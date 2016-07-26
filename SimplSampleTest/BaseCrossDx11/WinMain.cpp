@@ -12,7 +12,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 
-	MessageBox(nullptr, L"テストDx11", L"テストDx11", MB_OK);
+	MessageBox(nullptr, L"テスト", L"テスト", MB_OK);
 
 	return 0;
 }
