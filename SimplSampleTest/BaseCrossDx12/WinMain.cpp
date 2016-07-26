@@ -1,5 +1,4 @@
 
-
 #include "stdafx.h"
 
 //--------------------------------------------------------------------------------------
@@ -12,7 +11,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 
-	MessageBox(nullptr, L"テストDx11", L"テストDx11", MB_OK);
+	MessageBox(nullptr, L"テストDx12", L"テストDx12", MB_OK);
 
 	return 0;
 }

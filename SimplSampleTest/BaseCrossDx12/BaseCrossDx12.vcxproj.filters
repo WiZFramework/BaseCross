@@ -14,7 +14,7 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="シェーダファイル">
-      <UniqueIdentifier>{5b0f5ac1-db28-4212-a926-4fa316b8076d}</UniqueIdentifier>
+      <UniqueIdentifier>{d42a6f63-549b-41b3-8363-db23af1a9fb6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -29,7 +29,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="BaseCrossDx11.rc">
+    <ResourceCompile Include="BaseCrossDx12.rc">
       <Filter>リソース ファイル</Filter>
     </ResourceCompile>
   </ItemGroup>
