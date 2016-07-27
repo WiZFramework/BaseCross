@@ -2,13 +2,15 @@
 #include "stdafx.h"
 #include "Project.h"
 
+using namespace basecross;
+
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
 //定数
-const wchar_t* pClassName = L"BaseCrossClass";
-const wchar_t* pWndTitle = L"BaseCrossSample";
+const wchar_t* pClassName = L"BaseCrossDx12Class";
+const wchar_t* pWndTitle = L"BaseCrossDx12Sample";
 
 
 //--------------------------------------------------------------------------------------
@@ -150,6 +152,29 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 		}
 		//msg.wParamには終了コードが入っている
 		RetCode = (int)msg.wParam;
+	}
+	catch (BaseException& e) {
+		if (GetWindowInfo(hWnd, &WinInfo)) {
+			//実行失敗した
+			MessageBox(hWnd, e.what_w().c_str(), L"エラー", MB_OK);
+		}
+		else {
+			//実行失敗した
+			MessageBox(nullptr, e.what_w().c_str(), L"エラー", MB_OK);
+		}
+		RetCode = 1;
+	}
+	catch (BaseMBException& e) {
+		//マルチバイトバージョンのメッセージボックスを呼ぶ
+		if (GetWindowInfo(hWnd, &WinInfo)) {
+			//実行失敗した
+			MessageBoxA(hWnd, e.what_m().c_str(), "エラー", MB_OK);
+		}
+		else {
+			//実行失敗した
+			MessageBoxA(nullptr, e.what_m().c_str(), "エラー", MB_OK);
+		}
+		RetCode = 1;
 	}
 	catch (exception& e) {
 		//STLエラー

@@ -8,4 +8,9 @@
       <UniqueIdentifier>{631518d0-d18c-4919-b2e5-cd055fa95da1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Common.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
