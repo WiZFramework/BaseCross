@@ -19,11 +19,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MathExtEX.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MathVector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MathVectorEX.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MeshHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TransHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)XmlDoc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)BaseHelper.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MeshHelper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)XmlDoc.cpp" />
   </ItemGroup>
 </Project>
