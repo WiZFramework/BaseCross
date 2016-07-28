@@ -15,9 +15,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Common.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DeviceResources.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)VertexHelper.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DeviceResources.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)VertexHelper.cpp" />
   </ItemGroup>
 </Project>

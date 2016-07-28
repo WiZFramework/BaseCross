@@ -14,6 +14,7 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)App.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BaseHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MathExt.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MathExtEX.h" />
@@ -24,6 +25,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)XmlDoc.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)App.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)BaseHelper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MeshHelper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)XmlDoc.cpp" />

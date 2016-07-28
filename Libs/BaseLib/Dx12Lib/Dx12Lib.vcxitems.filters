@@ -18,9 +18,15 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)d3dx12.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)DeviceResources.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)VertexHelper.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DeviceResources.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

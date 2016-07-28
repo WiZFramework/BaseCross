@@ -25,4 +25,9 @@
 #include "VertexHelper.h"
 //プリミティブ作成関数等
 #include "../DxLib/MeshHelper.h"
+//アプリケーションクラスなど
+#include "../DxLib/App.h"
+//デバイスなど
+#include "DeviceResources.h"
+
 

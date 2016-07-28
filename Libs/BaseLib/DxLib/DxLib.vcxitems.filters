@@ -33,6 +33,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MeshHelper.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)App.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)BaseHelper.cpp">
@@ -42,6 +45,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)MeshHelper.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)App.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

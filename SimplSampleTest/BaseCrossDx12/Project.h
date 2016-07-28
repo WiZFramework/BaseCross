@@ -7,6 +7,7 @@
 
 
 #include "resource.h"
+#include "Scene.h"
 
 
 

@@ -134,6 +134,11 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 			// 初期化失敗
 			throw exception("Com初期化に失敗しました。");
 		}
+		////アプリケーションクラスの構築
+		App::GetApp(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
+		//シーンの作成
+		//戻り値のScenePtrは汎用的に使える
+		auto ScenePtr = App::GetApp()->CreateScene<Scene>();
 		//メッセージループ
 		MSG msg = { 0 };
 		//キーボード入力用
@@ -142,12 +147,18 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 		bool WinMess;
 		while (WM_QUIT != msg.message) {
 			WinMess = false;
-			//キー状態が何もなければウインドウメッセージを得る
-			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-				WinMess = true;
-				//キーボードとマウス状態をリセット
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
+			if (!App::GetApp()->ResetInputState(hWnd, UseKeyVec)) {
+				//キー状態が何もなければウインドウメッセージを得る
+				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+					WinMess = true;
+					//キーボードとマウス状態をリセット
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
+			}
+			if (!WinMess) {
+				//ウインドウメッセージがなければ更新描画処理
+				App::GetApp()->UpdateDraw(1);
 			}
 		}
 		//msg.wParamには終了コードが入っている
