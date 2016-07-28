@@ -23,10 +23,17 @@ https://github.com/WiZFramework/DxBaseTools
 
 　更新や追加情報はブログ、facebookにて紹介いたします。(ブログ情報はのちほど)
 
+　また、動作を確認するには以下の環境が必要です
+Visual Studio Community 2015（Community以外では動作確認してませんが、他は上位バージョンなので大丈夫と思われます）
+
+＊セットアップ時に必ずVisualC++をセットアップしてください。
+＊「DirectX11」版、動作にはWindows8.1以上が必要です。
+＊「DirectX12」版、動作にはWindows10、Windows10SDK（10.0.10240.0以上）が必要です。
 
 
 以下、主な更新履歴です（細かいのは、gitなのでレポジトリ内を参照ください）
 2016年7月25日　初期アプリケーション公開
+2016年7月28日　readme修正(動作環境)
 
 
 
