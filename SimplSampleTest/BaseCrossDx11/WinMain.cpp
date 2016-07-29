@@ -135,7 +135,7 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 			throw exception("Com初期化に失敗しました。");
 		}
 		////アプリケーションクラスの構築
-		App::GetApp(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
+		App::CreateApp(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
 		//シーンの作成
 		//戻り値のScenePtrは汎用的に使える
 		auto ScenePtr = App::GetApp()->CreateScene<Scene>();

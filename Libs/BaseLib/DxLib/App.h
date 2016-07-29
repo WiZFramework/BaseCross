@@ -120,11 +120,17 @@ namespace basecross {
 	};
 
 
+	//--------------------------------------------------------------------------------------
+	///	バックアップデータ（親）
+	//--------------------------------------------------------------------------------------
 	struct BackupDataBase {
 		BackupDataBase() {}
 		virtual ~BackupDataBase() {}
 
 	};
+	//--------------------------------------------------------------------------------------
+	///	バックアップデータ
+	//--------------------------------------------------------------------------------------
 	template<typename T>
 	struct BackupData : public BackupDataBase {
 		vector<T> m_Vertices;
@@ -533,16 +539,23 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief シングルトン構築とアクセサ（構築時はすべてのパラメータを設定する）
-		@param[in]	hInstance = 0	インスタンス
-		@param[in]	hWnd = 0		ウインドウのハンドル
-		@param[in]	FullScreen = false	フルスクリーンかどうか
-		@param[in]	Width = 0	幅
-		@param[in]	Height = 0	高さ
-		@return	なし
+		@param[in]	hInstance	インスタンス
+		@param[in]	hWnd		ウインドウのハンドル
+		@param[in]	FullScreen	フルスクリーンかどうか
+		@param[in]	Width	幅
+		@param[in]	Height	高さ
+		@return	Appのunique_ptr
 		*/
 		//--------------------------------------------------------------------------------------
-		static unique_ptr<App, AppDeleter>& GetApp(HINSTANCE hInstance = 0, HWND hWnd = 0,
-			bool FullScreen = false, UINT Width = 0, UINT Height = 0);
+		static unique_ptr<App, AppDeleter>& CreateApp(HINSTANCE hInstance, HWND hWnd,
+			bool FullScreen, UINT Width, UINT Height);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief シングルトンアクセサ
+		@return	Appのunique_ptr
+		*/
+		//--------------------------------------------------------------------------------------
+		static unique_ptr<App, AppDeleter>& GetApp();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief Appが作成されてるかチェック

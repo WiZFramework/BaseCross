@@ -406,13 +406,30 @@ namespace basecross {
 		}
 	}
 
-	//シングルトン構築とアクセサ
-	unique_ptr<App, App::AppDeleter>& App::GetApp(HINSTANCE hInstance, HWND hWnd,
+	//シングルトン構築
+	unique_ptr<App, App::AppDeleter>& App::CreateApp(HINSTANCE hInstance, HWND hWnd,
 		bool FullScreen, UINT Width, UINT Height) {
 		try {
 			if (m_App.get() == 0) {
 				//自分自身の構築
 				m_App.reset(new App(hInstance, hWnd, FullScreen, Width, Height));
+			}
+			return m_App;
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	//シングルトンアクセサ
+	unique_ptr<App, App::AppDeleter>& App::GetApp() {
+		try {
+			if (m_App.get() == 0) {
+				throw BaseException(
+					L"アプリケーションがまだ作成されてません",
+					L"if (m_App.get() == 0)",
+					L"App::GetApp()"
+				);
 			}
 			return m_App;
 		}
