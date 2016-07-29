@@ -16,16 +16,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\Dx
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{914918AE-6FB9-4608-B82A-851B16FF06A3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SharedGame", "SharedGame\SharedGame.vcxitems", "{A07ADED0-5440-4C03-B104-3BBFFA31E405}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxShared", "DxShared\DxShared.vcxitems", "{2D875D87-FFF7-4071-AF2E-B2965A4BDF6C}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		DxShared\DxShared.vcxitems*{2d875d87-fff7-4071-af2e-b2965a4bdf6c}*SharedItemsImports = 9
 		..\Libs\BaseLib\Dx12Lib\Dx12Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
 		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
-		SharedGame\SharedGame.vcxitems*{a07aded0-5440-4c03-b104-3bbffa31e405}*SharedItemsImports = 9
 		..\Libs\BaseLib\Dx12Lib\Dx12Lib.vcxitems*{b385003e-243e-40ff-92bf-3bfd222446e7}*SharedItemsImports = 4
 		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{b385003e-243e-40ff-92bf-3bfd222446e7}*SharedItemsImports = 4
-		SharedGame\SharedGame.vcxitems*{b385003e-243e-40ff-92bf-3bfd222446e7}*SharedItemsImports = 4
+		DxShared\DxShared.vcxitems*{b385003e-243e-40ff-92bf-3bfd222446e7}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86

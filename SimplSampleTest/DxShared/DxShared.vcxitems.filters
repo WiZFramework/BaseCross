@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="シェーダファイル">
-      <UniqueIdentifier>{13bc2d76-762b-4000-900e-5a5182e45de9}</UniqueIdentifier>
+      <UniqueIdentifier>{2c3dd856-51ca-4485-9f02-7f6047f6a7f5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
