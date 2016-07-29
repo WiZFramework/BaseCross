@@ -7,6 +7,9 @@
 
 
 #include "resource.h"
+
+#include "ProjectShader.h"
+#include "Character.h"
 #include "Scene.h"
 
 

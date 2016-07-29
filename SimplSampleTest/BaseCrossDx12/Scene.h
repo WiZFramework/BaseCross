@@ -10,6 +10,7 @@ namespace basecross {
 	///	ÉQÅ[ÉÄÉVÅ[Éì
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneInterface {
+		shared_ptr<NormalTextureBox> m_NormalTextureBox;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
