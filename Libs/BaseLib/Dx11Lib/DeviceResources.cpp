@@ -1,5 +1,5 @@
 /*!
-@file DeviceResources.h
+@file DeviceResources.cpp
 @brief テクスチャ、メッシュ、Dx11デバイスリソース実体
 */
 #include "stdafx.h"

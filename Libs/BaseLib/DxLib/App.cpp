@@ -1,6 +1,6 @@
 /*!
-@file App.h
-@brief アプリケーションクラス。入力機器等
+@file App.cpp
+@brief アプリケーションクラス。入力機器等実体
 */
 #include "stdafx.h"
 
