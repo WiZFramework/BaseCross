@@ -21,7 +21,12 @@ https://github.com/WiZFramework/DxBaseTools
 @uBaseCrossv‚Ìƒ_ƒEƒ“ƒ[ƒh•û–@‚ÍA‚±‚Ì•¶‘‚ª•\Ž¦‚³‚ê‚Ä‚¢‚éƒy[ƒW‚ÌA‰E‘¤‚É‚ ‚è‚Ü‚·AuDownloadZIPv‚Ìƒ{ƒ^ƒ“‚ðƒNƒŠƒbƒN‚µ‚ÄAƒpƒ\ƒRƒ““™‚Éƒ_ƒEƒ“ƒ[ƒh‚µ‚Ä‚­‚¾‚³‚¢B
 @‚Ü‚¸‚ÍuDirectX11v‚ÆuDirectX12v‚ÌuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ÌŽÀ‘•‚ði‚ß‚Ä‚Ü‚¢‚è‚Ü‚·B
 
-@XV‚â’Ç‰Áî•ñ‚ÍƒuƒƒOAfacebook‚É‚ÄÐ‰î‚¢‚½‚µ‚Ü‚·B(ƒuƒƒOî•ñ‚Í‚Ì‚¿‚Ù‚Ç)
+@XV‚â’Ç‰Áî•ñ‚ÍƒuƒƒOAfacebook‚É‚ÄÐ‰î‚¢‚½‚µ‚Ü‚·B
+
+BaseCrossƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒN
+ŠJ”­“úŽu-ŽÀŒ±‚ÆŽÀ‘•‚Æ-v
+http://gameproject.jp/
+
 
 @‚Ü‚½A“®ì‚ðŠm”F‚·‚é‚É‚ÍˆÈ‰º‚ÌŠÂ‹«‚ª•K—v‚Å‚·
 Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo[ƒWƒ‡ƒ“‚È‚Ì‚Å‘åä•v‚ÆŽv‚í‚ê‚Ü‚·j
@@ -35,6 +40,8 @@ Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo
 2016”N7ŒŽ25“ú@‰ŠúƒAƒvƒŠƒP[ƒVƒ‡ƒ“ŒöŠJ
 2016”N7ŒŽ28“ú@readmeC³(“®ìŠÂ‹«)
 2016”N7ŒŽ30“ú@ƒVƒ“ƒvƒ‹Aƒtƒ‹—¼ƒo[ƒWƒ‡ƒ“ƒeƒXƒgƒTƒ“ƒvƒ‹ŒöŠJ
+2016”N8ŒŽ02“ú@readmeC³BƒuƒƒOƒTƒCƒg‚Ì‚²Ð‰î
+
 
 
 
