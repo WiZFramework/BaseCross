@@ -9,23 +9,6 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	物理補間(ease-out:2次補間)
-	@tparam	T	計算する型
-	@param[in]	startV	開始値
-	@param[in]	endV	終了値
-	@param[in]	nowCnt	現在値
-	@param[in]	ts	全体値
-	@return	T型の計算結果
-	*/
-	//--------------------------------------------------------------------------------------
-	template<class T>
-	inline T PhyInterpolate(const T& startV, const T& endV, int nowCnt, int ts){
-		float t = nowCnt / (float)ts;
-		T d = endV - startV;
-		return startV + 2 * d*t - d*t*t;
-	}
-	//--------------------------------------------------------------------------------------
 	///	Lerp 補間処理計算構造体
 	//--------------------------------------------------------------------------------------
 	struct Lerp{
