@@ -32,15 +32,16 @@ namespace basecross {
 	Component::~Component() {}
 	//アクセサ
 	shared_ptr<GameObject> Component::GetGameObject() const {
-		if (pImpl->m_GameObject.expired()) {
+		auto shptr = pImpl->m_GameObject.lock();
+		if (!shptr) {
 			throw BaseException(
 				L"GameObjectは有効ではありません",
-				L"if (pImpl->m_GameObject.expired())",
+				L"if (!shptr)",
 				L"Component::GetGameObject()"
 			);
 		}
 		else {
-			return pImpl->m_GameObject.lock();
+			return shptr;
 		}
 	}
 

@@ -122,14 +122,15 @@ namespace basecross {
 	void  GameObject::SetDrawLayer(int l) {pImpl->m_DrawLayer = l;}
 
 	shared_ptr<Stage> GameObject::GetStage(bool ExceptionActive) const {
-		if (!pImpl->m_Stage.expired()) {
-			return pImpl->m_Stage.lock();
+		auto shptr = pImpl->m_Stage.lock();
+		if (shptr) {
+			return shptr;
 		}
 		else {
 			if (ExceptionActive) {
 				throw BaseException(
 					L"所属ステージがnullです。自分自身がステージではありませんか？",
-					L"if (pImpl->m_Stage.expired())",
+					L"if (!shptr)",
 					L"GameObject::GetStage()"
 				);
 			}

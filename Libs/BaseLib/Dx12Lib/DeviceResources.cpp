@@ -963,14 +963,15 @@ namespace basecross {
 		//テクスチャ
 		weak_ptr<TextureResource> m_TextureResource;
 		shared_ptr<TextureResource> TextureResourceExpiredLock() {
-			if (m_TextureResource.expired()) {
+			auto shptr = m_TextureResource.lock();
+			if (!shptr) {
 				ThrowBaseException(
 					L"テクスチャが無効です",
-					L"if (m_TextureResource.expired())",
+					L"if (!shptr)",
 					L"ShaderResource::Impl::TextureResourceExpiredLock()"
 				);
 			}
-			return m_TextureResource.lock();
+			return shptr;
 		}
 
 	};
@@ -1045,14 +1046,15 @@ namespace basecross {
 		//テクスチャ
 		weak_ptr<TextureResource> m_TextureResource;
 		shared_ptr<TextureResource> TextureResourceExpiredLock() {
-			if (m_TextureResource.expired()) {
+			auto shptr = m_TextureResource.lock();
+			if (!shptr) {
 				ThrowBaseException(
 					L"テクスチャが無効です",
-					L"if (m_TextureResource.expired())",
+					L"if (!shptr)",
 					L"VSPSDrawContext::Impl::TextureResourceExpiredLock()"
 				);
 			}
-			return m_TextureResource.lock();
+			return shptr;
 		}
 		//コンスタントバッファ
 		void* m_pConstantBuffer{ nullptr };

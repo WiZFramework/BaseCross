@@ -350,14 +350,15 @@ namespace basecross {
 
 	shared_ptr<MeshResource> PNTStaticDraw::GetMeshResource() const {
 		//メッシュがなければリターン
-		if (pImpl->m_MeshResource.expired()) {
+		auto shptr = pImpl->m_MeshResource.lock();
+		if (!shptr) {
 			throw BaseException(
 				L"メッシュが設定されてません",
-				L"if (pImpl->m_MeshResource.expired())",
+				L"if (!shptr)",
 				L"PNTStaticDraw::GetMeshResource()"
 			);
 		}
-		return pImpl->m_MeshResource.lock();
+		return shptr;
 	}
 
 	void PNTStaticDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
@@ -375,10 +376,11 @@ namespace basecross {
 	}
 	shared_ptr<TextureResource> PNTStaticDraw::GetTextureResource() const {
 		//テクスチャがなければnullを返す
-		if (pImpl->m_TextureResource.expired()) {
+		auto shptr = pImpl->m_TextureResource.lock();
+		if (!shptr) {
 			return nullptr;
 		}
-		return pImpl->m_TextureResource.lock();
+		return shptr;
 	}
 
 	Color4 PNTStaticDraw::GetEmissive() const {

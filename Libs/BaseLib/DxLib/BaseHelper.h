@@ -1145,7 +1145,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	template<typename T>
 	shared_ptr<T> ThrowIfWeakToSharedFailed(const weak_ptr<T>& SrcPtr) {
-		if (SrcPtr.expired()) {
+		auto shptr = SrcPtr.lock();
+		if (!shptr) {
 			string Str = typeid(T).name();
 			string Mess = Str += "は不定値になっています。"
 				ThrowBaseException(
@@ -1154,7 +1155,7 @@ namespace basecross{
 					"ThrowIfWeakToShared<T>()"
 				);
 		}
-		return SrcPtr.lock();
+		return shptr;
 	}
 
 
@@ -2055,8 +2056,9 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		shared_ptr< ObjState<T> >  GetCurrentState() const {
-			if (!m_CurrentState.expired()){
-				return m_CurrentState.lock();
+			auto shptr = m_CurrentState.lock();
+			if (shptr){
+				return shptr;
 			}
 			return nullptr;
 		}
@@ -2067,8 +2069,9 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		shared_ptr< ObjState<T> >  GetPreviousState()const {
-			if (!m_pPreviousState.expired()){
-				return m_pPreviousState.lock();
+			auto shptr = m_pPreviousState.lock();
+			if (shptr){
+				return shptr;
 			}
 			return nullptr;
 		}
@@ -2079,9 +2082,10 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void Update() const{
-			if (!m_CurrentState.expired() && !m_Owner.expired()){
-				auto Ptr = m_CurrentState.lock();
-				Ptr->Execute(m_Owner.lock());
+			auto shptr = m_CurrentState.lock();
+			auto ow_shptr = m_Owner.lock();
+			if (shptr && ow_shptr){
+				shptr->Execute(ow_shptr);
 			}
 		}
 		//--------------------------------------------------------------------------------------
@@ -2094,17 +2098,18 @@ namespace basecross{
 		void  ChangeState(const shared_ptr< ObjState<T> >& NewState){
 			//元のステートを保存
 			m_PreviousState = m_CurrentState;
-			if (!m_CurrentState.expired() && !m_Owner.expired()){
+			auto shptr = m_CurrentState.lock();
+			auto ow_shptr = m_Owner.lock();
+			if (shptr && ow_shptr){
 				//元のステートに終了を知らせる
-				auto Ptr = m_CurrentState.lock();
-				Ptr->Exit(m_Owner.lock());
+				shptr->Exit(ow_shptr);
 			}
 			//新しいステートをカレントに設定
 			m_CurrentState = NewState;
-			if (!m_CurrentState.expired() && !m_Owner.expired()){
+			shptr = m_CurrentState.lock();
+			if (shptr && ow_shptr){
 				//元のステートに終了を知らせる
-				auto Ptr = m_CurrentState.lock();
-				Ptr->Enter(m_Owner.lock());
+				shptr->Enter(ow_shptr);
 			}
 		}
 		//--------------------------------------------------------------------------------------
@@ -2124,10 +2129,11 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		bool IsInState(const shared_ptr< ObjState<T> >& st)const{
-			if (m_CurrentState.expired()){
+			auto shptr = m_CurrentState.lock();
+			if (!shptr){
 				return false;
 			}
-			return typeid(m_CurrentState.lock()) == typeid(st);
+			return typeid(shptr) == typeid(st);
 		}
 	};
 
