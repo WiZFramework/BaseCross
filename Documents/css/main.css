@@ -1,0 +1,269 @@
+@charset "utf-8";
+body, h1, h2, h3, h4, h5, p {
+	font-family:"ＭＳ Ｐゴシック", Osaka, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", san-self;
+}
+
+body {
+	background-image: url(../img/bg_main.gif);
+	background-repeat: repeat;
+	margin-left: 0;
+	margin-right: 0;
+	margin-top: 0px;
+	margin-bottom: 40px;
+	padding: 0px;
+	text-align: center;
+}
+
+h1, h2, h3, h4, h5 {
+	padding:0;
+	margin: 0;
+}
+
+a:link {
+	color: #004488;
+}
+a:visited {
+	color: #004488;
+}
+a:hover {
+	color: #8b0000;
+}
+
+ul.decimal li {
+	list-style-type:decimal;
+}
+
+ul.circle li {
+	list-style-type:circle;
+}
+
+ul.mokuji  {
+	margin-top: 0px;
+	margin-left: 50px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	padding: 0;
+}
+
+#container {
+	width: 880px; 
+	font-size: 90%;
+	line-height: 140%;
+	background-color: #FFFFFF;
+	padding-bottom: 14px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#header {
+	font-size: 20px;
+	text-align: left;
+	padding-top: 12px;
+	padding-right: 0px;
+	padding-left: 8px;
+	padding-bottom: 14px;
+}
+
+#contents  {
+	margin-top: 0px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-bottom: 16px;
+	text-align: left;
+	padding: 0px;
+}
+
+
+#contents p {
+	margin-top: 4px;
+	margin-left: 2px;
+	margin-right: 2px;
+	margin-bottom: 4px;
+	padding: 0px;
+}
+
+#contents h3 {
+	margin-bottom: 8px;
+}
+
+
+#contents .box1_title {
+	margin-top: 8px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: -4px;
+	padding: 4px;
+	border: 1px #0cb0e0 solid;
+	background-color: #7fff00;
+}
+
+#contents .box1_title_2 {
+	margin-top: 8px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: -4px;
+	padding: 4px;
+	border: 1px #0cb0e0 solid;
+	background-color: #EE82EE;
+}
+
+#contents .box1_head {
+	margin-top: 8px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: -4px;
+	padding: 4px;
+	border: 1px #0cb0e0 solid;
+	background-color: #e0ffff;
+}
+
+
+#contents .box1 {
+	margin-top: 8px;
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: 8px;
+	padding-top: 4px;
+	padding-left: 4px;
+	padding-right: 4px;
+	padding-bottom: 4px;
+	border: 1px #ffb366 solid;
+}
+
+#footer {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+
+
+ul.foot_navi {
+	margin-top: 0px;
+	margin-left: 240px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	padding: 0;
+	list-style-type: none;
+}
+
+ul.foot_navi li {
+	float: left;
+	width: 8em;
+	margin-right: 5px;
+	padding: 2px;
+	border: 1px #ffb366 solid;
+	background-color: #fffdee;
+	text-align: center;
+}
+
+
+
+#contents .box1 pre {
+	margin: 0px;
+	line-height: 120%;
+	font-weight: bold;
+	background-color: #fffdee;
+}
+
+#contents .red {
+	color: #FF0000; 
+}
+
+#contents .blue {
+	color: #0000c0; 
+}
+
+#contents .dark_blue {
+	color: #004488; 
+}
+
+#contents .dark_red {
+	color: #990033; 
+}
+
+
+#contents .center {
+	text-align: center;
+}
+
+#contents .right {
+	text-align: right;
+}
+
+#contents b {
+	margin-left: 4px;
+	margin-right: 4px;
+}
+
+#contents table {
+	width: 100%;
+	margin-top: 0px;
+	margin-left: 2px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	padding: 0px;
+	border: 1px solid #CCCCCC;
+	font-size: 100%;
+}
+
+#contents th {
+	border-top: none;
+	border-bottom: none;
+	border-left: 6px solid #98FB98; 
+	border-right: none;
+	background-color: #98FB98;
+	font-weight: normal;
+	padding-top: 4px; 
+	padding-bottom: 4px; 
+	padding-left: 2px; 
+	padding-right: 2px; 
+}
+
+
+/*<th class="nobottom">の設定*/
+#contents th.nobottom {
+	border-top: none;
+	border-bottom: none;
+	border-left: 6px solid #98FB98; 
+	border-right: none;
+	background-color: #98FB98;
+	font-weight: normal;
+	padding-top: 4px; 
+	padding-bottom: 4px; 
+	padding-left: 2px; 
+	padding-right: 2px; 
+}
+
+
+#contents td {
+	border-top: none;
+	border-bottom: 1px solid #CCCCCC;
+	border-left: none;
+	border-right: none;
+	margin: 0px;
+	padding-top: 4px; 
+	padding-bottom: 4px; 
+	padding-left: 2px; 
+	padding-right: 2px; 
+}
+
+#contents td.nobottom{
+	border: none;
+	margin: 0px;
+	padding-top: 4px; 
+	padding-bottom: 4px; 
+	padding-left: 2px; 
+	padding-right: 2px; 
+}
+
+
+#contents input,textarea{
+	font-size: 90%;
+}
+
+#contents select{
+	font-size: 90%;
+}
+
+

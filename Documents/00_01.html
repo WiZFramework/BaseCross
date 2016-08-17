@@ -1,0 +1,221 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>００１．三角形の描画</h3>
+　これから、<b>シンプルバージョン</b>のサンプルの説明を始めます。このサンプルは<b>SimplSample001</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　どちらのソリューションでも、実行結果は以下のような画面が出ます。単純な3角形の描画です。
+<p>&nbsp;</p>
+<img src="img/0001a.png" width="80%"/>
+<p>図0001a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>Dx12版解説</h4>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
+　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
+　親クラスの<b>ObjectInterface</b>は<b>OnCreate()仮想関数</b>を持つインターフェイスクラスです。子クラスはこの仮想関数を実装しなければなりません。<b>ObjectInterface</b>は、自分自身のshared_ptrを作成できるクラスです。（つまりthisポインタのshared_ptr版）。このポインタはオブジェクト配置の時に、簡単に包含関係を作れますので、便利と思われます。<br />
+　一方、<b>ShapeInterfaceクラス</b>は<b>OnUpdate、OnDraw仮想関数</b>を持ちます。こちらは、<b>ObjectInterface</b>ほど重要度は高くありません。<b>OnUpdate、OnDraw仮想関数</b>を作成せずに実装することも可能です。<br />
+　さて、<b>TriangleObjectクラス</b>ん<b>OnCreate()関数</b>は以下のようになります。
+<div class="box1">
+<pre>
+void TriangleObject::OnCreate() {
+    //頂点を作成するための配列
+    vector&lt;VertexPositionColor> vertices = {
+        { Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
+    };
+    m_TriangleMesh = MeshResource::CreateMeshResource(vertices,false);
+
+    m_DrawContext = ObjectFactory::Create&lt;VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSimple);
+    m_DrawContext->CreateDefault2DPipelineCmdList&lt;VertexPositionColor, VSPCDirect, PSPCDirect>();
+}
+</pre>
+</div>
+　ここでポイントなるのは、<b>m_DrawContext</b>というインスタンスの型<b>VSPSDrawContextクラス</b>です。これはDx12における描画処理をカプセル化しています。
+　Dx11の場合は、DirectX側で描画のためのインターフェイスを用意してあるので、直接Dx11のAPIを使ってもそんなに難解なことはないのですが、Dx12の場合、ほとんどGPUに直接アクセスするといっても過言ではないため、描画のためのラッピングクラスを用意しました。<br />
+　<b>VSPSDrawContextクラス</b>は<b>頂点シェーダとピクセルシェーダを描画に使う</b>オブジェクトの描画クラスです。今後、ジオメトリシェーダを使う場合などは別のクラスが必要になると思いますが、そこはおいおい準備します（サンプルに合わせてライブラリも更新予定です）。
+　<b>VSPSDrawContextクラス</b>の中身に関しては、開発ブログ<b><a href="http://gameproject.jp/" target="_blank">実験と実装と</a></b>を参照ください。かなり詳しく書いたつもりなので、Dx12に理解にはある程度役立つと思います。<br />
+　ここでは、<b>VSPSDrawContextクラス</b>の具体的な使い方を説明します。<br />
+　まず、
+<div class="box1">
+<pre>
+    m_DrawContext = ObjectFactory::Create&lt;VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSimple);
+</pre>
+</div>
+　でこのクラスのインスタンス（のshared_ptr）を初期化します。<br />
+　<b>VSPSDrawContext::CreateParam::CreateSimple</b>という引数は<b>コンスタントバッファもテクスチャも使わない</b>形で初期化します。<br />
+　続いて
+<div class="box1">
+<pre>
+    m_DrawContext->CreateDefault2DPipelineCmdList&lt;VertexPositionColor, VSPCDirect, PSPCDirect>();
+</pre>
+</div>
+　で2次元用の<b>パイプラインステートとコマンドリスト</b>という形で両オブジェクトを作成します。パイプラインステートとは<b>頂点のフォーマットはどうなっているか、どのシェーダーを使うか、ラスタライザステートはどうするか、デプスステンシルステートはどうするか、ブレンドステートはどうするか、</b>などを定義したオブジェクトで、コマンドリストとは、<b>パイプラインステートを設定し、描画処理をする</b>、などの命令を<b>コマンドリスト</b>という形でまとめるものです。<br />
+　ですのでここでは<b>VertexPositionColor(頂点形式)、VSPCDirect(頂点シェーダ)、PSPCDirect(ピクセルシェーダ)</b>のそれぞれの「型」を渡しています。<br />
+　実際に頂点データを渡すのは<b>OnDraw</b>で行います。<br />
+<br />
+　このサンプルの描画処理は、<b>TriangleObject::OnDraw()関数</b>で行います。
+<div class="box1">
+<pre>
+void TriangleObject::OnDraw() {
+    //描画
+    m_DrawContext->DrawVertex&lt;VertexPositionColor>(m_TriangleMesh);
+}
+</pre>
+</div>
+　いたってシンプルですが、これはコンスタントバッファやテクスチャを持たないし、2次元なのでカメラもいらないのでこのようにシンプルです。<br />
+　通常はもっちょと複雑になります。<br />
+<br />
+　さて、このような三角形クラスをゲーム上に配置するのは、シーンの役割です。<b>Character.h/cpp</b>に記述があります。<br />
+　まず、<b>Character.h</b>に宣言があります。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ゲームシーン
+//--------------------------------------------------------------------------------------
+class Scene : public SceneInterface {
+    shared_ptr&lt;TriangleObject> m_TriangleObject;
+public:
+    //中略
+};
+</pre>
+</div>
+　ここでメンバ変数になってる<b>m_TriangleObject</b>が三角形オブジェクトのshared_ptrです。<br />
+　これを、シーンの<b>OnCreate</b>で初期化します。
+<div class="box1">
+<pre>
+void Scene::OnCreate() {
+    //三角形の作成
+    m_TriangleObject = ObjectFactory::Create&lt;TriangleObject>();
+}
+</pre>
+</div>
+　そして、シーンの<b>OnDraw()</b>で描画します。
+<div class="box1">
+<pre>
+void Scene::OnDraw() {
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+    //デフォルト描画の開始
+    Dev->StartDefultDraw();
+    //三角形の描画
+    m_TriangleObject->OnDraw();
+    //デフォルト描画の終了
+    Dev->EndDefultDraw();
+}
+</pre>
+</div>
+　ここで、三角形の<b>OnDraw()</b>を呼び出しているため、<b>TriangleObject::OnDraw()</b>が実行されます。<br />
+　上記（このページの上のほう）で、<b>ShapeInterfaceクラス</b>は重要ではない、といったのは実は、この、シーンのOnDraw()で、呼び出す三角形の描画関数名は何でもいいのです。<br/>
+　つまり、三角形オブジェクトが<b>OnRender()関数</b>を持ち、シーンからその関数を呼び出せば、結果同じになります。<br />
+　このあたりがシンプルバージョンの融通性でもあります。これがフルバージョンでは、OnDraw()やOnUpdate()は必ずこの仮想関数でなければなりません。<br />
+　ということは逆に考えれば<b>仮想関数がお嫌いなら使わなくてもよい</b>ということになります。描画を呼び出すのはシーンですし、シーンはゲーム側のオブジェクトですから、そのあたりの設計は、ライブラリ（つまりBaseCross側）は関係ないのです。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<b>VSPSDrawContextクラス</b>は今後も何かと登場します。別の使用方法が出てきた都度説明します。<br />
+<br />
+<h4>Dx11版解説</h4>
+　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
+　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
+　ここまでは、Dx12版とほとんど一緒です。以下は、<b>TriangleObject::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void TriangleObject::OnCreate() {
+    //頂点を作成するための配列
+    vector&lt;VertexPositionColor> vertices = {
+        { Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
+    };
+    m_TriangleMesh = MeshResource::CreateMeshResource(vertices, false);
+}
+</pre>
+</div>
+　Dx12版にあった、<b>m_DrawContext</b>がないのがわかります。これはDx11は、APIがしっかりそろっていて、描画処理を直接書いてもプログラマの負担にはならないからです。ですから、<b>Dx12版のVSPSDrawContextクラス</b>のような描画のためのクラスは存在しません。<br />
+　その代りOnDraw()は、少し書く内容が多いです。
+<div class="box1">
+<pre>
+void TriangleObject::OnDraw() {
+    //描画
+    //デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pDx11Device = Dev->GetD3DDevice();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    //ステータスのポインタ
+    auto RenderStatePtr = Dev->GetRenderState();
+
+    //ストライドとオフセット
+    UINT stride = sizeof(VertexPositionColor);
+    UINT offset = 0;
+    //頂点バッファの設定
+    pID3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        m_TriangleMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    //描画方法（3角形）
+    pID3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //nullテクスチャを設定
+    ID3D11ShaderResourceView* pNull[1] = { 0 };
+    ID3D11SamplerState* pNullSR[1] = { 0 };
+    pID3D11DeviceContext->PSSetShaderResources(0, 1, pNull);
+    //nullサンプラーを設定
+    pID3D11DeviceContext->PSSetSamplers(0, 1, pNullSR);
+    pID3D11DeviceContext->OMSetDepthStencilState(RenderStatePtr->GetDepthNone(), 0);
+    //シェーダの設定
+    //頂点シェーダの設定
+    pID3D11DeviceContext->VSSetShader(VSPCDirect::GetPtr()->GetShader(), nullptr, 0);
+    //ピクセルシェーダの設定
+    pID3D11DeviceContext->PSSetShader(PSPCDirect::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pID3D11DeviceContext->IASetInputLayout(VSPCDirect::GetPtr()->GetInputLayout());
+
+    //塗りつぶし
+    pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetOpaque(), nullptr, 0xffffffff);
+    //レンダリングステート
+    pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullBack());
+    //描画
+    pID3D11DeviceContext->Draw(3, 0);
+    //後始末
+    Dev->InitializeStates();
+
+}
+</pre>
+</div>
+　記述内容は多いですが、一つ一つが理にかなっている（というか読めばわかる）操作かと思います。<br />
+　個別の解説はコメントでわかると思います。<br />
+<br />
+　さてこうしたうえで、シーンでのこのオブジェクトの準備と、描画呼び出しはDx12版と変わりませんので、上記説明を読んでください。<br />
+<br />
+<h4>まとめ</h4>
+　このようにDx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。Dx12の場合は、直接呼び出してもいいのですが、GPU直接の操作があまりに多いので、<b>VSPSDrawContextクラス</b>を介して描画処理をします。<br />
+　もしどうしても<b>自分でDx12描画したい</b>と思う方は、ぜひ<b>VSPSDrawContextクラス</b>に当たるクラスを自作するか、もしくは<b>VSPSDrawContextクラス</b>でやってるような処理を、オブジェクトのOnCreate()とOnDraw()に記述すれば、自作可能です。<br />
+　前述したブログも参考になると思いますので、このあたりを研究しながら自作してみるのもいいと思います。<br />
+<br />
+　以降、こんな感じでサンプルの解説を行っていきたいと思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -252,7 +252,7 @@ namespace basecross {
 		template<typename T>
 		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, bool AccessWrite) {
 			//デバイスの取得
-			auto Dev = App::GetApp()->GetDeviceResources<Dx12DeviceResources>();
+			auto Dev = App::GetApp()->GetDeviceResources();
 			auto Ptr = ObjectFactory::Create<MeshResource>();
 			Ptr->m_AccessWrite = AccessWrite;
 

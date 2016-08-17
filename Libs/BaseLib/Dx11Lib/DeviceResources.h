@@ -526,7 +526,7 @@ namespace basecross {
 		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, bool AccessWrite) {
 			std::mutex Mutex;
 			//デバイスの取得
-			auto Dev = App::GetApp()->GetDeviceResources<Dx11DeviceResources>();
+			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pDx11Device = Dev->GetD3DDevice();
 			auto Ptr = ObjectFactory::Create<MeshResource>();
 			//バッファの作成
