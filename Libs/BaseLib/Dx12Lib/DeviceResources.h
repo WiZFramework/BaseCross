@@ -529,6 +529,31 @@ namespace basecross {
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief  頂点の更新
+		@tparam	T	頂点の型
+		@param[in] vertices	頂点の配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void UpdateVirtex(const vector<T>& vertices) {
+			auto shptr = dynamic_pointer_cast< BackupData<T> >(m_BackupData);
+			if (!shptr) {
+				return;
+			}
+			if (shptr->m_Vertices.size() != vertices.size()) {
+				return;
+			}
+			for (size_t i = 0; i < vertices.size();i++) {
+				shptr->m_Vertices[i] = vertices[i];
+			}
+			m_DataRefresh = false;
+		}
+
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief  リソースの更新
 		@tparam	T	頂点の型
 		@param[in] commandList	コマンドリスト
@@ -750,6 +775,17 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void Present(unsigned int SyncInterval, unsigned int  Flags);
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief たまっているコマンドリストを実行してコマンドリストのバッファをクリアする
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ExecuteCommandLists();
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 1つ前のフレームの処理を待つ
@@ -1191,6 +1227,10 @@ namespace basecross {
 		void CreateConstantBuffer(UINT BufferSize);
 		void UpdateConstantBuffer(void* SrcBuffer, UINT BufferSize);
 
+		ComPtr<ID3D12GraphicsCommandList> GetCommandList() const {
+			return m_CommandList;
+		}
+
 		//パイプラインステート
 		template<typename Vertex, typename VS, typename PS>
 		void CreateDefault3DPipelineCmdList() {
@@ -1252,6 +1292,14 @@ namespace basecross {
 			UpdateShaderResource();
 			DrawVertexBase(Mesh);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief たまっているコマンドリストを実行してコマンドリストのバッファをクリアする
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ExecuteCommandLists();
+
 
 	private:
 		// pImplイディオム

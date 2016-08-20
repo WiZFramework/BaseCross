@@ -858,6 +858,15 @@ namespace basecross {
 		pImpl->WaitForPreviousFrame();
 		pImpl->m_DrawCommandLists.clear();
 	}
+
+	void DeviceResources::ExecuteCommandLists() {
+		// Execute the command list.
+		if (pImpl->m_DrawCommandLists.size() > 0) {
+			pImpl->m_CommandQueue->ExecuteCommandLists(pImpl->m_DrawCommandLists.size(), &pImpl->m_DrawCommandLists[0]);
+			pImpl->m_DrawCommandLists.clear();
+		}
+	}
+
 	void DeviceResources::WaitForPreviousFrame() {
 		pImpl->WaitForPreviousFrame();
 	}
@@ -1352,6 +1361,12 @@ namespace basecross {
 		Dev->InsertDrawCommandLists(m_CommandList.Get());
 
 	}
+
+	void VSPSDrawContext::ExecuteCommandLists() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->ExecuteCommandLists();
+	}
+
 
 
 	//パイプラインのリセット
