@@ -144,22 +144,17 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 		//キーボード入力用
 		//ここに設定したキーボード入力を得る
 		vector<DWORD> UseKeyVec = {};
-		bool WinMess;
 		while (WM_QUIT != msg.message) {
-			WinMess = false;
 			if (!App::GetApp()->ResetInputState(hWnd, UseKeyVec)) {
 				//キー状態が何もなければウインドウメッセージを得る
 				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-					WinMess = true;
 					//キーボードとマウス状態をリセット
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
 			}
-			if (!WinMess) {
-				//ウインドウメッセージがなければ更新描画処理
-				App::GetApp()->UpdateDraw(1);
-			}
+			//更新描画処理
+			App::GetApp()->UpdateDraw(1);
 		}
 		//msg.wParamには終了コードが入っている
 		RetCode = (int)msg.wParam;
@@ -208,6 +203,8 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 		}
 		RetCode = 1;
 	}
+	//アプリケーションの削除
+	App::DeleteApp();
 	//例外処理終了
 	//COMのリリース
 	::CoUninitialize();
@@ -252,7 +249,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	return MainLoop(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
+	return  MainLoop(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
 
 }
 

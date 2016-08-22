@@ -1,13 +1,9 @@
-/*!
-@file WinMain.cpp
-@brief エントリポイント
-*/
 
 #include "stdafx.h"
 #include "Project.h"
 
-
 using namespace basecross;
+
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -62,11 +58,11 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow, bool isFullScreen, int iCli
 	HWND hWnd = 0;
 	// ウィンドウの作成
 	if (isFullScreen) { // フルスクリーン
-		// 画面全体の幅と高さを取得
-		//もし画面全体の解像度で処理する場合は以下を有効に
-		//メモリを圧迫するので動作速度注意！
-		//        iClientWidth = GetSystemMetrics(SM_CXSCREEN);
-		//        iClientHeight = GetSystemMetrics(SM_CYSCREEN);
+						// 画面全体の幅と高さを取得
+						//もし画面全体の解像度で処理する場合は以下を有効に
+						//メモリを圧迫するので動作速度注意！
+						//        iClientWidth = GetSystemMetrics(SM_CXSCREEN);
+						//        iClientHeight = GetSystemMetrics(SM_CYSCREEN);
 		hWnd = CreateWindow(
 			pClassName,			// 登録されているクラス名
 			pWndTitle,			// ウインドウ名
@@ -79,8 +75,8 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow, bool isFullScreen, int iCli
 			nullptr,				// メニューや子ウインドウのハンドル
 			hInstance,			// アプリケーションインスタンスのハンドル
 			nullptr				// ウインドウの作成データ
-			);
-		if (!hWnd){
+		);
+		if (!hWnd) {
 			//失敗した
 			MessageBox(nullptr, L"ウインドウ作成に失敗しました", L"エラー", MB_OK);
 			return 0;   //エラー終了
@@ -103,8 +99,8 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow, bool isFullScreen, int iCli
 			nullptr,					// メニューや子ウインドウのハンドル
 			hInstance,				// アプリケーションインスタンスのハンドル
 			nullptr					// ウインドウの作成データ
-			);
-		if (!hWnd){
+		);
+		if (!hWnd) {
 			//失敗した
 			MessageBox(nullptr, L"ウインドウ作成に失敗しました", L"エラー", MB_OK);
 			return 0;   //エラー終了
@@ -114,7 +110,7 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow, bool isFullScreen, int iCli
 	ShowWindow(
 		hWnd,       //取得したウインドウのハンドル
 		nCmdShow    //WinMainに渡されたパラメータ
-		);
+	);
 	UpdateWindow(hWnd);
 	return hWnd;
 }
@@ -124,17 +120,17 @@ HWND InitInstance(HINSTANCE hInstance, int nCmdShow, bool isFullScreen, int iCli
 //	int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth, int iClientHeight);
 //	用途: メインループ
 //--------------------------------------------------------------------------------------
-int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth, int iClientHeight){
+int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth, int iClientHeight) {
 	//終了コード
 	int RetCode = 0;
 	//ウインドウ情報。メッセージボックス表示チェックに使用
 	WINDOWINFO WinInfo;
 	ZeroMemory(&WinInfo, sizeof(WinInfo));
 	//例外処理開始
-	try{
+	try {
 		//COMの初期化
 		//サウンドで使用する
-		if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))){
+		if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
 			// 初期化失敗
 			throw exception("Com初期化に失敗しました。");
 		}
@@ -148,71 +144,67 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 		//キーボード入力用
 		//ここに設定したキーボード入力を得る
 		vector<DWORD> UseKeyVec = {};
-		bool WinMess;
-		while (WM_QUIT != msg.message){
-			WinMess = false;
-			if (!App::GetApp()->ResetInputState(hWnd, UseKeyVec)){
+		while (WM_QUIT != msg.message) {
+			if (!App::GetApp()->ResetInputState(hWnd, UseKeyVec)) {
 				//キー状態が何もなければウインドウメッセージを得る
-				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)){
-					WinMess = true;
+				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 					//キーボードとマウス状態をリセット
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
 			}
-			if (!WinMess){
-				//ウインドウメッセージがなければ更新描画処理
-				App::GetApp()->UpdateDraw(1);
-			}
+			//更新描画処理
+			App::GetApp()->UpdateDraw(1);
 		}
 		//msg.wParamには終了コードが入っている
 		RetCode = (int)msg.wParam;
 	}
-	catch (BaseException& e){
-		if (GetWindowInfo(hWnd, &WinInfo)){
+	catch (BaseException& e) {
+		if (GetWindowInfo(hWnd, &WinInfo)) {
 			//実行失敗した
 			MessageBox(hWnd, e.what_w().c_str(), L"エラー", MB_OK);
 		}
-		else{
+		else {
 			//実行失敗した
 			MessageBox(nullptr, e.what_w().c_str(), L"エラー", MB_OK);
 		}
 		RetCode = 1;
 	}
-	catch (BaseMBException& e){
+	catch (BaseMBException& e) {
 		//マルチバイトバージョンのメッセージボックスを呼ぶ
-		if (GetWindowInfo(hWnd, &WinInfo)){
+		if (GetWindowInfo(hWnd, &WinInfo)) {
 			//実行失敗した
 			MessageBoxA(hWnd, e.what_m().c_str(), "エラー", MB_OK);
 		}
-		else{
+		else {
 			//実行失敗した
 			MessageBoxA(nullptr, e.what_m().c_str(), "エラー", MB_OK);
 		}
 		RetCode = 1;
 	}
-	catch (exception& e){
+	catch (exception& e) {
 		//STLエラー
 		//マルチバイトバージョンのメッセージボックスを呼ぶ
-		if (GetWindowInfo(hWnd, &WinInfo)){
+		if (GetWindowInfo(hWnd, &WinInfo)) {
 			MessageBoxA(hWnd, e.what(), "エラー", MB_OK);
 		}
-		else{
+		else {
 			MessageBoxA(nullptr, e.what(), "エラー", MB_OK);
 		}
 		RetCode = 1;
 	}
-	catch (...){
+	catch (...) {
 		//原因不明失敗した
-		if (GetWindowInfo(hWnd, &WinInfo)){
+		if (GetWindowInfo(hWnd, &WinInfo)) {
 			MessageBox(hWnd, L"原因不明のエラーです", L"エラー", MB_OK);
 		}
-		else{
+		else {
 			MessageBox(nullptr, L"原因不明のエラーです", L"エラー", MB_OK);
 		}
 		RetCode = 1;
 	}
-	basecross::App::DeleteApp();
+	//アプリケーションの削除
+	App::DeleteApp();
 	//例外処理終了
 	//COMのリリース
 	::CoUninitialize();
@@ -244,7 +236,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// コマンドラインに/fが設定されていたらフルスクリーンにする
 	bool isFullScreen = false;
 	wstring wstrcmd = lpCmdLine;
-	if (wstrcmd == L"/f" || wstrcmd == L"/F"){
+	if (wstrcmd == L"/f" || wstrcmd == L"/F") {
 		isFullScreen = true;     // フラグをtrueに設定
 	}
 
@@ -257,7 +249,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	return MainLoop(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
+	return  MainLoop(hInstance, hWnd, isFullScreen, iClientWidth, iClientHeight);
 
 }
 
@@ -298,6 +290,5 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-
 
 
