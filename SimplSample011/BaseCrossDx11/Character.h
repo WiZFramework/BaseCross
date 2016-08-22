@@ -8,26 +8,32 @@
 
 namespace basecross {
 
+
 	//--------------------------------------------------------------------------------------
 	///	立方体
 	//--------------------------------------------------------------------------------------
 	class CubeObject : public ObjectInterface, public ShapeInterface {
 		//メッシュ
 		shared_ptr<MeshResource> m_CubeMesh;
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
 		Vector3 m_Scale;				///<スケーリング
 		Quaternion m_Qt;			///<回転
 		Vector3 m_Pos;				///<位置
+		bool m_Trace;					///<透明処理するかどうか
 		bool m_Flat;				///<フラット表示するかどうか
 		void CreateBuffers();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
+		@param[in]	TextureFileName	テクスチャファイル名
+		@param[in]	Trace	透明処理するかどうか
 		@param[in]	Pos	位置
 		@param[in]	Flat	フラット表示にするかどうか
 		*/
 		//--------------------------------------------------------------------------------------
-		CubeObject(const Vector3& Pos, bool Flat);
+		CubeObject(const wstring& TextureFileName, bool Trace, const Vector3& Pos, bool Flat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -56,8 +62,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
 	};
-
-
 
 }
 //end basecross

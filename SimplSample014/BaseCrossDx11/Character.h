@@ -11,29 +11,52 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	立方体
 	//--------------------------------------------------------------------------------------
-	class CubeObject : public ObjectInterface, public ShapeInterface {
+	struct CubeObject {
+		Vector3 m_Scale;			///<スケーリング
+		Quaternion m_Quaternion;	///<回転
+		Vector3 m_QuaternionRot;	///<回転軸
+		float m_QuaternionVelocity;	///<回転速度
+		Vector3 m_Posision;				///<位置
+		Vector3 m_Velocity;			///<速度
+		CubeObject() {}
+		void Refresh() {
+			m_Scale = Vector3(0.1f, 0.1f, 0.1f);
+			m_QuaternionRot = Vector3(Util::RandZeroToOne() - 0.5f, 1.0f, Util::RandZeroToOne() - 0.5f);
+			m_Quaternion.RotationAxis(m_QuaternionRot, Util::RandZeroToOne());
+			m_QuaternionVelocity = (Util::RandZeroToOne() - 0.5f) * 10.0f;
+			m_Posision = Vector3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne(), Util::RandZeroToOne());
+			m_Velocity = Vector3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f);
+			m_Velocity *= 2.0f;
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	立方体グループ
+	//--------------------------------------------------------------------------------------
+	class CubeObjectGroup : public ObjectInterface, public ShapeInterface {
 		//メッシュ
 		shared_ptr<MeshResource> m_CubeMesh;
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
-		bool m_Flat;				///<フラット表示するかどうか
-		void CreateBuffers();
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
+		void CreateBuffers();	///<バッファの作成
+		const size_t m_MaxInstance;				///<インスタンス最大値
+		vector<CubeObject> m_CubeObjectVec;		///<立方体のインスタンス描画配列
+		ComPtr<ID3D11Buffer> m_MatrixBuffer;	///<行列用の頂点バッファ
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
-		@param[in]	Pos	位置
-		@param[in]	Flat	フラット表示にするかどうか
+		@param[in]	TextureFileName	テクスチャファイル名
 		*/
 		//--------------------------------------------------------------------------------------
-		CubeObject(const Vector3& Pos, bool Flat);
+		CubeObjectGroup(const wstring& TextureFileName);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~CubeObject();
+		virtual ~CubeObjectGroup();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -56,7 +79,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
 	};
-
 
 
 }

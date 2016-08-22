@@ -9,12 +9,15 @@
 namespace basecross {
 
 
+
 	//--------------------------------------------------------------------------------------
 	///	立方体実体
 	//--------------------------------------------------------------------------------------
-	CubeObject::CubeObject(const Vector3& Pos, bool Flat) :
+	CubeObject::CubeObject(const wstring& TextureFileName, bool Trace, const Vector3& Pos, bool Flat) :
 		ObjectInterface(),
 		ShapeInterface(),
+		m_TextureFileName(TextureFileName),
+		m_Trace(Trace),
 		m_Pos(Pos),
 		m_Flat(Flat)
 	{}
@@ -51,12 +54,12 @@ namespace basecross {
 			{ Vector3(0, -1.0f, 0) }
 		};
 
-		vector<VertexPositionNormal> vertices;
+		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
 		UINT BasePosCount = 0;
 		for (int i = 0; i < 6; i++) {
 			for (int j = 0; j < 4; j++) {
-				VertexPositionNormal Data;
+				VertexPositionNormalTexture Data;
 				Data.position = PosVec[PosIndeces[BasePosCount + j]];
 				if (m_Flat) {
 					//フラット表示の場合は法線は頂点方向にする
@@ -66,6 +69,20 @@ namespace basecross {
 				else {
 					//フラット表示しない場合は、法線は面の向き
 					Data.normal = FaceNormalVec[i];
+				}
+				switch (j) {
+				case 0:
+					Data.textureCoordinate = Vector2(0, 0);
+					break;
+				case 1:
+					Data.textureCoordinate = Vector2(1.0f, 0);
+					break;
+				case 2:
+					Data.textureCoordinate = Vector2(0, 1.0f);
+					break;
+				case 3:
+					Data.textureCoordinate = Vector2(1.0f, 1.0f);
+					break;
 				}
 				vertices.push_back(Data);
 			}
@@ -87,6 +104,8 @@ namespace basecross {
 
 	void CubeObject::OnCreate() {
 		CreateBuffers();
+		//テクスチャの作成
+		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
 		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 		m_Qt.Identity();
 	}
@@ -123,7 +142,7 @@ namespace basecross {
 		//転置する
 		Proj.Transpose();
 		//コンスタントバッファの準備
-		PNStaticConstantBuffer sb;
+		PNTStaticConstantBuffer sb;
 		sb.World = World;
 		sb.View = View;
 		sb.Projection = Proj;
@@ -132,14 +151,14 @@ namespace basecross {
 		LightDir.Normalize();
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(0.0f, 0.0f, 1.0f, 1.0f);
+		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算は行わない。
 		sb.Emissive = Color4(0, 0, 0, 0);
 		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBPNStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+		pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 
 		//ストライドとオフセット
-		UINT stride = sizeof(VertexPositionNormal);
+		UINT stride = sizeof(VertexPositionNormalTexture);
 		UINT offset = 0;
 		//頂点バッファのセット
 		pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
@@ -150,29 +169,60 @@ namespace basecross {
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		//コンスタントバッファの設定
-		ID3D11Buffer* pConstantBuffer = CBPNStatic::GetPtr()->GetBuffer();
+		ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
 		ID3D11Buffer* pNullConstantBuffer = nullptr;
 		//頂点シェーダに渡す
 		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
 		//ピクセルシェーダに渡す
 		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 		//シェーダの設定
-		pD3D11DeviceContext->VSSetShader(VSPNStatic::GetPtr()->GetShader(), nullptr, 0);
-		pD3D11DeviceContext->PSSetShader(PSPNStatic::GetPtr()->GetShader(), nullptr, 0);
+		pD3D11DeviceContext->VSSetShader(VSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
+		pD3D11DeviceContext->PSSetShader(PSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
 		//インプットレイアウトの設定
-		pD3D11DeviceContext->IASetInputLayout(VSPNStatic::GetPtr()->GetInputLayout());
+		pD3D11DeviceContext->IASetInputLayout(VSPNTStatic::GetPtr()->GetInputLayout());
 
 		//ブレンドステート
-		pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+		if (m_Trace) {
+			//透明処理
+			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+		}
+		else {
+			//透明処理しない
+			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+		}
+
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
-		//ラスタライザステート
-		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-		//描画
-		pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+
+		//テクスチャとサンプラーの設定
+		ID3D11ShaderResourceView* pNull[1] = { 0 };
+		pD3D11DeviceContext->PSSetShaderResources(0, 1, m_TextureResource->GetShaderResourceView().GetAddressOf());
+		ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
+		pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+
+		if (m_Trace) {
+			//透明処理の場合は、ラスタライザステートを変更して2回描画
+			//ラスタライザステート（裏面描画）
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+			//描画
+			pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+			//ラスタライザステート（表面描画）
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+			//描画
+			pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+		}
+		else {
+			//ラスタライザステート（表面描画）
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+			//描画
+			pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+		}
 		//後始末
 		Dev->InitializeStates();
 	}
+
+
+
 
 
 }

@@ -1,39 +1,51 @@
 /*!
-@file Character.h
-@brief キャラクターなど
+@file Scene.h
+@brief シーンなど
 */
-
 #pragma once
 #include "stdafx.h"
 
 namespace basecross {
-
 	//--------------------------------------------------------------------------------------
-	///	立方体
+	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
-	class CubeObject : public ObjectInterface, public ShapeInterface {
-		//メッシュ
-		shared_ptr<MeshResource> m_CubeMesh;
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
-		bool m_Flat;				///<フラット表示するかどうか
-		void CreateBuffers();
+	class Scene : public SceneInterface {
+		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
+		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
+		Vector3 m_CamerEye;			///<カメラ位置
+		Vector3 m_CamerAt;			///<カメラ視点
+		Vector3 m_CamerUp;			///<カメラ傾き
+		Vector4 m_LightDir;			///<ライト向き
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
-		@param[in]	Pos	位置
-		@param[in]	Flat	フラット表示にするかどうか
 		*/
 		//--------------------------------------------------------------------------------------
-		CubeObject(const Vector3& Pos, bool Flat);
+		Scene();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~CubeObject();
+		virtual ~Scene() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief ビュー行列と射影行列の取得（各参照パラメータに代入）
+		@param[out]	View	ビュー行列を受け取る参照
+		@param[out]	Proj	射影行列を受け取る参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief ライト向きの取得
+		@param[out]	LightDir	ライト向き受け取る参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetLightDir(Vector4& LightDir)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -58,6 +70,5 @@ namespace basecross {
 	};
 
 
-
 }
-//end basecross
+// end basecross
