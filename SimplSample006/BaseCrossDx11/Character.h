@@ -21,6 +21,8 @@ namespace basecross {
 		float m_Rot;				///<回転角度
 		Vector2 m_Pos;				///<位置
 		Vector2 m_PosSpan;				///<位置変更間隔
+		Color4 m_Diffuse;			///<変化させるデフィーズ
+		float m_TotalTime;			///<タイム
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

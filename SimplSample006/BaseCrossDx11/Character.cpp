@@ -16,7 +16,9 @@ namespace basecross {
 		ShapeInterface(),
 		m_TextureFileName(TextureFileName),
 		m_Trace(Trace),
-		m_Pos(StartPos)
+		m_Pos(StartPos),
+		m_Diffuse(1.0f,1.0f,1.0f,1.0f),
+		m_TotalTime(0)
 	{}
 	SquareSprite::~SquareSprite() {}
 	void SquareSprite::OnCreate() {
@@ -54,6 +56,17 @@ namespace basecross {
 		if (abs(m_Pos.x) > 400.0f) {
 			m_PosSpan *= -1.0f;
 		}
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_2PI) {
+			m_TotalTime = 0;
+		}
+		m_Diffuse.x 
+		= m_Diffuse.y 
+		= m_Diffuse.z 
+		= m_Diffuse.w 
+		= abs(sin(m_TotalTime));
 	}
 
 	void SquareSprite::OnDraw() {
@@ -81,8 +94,8 @@ namespace basecross {
 		DiffuseSpriteConstantBuffer sb;
 		//エミッシブ加算は行わない。
 		sb.Emissive = Color4(0, 0, 0, 0);
-		//デフィーズはすべて通す
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		//デフィーズを変化させる
+		sb.Diffuse = m_Diffuse;
 		//行列の設定
 		sb.World = World;
 		//コンスタントバッファの更新
