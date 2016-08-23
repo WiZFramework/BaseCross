@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseCrossDx11", "BaseCrossDx11\BaseCrossDx11.vcxproj", "{6926A431-0C26-4D69-9640-271F3DC6C2A5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\Libs\DirectXTex\DirectXTex_Desktop_2015.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{055F2C58-4101-4E85-B8FA-B78BB2AACFC5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11Lib", "..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\DxLib\DxLib.vcxitems", "{974C28F3-3934-456B-BE8E-408774EF14CF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxShared", "DxShared\DxShared.vcxitems", "{2D875D87-FFF7-4071-AF2E-B2965A4BDF6C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TeamSharedDx11", "BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems", "{4D30EBB9-82BA-47CE-99A6-70CE7E61ADF0}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		DxShared\DxShared.vcxitems*{2d875d87-fff7-4071-af2e-b2965a4bdf6c}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems*{4d30ebb9-82ba-47ce-99a6-70ce7e61adf0}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
+		BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
+		DxShared\DxShared.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6926A431-0C26-4D69-9640-271F3DC6C2A5}.Debug|x86.ActiveCfg = Debug|Win32
+		{6926A431-0C26-4D69-9640-271F3DC6C2A5}.Debug|x86.Build.0 = Debug|Win32
+		{6926A431-0C26-4D69-9640-271F3DC6C2A5}.Release|x86.ActiveCfg = Release|Win32
+		{6926A431-0C26-4D69-9640-271F3DC6C2A5}.Release|x86.Build.0 = Release|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x86.ActiveCfg = Debug|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x86.Build.0 = Debug|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x86.ActiveCfg = Release|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {055F2C58-4101-4E85-B8FA-B78BB2AACFC5}
+		{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7} = {055F2C58-4101-4E85-B8FA-B78BB2AACFC5}
+		{974C28F3-3934-456B-BE8E-408774EF14CF} = {055F2C58-4101-4E85-B8FA-B78BB2AACFC5}
+	EndGlobalSection
+EndGlobal

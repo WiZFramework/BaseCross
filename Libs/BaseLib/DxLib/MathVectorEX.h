@@ -9,6 +9,12 @@ XNAMATH のラッピング関数群
 #include "stdafx.h"
 
 namespace basecross{
+
+	void Vector2::Transform(const Matrix4X4& m) {
+		*this = XMVector2Transform(XMVECTOR(*this), XMMATRIX(m));
+
+	}
+
 	//--------------------------------------------------------------------------------------
 	///	Vector2EX（2次元ベクトル）ネームスペース
 	//--------------------------------------------------------------------------------------
@@ -385,6 +391,9 @@ namespace basecross{
 	};
 	// end Vector2EX
 
+	void Vector3::Transform(const Matrix4X4& m) {
+		*this = XMVector3Transform(XMVECTOR(*this), XMMATRIX(m));
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	Vector3EX（3次元ベクトル）ネームスペース
@@ -758,11 +767,16 @@ namespace basecross{
 		@return	トランスフォームさせたベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		inline  Vector2 Transform(const Vector2& Vec, const Matrix4X4& m) {
+		inline  Vector3 Transform(const Vector3& Vec, const Matrix4X4& m) {
 			return (Vector3)XMVector3Transform(XMVECTOR(Vec), XMMATRIX(m));
 		}
 	};
 	//end Vector3EX
+
+	void Vector4::Transform(const Matrix4X4& m) {
+		*this = XMVector4Transform(XMVECTOR(*this), XMMATRIX(m));
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	Vector4EX（4次元ベクトル）ネームスペース
