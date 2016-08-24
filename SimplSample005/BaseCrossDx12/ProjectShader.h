@@ -8,5 +8,8 @@
 
 namespace basecross {
 
+	DECLARE_DX12SHADER(VSPTSprite)
+	DECLARE_DX12SHADER(PSPTSprite)
+
 }
 //end basecross

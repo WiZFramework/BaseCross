@@ -10,6 +10,8 @@ namespace basecross {
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneInterface {
+		shared_ptr<SquareSprite> m_SquareSprite1;			///<四角形スプライト1
+		shared_ptr<SquareSprite> m_SquareSprite2;			///<四角形スプライト2
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

@@ -1214,6 +1214,173 @@ namespace basecross {
 		DynamicSampler::CreateSampler(State, pImpl->m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 	}
 
+	void VSPSDrawContext::SetBlendState(const D3D12_BLEND_DESC& State) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetBlendState()"
+			);
+		}
+		m_PineLineDesc.BlendState = State;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+	void VSPSDrawContext::SetBlendState(const BlendState Mode) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetBlendState()"
+			);
+		}
+		D3D12_BLEND_DESC blend_desc;
+		D3D12_RENDER_TARGET_BLEND_DESC Target;
+		switch (Mode) {
+		case BlendState::Opaque:
+			blend_desc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			break;
+		case BlendState::AlphaBlend:
+			ZeroMemory(&blend_desc, sizeof(blend_desc));
+			blend_desc.AlphaToCoverageEnable = false;
+			blend_desc.IndependentBlendEnable = false;
+			ZeroMemory(&Target, sizeof(Target));
+			Target.BlendEnable = true;
+			Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			Target.BlendOp = D3D12_BLEND_OP_ADD;
+			Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+			Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+			Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+				blend_desc.RenderTarget[i] = Target;
+			}
+			break;
+		case BlendState::Additive:
+			ZeroMemory(&blend_desc, sizeof(blend_desc));
+			blend_desc.AlphaToCoverageEnable = false;
+			blend_desc.IndependentBlendEnable = false;
+			ZeroMemory(&Target, sizeof(Target));
+			Target.BlendEnable = true;
+			Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			Target.DestBlend = D3D12_BLEND_ONE;
+			Target.BlendOp = D3D12_BLEND_OP_ADD;
+			Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+			Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+			Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+				blend_desc.RenderTarget[i] = Target;
+			}
+			break;
+		case BlendState::NonPremultiplied:
+			ZeroMemory(&blend_desc, sizeof(blend_desc));
+			blend_desc.AlphaToCoverageEnable = false;
+			blend_desc.IndependentBlendEnable = false;
+			ZeroMemory(&Target, sizeof(Target));
+			Target.BlendEnable = true;
+			Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			Target.BlendOp = D3D12_BLEND_OP_ADD;
+			Target.SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+			Target.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+			Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+				blend_desc.RenderTarget[i] = Target;
+			}
+			break;
+		default:
+			blend_desc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			break;
+		}
+		m_PineLineDesc.BlendState = blend_desc;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+
+	void VSPSDrawContext::SetRasterizerState(const RasterizerState Mode) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetRasterizerState()"
+			);
+		}
+		D3D12_FILL_MODE FillMode;
+		D3D12_CULL_MODE CullMode;
+		switch (Mode) {
+		case RasterizerState::CullBack:
+			FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+			CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+			break;
+		case RasterizerState::CullFront:
+			FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+			CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+			break;
+		case RasterizerState::CullNone:
+			FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+			CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
+			break;
+		case RasterizerState::Wireframe:
+			FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
+			CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
+			break;
+		}
+		m_PineLineDesc.RasterizerState.FillMode = FillMode;
+		m_PineLineDesc.RasterizerState.CullMode = CullMode;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+
+	void VSPSDrawContext::SetRasterizerState(const D3D12_RASTERIZER_DESC& State) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetRasterizerState()"
+			);
+		}
+		m_PineLineDesc.RasterizerState = State;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+
+	void VSPSDrawContext::SetDepthStencilState(const DepthStencilState Mode) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetDepthStencilState()"
+			);
+		}
+		D3D12_DEPTH_STENCIL_DESC State;
+		ZeroMemory(&State, sizeof(State));
+		switch (Mode) {
+		case DepthStencilState::Default:
+			State = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			break;
+		case DepthStencilState::None:
+			State.DepthEnable = false;
+			State.StencilEnable = false;
+			break;
+		case DepthStencilState::Read:
+			//Readは未実装
+			State = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			break;
+		}
+		m_PineLineDesc.DepthStencilState = State;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+	void VSPSDrawContext::SetDepthStencilState(const D3D12_DEPTH_STENCIL_DESC& State) {
+		if (!m_PipelineState.Get()) {
+			ThrowBaseException(
+				L"パイプラインステートがまだ作成されていません",
+				L"if (!m_PipelineState.Get())",
+				L"VSPSDrawContext::SetDepthStencilState()"
+			);
+		}
+		m_PineLineDesc.DepthStencilState = State;
+		m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+	}
+
 	void VSPSDrawContext::SetTextureResource(const shared_ptr<TextureResource>& textureResorce) {
 		pImpl->CbvSrvUavDescriptorHeapChk();
 		pImpl->m_TextureResource = textureResorce;

@@ -1066,6 +1066,7 @@ namespace basecross {
 		}
 		template<typename Vertex, typename VS, typename PS>
 		static inline ComPtr<ID3D12PipelineState> CreateDefault2D(const ComPtr<ID3D12RootSignature>& rootSignature, D3D12_GRAPHICS_PIPELINE_STATE_DESC& RetDesc) {
+
 			ZeroMemory(&RetDesc, sizeof(RetDesc));
 			RetDesc.InputLayout = { Vertex::GetVertexElement(), Vertex::GetNumElements() };
 			RetDesc.pRootSignature = rootSignature.Get();
@@ -1224,6 +1225,13 @@ namespace basecross {
 		virtual void OnCreate()override;
 		void SetTextureResource(const shared_ptr<TextureResource>& textureResorce);
 		void SetSamplerState(const SamplerState State);
+		void SetBlendState(const D3D12_BLEND_DESC& State);
+		void SetBlendState(const BlendState Mode);
+		void SetRasterizerState(const RasterizerState Mode);
+		void SetRasterizerState(const D3D12_RASTERIZER_DESC& State);
+		void SetDepthStencilState(const DepthStencilState Mode);
+		void SetDepthStencilState(const D3D12_DEPTH_STENCIL_DESC& State);
+
 		void CreateConstantBuffer(UINT BufferSize);
 		void UpdateConstantBuffer(void* SrcBuffer, UINT BufferSize);
 
@@ -1244,39 +1252,6 @@ namespace basecross {
 			m_CommandList = CommandList::CreateDefault(m_PipelineState);
 			CommandList::Close(m_CommandList);
 		}
-		void SetRasterizerState(const RasterizerState Mode) {
-			if (!m_PipelineState.Get()) {
-				ThrowBaseException(
-					L"パイプラインステートがまだ作成されていません",
-					L"if (!m_PipelineState.Get())",
-					L"VSPSDrawContext::SetRasterizerState()"
-				);
-			}
-			D3D12_FILL_MODE FillMode;
-			D3D12_CULL_MODE CullMode;
-			switch (Mode) {
-			case RasterizerState::CullBack:
-				FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
-				CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
-				break;
-			case RasterizerState::CullFront:
-				FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
-				CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
-				break;
-			case RasterizerState::CullNone:
-				FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
-				CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
-				break;
-			case RasterizerState::Wireframe:
-				FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_WIREFRAME;
-				CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
-				break;
-			}
-			m_PineLineDesc.RasterizerState.FillMode = FillMode;
-			m_PineLineDesc.RasterizerState.CullMode = CullMode;
-			m_PipelineState = PipelineState::CreateDirect(m_PineLineDesc);
-		}
-
 
 		template<typename Vertex>
 		void DrawIndexed(const shared_ptr<MeshResource>& Mesh) {
