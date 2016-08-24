@@ -34,7 +34,7 @@ namespace basecross {
 		//メッシュの作成（変更できない）
 		m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 		//テクスチャの作成
-		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
 		//矩形の大きさ
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
@@ -151,7 +151,7 @@ namespace basecross {
 		//メッシュの作成（変更できる）
 		m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, true);
 		//テクスチャの作成
-		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
 		//矩形の大きさ
 		m_Scale = Vector2(512.0f, 128.0f);
 	}

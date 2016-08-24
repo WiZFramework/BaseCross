@@ -537,6 +537,13 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T>
 		void UpdateVirtex(const vector<T>& vertices) {
+			if (!m_AccessWrite) {
+				ThrowBaseException(
+					L"このメッシュの頂点変更は許可されていません",
+					L"if (!m_AccessWrite)",
+					L"MeshResource::UpdateVirtex()"
+				);
+			}
 			auto shptr = dynamic_pointer_cast< BackupData<T> >(m_BackupData);
 			if (!shptr) {
 				return;
@@ -547,10 +554,8 @@ namespace basecross {
 			for (size_t i = 0; i < vertices.size();i++) {
 				shptr->m_Vertices[i] = vertices[i];
 			}
-			m_DataRefresh = false;
+			m_DataRefresh = true;
 		}
-
-
 
 		//--------------------------------------------------------------------------------------
 		/*!

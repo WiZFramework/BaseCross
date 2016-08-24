@@ -34,7 +34,7 @@ namespace basecross {
 		//メッシュの作成
 		m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 		//テクスチャの作成
-		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
 
 		//矩形の大きさ
 		m_Scale = Vector2(128.0f, 128.0f);

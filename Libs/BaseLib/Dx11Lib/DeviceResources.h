@@ -13,6 +13,8 @@ namespace basecross {
 	///	テクスチャリソース
 	//--------------------------------------------------------------------------------------
 	class TextureResource : public BaseResource {
+		friend class ObjectFactory;
+		explicit TextureResource(const wstring& FileName, const wstring& TexType = L"WIC");
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -22,13 +24,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static  shared_ptr<TextureResource> CreateTextureResource(const wstring& FileName, const wstring& TexType = L"WIC");
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	FileName	ファイル名
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit TextureResource(const wstring& FileName, const wstring& TexType = L"WIC");
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
