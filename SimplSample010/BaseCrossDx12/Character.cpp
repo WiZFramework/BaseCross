@@ -126,7 +126,7 @@ namespace basecross {
 		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 		m_Qt.Identity();
 		//描画コンテキスト
-		m_DrawContext = ObjectFactory::Create<VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSrvSmpCbv);
+		m_DrawContext = ObjectFactory::Create<VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateCbv);
 		m_DrawContext->CreateConstantBuffer(sizeof(m_StaticConstantBuffer));
 		m_DrawContext->CreateDefault3DPipelineCmdList<VertexPositionNormal, VSPNStatic, PSPNStatic>();
 		//コンスタントバッファの更新

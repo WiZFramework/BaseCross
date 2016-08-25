@@ -86,7 +86,7 @@ namespace basecross {
 		m_Qt.Identity();
 		m_Pos = Vector3(0, 0, 0.0);
 		//描画コンテキスト
-		m_DrawContext = ObjectFactory::Create<VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSrvSmpCbv);
+		m_DrawContext = ObjectFactory::Create<VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateCbv);
 		m_DrawContext->CreateConstantBuffer(sizeof(m_StaticConstantBuffer));
 		m_DrawContext->CreateDefault3DPipelineCmdList<VertexPositionColorTexture, VSPCStatic, PSPCStatic>();
 		//コンスタントバッファの更新
