@@ -10,6 +10,8 @@ namespace basecross {
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneInterface {
+		shared_ptr<SphereObject> m_SphereObject1;				///<球オブジェクト1
+		shared_ptr<SphereObject> m_SphereObject2;				///<球オブジェクト2
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

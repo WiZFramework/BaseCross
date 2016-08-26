@@ -105,7 +105,7 @@ namespace basecross {
 	void CubeObject::OnCreate() {
 		CreateBuffers();
 		//テクスチャの作成
-		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
 		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
 		m_Qt.Identity();
 	}

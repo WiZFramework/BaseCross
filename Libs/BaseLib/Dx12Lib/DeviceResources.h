@@ -1265,6 +1265,7 @@ namespace basecross {
 			UpdateShaderResource();
 			DrawIndexedBase(Mesh);
 		}
+
 		template<typename Vertex>
 		void DrawVertex(const shared_ptr<MeshResource>& Mesh) {
 			ResetPipeLine();
