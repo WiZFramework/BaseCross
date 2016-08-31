@@ -453,6 +453,10 @@ namespace basecross {
 		ComPtr<ID3D12RootSignature> m_RootSignature;
 		ComPtr<ID3D12PipelineState> m_PipelineState;
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		//汎用ルートシグネチャのマップ
+		map<wstring, ComPtr<ID3D12RootSignature>> m_RootSignatureMap;
+
+
 
 		//プレゼントバリア用のコマンドリスト
 		ComPtr<ID3D12GraphicsCommandList> m_PresentCommandList;
@@ -963,53 +967,23 @@ namespace basecross {
 
 	}
 
-
-	//--------------------------------------------------------------------------------------
-	//	struct ShaderResource::Impl;
-	//	用途: ShaderResourceイディオム
-	//--------------------------------------------------------------------------------------
-	struct ShaderResource::Impl {
-		//テクスチャ
-		weak_ptr<TextureResource> m_TextureResource;
-		shared_ptr<TextureResource> TextureResourceExpiredLock() {
-			auto shptr = m_TextureResource.lock();
-			if (!shptr) {
-				ThrowBaseException(
-					L"テクスチャが無効です",
-					L"if (!shptr)",
-					L"ShaderResource::Impl::TextureResourceExpiredLock()"
-				);
-			}
-			return shptr;
+	ComPtr<ID3D12RootSignature> DeviceResources::GetRootSignature(const wstring& Key) {
+		auto it = pImpl->m_RootSignatureMap.find(Key);
+		if (it == pImpl->m_RootSignatureMap.end()) {
+			return nullptr;
 		}
-
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	class ShaderResource;
-	//--------------------------------------------------------------------------------------
-	ShaderResource::ShaderResource() :
-		pImpl(new Impl())
-	{}
-	ShaderResource::~ShaderResource() {}
-	void ShaderResource::SetTextureResource(const shared_ptr<TextureResource>& textureResorce, const D3D12_CPU_DESCRIPTOR_HANDLE& hadle) {
-		pImpl->m_TextureResource = textureResorce;
-		//デバイスの取得
-		auto Dev = App::GetApp()->GetDeviceResources();
-		//テクスチャのシェーダリソースビューを作成
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		//フォーマット固定
-		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
-		Dev->GetDevice()->CreateShaderResourceView(
-			textureResorce->GetTexture().Get(),
-			&srvDesc,
-			hadle);
+		return pImpl->m_RootSignatureMap[Key];
 	}
-	void ShaderResource::UpdateResources(const ComPtr<ID3D12GraphicsCommandList>& commandList) {
-		pImpl->TextureResourceExpiredLock()->UpdateResources(commandList);
+
+	void  DeviceResources::SetRootSignature(const wstring& Key, const ComPtr<ID3D12RootSignature>& rootsig) {
+		if (GetRootSignature(Key) != nullptr) {
+			ThrowBaseException(
+				L"すでにそのルートシグネチャは存在します",
+				Key,
+				L"DeviceResources::SetRootSignature()"
+			);
+		}
+		pImpl->m_RootSignatureMap[Key] = rootsig;
 	}
 
 	//--------------------------------------------------------------------------------------

@@ -855,6 +855,27 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void AfterInitContents();
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief キーに割り当てられたルートシグネチャを得る
+		@param[in] Key	キー
+		@return	見つかればルートシグネチャ。なければnurrptr
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D12RootSignature> GetRootSignature(const wstring& Key);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief キーに割り当てられたルートシグネチャを設定する
+		@param[in] Key	キー
+		@param[in] rootsig	設定するルートシグネチャ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetRootSignature(const wstring& Key,const ComPtr<ID3D12RootSignature>& rootsig);
+
+
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -921,12 +942,27 @@ namespace basecross {
 		}
 		//一番シンプルなルートシグネチャ
 		static inline ComPtr<ID3D12RootSignature> CreateSimple() {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Simple");
+			if (Ret != nullptr) {
+				return Ret;
+			}
+
 			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-			return CreateDirect(rootSignatureDesc);
+
+			Ret = CreateDirect(rootSignatureDesc);
+			Dev->SetRootSignature(L"Simple", Ret);
+			return Ret;
 		}
 		//コンスタントバッファのみ
 		static inline ComPtr<ID3D12RootSignature> CreateCbv() {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Cbv");
+			if (Ret != nullptr) {
+				return Ret;
+			}
+
 			CD3DX12_DESCRIPTOR_RANGE ranges[1];
 			ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 			CD3DX12_ROOT_PARAMETER rootParameters[1];
@@ -937,10 +973,18 @@ namespace basecross {
 
 			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
-			return CreateDirect(rootSignatureDesc);
+
+			Ret = CreateDirect(rootSignatureDesc);
+			Dev->SetRootSignature(L"Cbv", Ret);
+			return Ret;
 		}
 		//シェーダリソースとサンプラー
 		static inline ComPtr<ID3D12RootSignature> CreateSrvSmp() {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"SrvSmp");
+			if (Ret != nullptr) {
+				return Ret;
+			}
 
 			CD3DX12_DESCRIPTOR_RANGE ranges[2];
 			ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -952,12 +996,19 @@ namespace basecross {
 
 			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-			return CreateDirect(rootSignatureDesc);
+			Ret = CreateDirect(rootSignatureDesc);
+			Dev->SetRootSignature(L"SrvSmp", Ret);
+			return Ret;
 		}
 
 		//シェーダリソースとサンプラーとコンスタントバッファ
 		static inline ComPtr<ID3D12RootSignature> CreateSrvSmpCbv() {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"SrvSmpCbv");
+			if (Ret != nullptr) {
+				return Ret;
+			}
+
 
 			CD3DX12_DESCRIPTOR_RANGE ranges[3];
 			ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -972,7 +1023,9 @@ namespace basecross {
 			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-			return CreateDirect(rootSignatureDesc);
+			Ret = CreateDirect(rootSignatureDesc);
+			Dev->SetRootSignature(L"SrvSmpCbv", Ret);
+			return Ret;
 		}
 
 	}
@@ -1170,23 +1223,8 @@ namespace basecross {
 	}
 
 	class TextureResource;
-
-	//--------------------------------------------------------------------------------------
-	/// シェーダリソース(テクスチャ)ユーティリティクラス
-	//--------------------------------------------------------------------------------------
-	class ShaderResource {
-	public:
-		ShaderResource();
-		virtual ~ShaderResource();
-		void SetTextureResource(const shared_ptr<TextureResource>& textureResorce, const D3D12_CPU_DESCRIPTOR_HANDLE& hadle);
-		void UpdateResources(const ComPtr<ID3D12GraphicsCommandList>& commandList);
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
 	class MeshResource;
+
 
 	//--------------------------------------------------------------------------------------
 	/// VSとPSを持つ描画用コンテクスト（各オブジェクトの描画クラス）
