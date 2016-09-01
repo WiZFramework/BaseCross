@@ -18,8 +18,17 @@ namespace basecross {
 		Vector2 m_LocalPos;				///<ローカル位置
 		Vector2 m_LocalVelocity;		///<ローカル速度
 		Vector2 m_LocalGravityVelocity;		///<ローカル加速速度
-		//描画コンテキスト
-		shared_ptr<VSPSDrawContext> m_DrawContext;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///コンスタントバッファ
 		struct SpriteConstantBuffer
 		{
 			Matrix4X4 World;
@@ -28,6 +37,7 @@ namespace basecross {
 				memset(this, 0, sizeof(SpriteConstantBuffer));
 			};
 		};
+		///コンスタントバッファデータ
 		SpriteConstantBuffer m_SpriteConstantBuffer;
 		SquareSprite() :
 			m_LocalScale(64.0f, 64.0f),
@@ -37,22 +47,45 @@ namespace basecross {
 			m_LocalVelocity(0, 0),
 			m_LocalGravityVelocity(0, 0)
 		{
-
 		}
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		//コンスタントバッファ更新
+		void UpdateConstantBuffer();
 	};
 
 	//--------------------------------------------------------------------------------------
 	///	四角形スプライトのグループ
 	//--------------------------------------------------------------------------------------
 	class SquareSpriteGroup : public ObjectInterface, public ShapeInterface {
-		//バックアップしておく頂点データ
-		vector<VertexPositionColor> m_BackupVertices;
 		//メッシュ
 		shared_ptr<MeshResource> m_SquareSpriteMesh;
 		vector<SquareSprite> m_SquareSpriteVec;
 		float m_TotalTime;
 		//各オブジェクトの位置等の変更
 		void UpdateObjects(float ElapsedTime);
+		//コンスタントバッファ更新
+		void UpdateConstantBuffer();
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		//パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		///描画処理
+		void DrawObject();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

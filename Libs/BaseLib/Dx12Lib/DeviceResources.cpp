@@ -1,5 +1,5 @@
 /*!
-@file DeviceResources.h
+@file DeviceResources.cpp
 @brief テクスチャ、メッシュ、Dx12デバイスリソース実体
 */
 #include "stdafx.h"
@@ -985,6 +985,23 @@ namespace basecross {
 		}
 		pImpl->m_RootSignatureMap[Key] = rootsig;
 	}
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE DeviceResources::GetRtvHandle() const {
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+			GetFrameIndex(),
+			GetRtvDescriptorSize());
+		return rtvHandle;
+	}
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE DeviceResources::GetDsvHandle() const {
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+			GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+		);
+		return dsvHandle;
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct VSPSDrawContext::Impl;

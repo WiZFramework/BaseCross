@@ -875,6 +875,22 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void SetRootSignature(const wstring& Key,const ComPtr<ID3D12RootSignature>& rootsig);
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief レンダーターゲットビューのハンドルを得る
+		@return	レンダーターゲットビューのハンドル
+		*/
+		//--------------------------------------------------------------------------------------
+		CD3DX12_CPU_DESCRIPTOR_HANDLE GetRtvHandle() const;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デプスステンシルビューのハンドルを得る
+		@return	デプスステンシルビューのハンドル
+		*/
+		//--------------------------------------------------------------------------------------
+		CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const;
+
 
 	private:
 		// pImplイディオム
@@ -892,7 +908,7 @@ namespace basecross {
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12DescriptorHeap> Ret;
 			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&Ret)),
-				L"CbvSrvUav用のデスクプリタヒープの作成に失敗しました",
+				L"デスクプリタヒープの作成に失敗しました",
 				L"Dev->GetDevice()->CreateDescriptorHeap()",
 				L"DescriptorHeap::CreateDirect()"
 			);

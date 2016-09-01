@@ -12,8 +12,23 @@ namespace basecross {
 	///	四角形スプライト
 	//--------------------------------------------------------------------------------------
 	class SquareSprite : public ObjectInterface, public ShapeInterface {
-		//描画コンテキスト
-		shared_ptr<VSPSDrawContext> m_DrawContext;
+		///メッシュ
+		shared_ptr<MeshResource> m_SquareMesh;
+		Vector2 m_Scale;				///<スケーリング
+		float m_Rot;				///<回転角度
+		Vector2 m_Pos;				///<位置
+		Vector2 m_PosSpan;				///<位置変更間隔
+		//コンスタントバッファ更新
+		void UpdateConstantBuffer();
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファ
 		struct SpriteConstantBuffer
 		{
 			Matrix4X4 World;
@@ -22,13 +37,29 @@ namespace basecross {
 				memset(this, 0, sizeof(SpriteConstantBuffer));
 			};
 		};
+		///コンスタントバッファデータ
 		SpriteConstantBuffer m_SpriteConstantBuffer;
-		///メッシュ
-		shared_ptr<MeshResource> m_SquareMesh;
-		Vector2 m_Scale;				///<スケーリング
-		float m_Rot;				///<回転角度
-		Vector2 m_Pos;				///<位置
-		Vector2 m_PosSpan;				///<位置変更間隔
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		//パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		///描画処理
+		void DrawObject();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

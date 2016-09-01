@@ -14,8 +14,29 @@ namespace basecross {
 	///	立方体
 	//--------------------------------------------------------------------------------------
 	class CubeObject : public ObjectInterface, public ShapeInterface {
-		shared_ptr<VSPSDrawContext> m_DrawContextCullBack;
-		shared_ptr<VSPSDrawContext> m_DrawContextCullFront;
+		//メッシュ
+		shared_ptr<MeshResource> m_CubeMesh;
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
+		Vector3 m_Scale;				///<スケーリング
+		Quaternion m_Qt;			///<回転
+		Vector3 m_Pos;				///<位置
+		bool m_Trace;					///<透明処理するかどうか
+		bool m_Flat;				///<フラット表示するかどうか
+		void CreateBuffers();
+		void UpdateConstantBuffer();
+
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+
+		///コンスタントバッファ
 		struct StaticConstantBuffer
 		{
 			Matrix4X4 World;
@@ -28,18 +49,38 @@ namespace basecross {
 				memset(this, 0, sizeof(StaticConstantBuffer));
 			};
 		};
+		///コンスタントバッファのオブジェクト側変数
 		StaticConstantBuffer m_StaticConstantBuffer;
-		//メッシュ
-		shared_ptr<MeshResource> m_CubeMesh;
-		wstring m_TextureFileName;		///<テクスチャファイル名
-		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
-		bool m_Trace;					///<透明処理するかどうか
-		bool m_Flat;				///<フラット表示するかどうか
-		void CreateBuffers();
-		void UpdateConstantBuffer();
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_CullBackPipelineState;
+		ComPtr<ID3D12PipelineState> m_CullFrontPipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+
+		///各初期化関数
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+
+		///描画処理
+		void DrawObject();
+
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
