@@ -127,13 +127,13 @@ namespace basecross {
 		m_GPUDescriptorHandleVec.clear();
 		CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
 			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-			1,
+			0,
 			0
 		);
 		m_GPUDescriptorHandleVec.push_back(SrvHandle);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
 			m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-			1,
+			0,
 			0
 		);
 		m_GPUDescriptorHandleVec.push_back(SamplerHandle);
