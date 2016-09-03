@@ -12,19 +12,6 @@ namespace basecross {
 	///	四角形スプライト
 	//--------------------------------------------------------------------------------------
 	class SquareSprite : public ObjectInterface, public ShapeInterface {
-		//描画コンテキスト
-		shared_ptr<VSPSDrawContext> m_DrawContext;
-		// Diffuse入りコンスタントバッファ
-		struct DiffuseSpriteConstantBuffer
-		{
-			Matrix4X4 World;
-			Color4 Emissive;
-			Color4 Diffuse;
-			DiffuseSpriteConstantBuffer() {
-				memset(this, 0, sizeof(DiffuseSpriteConstantBuffer));
-			};
-		};
-		DiffuseSpriteConstantBuffer m_DiffuseSpriteConstantBuffer;
 		///メッシュ
 		shared_ptr<MeshResource> m_SquareMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
@@ -36,6 +23,57 @@ namespace basecross {
 		Vector2 m_PosSpan;				///<位置変更間隔
 		Color4 m_Diffuse;			///<変化させるデフィーズ
 		float m_TotalTime;			///<タイム
+
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		// Diffuse入りコンスタントバッファ
+		struct DiffuseSpriteConstantBuffer
+		{
+			Matrix4X4 World;
+			Color4 Emissive;
+			Color4 Diffuse;
+			DiffuseSpriteConstantBuffer() {
+				memset(this, 0, sizeof(DiffuseSpriteConstantBuffer));
+			};
+		};
+		DiffuseSpriteConstantBuffer m_DiffuseSpriteConstantBuffer;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+		///各初期化関数
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+
+		///コンスタントバッファ更新
+		void UpdateConstantBuffer();
+		///描画処理
+		void DrawObject();
+
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -73,7 +111,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
-	};
+};
 
 
 }
