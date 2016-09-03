@@ -44,11 +44,82 @@ namespace basecross {
 		///シェーダーリソースビュー作成
 		void CreateShaderResourceView();
 		///コンスタントバッファ作成
+		void CreateConstantBufferBase(UINT BuffSize);
 		virtual void CreateConstantBuffer() = 0;
 		///パイプラインステート作成
+		template<typename Vertex, typename VS, typename PS>
+		void CreatePipelineStateBase() {
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+			m_PipelineState
+				= PipelineState::CreateDefault2D<Vertex, VS, PS>(m_RootSignature, PineLineDesc);
+			//透明の場合はブレンドステート差し替え
+			if (m_Trace) {
+				D3D12_BLEND_DESC blend_desc;
+				D3D12_RENDER_TARGET_BLEND_DESC Target;
+				ZeroMemory(&blend_desc, sizeof(blend_desc));
+				blend_desc.AlphaToCoverageEnable = false;
+				blend_desc.IndependentBlendEnable = false;
+				ZeroMemory(&Target, sizeof(Target));
+				Target.BlendEnable = true;
+				Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+				Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+				Target.BlendOp = D3D12_BLEND_OP_ADD;
+				Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+				Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+				Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+				Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+					blend_desc.RenderTarget[i] = Target;
+				}
+				PineLineDesc.BlendState = blend_desc;
+				m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+			}
+		}
 		virtual void CreatePipelineState() = 0;
 		///コマンドリスト作成
 		void CreateCommandList();
+		//描画テンプレート関数
+		template<typename Vertex>
+		void DrawObjectBase(const shared_ptr<MeshResource>& Mesh) {
+			//コマンドリストのリセット
+			CommandList::Reset(m_PipelineState, m_CommandList);
+
+			Mesh->UpdateResources<Vertex>(m_CommandList);
+			m_TextureResource->UpdateResources(m_CommandList);
+
+			//描画
+			m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+			ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
+			m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+			for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
+				m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+			}
+			auto Dev = App::GetApp()->GetDeviceResources();
+			m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+			m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+				Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+				Dev->GetFrameIndex(),
+				Dev->GetRtvDescriptorSize());
+			CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+				Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+			);
+			m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+			m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			m_CommandList->IASetIndexBuffer(&Mesh->GetIndexBufferView());
+			m_CommandList->IASetVertexBuffers(0, 1, &Mesh->GetVertexBufferView());
+			m_CommandList->DrawIndexedInstanced(Mesh->GetNumIndicis(), 1, 0, 0, 0);
+
+			//コマンドリストのクローズ
+			CommandList::Close(m_CommandList);
+			//デバイスにコマンドリストを送る
+			Dev->InsertDrawCommandLists(m_CommandList.Get());
+		}
+
+
 		//プロテクトコンストラクタ
 		SpriteDraw(const wstring& TextureFileName, bool Trace);
 		//プロテクトデストラクタ
@@ -83,9 +154,9 @@ namespace basecross {
 	class PCTSpriteDraw : public SpriteDraw {
 	protected:
 		///コンスタントバッファ作成
-		virtual void CreateConstantBuffer();
+		virtual void CreateConstantBuffer()override;
 		///パイプラインステート作成
-		virtual void CreatePipelineState();
+		virtual void CreatePipelineState()override;
 	public:
 		PCTSpriteDraw(const wstring& TextureFileName, bool Trace);
 		virtual ~PCTSpriteDraw() {}
@@ -115,9 +186,9 @@ namespace basecross {
 	class PTSpriteDraw : public SpriteDraw {
 	protected:
 		///コンスタントバッファ作成
-		virtual void CreateConstantBuffer();
+		virtual void CreateConstantBuffer()override;
 		///パイプラインステート作成
-		virtual void CreatePipelineState();
+		virtual void CreatePipelineState()override;
 	public:
 		PTSpriteDraw(const wstring& TextureFileName, bool Trace);
 		virtual ~PTSpriteDraw() {}

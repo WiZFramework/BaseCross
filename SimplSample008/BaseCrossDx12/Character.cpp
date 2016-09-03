@@ -11,7 +11,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	スプライト描画(親クラス)
 	//--------------------------------------------------------------------------------------
-	SpriteDraw::SpriteDraw(const wstring& TextureFileName, bool Trace):
+	SpriteDraw::SpriteDraw(const wstring& TextureFileName, bool Trace) :
 		m_TextureFileName(TextureFileName),
 		m_Trace(Trace)
 	{}
@@ -102,6 +102,45 @@ namespace basecross {
 			&srvDesc,
 			Handle);
 	}
+
+	///コンスタントバッファ作成
+	void SpriteDraw::CreateConstantBufferBase(UINT BuffSize) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファリソース（アップロードヒープ）の作成
+		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(BuffSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+			L"Dev->GetDevice()->CreateCommittedResource()",
+			L"SpriteDraw::CreateConstantBuffer()"
+		);
+		//コンスタントバッファのビューを作成
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+		//コンスタントバッファは256バイトにアラインメント
+		cbvDesc.SizeInBytes = (BuffSize + 255) & ~255;
+		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		//コンスタントバッファのアップロードヒープのマップ
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			L"コンスタントバッファのマップに失敗しました",
+			L"pImpl->m_ConstantBufferUploadHeap->Map()",
+			L"SpriteDraw::CreateConstantBuffer()"
+		);
+	}
+
+
 	///コマンドリスト作成
 	void SpriteDraw::CreateCommandList() {
 		m_CommandList = CommandList::CreateDefault(m_PipelineState);
@@ -113,71 +152,15 @@ namespace basecross {
 	///	PCTスプライト描画
 	//--------------------------------------------------------------------------------------
 	PCTSpriteDraw::PCTSpriteDraw(const wstring& TextureFileName, bool Trace) :
-		SpriteDraw(TextureFileName,Trace)
+		SpriteDraw(TextureFileName, Trace)
 	{}
-	///コンスタントバッファ作成
+	//コンスタントバッファ作成
 	void PCTSpriteDraw::CreateConstantBuffer() {
-		auto Dev = App::GetApp()->GetDeviceResources();
-		//コンスタントバッファリソース（アップロードヒープ）の作成
-		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(sizeof(SpriteConstantBuffer)),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
-			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
-			L"Dev->GetDevice()->CreateCommittedResource()",
-			L"PCTSpriteDraw::CreateConstantBuffer()"
-		);
-		//コンスタントバッファのビューを作成
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
-		//コンスタントバッファは256バイトにアラインメント
-		cbvDesc.SizeInBytes = (sizeof(SpriteConstantBuffer) + 255) & ~255;
-		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
-		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
-			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-			1,
-			m_CbvSrvDescriptorHandleIncrementSize
-		);
-		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
-		//コンスタントバッファのアップロードヒープのマップ
-		CD3DX12_RANGE readRange(0, 0);
-		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
-			L"コンスタントバッファのマップに失敗しました",
-			L"pImpl->m_ConstantBufferUploadHeap->Map()",
-			L"PCTSpriteDraw::CreateConstantBuffer()"
-		);
+		CreateConstantBufferBase(sizeof(SpriteConstantBuffer));
 	}
 	///パイプラインステート作成
 	void PCTSpriteDraw::CreatePipelineState() {
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
-		m_PipelineState
-			= PipelineState::CreateDefault2D<VertexPositionColorTexture, VSPCTSprite, PSPCTSprite>(m_RootSignature, PineLineDesc);
-		//透明の場合はブレンドステート差し替え
-		if (m_Trace) {
-			D3D12_BLEND_DESC blend_desc;
-			D3D12_RENDER_TARGET_BLEND_DESC Target;
-			ZeroMemory(&blend_desc, sizeof(blend_desc));
-			blend_desc.AlphaToCoverageEnable = false;
-			blend_desc.IndependentBlendEnable = false;
-			ZeroMemory(&Target, sizeof(Target));
-			Target.BlendEnable = true;
-			Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-			Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-			Target.BlendOp = D3D12_BLEND_OP_ADD;
-			Target.SrcBlendAlpha = D3D12_BLEND_ONE;
-			Target.DestBlendAlpha = D3D12_BLEND_ZERO;
-			Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-			Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
-				blend_desc.RenderTarget[i] = Target;
-			}
-			PineLineDesc.BlendState = blend_desc;
-			m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
-		}
+		CreatePipelineStateBase<VertexPositionColorTexture, VSPCTSprite, PSPCTSprite>();
 	}
 	///コンスタントバッファ更新
 	void PCTSpriteDraw::UpdateConstantBuffer(SpriteConstantBuffer& CBuff) {
@@ -188,45 +171,8 @@ namespace basecross {
 	}
 	///描画処理
 	void PCTSpriteDraw::DrawObject(const shared_ptr<MeshResource>& Mesh) {
-		//コマンドリストのリセット
-		CommandList::Reset(m_PipelineState, m_CommandList);
-
-		Mesh->UpdateResources<VertexPositionColorTexture>(m_CommandList);
-		m_TextureResource->UpdateResources(m_CommandList);
-
-		//描画
-		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
-		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
-			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
-		}
-		auto Dev = App::GetApp()->GetDeviceResources();
-		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
-		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
-			Dev->GetFrameIndex(),
-			Dev->GetRtvDescriptorSize());
-		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
-			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
-		);
-		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_CommandList->IASetIndexBuffer(&Mesh->GetIndexBufferView());
-		m_CommandList->IASetVertexBuffers(0, 1, &Mesh->GetVertexBufferView());
-		m_CommandList->DrawIndexedInstanced(Mesh->GetNumIndicis(), 1, 0, 0, 0);
-
-		//コマンドリストのクローズ
-		CommandList::Close(m_CommandList);
-		//デバイスにコマンドリストを送る
-		Dev->InsertDrawCommandLists(m_CommandList.Get());
+		DrawObjectBase<VertexPositionColorTexture>(Mesh);
 	}
-
-
 
 	//--------------------------------------------------------------------------------------
 	///	PTスプライト描画
@@ -237,67 +183,11 @@ namespace basecross {
 
 	///コンスタントバッファ作成
 	void PTSpriteDraw::CreateConstantBuffer() {
-		auto Dev = App::GetApp()->GetDeviceResources();
-		//コンスタントバッファリソース（アップロードヒープ）の作成
-		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(sizeof(DiffuseSpriteConstantBuffer)),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
-			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
-			L"Dev->GetDevice()->CreateCommittedResource()",
-			L"PTSpriteDraw::CreateConstantBuffer()"
-		);
-		//コンスタントバッファのビューを作成
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
-		//コンスタントバッファは256バイトにアラインメント
-		cbvDesc.SizeInBytes = (sizeof(DiffuseSpriteConstantBuffer) + 255) & ~255;
-		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
-		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
-			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-			1,
-			m_CbvSrvDescriptorHandleIncrementSize
-		);
-		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
-		//コンスタントバッファのアップロードヒープのマップ
-		CD3DX12_RANGE readRange(0, 0);
-		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
-			L"コンスタントバッファのマップに失敗しました",
-			L"pImpl->m_ConstantBufferUploadHeap->Map()",
-			L"PTSpriteDraw::CreateConstantBuffer()"
-		);
+		CreateConstantBufferBase(sizeof(DiffuseSpriteConstantBuffer));
 	}
 	///パイプラインステート作成
 	void PTSpriteDraw::CreatePipelineState() {
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
-		m_PipelineState
-			= PipelineState::CreateDefault2D<VertexPositionTexture, VSPTSprite, PSPTSprite>(m_RootSignature, PineLineDesc);
-		//透明の場合はブレンドステート差し替え
-		if (m_Trace) {
-			D3D12_BLEND_DESC blend_desc;
-			D3D12_RENDER_TARGET_BLEND_DESC Target;
-			ZeroMemory(&blend_desc, sizeof(blend_desc));
-			blend_desc.AlphaToCoverageEnable = false;
-			blend_desc.IndependentBlendEnable = false;
-			ZeroMemory(&Target, sizeof(Target));
-			Target.BlendEnable = true;
-			Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-			Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-			Target.BlendOp = D3D12_BLEND_OP_ADD;
-			Target.SrcBlendAlpha = D3D12_BLEND_ONE;
-			Target.DestBlendAlpha = D3D12_BLEND_ZERO;
-			Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-			Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
-				blend_desc.RenderTarget[i] = Target;
-			}
-			PineLineDesc.BlendState = blend_desc;
-			m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
-		}
+		CreatePipelineStateBase<VertexPositionTexture, VSPTSprite, PSPTSprite>();
 	}
 
 	///コンスタントバッファ更新
@@ -309,45 +199,8 @@ namespace basecross {
 	}
 	///描画処理
 	void PTSpriteDraw::DrawObject(const shared_ptr<MeshResource>& Mesh) {
-		//コマンドリストのリセット
-		CommandList::Reset(m_PipelineState, m_CommandList);
-
-		Mesh->UpdateResources<VertexPositionTexture>(m_CommandList);
-		m_TextureResource->UpdateResources(m_CommandList);
-
-		//描画
-		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
-		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
-			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
-		}
-		auto Dev = App::GetApp()->GetDeviceResources();
-		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
-		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
-			Dev->GetFrameIndex(),
-			Dev->GetRtvDescriptorSize());
-		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
-			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
-		);
-		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_CommandList->IASetIndexBuffer(&Mesh->GetIndexBufferView());
-		m_CommandList->IASetVertexBuffers(0, 1, &Mesh->GetVertexBufferView());
-		m_CommandList->DrawIndexedInstanced(Mesh->GetNumIndicis(), 1, 0, 0, 0);
-
-		//コマンドリストのクローズ
-		CommandList::Close(m_CommandList);
-		//デバイスにコマンドリストを送る
-		Dev->InsertDrawCommandLists(m_CommandList.Get());
+		DrawObjectBase<VertexPositionTexture>(Mesh);
 	}
-
-
 
 	//--------------------------------------------------------------------------------------
 	///	壁スプライト実体
