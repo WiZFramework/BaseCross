@@ -109,102 +109,12 @@ namespace basecross {
 	}
 
 
-
-
-
-
 	//--------------------------------------------------------------------------------------
 	///	PCTスプライト描画
 	//--------------------------------------------------------------------------------------
 	PCTSpriteDraw::PCTSpriteDraw(const wstring& TextureFileName, bool Trace) :
 		SpriteDraw(TextureFileName,Trace)
 	{}
-
-	//void PCTSpriteDraw::OnCreate() {
-	//	//テクスチャの作成
-	//	m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-	//	///各初期化関数呼び出し
-	//	///ルートシグネチャ作成
-	//	CreateRootSignature();
-	//	///デスクプリタヒープ作成
-	//	CreateDescriptorHeap();
-	//	///サンプラー作成
-	//	CreateSampler();
-	//	///シェーダーリソースビュー作成
-	//	CreateShaderResourceView();
-	//	///コンスタントバッファ作成
-	//	CreateConstantBuffer();
-	//	///パイプラインステート作成
-	//	CreatePipelineState();
-	//	///コマンドリスト作成
-	//	CreateCommandList();
-	//}
-
-	/////ルートシグネチャ作成
-	//void PCTSpriteDraw::CreateRootSignature() {
-	//	//ルートシグネチャ
-	//	m_RootSignature = RootSignature::CreateSrvSmpCbv();
-	//}
-
-
-	///デスクプリタヒープ作成
-	//void PCTSpriteDraw::CreateDescriptorHeap() {
-	//	auto Dev = App::GetApp()->GetDeviceResources();
-	//	m_CbvSrvDescriptorHandleIncrementSize =
-	//		Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	//	//CbvSrvデスクプリタヒープ
-	//	m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
-	//	//サンプラーデスクプリタヒープ
-	//	m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
-	//	//GPU側デスクプリタヒープのハンドルの配列の作成
-	//	m_GPUDescriptorHandleVec.clear();
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
-	//		m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(SrvHandle);
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
-	//		m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(SamplerHandle);
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
-	//		m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		1,
-	//		m_CbvSrvDescriptorHandleIncrementSize
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(CbvHandle);
-	//}
-	/////サンプラー作成
-	//void PCTSpriteDraw::CreateSampler() {
-	//	auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	//	//ラッピングサンプラー
-	//	DynamicSampler::CreateSampler(SamplerState::LinearWrap, SamplerDescriptorHandle);
-	//}
-	/////シェーダーリソースビュー作成
-	//void PCTSpriteDraw::CreateShaderResourceView() {
-	//	auto Dev = App::GetApp()->GetDeviceResources();
-	//	//テクスチャハンドルを作成
-	//	CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
-	//		m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	//テクスチャのシェーダリソースビューを作成
-	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	//	//フォーマット
-	//	srvDesc.Format = m_TextureResource->GetTextureResDesc().Format;
-	//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	//	srvDesc.Texture2D.MipLevels = m_TextureResource->GetTextureResDesc().MipLevels;
-	//	//シェーダリソースビュー
-	//	Dev->GetDevice()->CreateShaderResourceView(
-	//		m_TextureResource->GetTexture().Get(),
-	//		&srvDesc,
-	//		Handle);
-	//}
 	///コンスタントバッファ作成
 	void PCTSpriteDraw::CreateConstantBuffer() {
 		auto Dev = App::GetApp()->GetDeviceResources();
@@ -269,12 +179,6 @@ namespace basecross {
 			m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
 		}
 	}
-	/////コマンドリスト作成
-	//void PCTSpriteDraw::CreateCommandList() {
-	//	m_CommandList = CommandList::CreateDefault(m_PipelineState);
-	//	CommandList::Close(m_CommandList);
-	//}
-
 	///コンスタントバッファ更新
 	void PCTSpriteDraw::UpdateConstantBuffer(SpriteConstantBuffer& CBuff) {
 		//更新
@@ -331,91 +235,6 @@ namespace basecross {
 		SpriteDraw(TextureFileName, Trace)
 	{}
 
-	//void PTSpriteDraw::OnCreate() {
-	//	//テクスチャの作成
-	//	m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-	//	///各初期化関数呼び出し
-	//	///ルートシグネチャ作成
-	//	CreateRootSignature();
-	//	///デスクプリタヒープ作成
-	//	CreateDescriptorHeap();
-	//	///サンプラー作成
-	//	CreateSampler();
-	//	///シェーダーリソースビュー作成
-	//	CreateShaderResourceView();
-	//	///コンスタントバッファ作成
-	//	CreateConstantBuffer();
-	//	///パイプラインステート作成
-	//	CreatePipelineState();
-	//	///コマンドリスト作成
-	//	CreateCommandList();
-	//}
-
-	/////ルートシグネチャ作成
-	//void PTSpriteDraw::CreateRootSignature() {
-	//	//ルートシグネチャ
-	//	m_RootSignature = RootSignature::CreateSrvSmpCbv();
-	//}
-
-
-	/////デスクプリタヒープ作成
-	//void PTSpriteDraw::CreateDescriptorHeap() {
-	//	auto Dev = App::GetApp()->GetDeviceResources();
-	//	m_CbvSrvDescriptorHandleIncrementSize =
-	//		Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	//	//CbvSrvデスクプリタヒープ
-	//	m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
-	//	//サンプラーデスクプリタヒープ
-	//	m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
-	//	//GPU側デスクプリタヒープのハンドルの配列の作成
-	//	m_GPUDescriptorHandleVec.clear();
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
-	//		m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(SrvHandle);
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
-	//		m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(SamplerHandle);
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
-	//		m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-	//		1,
-	//		m_CbvSrvDescriptorHandleIncrementSize
-	//	);
-	//	m_GPUDescriptorHandleVec.push_back(CbvHandle);
-	//}
-	/////サンプラー作成
-	//void PTSpriteDraw::CreateSampler() {
-	//	auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	//	//ラッピングサンプラー
-	//	DynamicSampler::CreateSampler(SamplerState::LinearWrap, SamplerDescriptorHandle);
-	//}
-	/////シェーダーリソースビュー作成
-	//void PTSpriteDraw::CreateShaderResourceView() {
-	//	auto Dev = App::GetApp()->GetDeviceResources();
-	//	//テクスチャハンドルを作成
-	//	CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
-	//		m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-	//		0,
-	//		0
-	//	);
-	//	//テクスチャのシェーダリソースビューを作成
-	//	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	//	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	//	//フォーマット
-	//	srvDesc.Format = m_TextureResource->GetTextureResDesc().Format;
-	//	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	//	srvDesc.Texture2D.MipLevels = m_TextureResource->GetTextureResDesc().MipLevels;
-	//	//シェーダリソースビュー
-	//	Dev->GetDevice()->CreateShaderResourceView(
-	//		m_TextureResource->GetTexture().Get(),
-	//		&srvDesc,
-	//		Handle);
-	//}
 	///コンスタントバッファ作成
 	void PTSpriteDraw::CreateConstantBuffer() {
 		auto Dev = App::GetApp()->GetDeviceResources();
@@ -480,11 +299,6 @@ namespace basecross {
 			m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
 		}
 	}
-	/////コマンドリスト作成
-	//void PTSpriteDraw::CreateCommandList() {
-	//	m_CommandList = CommandList::CreateDefault(m_PipelineState);
-	//	CommandList::Close(m_CommandList);
-	//}
 
 	///コンスタントバッファ更新
 	void PTSpriteDraw::UpdateConstantBuffer(DiffuseSpriteConstantBuffer& CBuff) {
