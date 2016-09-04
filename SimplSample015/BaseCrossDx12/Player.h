@@ -1,51 +1,54 @@
 /*!
-@file Scene.h
-@brief シーンなど
+@file Player.h
+@brief プレイヤーなど
 */
+
 #pragma once
 #include "stdafx.h"
 
-namespace basecross {
+namespace basecross{
+
+
 	//--------------------------------------------------------------------------------------
-	///	ゲームシーン
+	///	プレイヤー
 	//--------------------------------------------------------------------------------------
-	class Scene : public SceneInterface {
-		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
-		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
-		Vector3 m_CamerEye;			///<カメラ位置
-		Vector3 m_CamerAt;			///<カメラ視点
-		Vector3 m_CamerUp;			///<カメラ傾き
-		Vector4 m_LightDir;			///<ライト向き
+	class Player : public GameObject{
+		//メッシュ
+		shared_ptr<MeshResource> m_Mesh;
+		UINT m_Division;				///<分割数
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
+		Vector3 m_Scale;				///<スケーリング
+		Quaternion m_Qt;			///<回転
+		Vector3 m_Pos;				///<位置
+		bool m_Trace;					///<透明処理するかどうか
+		void CreateBuffers();
+		void CollisionTest();			///<衝突判定テスト
+		bool OnObjectTest(const SPHERE& Src, const OBB& Dest);	///<spがobbに乗ってるかどうか
+		void CollisionEscape();			///<エスケープ処理
+
+		OBB m_OnObb;
+		bool m_OnObject;
+
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
+		@param[in]	PtrScene	シーンのポインタ
+		@param[in]	Division	分割数
+		@param[in]	TextureFileName	テクスチャファイル名
+		@param[in]	Trace	透明処理するかどうか
+		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Scene();
+		Player(const shared_ptr<Scene> PtrScene,
+			UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~Scene() {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief ビュー行列と射影行列の取得（各参照パラメータに代入）
-		@param[out]	View	ビュー行列を受け取る参照
-		@param[out]	Proj	射影行列を受け取る参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief ライト向きの取得
-		@param[out]	LightDir	ライト向き受け取る参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void GetLightDir(Vector4& LightDir)const;
+		virtual ~Player();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -60,15 +63,19 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnUpdate()override;
+
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 描画
+		@brief	最終更新（衝突判定などをチェックする）
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
+		virtual void OnLastUpdate()override;
+
 	};
 
 
+
 }
-// end basecross
+//end basecross
+

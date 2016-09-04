@@ -157,6 +157,7 @@ namespace basecross {
 			auto Ptr = ObjectFactory::Create<MeshResource>();
 			Ptr->m_AccessWrite = AccessWrite;
 			//データのバックアップ
+
 			auto DataPtr = make_shared< BackupData<T> >();
 			DataPtr->m_Vertices.clear();
 			for (auto v : vertices) {
@@ -167,7 +168,6 @@ namespace basecross {
 				DataPtr->m_Indices.push_back(i);
 			}
 			Ptr->m_BackupData = DataPtr;
-
 			UINT vertexBufferSize = sizeof(T) * vertices.size();
 			//頂点バッファの作成
 			{
@@ -257,13 +257,13 @@ namespace basecross {
 			Ptr->m_AccessWrite = AccessWrite;
 
 			//データのバックアップ
+
 			auto DataPtr = make_shared< BackupData<T> >();
 			DataPtr->m_Vertices.clear();
 			for (auto v : vertices) {
 				DataPtr->m_Vertices.push_back(v);
 			}
 			Ptr->m_BackupData = DataPtr;
-
 			UINT vertexBufferSize = sizeof(T) * vertices.size();
 			// Create the vertex buffer.
 			{
@@ -548,7 +548,7 @@ namespace basecross {
 			if (!shptr) {
 				return;
 			}
-			if (shptr->m_Vertices.size() != vertices.size()) {
+			if (shptr->m_Vertices.size() < vertices.size()) {
 				return;
 			}
 			for (size_t i = 0; i < vertices.size();i++) {
