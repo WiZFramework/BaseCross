@@ -2127,6 +2127,15 @@ namespace basecross {
 		//ビューポートの設定
 		pD3D11DeviceContext->RSSetViewports(1, &GetViewport());
 
+		D3D11_RECT rect;
+		rect.left = 0;
+		rect.top = 0;
+		rect.right = 600;
+		rect.bottom = 600;
+		pD3D11DeviceContext->RSSetScissorRects(1, &rect);
+
+
+
 		//シェーダーリソースビューのクリア
 		ID3D11ShaderResourceView* pNull[1] = { nullptr };
 		pD3D11DeviceContext->PSSetShaderResources(0, _countof(pNull), pNull);

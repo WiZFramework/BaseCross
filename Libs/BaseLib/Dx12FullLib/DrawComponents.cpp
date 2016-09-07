@@ -84,6 +84,92 @@ namespace basecross {
 		pImpl->m_MeshToTransformMatrix = Mat;
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	struct Shadowmap::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct Shadowmap::Impl {
+		static float m_LightHeight;	//ライトの高さ（向きをこの値で掛ける）
+		static float m_LightNear;	//ライトのNear
+		static float m_LightFar;		//ライトのFar
+		static float m_ViewWidth;
+		static float m_ViewHeight;
+
+		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
+
+
+		Impl()
+		{}
+		~Impl() {}
+	};
+
+	float Shadowmap::Impl::m_LightHeight(20.0f);
+	float Shadowmap::Impl::m_LightNear(1.0f);
+	float Shadowmap::Impl::m_LightFar(200.0f);
+	float Shadowmap::Impl::m_ViewWidth(32.0f);
+	float Shadowmap::Impl::m_ViewHeight(32.0f);
+
+
+	//--------------------------------------------------------------------------------------
+	//	シャドウマップコンポーネント（前処理用）
+	//--------------------------------------------------------------------------------------
+	Shadowmap::Shadowmap(const shared_ptr<GameObject>& GameObjectPtr) :
+		DrawComponent(GameObjectPtr),
+		pImpl(new Impl())
+	{}
+	Shadowmap::~Shadowmap() {}
+
+	float Shadowmap::GetLightHeight() { return Impl::m_LightHeight; }
+	float Shadowmap::GetLightNear() { return  Impl::m_LightNear; }
+	float Shadowmap::GetLightFar() { return  Impl::m_LightFar; }
+	float Shadowmap::GetViewWidth() { return  Impl::m_ViewWidth; }
+	float Shadowmap::GetViewHeight() { return  Impl::m_ViewHeight; }
+
+	void Shadowmap::SetLightHeight(float f) { Impl::m_LightHeight = f; }
+	void Shadowmap::SetLightNear(float f) { Impl::m_LightNear = f; }
+	void Shadowmap::SetLightFar(float f) { Impl::m_LightFar = f; }
+	void Shadowmap::SetViewWidth(float f) { Impl::m_ViewWidth = f; }
+	void Shadowmap::SetViewHeight(float f) { Impl::m_ViewHeight = f; }
+	void Shadowmap::SetViewSize(float f) { Impl::m_ViewWidth = Impl::m_ViewHeight = f; }
+
+	shared_ptr<MeshResource> Shadowmap::GetMeshResource(bool ExceptionActive) const {
+		if (!pImpl->m_MeshResource.expired()) {
+			return pImpl->m_MeshResource.lock();
+		}
+		else {
+			if (ExceptionActive) {
+				throw BaseException(
+					L"メッシュリソースが見つかりません",
+					L"if (pImpl->m_MeshResource.expired())",
+					L"ShadowmapComp::GetMeshResource()"
+				);
+			}
+		}
+		return nullptr;
+	}
+
+
+	void Shadowmap::SetMeshResource(const wstring& ResKey) {
+		try {
+			if (ResKey == L"") {
+				throw BaseException(
+					L"メッシュキーが空白です",
+					L"if (ResKey == L\"\"",
+					L"ShadowmapComp::SetMeshResource()"
+				);
+			}
+			pImpl->m_MeshResource = App::GetApp()->GetResource<MeshResource>(ResKey);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+	void Shadowmap::SetMeshResource(const shared_ptr<MeshResource>& MeshResourcePtr) {
+		pImpl->m_MeshResource = MeshResourcePtr;
+	}
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct PNTStaticDraw::Impl;
@@ -167,7 +253,8 @@ namespace basecross {
 			m_StaticConstantBuffer.View = Matrix4X4EX::Identity();
 			m_StaticConstantBuffer.Projection = Matrix4X4EX::Identity();
 			m_StaticConstantBuffer.Emissive = Color4(0.0f, 0.0f, 0.0f, 0.0f);
-			m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_StaticConstantBuffer.Diffuse = Color4(1.0000000f, 0.9607844f, 0.8078432f, 1.0f);
+
 
 			///各初期化関数呼び出し
 			///ルートシグネチャ作成
@@ -474,13 +561,6 @@ namespace basecross {
 		pImpl->m_StaticConstantBuffer.Emissive = col;
 	}
 
-	Color4 PNTStaticDraw::GetDiffuse() const {
-		return pImpl->m_StaticConstantBuffer.Diffuse;
-	}
-	void PNTStaticDraw::SetDiffuse(const Color4& col) {
-		pImpl->m_StaticConstantBuffer.Diffuse = col;
-	}
-
 	bool PNTStaticDraw::GetAlphaActive() const {
 		return pImpl->m_Trace;
 
@@ -492,8 +572,20 @@ namespace basecross {
 		}
 	}
 
+	bool PNTStaticDraw::GetOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	bool PNTStaticDraw::IsOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	void PNTStaticDraw::SetOwnShadowActive(bool b) {
+		pImpl->m_OwnShadowActive = b;
+	}
+
+
 	void PNTStaticDraw::DrawNotShadow() {
 		auto PtrStage = GetGameObject()->GetStage();
+		SetAlphaActive(GetGameObject()->GetAlphaActive());
 		auto PtrMeshResource = GetMeshResource();
 		//行列の定義
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
@@ -507,21 +599,24 @@ namespace basecross {
 		//転置する
 		pImpl->m_StaticConstantBuffer.World.Transpose();
 		//ビュー行列の決定
-		pImpl->m_StaticConstantBuffer.View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+		auto StageView = PtrStage->GetView();
+		pImpl->m_StaticConstantBuffer.View = StageView->GetTargetCamera()->GetViewMatrix();
 		//転置する
 		pImpl->m_StaticConstantBuffer.View.Transpose();
 		//射影行列の決定
-		float w = static_cast<float>(App::GetApp()->GetGameWidth());
-		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		pImpl->m_StaticConstantBuffer.Projection.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		pImpl->m_StaticConstantBuffer.Projection = StageView->GetTargetCamera()->GetProjMatrix();
 		//転置する
 		pImpl->m_StaticConstantBuffer.Projection.Transpose();
+
+
+
 		//ライティング
-		pImpl->m_StaticConstantBuffer.LightDir = Vector4(0.5f, -1.0f, 0.5f, 1.0f);
+		auto StageLight = PtrStage->GetLight();
+		pImpl->m_StaticConstantBuffer.LightDir = StageLight->GetTargetLight().m_Directional;
 		//エミッシブ
-		pImpl->m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+		pImpl->m_StaticConstantBuffer.Emissive = GetEmissive();
 		//ディフューズ
-		pImpl->m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		pImpl->m_StaticConstantBuffer.Diffuse = StageLight->GetTargetLight().m_DiffuseColor;
 		//更新
 		pImpl->UpdateConstantBuffer();
 		pImpl->DrawObject();

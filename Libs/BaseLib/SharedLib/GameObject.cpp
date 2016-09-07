@@ -166,6 +166,10 @@ namespace basecross {
 	}
 
 	void GameObject::DrawShadowmap() {
+		auto shadowptr = GetDynamicComponent<Shadowmap>(false);
+		if (shadowptr) {
+			shadowptr->OnDraw();
+		}
 	}
 
 	void GameObject::ComponentDraw() {
@@ -176,8 +180,10 @@ namespace basecross {
 		while (it != pImpl->m_CompOrder.end()) {
 			map<type_index, shared_ptr<Component> >::const_iterator it2;
 			it2 = pImpl->m_CompMap.find(*it);
-			if (it2 != pImpl->m_CompMap.end()) {
-				//そのコンポーネントの描画
+			//指定の型のコンポーネントが見つかった
+			if (it2 != pImpl->m_CompMap.end() && !dynamic_pointer_cast<Shadowmap>(it2->second)) {
+				//シャドウマップ以外なら実行
+				//そのコンポーネントの子コンポーネントの描画
 				if (it2->second->IsDrawActive()) {
 					it2->second->OnDraw();
 				}
@@ -215,6 +221,12 @@ namespace basecross {
 		vector< shared_ptr<GameObject> > m_WaitAddObjectVec;
 		//現在Drawされているビューのインデックス
 		size_t m_DrawViewIndex;
+		//ビューのポインタ
+		shared_ptr<ViewBase> m_ViewBase;
+		//ライトのポインタ
+		shared_ptr<LightBase> m_LightBase;
+
+
 		Impl() :m_DrawViewIndex(0) {}
 		~Impl() {}
 	};
@@ -244,6 +256,39 @@ namespace basecross {
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
 
+	void Stage::SetView(const shared_ptr<ViewBase>& v) {
+		pImpl->m_ViewBase = v;
+	}
+
+	const shared_ptr<ViewBase>& Stage::GetView()const {
+		if (!pImpl->m_ViewBase) {
+			throw BaseException(
+				L"ステージにビューが設定されていません。",
+				L"if (!pImpl->m_ViewBase)",
+				L"Stage::GetView()"
+			);
+		}
+		return pImpl->m_ViewBase;
+	}
+
+	void Stage::SetLight(const shared_ptr<LightBase>& L) {
+		pImpl->m_LightBase = L;
+
+	}
+	const shared_ptr<LightBase>& Stage::GetLight()const {
+		if (!pImpl->m_LightBase) {
+			throw BaseException(
+				L"ステージにライトが設定されていません。",
+				L"if (!pImpl->m_LightBase)",
+				L"Stage::GetLight()"
+			);
+		}
+		return pImpl->m_LightBase;
+	}
+
+
+
+
 
 	//ステージ内の更新（シーンからよばれる）
 	void Stage::UpdateStage() {
@@ -267,6 +312,13 @@ namespace basecross {
 			}
 		}
 	}
+
+	void Stage::DrawShadowmapStage() {
+		for (auto ptr : pImpl->m_GameObjectVec) {
+			ptr->DrawShadowmap();
+		}
+	}
+
 
 	//ステージ内の描画（シーンからよばれる）
 	void Stage::DrawStage() {
@@ -341,6 +393,17 @@ namespace basecross {
 			//描画デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+
+			Dev->ClearShadowmapViews();
+
+			Dev->StartShadowmapDraw();
+
+			pImpl->m_ActiveStage->DrawShadowmapStage();
+
+
+			Dev->EndShadowmapDraw();
+
+
 			//デフォルト描画の開始
 			Dev->StartDefultDraw();
 			pImpl->m_ActiveStage->DrawStage();

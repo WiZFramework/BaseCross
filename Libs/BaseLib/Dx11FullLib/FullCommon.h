@@ -5,6 +5,8 @@
 
 #pragma once
 
+//共有リソース
+#include "../SharedLib/SharedResources.h"
 //コンポーネント
 #include "../SharedLib/Components.h"
 //描画コンポーネント

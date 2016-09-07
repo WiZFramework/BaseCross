@@ -407,6 +407,13 @@ namespace basecross {
 		virtual void OnPreCreate()override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	初期化（デフォルトは何もしない）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override {}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	更新（デフォルトは何もしない）
 		@return	なし
 		*/
@@ -479,8 +486,37 @@ namespace basecross {
 				throw;
 			}
 		}
+
+		void SetView(const shared_ptr<ViewBase>& v);
+		const shared_ptr<ViewBase>& GetView()const;
+
+		void SetLight(const shared_ptr<LightBase>& L);
+		const shared_ptr<LightBase>& GetLight()const;
+
+
+		template<typename T, typename... Ts>
+		shared_ptr<T> CreateView(Ts&&... params) {
+			//新たに作成する
+			shared_ptr<T> newPtr = ObjectFactory::Create<T>(GetThis<Stage>(), params...);
+			SetView(newPtr);
+			return newPtr;
+		}
+
+		template<typename T, typename... Ts>
+		shared_ptr<T> CreateLight(Ts&&... params) {
+			//新たに作成する
+			shared_ptr<T> newPtr = ObjectFactory::Create<T>(GetThis<Stage>(), params...);
+			SetLight(newPtr);
+			return newPtr;
+		}
+
+
 		//ステージ内の更新（シーンからよばれる）
 		virtual void UpdateStage();
+
+		//ステージ内のシャドウマップ描画（シーンからよばれる）
+		virtual void DrawShadowmapStage();
+
 		//ステージ内の描画（シーンからよばれる）
 		virtual void DrawStage();
 

@@ -143,6 +143,44 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
+	//	シャドウマップコンポーネント（前処理用）
+	//--------------------------------------------------------------------------------------
+	class Shadowmap : public DrawComponent {
+	public:
+		explicit Shadowmap(const shared_ptr<GameObject>& GameObjectPtr);
+		virtual ~Shadowmap();
+		//アクセサ
+		static float GetLightHeight();
+		static float GetLightNear();
+		static float GetLightFar();
+		static float GetViewWidth();
+		static float GetViewHeight();
+
+		static void SetLightHeight(float f);
+		static void SetLightNear(float f);
+		static void SetLightFar(float f);
+		static void SetViewWidth(float f);
+		static void SetViewHeight(float f);
+		static void SetViewSize(float f);
+
+
+		shared_ptr<MeshResource> GetMeshResource(bool ExceptionActive = true) const;
+		void SetMeshResource(const wstring& ResKey);
+		void SetMeshResource(const shared_ptr<MeshResource>& MeshResourcePtr);
+
+
+		//操作
+		virtual void OnUpdate()override {}
+		virtual void OnDraw()override {}
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	PNTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	class PNTStaticDraw : public DrawComponent {
@@ -224,22 +262,6 @@ namespace basecross {
 		void SetEmissive(const Color4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ディフューズ色の取得
-		@return	ディフューズ色
-		*/
-		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ディフューズ色の設定
-		@param[in]	col	ディフューズ色
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
-
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	透明かどうかの取得
 		@return	透明かどうか
 		*/
@@ -253,6 +275,29 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetAlphaActive(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか設定する
+		@param[in]	b		影を描画するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetOwnShadowActive(bool b);
+
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!

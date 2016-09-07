@@ -44,6 +44,30 @@ namespace basecross {
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticNoTexture)
 
 
+	struct PNTStaticShadowConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Vector4 LightDir;
+		Color4 Emissive;
+		Color4 Diffuse;
+		Vector4 LightPos;
+		Vector4 EyePos;
+		XMUINT4 ActiveFlg;			//テクスチャ=xがアクティブかどうか
+		Matrix4X4 LightView;
+		Matrix4X4 LightProjection;
+		PNTStaticShadowConstantBuffer() {
+			memset(this, 0, sizeof(PNTStaticShadowConstantBuffer));
+		};
+	};
+	DECLARE_DX11_CONSTANT_BUFFER(CBPNTStaticShadow, PNTStaticShadowConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticShadow, VertexPositionNormalTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow2)
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	描画用コンテクスト（各オブジェクトの描画クラス）<br />基本的なパラメータで処理される描画用ユーティリティクラス
@@ -302,12 +326,50 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	シャドウマップコンポーネント（前処理用）
+	//--------------------------------------------------------------------------------------
+	class Shadowmap : public DrawComponent {
+	public:
+		explicit Shadowmap(const shared_ptr<GameObject>& GameObjectPtr);
+		virtual ~Shadowmap();
+		//アクセサ
+		static float GetLightHeight();
+		static float GetLightNear();
+		static float GetLightFar();
+		static float GetViewWidth();
+		static float GetViewHeight();
+
+		static void SetLightHeight(float f);
+		static void SetLightNear(float f);
+		static void SetLightFar(float f);
+		static void SetViewWidth(float f);
+		static void SetViewHeight(float f);
+		static void SetViewSize(float f);
+
+
+		shared_ptr<MeshResource> GetMeshResource(bool ExceptionActive = true) const;
+		void SetMeshResource(const wstring& ResKey);
+		void SetMeshResource(const shared_ptr<MeshResource>& MeshResourcePtr);
+
+
+		//操作
+		virtual void OnUpdate()override {}
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	PNTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	class PNTStaticDraw : public DrawComponent {
 		void DrawNotShadow();
+		void DrawWithShadow();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -385,19 +447,26 @@ namespace basecross {
 		void SetEmissive(const Color4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ディフューズ色の取得
-		@return	ディフューズ色
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bool GetOwnShadowActive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ディフューズ色の設定
-		@param[in]	col	ディフューズ色
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか設定する
+		@param[in]	b		影を描画するかどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetOwnShadowActive(bool b);
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
