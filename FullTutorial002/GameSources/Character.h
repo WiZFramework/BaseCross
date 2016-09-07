@@ -14,12 +14,15 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class Box : public GameObject {
 		Vector3 m_StartPos;
+		float m_TotalTime;
 	public:
 		//\’z‚Æ”jŠü
 		Box(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
 		virtual ~Box();
 		//‰Šú‰»
 		virtual void OnCreate() override;
+		//XV
+		virtual void OnUpdate() override;
 	};
 
 

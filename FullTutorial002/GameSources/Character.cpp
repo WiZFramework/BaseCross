@@ -15,7 +15,8 @@ namespace basecross{
 	//構築と破棄
 	Box::Box(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
-		m_StartPos(StartPos)
+		m_StartPos(StartPos),
+		m_TotalTime(0)
 	{
 	}
 	Box::~Box() {}
@@ -39,6 +40,18 @@ namespace basecross{
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 		//透過処理
 		SetAlphaActive(true);
+	}
+
+	void Box::OnUpdate() {
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_2PI) {
+			m_TotalTime = 0;
+		}
+		auto Pos = GetComponent<Transform>()->GetPosition();
+		Pos.x = sin(m_TotalTime);
+		GetComponent<Transform>()->SetPosition(Pos);
 	}
 
 
