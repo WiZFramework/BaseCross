@@ -40,49 +40,136 @@ void TriangleObject::OnCreate() {
         { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
     m_TriangleMesh = MeshResource::CreateMeshResource(vertices,false);
+    CreateRootSignature();
+    CreatePipelineState();
+    CreateCommandList();
+}
+</pre>
+</div>
+　ここでポイントなるのは、<b>CreateRootSignature、CreatePipelineState、CreateCommandList</b>という<b>Dx12用リソース構築</b>の関数です。
+　これらの関数を説明する前に、Dx12で描画するのには何が必要かを述べます。
+<div class="box1">
+<pre>
+【ルートシグネチャ】シェーダに入力する内容の設定
+【パイプラインステート】どのシェーダを使うか、ラスタライザステートやデプスステンシルステートなどの
+　　各レンダリングステートを設定する。
+【コマンドリスト】描画命令や、頂点の型の設定など実際に描画するときに実行する「命令」をコマンドリストという、
+　　命令の手順を定義したものを作成して、それを「実行する」という形で、描画する。
+</pre>
+</div>
+　これらの3つのリソースの記述は、最低限行わなければなりません。
+　そして<b>CreateRootSignature、CreatePipelineState、CreateCommandList</b>の3つの関数は、それぞれの初期化を行う関数です。<br />
+　簡単にそれらの関数の役割を述べます。<br />
+<br />
+<h4>CreateRootSignature関数</h4>
+　Dx12では、<b>シェーダーへのアクセス方法の定義</b>をカプセル化したものが必要です。これを<b>ルートシグネチャ</b>といいます。<br />
+　例えば、コンスタントバッファ、サンプラー、テクスチャの3つのデータをシェーダに渡す場合、それらを渡すための定義が必要になります。
+　このサンプルでは、三角形を描画するわけですが、描画方法は<b>頂点データのみ</b>となります。ですから、以下のような記述になります。
+<div class="box1">
+<pre>
+///ルートシグネチャ作成
+void TriangleObject::CreateRootSignature() {
+    m_RootSignature = RootSignature::CreateSimple();
+}
+</pre>
+</div>
+　<b>RootSignature::CreateSimple関数</b>を読んでいるわけですが、これの実体は以下です。
+<div class="box1">
+<pre>
+//一番シンプルなルートシグネチャ
+static inline ComPtr&lt;ID3D12RootSignature> CreateSimple() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    ComPtr&lt;ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Simple");
+    if (Ret != nullptr) {
+        return Ret;
+    }
 
-    m_DrawContext = ObjectFactory::Create&lt;VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSimple);
-    m_DrawContext->CreateDefault2DPipelineCmdList&lt;VertexPositionColor, VSPCDirect, PSPCDirect>();
+    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.Init(0, nullptr, 0, nullptr, 
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    Ret = CreateDirect(rootSignatureDesc);
+    Dev->SetRootSignature(L"Simple", Ret);
+    return Ret;
 }
 </pre>
 </div>
-　ここでポイントなるのは、<b>m_DrawContext</b>というインスタンスの型<b>VSPSDrawContextクラス</b>です。これはDx12における描画処理をカプセル化しています。
-　Dx11の場合は、DirectX側で描画のためのインターフェイスを用意してあるので、直接Dx11のAPIを使ってもそんなに難解なことはないのですが、Dx12の場合、ほとんどGPUに直接アクセスするといっても過言ではないため、描画のためのラッピングクラスを用意しました。<br />
-　<b>VSPSDrawContextクラス</b>は<b>頂点シェーダとピクセルシェーダを描画に使う</b>オブジェクトの描画クラスです。今後、ジオメトリシェーダを使う場合などは別のクラスが必要になると思いますが、そこはおいおい準備します（サンプルに合わせてライブラリも更新予定です）。
-　<b>VSPSDrawContextクラス</b>の中身に関しては、開発ブログ<b><a href="http://gameproject.jp/" target="_blank">実験と実装と</a></b>を参照ください。かなり詳しく書いたつもりなので、Dx12に理解にはある程度役立つと思います。<br />
-　ここでは、<b>VSPSDrawContextクラス</b>の具体的な使い方を説明します。<br />
-　まず、
-<div class="box1">
-<pre>
-    m_DrawContext = ObjectFactory::Create&lt;VSPSDrawContext>(VSPSDrawContext::CreateParam::CreateSimple);
-</pre>
-</div>
-　でこのクラスのインスタンス（のshared_ptr）を初期化します。<br />
-　<b>VSPSDrawContext::CreateParam::CreateSimple</b>という引数は<b>コンスタントバッファもテクスチャも使わない</b>形で初期化します。<br />
-　続いて
-<div class="box1">
-<pre>
-    m_DrawContext->CreateDefault2DPipelineCmdList&lt;VertexPositionColor, VSPCDirect, PSPCDirect>();
-</pre>
-</div>
-　で2次元用の<b>パイプラインステートとコマンドリスト</b>という形で両オブジェクトを作成します。パイプラインステートとは<b>頂点のフォーマットはどうなっているか、どのシェーダーを使うか、ラスタライザステートはどうするか、デプスステンシルステートはどうするか、ブレンドステートはどうするか、</b>などを定義したオブジェクトで、コマンドリストとは、<b>パイプラインステートを設定し、描画処理をする</b>、などの命令を<b>コマンドリスト</b>という形でまとめるものです。<br />
-　ですのでここでは<b>VertexPositionColor(頂点形式)、VSPCDirect(頂点シェーダ)、PSPCDirect(ピクセルシェーダ)</b>のそれぞれの「型」を渡しています。<br />
-　実際に頂点データを渡すのは<b>OnDraw</b>で行います。<br />
+　ここでは、テクスチャ（シェーダーリソース）もサンプラーも、コンスタントバッファも指定しません。シェーダーに入れるのは頂点データのみなのでこのような<b>ルートシグネチャ</b>になります。<br />
 <br />
-　このサンプルの描画処理は、<b>TriangleObject::OnDraw()関数</b>で行います。
+<h4>CreatePipelineState関数</h4>
+　ここでは<b>パイプラインステート</b>を作成します。
 <div class="box1">
 <pre>
-void TriangleObject::OnDraw() {
-    //描画
-    m_DrawContext->DrawVertex&lt;VertexPositionColor>(m_TriangleMesh);
+///パイプラインステート作成
+void TriangleObject::CreatePipelineState() {
+    //パイプラインステートの定義
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+    m_PipelineState 
+    = PipelineState::CreateDefault2D&lt;VertexPositionColor, 
+        VSPCDirect, PSPCDirect>(m_RootSignature, PineLineDesc);
 }
 </pre>
 </div>
-　いたってシンプルですが、これはコンスタントバッファやテクスチャを持たないし、2次元なのでカメラもいらないのでこのようにシンプルです。<br />
-　通常はもっちょと複雑になります。<br />
+　ここで呼び出している<b>PipelineState::CreateDefault2D</b>はテンプレート関数になっていて、基本的な２Ｄのパイプラインの設定を行います。使用するシェーダと頂点形式をテンプレート引数に渡します。
+　また、パイプラインステートを作成するのに<b>ルートシグネチャ</b>が必要になります。<br />
 <br />
-　さて、このような三角形クラスをゲーム上に配置するのは、シーンの役割です。<b>Character.h/cpp</b>に記述があります。<br />
-　まず、<b>Character.h</b>に宣言があります。
+<h4>CreateCommandList関数</h4>
+　この関数で<b>コマンドリスト</b>を作成します。中身は単純です。
+<div class="box1">
+<pre>
+///コマンドリスト作成
+void TriangleObject::CreateCommandList() {
+    m_CommandList = CommandList::CreateDefault(m_PipelineState);
+    CommandList::Close(m_CommandList);
+}
+</pre>
+</div>
+　このように、Dx12描画にはこれらの3つのリソースが必ず必要になります。このサンプルは、非常に単純なのでそれぞれの初期化関数も単純になってますが、この後のサンプルでは、徐々に複雑になっていきます。<br />
+　まずは、Dx12描画の基本だけをおさえてもらえればと思います。<br />
+<br />
+<h4>描画処理</h4>
+　上記3つの関数は<b>初期化処理</b>です。実際の描画は<b>TriangleObject::DrawObject関数</b>に記述します。
+<div class="box1">
+<pre>
+///描画処理
+void TriangleObject::DrawObject() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //コマンドリストのリセット
+    CommandList::Reset(m_PipelineState, m_CommandList);
+    //メッシュが更新されていればリソース更新
+    m_TriangleMesh->UpdateResources&lt;VertexPositionColor>(m_CommandList);
+
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+
+    m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+    m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+    //レンダーターゲットビューのハンドルを取得
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = Dev->GetRtvHandle();
+    //デプスステンシルビューのハンドルを取得
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle = Dev->GetDsvHandle();
+    //取得したハンドルをセット
+    m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_CommandList->IASetVertexBuffers(0, 1, &m_TriangleMesh->GetVertexBufferView());
+    m_CommandList->DrawInstanced(m_TriangleMesh->GetNumVertices(), 1, 0, 0);
+
+    //コマンドリストのクローズ
+    CommandList::Close(m_CommandList);
+    //デバイスにコマンドリストを送る
+    Dev->InsertDrawCommandLists(m_CommandList.Get());
+}
+</pre>
+</div>
+　ここでは、初期化処理で作成した<b>コマンドリスト</b>による描画命令を記述します。<br />
+　内容的にはDx11の<b>デバイスコンテキスト</b>の処理に似ています。違いは、最後に<b>Dev->InsertDrawCommandLists関数</b>を呼んでいます。この関数はDx12の関数ではなく、フレームワークの関数です。
+　どういう関数かというと<b>コマンドリスト</b>を貯める（一時的に保持する）関数です。<br />
+　フレームワークではこのように、いくつものコマンドリストを貯めておいて、描画ターンの最後に<b>コマンドリストの実行</b>を行うことで描画処理をします。<br />
+<br />
+<br />
+　さて、このような三角形クラスをゲーム上に配置するのは、シーンの役割です。<b>Scene.h/cpp</b>に記述があります。<br />
+　まず、<b>Scene.h</b>に宣言があります。
 <div class="box1">
 <pre>
 //--------------------------------------------------------------------------------------
@@ -122,12 +209,12 @@ void Scene::OnDraw() {
 </pre>
 </div>
 　ここで、三角形の<b>OnDraw()</b>を呼び出しているため、<b>TriangleObject::OnDraw()</b>が実行されます。<br />
+　<b>TriangleObject::OnDraw()</b>は<b>TriangleObject::DrawObject()</b>を呼び出します。<br />
 　上記（このページの上のほう）で、<b>ShapeInterfaceクラス</b>は重要ではない、といったのは実は、この、シーンのOnDraw()で、呼び出す三角形の描画関数名は何でもいいのです。<br/>
 　つまり、三角形オブジェクトが<b>OnRender()関数</b>を持ち、シーンからその関数を呼び出せば、結果同じになります。<br />
 　このあたりがシンプルバージョンの融通性でもあります。これがフルバージョンでは、OnDraw()やOnUpdate()は必ずこの仮想関数でなければなりません。<br />
 　ということは逆に考えれば<b>仮想関数がお嫌いなら使わなくてもよい</b>ということになります。描画を呼び出すのはシーンですし、シーンはゲーム側のオブジェクトですから、そのあたりの設計は、ライブラリ（つまりBaseCross側）は関係ないのです。<br />
-<br />
-　以上、Dx12側の説明は終わりです。<b>VSPSDrawContextクラス</b>は今後も何かと登場します。別の使用方法が出てきた都度説明します。<br />
+　以上、Dx12側の説明は終わりです。<br/>
 <br />
 <h4>Dx11版解説</h4>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
@@ -200,8 +287,7 @@ void TriangleObject::OnDraw() {
 　さてこうしたうえで、シーンでのこのオブジェクトの準備と、描画呼び出しはDx12版と変わりませんので、上記説明を読んでください。<br />
 <br />
 <h4>まとめ</h4>
-　このようにDx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。Dx12の場合は、直接呼び出してもいいのですが、GPU直接の操作があまりに多いので、<b>VSPSDrawContextクラス</b>を介して描画処理をします。<br />
-　もしどうしても<b>自分でDx12描画したい</b>と思う方は、ぜひ<b>VSPSDrawContextクラス</b>に当たるクラスを自作するか、もしくは<b>VSPSDrawContextクラス</b>でやってるような処理を、オブジェクトのOnCreate()とOnDraw()に記述すれば、自作可能です。<br />
+　このようにDx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。Dx12の場合は、ルートシグネチャやパイプライステート、コマンドリストを使用して描画します。<br />
 　前述したブログも参考になると思いますので、このあたりを研究しながら自作してみるのもいいと思います。<br />
 <br />
 　以降、こんな感じでサンプルの解説を行っていきたいと思います。
