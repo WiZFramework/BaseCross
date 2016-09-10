@@ -13,6 +13,8 @@ namespace basecross {
 	class GameStage : public Stage {
 		//リソースの作成
 		void CreateResourses();
+		//ビューとライトの作成
+		void CreateViewLight();
 		//ボックスの作成
 		void CreateNormalTextureBox();
 	public:

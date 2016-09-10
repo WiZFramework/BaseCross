@@ -106,11 +106,13 @@ namespace basecross {
 	///コンスタントバッファ作成
 	void SpriteDraw::CreateConstantBufferBase(UINT BuffSize) {
 		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (BuffSize + 255) & ~255;
 		//コンスタントバッファリソース（アップロードヒープ）の作成
 		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(BuffSize),
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
@@ -121,8 +123,7 @@ namespace basecross {
 		//コンスタントバッファのビューを作成
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
-		//コンスタントバッファは256バイトにアラインメント
-		cbvDesc.SizeInBytes = (BuffSize + 255) & ~255;
+		cbvDesc.SizeInBytes = ConstBuffSize;
 		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
 		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
 		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(

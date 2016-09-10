@@ -447,23 +447,25 @@ namespace basecross {
 		//DepsStensilViewHeap
 		ComPtr<ID3D12DescriptorHeap> m_DsvHeap;
 
+		///シャドウマップのレンダリングターゲット
+		shared_ptr<ShadowMapRenderTarget> m_ShadowMapRenderTarget;
+
 		UINT m_RtvDescriptorSize;
+		UINT m_DsvDescriptorSize;
 
 		//クリア処理用のオブジェクト
 		ComPtr<ID3D12RootSignature> m_RootSignature;
 		ComPtr<ID3D12PipelineState> m_PipelineState;
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+
 		//汎用ルートシグネチャのマップ
 		map<wstring, ComPtr<ID3D12RootSignature>> m_RootSignatureMap;
-
-
 
 		//プレゼントバリア用のコマンドリスト
 		ComPtr<ID3D12GraphicsCommandList> m_PresentCommandList;
 		//コマンドリスト実行用の配列
 		vector<ID3D12CommandList*> m_DrawCommandLists;
-
-
 
 		//同期オブジェクト
 		UINT m_FrameIndex;
@@ -693,8 +695,6 @@ namespace basecross {
 			m_Device->CreateDepthStencilView(m_DepthStencil.Get(), &depthStencilDesc, m_DsvHeap->GetCPUDescriptorHandleForHeapStart());
 		}
 
-
-
 		ThrowIfFailed(m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator)),
 			L"コマンドアロケータの作成に失敗しました",
 			L"m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator)",
@@ -734,7 +734,6 @@ namespace basecross {
 			L"m_CommandList->Close()",
 			L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 		);
-
 		//プレゼント用のコマンドリスト
 		ThrowIfFailed(
 			m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_PresentCommandList)),
@@ -793,6 +792,22 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	class Dx12DeviceResources : public DeviceResources;
 	//--------------------------------------------------------------------------------------
+
+	shared_ptr<ShadowMapRenderTarget> DeviceResources::GetShadowMapRenderTarget(float ShadowMapDimension) {
+		if (!pImpl->m_ShadowMapRenderTarget) {
+			//シャドウマップのレンダリングターゲットを作成
+			pImpl->m_ShadowMapRenderTarget = make_shared<ShadowMapRenderTarget>(ShadowMapDimension);
+		}
+		return pImpl->m_ShadowMapRenderTarget;
+	}
+
+
+	void DeviceResources::ClearShadowmapViews() {
+		auto ShadowTarget = GetShadowMapRenderTarget();
+		ShadowTarget->ClearViews();
+	}
+
+
 
 	//通常描画のクリア
 	void DeviceResources::ClearDefultViews(const Color4& col) {
@@ -1000,6 +1015,153 @@ namespace basecross {
 		);
 		return dsvHandle;
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	struct RenderTarget::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct RenderTarget::Impl {
+		Impl() {
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	class RenderTarget;
+	//	用途: レンダリングターゲット
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	RenderTarget::RenderTarget() :
+		pImpl(new Impl())
+	{}
+	RenderTarget::~RenderTarget() {}
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct ShadowMapRenderTarget::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct ShadowMapRenderTarget::Impl {
+		//シャドウマップの大きさ
+		const float m_ShadowMapDimension;
+		//シャドウマップのデスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_ShadoumapDsvHeap;
+		//シャドウマップのデプスステンシル
+		ComPtr<ID3D12Resource> m_ShadoumapDepthStencil;
+		//クリア用オブジェクト
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+		Impl(float ShadowMapDimension) :
+			m_ShadowMapDimension(ShadowMapDimension)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	シャドウマップのレンダリングターゲット
+	//--------------------------------------------------------------------------------------
+	ShadowMapRenderTarget::ShadowMapRenderTarget(float ShadowMapDimension):
+		pImpl(new Impl(ShadowMapDimension))
+	{
+		try {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			//シャドウマップ用デスクプリタヒープ
+			D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+			dsvHeapDesc.NumDescriptors = 2;
+			dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+			dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&pImpl->m_ShadoumapDsvHeap)),
+				L"シャドウマップデプスステンシルビューのデスクプリタヒープ作成に失敗しました",
+				L"Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_ShadoumapDsvHeap)",
+				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
+			);
+
+			D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+			depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+			D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+			depthOptimizedClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+			depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+			ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Tex2D(
+					DXGI_FORMAT_R24G8_TYPELESS,
+					2048,
+					2048,
+					1,
+					1,
+					1,
+					0,
+					D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL
+				),
+				D3D12_RESOURCE_STATE_DEPTH_WRITE,
+				&depthOptimizedClearValue,
+				IID_PPV_ARGS(&pImpl->m_ShadoumapDepthStencil)
+			),
+				L"シャドウマップデプスステンシルリソース作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommittedResource()",
+				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
+			);
+			//デプスステンシルビューの作成
+			Dev->GetDevice()->CreateDepthStencilView(pImpl->m_ShadoumapDepthStencil.Get(), &depthStencilDesc,
+				pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart());
+
+			//ルートシグネチャ
+			pImpl->m_RootSignature = RootSignature::CreateSimple();
+
+			ComPtr<ID3D12PipelineState> PipelineState;
+
+			pImpl->m_CommandList = CommandList::CreateDefault(PipelineState);
+			CommandList::Close(pImpl->m_CommandList);
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+	ShadowMapRenderTarget::~ShadowMapRenderTarget() {}
+
+	float ShadowMapRenderTarget::GetShadowMapDimension() const {
+		return pImpl->m_ShadowMapDimension;
+	}
+
+	//レンダリングターゲットをクリアする
+	void ShadowMapRenderTarget::ClearViews(const Color4& col) {
+		//シャドウマップはcolは未使用
+		auto Dev = App::GetApp()->GetDeviceResources();
+		CommandList::Reset(pImpl->m_CommandList);
+		pImpl->m_CommandList->SetGraphicsRootSignature(pImpl->m_RootSignature.Get());
+
+		pImpl->m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		pImpl->m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvNullHandle = nullptr;
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart());
+		pImpl->m_CommandList->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle);
+
+		// Record commands.
+		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+		CommandList::Close(pImpl->m_CommandList);
+		Dev->InsertDrawCommandLists(pImpl->m_CommandList.Get());
+	}
+	//レンダリングターゲットを開始する
+	void ShadowMapRenderTarget::StartRenderTarget() {}
+
+
+
+
+
+
+
+
+
 
 	namespace Dx12ShaderHelper {
 		//--------------------------------------------------------------------------------------

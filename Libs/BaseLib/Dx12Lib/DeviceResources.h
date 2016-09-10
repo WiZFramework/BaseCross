@@ -646,7 +646,7 @@ namespace basecross {
 	};
 
 
-
+	class ShadowMapRenderTarget;
 
 	//--------------------------------------------------------------------------------------
 	//	class DeviceResources;
@@ -700,6 +700,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D12Device> GetDevice() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief シャドウマップのレンダリングターゲットの取得
+		@return	シャドウマップのレンダリングターゲット
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<ShadowMapRenderTarget> GetShadowMapRenderTarget(float ShadowMapDimension = 2048.0f);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief  レンダリングターゲット（のポインタ）を得る
@@ -805,7 +812,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearShadowmapViews() {}
+		virtual void ClearShadowmapViews();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief シャドウマップ描画の開始（未定義）
@@ -897,6 +904,115 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	レンダーターゲット基底クラス
+	//--------------------------------------------------------------------------------------
+	class RenderTarget {
+	protected:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトコンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		RenderTarget();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトデストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~RenderTarget();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットをクリアする純粋仮想関数
+		@param[in]	col	クリア色
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットを開始する純粋仮想関数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void StartRenderTarget() = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットを終了する純粋仮想関数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EndRenderTarget() = 0;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+		//コピー禁止
+		RenderTarget(const RenderTarget&) = delete;
+		RenderTarget& operator=(const RenderTarget&) = delete;
+		//ムーブ禁止
+		RenderTarget(const RenderTarget&&) = delete;
+		RenderTarget& operator=(const RenderTarget&&) = delete;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	シャドウマップのレンダリングターゲット
+	//--------------------------------------------------------------------------------------
+	class ShadowMapRenderTarget : public RenderTarget {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	ShadowMapDimension	シャドウマップの大きさ
+		*/
+		//--------------------------------------------------------------------------------------
+		ShadowMapRenderTarget(float ShadowMapDimension);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~ShadowMapRenderTarget();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	シャドウマップの大きさを得る
+		@return	シャドウマップの大きさ
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetShadowMapDimension() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットをクリアする仮想関数
+		@param[in]	col	クリア色
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットを開始する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void StartRenderTarget()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	レンダリングターゲットを終了する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EndRenderTarget()override {}
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
 
 
 
@@ -1200,6 +1316,23 @@ namespace basecross {
 	/// コマンドリストユーティリティ
 	//--------------------------------------------------------------------------------------
 	namespace CommandList {
+		static inline  ComPtr<ID3D12GraphicsCommandList> CreateSimple() {
+			//デバイスの取得
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12GraphicsCommandList> Ret;
+			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+				0,
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				Dev->GetCommandAllocator().Get(),
+				nullptr,
+				IID_PPV_ARGS(&Ret)),
+				L"コマンドリストの作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommandList()",
+				L"CommandList::CreateSimple()"
+			);
+			return Ret;
+		}
+
 		static inline  ComPtr<ID3D12GraphicsCommandList> CreateDefault(const ComPtr<ID3D12PipelineState>& pipelineState) {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
@@ -1215,6 +1348,16 @@ namespace basecross {
 				L"CommandList::CreateDefault()"
 			);
 			return Ret;
+		}
+		static inline  void Reset(const ComPtr<ID3D12GraphicsCommandList>& commandList) {
+			//デバイスの取得
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ThrowIfFailed(commandList->Reset(Dev->GetCommandAllocator().Get(), nullptr),
+				L"コマンドリストのリセットに失敗しました",
+				L"commandList->Reset(Dev->GetCommandAllocator().Get(),nullptr)",
+				L"CommandList::Reset()"
+			);
+
 		}
 		static inline  void Reset(const ComPtr<ID3D12PipelineState>& pipelineState, const ComPtr<ID3D12GraphicsCommandList>& commandList) {
 			//デバイスの取得

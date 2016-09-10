@@ -29,11 +29,13 @@ namespace basecross {
 	}
 	///コンスタントバッファ作成
 	void SquareSprite::CreateConstantBuffer() {
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (sizeof(SpriteConstantBuffer) + 255) & ~255;
 		auto Dev = App::GetApp()->GetDeviceResources();
 		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(sizeof(SpriteConstantBuffer)),
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
@@ -44,8 +46,7 @@ namespace basecross {
 		//コンスタントバッファのビューを作成
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
-		//コンスタントバッファは256バイトにアラインメント
-		cbvDesc.SizeInBytes = (sizeof(SpriteConstantBuffer) + 255) & ~255;
+		cbvDesc.SizeInBytes = ConstBuffSize;
 		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
 		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
 		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
@@ -118,6 +119,7 @@ namespace basecross {
 	}
 	///コンスタントバッファ作成
 	void SquareSpriteGroup::CreateConstantBuffer() {
+
 		for (auto& v : m_SquareSpriteVec) {
 			v.CreateConstantBuffer();
 		}
@@ -160,13 +162,13 @@ namespace basecross {
 		m_CommandList->IASetIndexBuffer(&m_SquareSpriteMesh->GetIndexBufferView());
 		//各スプライトごとの処理
 		for (auto& v : m_SquareSpriteVec) {
+			//デスクプリタヒープのセット
+			ID3D12DescriptorHeap* ppHeaps[] = { v.m_CbvSrvUavDescriptorHeap.Get() };
+			m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			//GPUデスクプリタヒープハンドルのセット
 			for (size_t i = 0; i < v.m_GPUDescriptorHandleVec.size(); i++) {
 				m_CommandList->SetGraphicsRootDescriptorTable(i, v.m_GPUDescriptorHandleVec[i]);
 			}
-			//デスクプリタヒープのセット
-			ID3D12DescriptorHeap* ppHeaps[] = { v.m_CbvSrvUavDescriptorHeap.Get() };
-			m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			//インデックス描画
 			m_CommandList->DrawIndexedInstanced(m_SquareSpriteMesh->GetNumIndicis(), 1, 0, 0, 0);
 		}

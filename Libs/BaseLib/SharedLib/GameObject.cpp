@@ -393,22 +393,17 @@ namespace basecross {
 			//描画デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
-
 			Dev->ClearShadowmapViews();
-
 			Dev->StartShadowmapDraw();
-
 			pImpl->m_ActiveStage->DrawShadowmapStage();
-
-
 			Dev->EndShadowmapDraw();
-
-
 			//デフォルト描画の開始
 			Dev->StartDefultDraw();
 			pImpl->m_ActiveStage->DrawStage();
 			//デフォルト描画の終了
 			Dev->EndDefultDraw();
+
+
 		}
 	}
 
