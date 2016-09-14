@@ -58,10 +58,11 @@ namespace basecross {
 		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
-		//描画コンポーネントテクスチャの設定
-		DrawComp->SetTextureResource(L"SKY_TX");
 		//自分に影が映りこむようにする
 		DrawComp->SetOwnShadowActive(true);
+
+		//描画コンポーネントテクスチャの設定
+		DrawComp->SetTextureResource(L"SKY_TX");
 	}
 
 	//ボックスの作成

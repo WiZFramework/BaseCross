@@ -1,11 +1,13 @@
-//////////////////////////////////////////////////////////////////////////////
+//*********************************************************
 //
-//  Copyright (C) Microsoft Corporation.  All Rights Reserved.
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
 //
-//  File:       d3dx12.h
-//  Content:    D3DX12 utility library
-//
-//////////////////////////////////////////////////////////////////////////////
+//*********************************************************
 
 #ifndef __D3DX12_H__
 #define __D3DX12_H__
@@ -440,6 +442,30 @@ struct CD3DX12_RANGE : public D3D12_RANGE
         End = end;
     }
     operator const D3D12_RANGE&() const { return *this; }
+};
+
+//------------------------------------------------------------------------------------------------
+struct CD3DX12_SHADER_BYTECODE : public D3D12_SHADER_BYTECODE
+{
+    CD3DX12_SHADER_BYTECODE()
+    {}
+    explicit CD3DX12_SHADER_BYTECODE(const D3D12_SHADER_BYTECODE &o) :
+        D3D12_SHADER_BYTECODE(o)
+    {}
+    CD3DX12_SHADER_BYTECODE(
+        ID3DBlob* pShaderBlob )
+    {
+        pShaderBytecode = pShaderBlob->GetBufferPointer();
+        BytecodeLength = pShaderBlob->GetBufferSize();
+    }
+    CD3DX12_SHADER_BYTECODE(
+        void* _pShaderBytecode,
+        SIZE_T bytecodeLength )
+    {
+        pShaderBytecode = _pShaderBytecode;
+        BytecodeLength = bytecodeLength;
+    }
+    operator const D3D12_SHADER_BYTECODE&() const { return *this; }
 };
 
 //------------------------------------------------------------------------------------------------
@@ -1081,11 +1107,11 @@ struct CD3DX12_CPU_DESCRIPTOR_HANDLE : public D3D12_CPU_DESCRIPTOR_HANDLE
         ptr += offsetScaledByIncrementSize;
         return *this;
     }
-    bool operator==(_In_ const D3D12_CPU_DESCRIPTOR_HANDLE& other)
+    bool operator==(_In_ const D3D12_CPU_DESCRIPTOR_HANDLE& other) const
     {
         return (ptr == other.ptr);
     }
-    bool operator!=(_In_ const D3D12_CPU_DESCRIPTOR_HANDLE& other)
+    bool operator!=(_In_ const D3D12_CPU_DESCRIPTOR_HANDLE& other) const
     {
         return (ptr != other.ptr);
     }
@@ -1142,11 +1168,11 @@ struct CD3DX12_GPU_DESCRIPTOR_HANDLE : public D3D12_GPU_DESCRIPTOR_HANDLE
         ptr += offsetScaledByIncrementSize;
         return *this;
     }
-    inline bool operator==(_In_ const D3D12_GPU_DESCRIPTOR_HANDLE& other)
+    inline bool operator==(_In_ const D3D12_GPU_DESCRIPTOR_HANDLE& other) const
     {
         return (ptr == other.ptr);
     }
-    inline bool operator!=(_In_ const D3D12_GPU_DESCRIPTOR_HANDLE& other)
+    inline bool operator!=(_In_ const D3D12_GPU_DESCRIPTOR_HANDLE& other) const
     {
         return (ptr != other.ptr);
     }

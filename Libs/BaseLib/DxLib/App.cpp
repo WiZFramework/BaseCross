@@ -394,7 +394,6 @@ namespace basecross {
 
 			////デバイスリソースの構築
 			m_DeviceResources = shared_ptr<DeviceResources>(new DeviceResources(hWnd, FullScreen, Width, Height));
-			m_DeviceResources->AfterInitContents();
 			//オーディオマネージャの取得
 			GetAudioManager();
 			//乱数の初期化
@@ -408,11 +407,12 @@ namespace basecross {
 
 	//シングルトン構築
 	unique_ptr<App, App::AppDeleter>& App::CreateApp(HINSTANCE hInstance, HWND hWnd,
-		bool FullScreen, UINT Width, UINT Height) {
+		bool FullScreen, UINT Width, UINT Height, bool ShadowActive) {
 		try {
 			if (m_App.get() == 0) {
 				//自分自身の構築
 				m_App.reset(new App(hInstance, hWnd, FullScreen, Width, Height));
+				m_App->AfterInitContents(ShadowActive);
 			}
 			return m_App;
 		}
@@ -466,6 +466,18 @@ namespace basecross {
 			throw;
 		}
 	}
+
+	void App::AfterInitContents(bool ShadowActive) {
+		if (!m_DeviceResources) {
+			throw BaseException(
+				L"デバイスが初期化されていません",
+				L"if (!m_DeviceResources)",
+				L"App::AfterInitContents()"
+			);
+		}
+		m_DeviceResources->AfterInitContents(ShadowActive);
+	}
+
 
 	void App::RegisterResource(const wstring& Key, const shared_ptr<BaseResource>& ResObj) {
 		try {

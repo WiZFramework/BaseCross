@@ -491,6 +491,15 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@breaf 頂点バッファの取得
+		@return	頂点の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const ComPtr<ID3D12Resource>& GetVertexBuffer()const {
+			return m_VertexBuffer;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@breaf 頂点バッファビューの取得
 		@return	頂点バッファビューの参照
 		*/
@@ -506,6 +515,15 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		UINT GetNumVertices() const {
 			return m_NumVertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@breaf インデックスバッファの取得
+		@return	インデックスバッファの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const ComPtr<ID3D12Resource>& GetIndexBuffer()const {
+			return m_IndexBuffer;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -582,7 +600,6 @@ namespace basecross {
 			UpdateSubresources<1>(commandList.Get(), m_VertexBuffer.Get(), m_VertexBufferUploadHeap.Get(), 0, 0, 1, &vertexData);
 			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_VertexBuffer.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
 			//インデックスバッファの更新
 			if (shptr->m_Indices.size() > 0) {
 				D3D12_SUBRESOURCE_DATA indexData = {};
@@ -700,6 +717,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D12Device> GetDevice() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief シャドウマップのレンダリングターゲットの作成
+		@param[in] ShadowMapDimension	シャドウマップの幅及び高さ
+		@return	シャドウマップのレンダリングターゲット
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<ShadowMapRenderTarget> CreateShadowMapRenderTarget(float ShadowMapDimension = 2048.0f);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief シャドウマップのレンダリングターゲットの取得
@@ -858,11 +883,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンテンツの作成後の処理
+		@param[in]	ShadowActive	影が有効かどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterInitContents();
-
+		virtual void AfterInitContents(bool ShadowActive);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief キーに割り当てられたルートシグネチャを得る
@@ -1005,6 +1030,21 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void EndRenderTarget()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デプスステンシルビューのハンドルを得る
+		@return	デプスステンシルビューのハンドル
+		*/
+		//--------------------------------------------------------------------------------------
+		CD3DX12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デプスステンシルを得る
+		@return	デプスステンシル
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D12Resource> GetDepthStencil() const;
+
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1159,6 +1199,37 @@ namespace basecross {
 			Dev->SetRootSignature(L"SrvSmpCbv", Ret);
 			return Ret;
 		}
+		//シェーダリソース2つととサンプラー2つととコンスタントバッファ
+		static inline ComPtr<ID3D12RootSignature> CreateSrv2Smp2Cbv() {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Srv2Smp2Cbv");
+			if (Ret != nullptr) {
+				return Ret;
+			}
+
+
+			CD3DX12_DESCRIPTOR_RANGE ranges[5];
+			ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+			ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+			ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+			ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);
+			ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+
+			CD3DX12_ROOT_PARAMETER rootParameters[5];
+			rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+			rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+			rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
+			rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+			rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_ALL);
+
+			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+			rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+			Ret = CreateDirect(rootSignatureDesc);
+			Dev->SetRootSignature(L"Srv2Smp2Cbv", Ret);
+			return Ret;
+		}
+
 
 	}
 
@@ -1230,8 +1301,10 @@ namespace basecross {
 				samplerDesc.MipLODBias = 0.0f;
 				samplerDesc.MaxAnisotropy = 0;
 				samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
 				break;
 			}
+
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			Dev->GetDevice()->CreateSampler(&samplerDesc, Handle);
@@ -1309,6 +1382,41 @@ namespace basecross {
 			RetDesc.SampleDesc.Count = 1;
 			return CreateDirect(RetDesc);
 		}
+
+		template<typename Vertex, typename VS>
+		static inline ComPtr<ID3D12PipelineState> CreateShadowmap3D(const ComPtr<ID3D12RootSignature>& rootSignature, D3D12_GRAPHICS_PIPELINE_STATE_DESC& RetDesc) {
+
+			CD3DX12_RASTERIZER_DESC rasterizerStateDesc(D3D12_DEFAULT);
+			//表面カリング
+			rasterizerStateDesc.CullMode = D3D12_CULL_MODE_FRONT;
+			rasterizerStateDesc.FillMode = D3D12_FILL_MODE_SOLID;
+			rasterizerStateDesc.DepthClipEnable = TRUE;
+
+			ZeroMemory(&RetDesc, sizeof(RetDesc));
+			RetDesc.InputLayout = { Vertex::GetVertexElement(), Vertex::GetNumElements() };
+			RetDesc.pRootSignature = rootSignature.Get();
+			RetDesc.VS =
+			{
+				reinterpret_cast<UINT8*>(VS::GetPtr()->GetShaderComPtr()->GetBufferPointer()),
+				VS::GetPtr()->GetShaderComPtr()->GetBufferSize()
+			};
+
+			RetDesc.PS = CD3DX12_SHADER_BYTECODE(0, 0);
+			RetDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+			RetDesc.NumRenderTargets = 0;
+
+			RetDesc.RasterizerState = rasterizerStateDesc;
+			RetDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			RetDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			RetDesc.SampleMask = UINT_MAX;
+			RetDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			RetDesc.NumRenderTargets = 0;
+			RetDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+			RetDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+			RetDesc.SampleDesc.Count = 1;
+			return CreateDirect(RetDesc);
+		}
+
 	}
 
 

@@ -544,11 +544,12 @@ namespace basecross {
 		@param[in]	FullScreen	フルスクリーンかどうか
 		@param[in]	Width	幅
 		@param[in]	Height	高さ
+		@param[in]	ShadowActive	影が有効かどうか
 		@return	Appのunique_ptr
 		*/
 		//--------------------------------------------------------------------------------------
 		static unique_ptr<App, AppDeleter>& CreateApp(HINSTANCE hInstance, HWND hWnd,
-			bool FullScreen, UINT Width, UINT Height);
+			bool FullScreen, UINT Width, UINT Height,bool ShadowActive = true);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief シングルトンアクセサ
@@ -570,6 +571,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static void DeleteApp();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 追加初期化（レンダリングターゲットの準備など）
+		@param[in]	ShadowActive	影が有効かどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AfterInitContents(bool ShadowActive);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief オーディオマネージャの取得

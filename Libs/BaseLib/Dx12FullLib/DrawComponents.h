@@ -8,6 +8,10 @@
 namespace basecross {
 
 	//各シェーダ
+	//各シェーダ
+	DECLARE_DX12SHADER(VSShadowmap)
+
+
 	DECLARE_DX12SHADER(VSPCDirect)
 	DECLARE_DX12SHADER(PSPCDirect)
 
@@ -24,6 +28,9 @@ namespace basecross {
 	DECLARE_DX12SHADER(VSPNTStatic)
 	DECLARE_DX12SHADER(PSPNTStatic)
 
+	DECLARE_DX12SHADER(VSPNTStaticShadow)
+	DECLARE_DX12SHADER(PSPNTStaticShadow)
+	DECLARE_DX12SHADER(PSPNTStaticShadow2)
 
 
 	class GameObject;
@@ -171,7 +178,7 @@ namespace basecross {
 
 		//操作
 		virtual void OnUpdate()override {}
-		virtual void OnDraw()override {}
+		virtual void OnDraw()override;
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -184,7 +191,11 @@ namespace basecross {
 	///	PNTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	class PNTStaticDraw : public DrawComponent {
+		void CreateNotShadow();
+		void CreateWithShadow();
+
 		void DrawNotShadow();
+		void DrawWithShadow();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
