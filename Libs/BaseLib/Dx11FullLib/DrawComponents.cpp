@@ -758,8 +758,8 @@ namespace basecross {
 		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
 		//ステータスのポインタ
 		//シャドウマップのレンダラーターゲット
-		auto ShadoumapPtr = Dev->GetShadowMapRenderTarget();
-		ID3D11ShaderResourceView* pShadowSRV = ShadoumapPtr->GetShaderResourceView();
+		auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+		ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
 
 		if (PtrTextureResource) {
 
@@ -769,7 +769,7 @@ namespace basecross {
 			pImpl->m_DrawContext->AddSamplerAndSrv(0, SamplerState::SamplerNone, nullptr);
 		}
 		//自己影
-		pImpl->m_DrawContext->AddSamplerAndSrv(1, SamplerState::ComparisonLinear, ShadoumapPtr->GetShaderResourceView());
+		pImpl->m_DrawContext->AddSamplerAndSrv(1, SamplerState::ComparisonLinear, ShadowmapPtr->GetShaderResourceView());
 		pImpl->m_DrawContext->DrawIndexed<CBPNTStaticShadow>(GetGameObject(),
 			&cb1, GetMeshResource(), sizeof(VertexPositionNormalTexture), 0);
 

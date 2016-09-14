@@ -639,7 +639,7 @@ namespace basecross {
 				L"m_Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_RtvHeap)",
 				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 			);
-			// Describe and create a depth stencil view (DSV) descriptor heap.
+			// デプスステンシルビューのデスクプリタヒープ作成
 			D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
 			dsvHeapDesc.NumDescriptors = 1;
 			dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -1060,9 +1060,9 @@ namespace basecross {
 		//シャドウマップの大きさ
 		const float m_ShadowMapDimension;
 		//シャドウマップのデスクプリタヒープ
-		ComPtr<ID3D12DescriptorHeap> m_ShadoumapDsvHeap;
+		ComPtr<ID3D12DescriptorHeap> m_ShadowmapDsvHeap;
 		//シャドウマップのデプスステンシル
-		ComPtr<ID3D12Resource> m_ShadoumapDepthStencil;
+		ComPtr<ID3D12Resource> m_ShadowmapDepthStencil;
 		//クリア用オブジェクト
 		ComPtr<ID3D12RootSignature> m_RootSignature;
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
@@ -1085,12 +1085,12 @@ namespace basecross {
 
 			//シャドウマップ用デスクプリタヒープ
 			D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-			dsvHeapDesc.NumDescriptors = 2;
+			dsvHeapDesc.NumDescriptors = 1;
 			dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 			dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&pImpl->m_ShadoumapDsvHeap)),
+			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&pImpl->m_ShadowmapDsvHeap)),
 				L"シャドウマップデプスステンシルビューのデスクプリタヒープ作成に失敗しました",
-				L"Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_ShadoumapDsvHeap)",
+				L"Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_ShadowmapDsvHeap)",
 				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
 			);
 
@@ -1120,7 +1120,7 @@ namespace basecross {
 				&shadowTextureDesc,
 				D3D12_RESOURCE_STATE_DEPTH_WRITE,
 				&depthOptimizedClearValue,
-				IID_PPV_ARGS(&pImpl->m_ShadoumapDepthStencil)
+				IID_PPV_ARGS(&pImpl->m_ShadowmapDepthStencil)
 			),
 				L"シャドウマップデプスステンシルリソース作成に失敗しました",
 				L"Dev->GetDevice()->CreateCommittedResource()",
@@ -1135,8 +1135,8 @@ namespace basecross {
 
 
 			//デプスステンシルビューの作成
-			Dev->GetDevice()->CreateDepthStencilView(pImpl->m_ShadoumapDepthStencil.Get(), &depthStencilViewDesc,
-				pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart());
+			Dev->GetDevice()->CreateDepthStencilView(pImpl->m_ShadowmapDepthStencil.Get(), &depthStencilViewDesc,
+				pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart());
 
 			//ルートシグネチャ
 			{
@@ -1192,7 +1192,7 @@ namespace basecross {
 		pImpl->m_CommandList->RSSetViewports(1, &Dev->GetViewport());
 		pImpl->m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
 		// Record commands.
-		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		CommandList::Close(pImpl->m_CommandList);
 		Dev->InsertDrawCommandLists(pImpl->m_CommandList.Get());
 	}
@@ -1201,13 +1201,13 @@ namespace basecross {
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE ShadowMapRenderTarget::GetDsvHandle() const {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
-			pImpl->m_ShadoumapDsvHeap->GetCPUDescriptorHandleForHeapStart(), 0, 0
+			pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart(), 0, 0
 		);
 		return dsvHandle;
 	}
 
 	ComPtr<ID3D12Resource> ShadowMapRenderTarget::GetDepthStencil() const {
-		return pImpl->m_ShadoumapDepthStencil;
+		return pImpl->m_ShadowmapDepthStencil;
 	}
 
 

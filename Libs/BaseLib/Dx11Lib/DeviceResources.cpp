@@ -1821,7 +1821,7 @@ namespace basecross {
 			shadowMapDesc.SampleDesc.Count = 1;
 			shadowMapDesc.Usage = D3D11_USAGE_DEFAULT;
 			shadowMapDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-			shadowMapDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+			shadowMapDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 
 			ThrowIfFailed(
 				pD3D11Device->CreateTexture2D(&shadowMapDesc, nullptr, &pImpl->m_DepthStencil),
@@ -1833,7 +1833,7 @@ namespace basecross {
 			//深度ステンシルビュー作成
 			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-			depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			depthStencilViewDesc.Format = DXGI_FORMAT_D32_FLOAT;
 			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 			depthStencilViewDesc.Texture2D.MipSlice = 0;
 
@@ -1847,7 +1847,7 @@ namespace basecross {
 			//シェーダーリソースビュー作成
 			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 			ZeroMemory(&shaderResourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-			shaderResourceViewDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+			shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
 			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 			shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
