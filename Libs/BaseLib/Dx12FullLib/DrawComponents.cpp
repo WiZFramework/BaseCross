@@ -279,15 +279,18 @@ namespace basecross {
 			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
 		}
 
+		auto ShadowMapDimension = Dev->GetShadowMapRenderTarget()->GetShadowMapDimension();
+
+
 		D3D12_VIEWPORT Viewport = {};
-		Viewport.Width = static_cast<float>(2048);
-		Viewport.Height = static_cast<float>(2048);
+		Viewport.Width = static_cast<float>(ShadowMapDimension);
+		Viewport.Height = static_cast<float>(ShadowMapDimension);
 		Viewport.MaxDepth = 1.0f;
 
 		D3D12_RECT ScissorRect = {};
 
-		ScissorRect.right = static_cast<LONG>(2048);
-		ScissorRect.bottom = static_cast<LONG>(2048);
+		ScissorRect.right = static_cast<LONG>(ShadowMapDimension);
+		ScissorRect.bottom = static_cast<LONG>(ShadowMapDimension);
 
 
 		m_CommandList->RSSetViewports(1, &Viewport);

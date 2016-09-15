@@ -1199,7 +1199,7 @@ namespace basecross {
 			Dev->SetRootSignature(L"SrvSmpCbv", Ret);
 			return Ret;
 		}
-		//シェーダリソース2つととサンプラー2つととコンスタントバッファ
+		//シェーダリソース2つとサンプラー2つとコンスタントバッファ1つ
 		static inline ComPtr<ID3D12RootSignature> CreateSrv2Smp2Cbv() {
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Srv2Smp2Cbv");
