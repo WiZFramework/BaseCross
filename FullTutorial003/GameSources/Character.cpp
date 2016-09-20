@@ -34,12 +34,9 @@ namespace basecross{
 		PtrTransform->SetRotation(m_Rotation);
 		PtrTransform->SetPosition(m_Position);
 
-		//”½”­‚ğÀ‘•‚·‚éê‡‚ÍRigidbody‚ğ‚Â‚¯‚é
-		//		auto PtrRegid = AddComponent<Rigidbody>();
 		//Õ“Ë”»’è
 		auto PtrObb = AddComponent<CollisionObb>();
 		PtrObb->SetFixed(true);
-		//		AddComponent<PNTCollisionDraw>();
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();
