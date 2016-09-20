@@ -204,6 +204,172 @@ namespace basecross {
 		CalculateMatrix();
 	}
 
+	void Camera::OnUpdate() {
+		CalculateMatrix();
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct LookAtCamera::Impl;
+	//	用途: Implクラス
+	//--------------------------------------------------------------------------------------
+	struct LookAtCamera::Impl {
+		weak_ptr<GameObject> m_TargetObject;	//目標となるオブジェクト
+		float m_ToTargetLerp;	//目標を追いかける際の補間値
+
+
+		float m_RadY;
+		float m_RadXZ;
+		//カメラの上下スピード
+		float m_CameraUpDownSpeed;
+		//カメラを下げる下限角度
+		float m_CameraUnderRot;
+		float	m_Arm;
+		//腕の長さの設定
+		float m_MaxArm;
+		float m_MinArm;
+		//回転スピード
+		float m_RotSpeed;
+		//ズームスピード
+		float m_ZoomSpeed;
+
+		Impl() :
+			m_ToTargetLerp(1.0f),
+			m_RadY(0.5f),
+			m_RadXZ(0),
+			m_CameraUpDownSpeed(0.02f),
+			m_CameraUnderRot(0.1f),
+			m_Arm(5.0f),
+			m_MaxArm(20.0f),
+			m_MinArm(2.0f),
+			m_RotSpeed(1.0f),
+			m_ZoomSpeed(0.1f)
+		{}
+		~Impl() {}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class LookAtCamera : public Camera ;
+	//	用途: LookAtカメラ（コンポーネントではない）
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	LookAtCamera::LookAtCamera() :
+		Camera(),
+		pImpl(new Impl())
+	{
+	}
+	LookAtCamera::~LookAtCamera() {}
+	//アクセサ
+	shared_ptr<GameObject> LookAtCamera::GetTargetObject() const {
+		if (!pImpl->m_TargetObject.expired()) {
+			return pImpl->m_TargetObject.lock();
+		}
+		return nullptr;
+	}
+
+	void LookAtCamera::SetTargetObject(const shared_ptr<GameObject>& Obj) {
+		pImpl->m_TargetObject = Obj;
+	}
+
+	float LookAtCamera::GetToTargetLerp() const {
+		return pImpl->m_ToTargetLerp;
+	}
+	void LookAtCamera::SetToTargetLerp(float f) {
+		pImpl->m_ToTargetLerp = f;
+	}
+
+
+	void LookAtCamera::OnUpdate() {
+		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Vector3 NewEye = GetEye();
+		Vector3 NewAt = GetAt();
+		//計算に使うための腕角度（ベクトル）
+		Vector3 ArmVec = NewEye - NewAt;
+		//正規化しておく
+		ArmVec.Normalize();
+		if (CntlVec[0].bConnected) {
+			//上下角度の変更
+			if (CntlVec[0].fThumbRY >= 0.1f) {
+				pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+			}
+			else if (CntlVec[0].fThumbRY <= -0.1f) {
+				pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+			}
+			if (pImpl->m_RadY > XM_PI * 4 / 9.0f) {
+				pImpl->m_RadY = XM_PI * 4 / 9.0f;
+			}
+			else if (pImpl->m_RadY <= pImpl->m_CameraUnderRot) {
+				//カメラが限界下に下がったらそれ以上下がらない
+				pImpl->m_RadY = pImpl->m_CameraUnderRot;
+			}
+			ArmVec.y = sin(pImpl->m_RadY);
+			//ここでY軸回転を作成
+			if (CntlVec[0].fThumbRX != 0) {
+				//回転スピードを反映
+				pImpl->m_RadXZ += -CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+				if (abs(pImpl->m_RadXZ) >= XM_2PI) {
+					//1週回ったら0回転にする
+					pImpl->m_RadXZ = 0;
+				}
+			}
+			//クオータニオンでY回転（つまりXZベクトルの値）を計算
+			Quaternion QtXZ;
+			QtXZ.RotationAxis(Vector3(0, 1.0f, 0), pImpl->m_RadXZ);
+			QtXZ.Normalize();
+			//移動先行の行列計算することで、XZの値を算出
+			Matrix4X4 Mat;
+			Mat.STRTransformation(
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, 0.0f, -1.0f),
+				QtXZ
+			);
+
+			Vector3 PosXZ = Mat.PosInMatrixSt();
+			//XZの値がわかったので腕角度に代入
+			ArmVec.x = PosXZ.x;
+			ArmVec.z = PosXZ.z;
+			//腕角度を正規化
+			ArmVec.Normalize();
+
+			auto TargetPtr = GetTargetObject();
+			if (TargetPtr) {
+				//目指したい場所
+				Matrix4X4 ToAtMat = TargetPtr->GetComponent<Transform>()->GetWorldMatrix();
+				Vector3 ToAt = ToAtMat.PosInMatrixSt();
+				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0f, Lerp::Linear);
+			}
+			//アームの変更
+			//Dパッド下
+			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
+				//カメラ位置を引く
+				pImpl->m_Arm += pImpl->m_ZoomSpeed;
+				if (pImpl->m_Arm >= pImpl->m_MaxArm) {
+					//m_MaxArm以上離れないようにする
+					pImpl->m_Arm = pImpl->m_MaxArm;
+				}
+			}
+			//Dパッド上
+			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
+				//カメラ位置を寄る
+				pImpl->m_Arm -= pImpl->m_ZoomSpeed;
+				if (pImpl->m_Arm <= pImpl->m_MinArm) {
+					//m_MinArm以下近づかないようにする
+					pImpl->m_Arm = pImpl->m_MinArm;
+				}
+			}
+			////目指したい場所にアームの値と腕ベクトルでEyeを調整
+			NewEye = NewAt + ArmVec * pImpl->m_Arm;
+		}
+		SetEye(NewEye);
+		SetAt(NewAt);
+		Camera::OnUpdate();
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -273,7 +439,7 @@ namespace basecross {
 
 	void SingleView::OnUpdate() {
 		//カメラの計算をする
-		pImpl->m_ViewItem.m_Camera->CalculateMatrix();
+		pImpl->m_ViewItem.m_Camera->OnUpdate();
 	}
 
 	void SingleView::SetViewport(const Viewport& v) {
@@ -298,90 +464,6 @@ namespace basecross {
 		return pImpl->m_ViewItem.m_Viewport;
 	}
 
-
-	////--------------------------------------------------------------------------------------
-	////	Implクラス
-	////--------------------------------------------------------------------------------------
-	//struct Light::Impl {
-	//	Vector3 m_Directional;	//ライトの向き
-	//	Color4 m_DiffuseColor;	//ディフィーズ色
-	//	Color4 m_SpecularColor;	//スペキュラー色
-	//	Impl() :
-	//		m_Directional(0, 0, 0),
-	//		m_DiffuseColor(1.0000000f, 0.9607844f, 0.8078432f, 1.0f),
-	//		m_SpecularColor(1.0000000f, 0.9607844f, 0.8078432f, 1.0f)
-	//	{
-	//	}
-	//	~Impl() {}
-	//};
-
-	////--------------------------------------------------------------------------------------
-	////	ライト
-	////--------------------------------------------------------------------------------------
-	////構築と破棄
-	//Light::Light() :
-	//	ObjectInterface(),
-	//	pImpl(new Impl())
-	//{
-	//	SetPositionToDirectional(Vector3(-1.0f, 1.0f, -1.0f));
-	//}
-	//Light::Light(
-	//	const Vector3& Directional,
-	//	const Color4& DiffuseColor,
-	//	const Color4& SpecularColor
-	//) :
-	//	ObjectInterface(),
-	//	pImpl(new Impl())
-	//{
-	//	pImpl->m_Directional = Directional;
-	//	pImpl->m_DiffuseColor = DiffuseColor;
-	//	pImpl->m_SpecularColor = SpecularColor;
-	//}
-
-	//Light::~Light() {}
-
-	////アクセサ
-	//const Vector3& Light::GetDirectional() const {
-	//	return pImpl->m_Directional;
-	//}
-	//void Light::SetDirectional(const Vector3& Directional) {
-	//	pImpl->m_Directional = Directional;
-	//	pImpl->m_Directional.Normalize();
-	//}
-	//void Light::SetDirectional(float x, float y, float z) {
-	//	pImpl->m_Directional = Vector3(x, y, z);
-	//	pImpl->m_Directional.Normalize();
-	//}
-	//void Light::SetPositionToDirectional(const Vector3& Position) {
-	//	pImpl->m_Directional = Position;
-	//	pImpl->m_Directional *= -1.0f;
-	//	pImpl->m_Directional.Normalize();
-	//}
-	//void Light::SetPositionToDirectional(float x, float y, float z) {
-	//	pImpl->m_Directional = Vector3(x, y, z);
-	//	pImpl->m_Directional *= -1.0f;
-	//	pImpl->m_Directional.Normalize();
-	//}
-
-	//const Color4& Light::GetDiffuseColor() const {
-	//	return pImpl->m_DiffuseColor;
-	//}
-	//void Light::SetDiffuseColor(const Color4& col) {
-	//	pImpl->m_DiffuseColor = col;
-	//}
-	//void Light::SetDiffuseColor(float r, float g, float b, float a) {
-	//	pImpl->m_DiffuseColor = Color4(r, g, b, a);
-	//}
-
-	//const Color4& Light::GetSpecularColor() const {
-	//	return pImpl->m_SpecularColor;
-	//}
-	//void Light::SetSpecularColor(const Color4& col) {
-	//	pImpl->m_SpecularColor = col;
-	//}
-	//void Light::SetSpecularColor(float r, float g, float b, float a) {
-	//	pImpl->m_SpecularColor = Color4(r, g, b, a);
-	//}
 
 	//--------------------------------------------------------------------------------------
 	///	struct ViewBase::Impl;

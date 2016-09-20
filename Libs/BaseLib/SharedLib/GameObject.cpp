@@ -22,6 +22,9 @@ namespace basecross {
 		map<type_index, shared_ptr<Component> > m_CompMap;
 		list<type_index> m_CompOrder;	//コンポーネント実行順番
 
+		shared_ptr<Rigidbody> m_Rigidbody;	//Rigidbodyは別にする
+		shared_ptr<Gravity> m_Gravity;	//Gravityは別にする
+		shared_ptr<Collision> m_Collision;	//Collisionも別にする
 		shared_ptr<Transform> m_Transform;	//Transformも別にする
 
 
@@ -51,6 +54,52 @@ namespace basecross {
 	shared_ptr<Transform> GameObject::GetTransform()const {
 		return pImpl->m_Transform;
 
+	}
+	shared_ptr<Rigidbody> GameObject::GetRigidbody()const {
+		return pImpl->m_Rigidbody;
+	}
+	shared_ptr<Gravity> GameObject::GetGravity()const {
+		return pImpl->m_Gravity;
+	}
+	shared_ptr<Collision> GameObject::GetCollision()const {
+		return pImpl->m_Collision;
+	}
+	shared_ptr<CollisionSphere> GameObject::GetCollisionSphere()const {
+		return dynamic_pointer_cast<CollisionSphere>(pImpl->m_Collision);
+	}
+
+	shared_ptr<CollisionCapsule> GameObject::GetCollisionCapsule()const {
+		return dynamic_pointer_cast<CollisionCapsule>(pImpl->m_Collision);
+	}
+	shared_ptr<CollisionObb> GameObject::GetCollisionObb()const {
+		return dynamic_pointer_cast<CollisionObb>(pImpl->m_Collision);
+	}
+
+	void GameObject::SetRigidbody(const shared_ptr<Rigidbody>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Rigidbody = Ptr;
+	}
+	void GameObject::SetGravity(const shared_ptr<Gravity>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Gravity = Ptr;
+	}
+	void GameObject::SetCollision(const shared_ptr<Collision>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Collision = Ptr;
+	}
+	void GameObject::SetCollisionSphere(const shared_ptr<CollisionSphere>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Collision = Ptr;
+	}
+
+	void GameObject::SetCollisionCapsule(const shared_ptr<CollisionCapsule>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Collision = Ptr;
+	}
+
+	void GameObject::SetCollisionObb(const shared_ptr<CollisionObb>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Collision = Ptr;
 	}
 
 	void GameObject::SetTransform(const shared_ptr<Transform>& Ptr) {
@@ -146,6 +195,12 @@ namespace basecross {
 
 	void GameObject::ComponentUpdate() {
 		auto TMptr = GetComponent<Transform>();
+		auto RigidPtr = GetComponent<Rigidbody>(false);
+		auto GravityPtr = GetComponent<Gravity>(false);
+		if (RigidPtr) {
+			//Rigidbodyがあればフォースを初期化
+			RigidPtr->SetForce(0, 0, 0);
+		}
 		//マップを検証してUpdate
 		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
 		while (it != pImpl->m_CompOrder.end()) {
@@ -159,9 +214,49 @@ namespace basecross {
 			}
 			it++;
 		}
-		//TransformMatrixのUpdate
+		if (GravityPtr && GravityPtr->IsUpdateActive()) {
+			//GravityPtrがあればUpdate()
+			GravityPtr->OnUpdate();
+		}
+		if (RigidPtr && RigidPtr->IsUpdateActive()) {
+			//RigidbodyがあればUpdate()
+			RigidPtr->OnUpdate();
+		}
+		//TransformのUpdate
 		if (TMptr->IsUpdateActive()) {
 			TMptr->OnUpdate();
+		}
+	}
+
+	void GameObject::CollisionReset() {
+		auto CollisionPtr = GetComponent<Collision>(false);
+		if (CollisionPtr) {
+			CollisionPtr->ClearHitObject();
+		}
+	}
+
+	void GameObject::CollisionChk() {
+		auto CollisionPtr = GetComponent<Collision>(false);
+		if (CollisionPtr && CollisionPtr->IsUpdateActive()) {
+			//CollisionがあればUpdate()
+			CollisionPtr->OnUpdate();
+		}
+	}
+
+	void GameObject::CollisionGravityChk() {
+		auto CollisionPtr = GetComponent<Collision>(false);
+		if (CollisionPtr && !CollisionPtr->IsOnObject()) {
+			auto GravityPtr = GetComponent<Gravity>(false);
+			if (GravityPtr) {
+				GravityPtr->SetGravityDefault();
+			}
+		}
+	}
+
+	void GameObject::ToMessageCollision() {
+		auto CollisionPtr = GetComponent<Collision>(false);
+		if (CollisionPtr && CollisionPtr->GetHitObjectVec().size() > 0) {
+			OnCollision(CollisionPtr->GetHitObjectVec());
 		}
 	}
 
@@ -175,6 +270,8 @@ namespace basecross {
 	void GameObject::ComponentDraw() {
 		//Transformがなければ例外
 		auto Tptr = GetComponent<Transform>();
+		auto RigidPtr = GetComponent<Rigidbody>(false);
+		auto GravityPtr = GetComponent<Gravity>(false);
 		//マップを検証してDraw
 		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
 		while (it != pImpl->m_CompOrder.end()) {
@@ -190,8 +287,16 @@ namespace basecross {
 			}
 			it++;
 		}
+		//派生クラス対策
+		if (GravityPtr && GravityPtr->IsDrawActive()) {
+			//GravityPtrがあればUpdate()
+			GravityPtr->OnDraw();
+		}
+		if (RigidPtr && RigidPtr->IsDrawActive()) {
+			//RigidbodyがあればUpdate()
+			RigidPtr->OnDraw();
+		}
 		//TransformのDraw
-		//Transformの派生クラス対策
 		if (Tptr->IsDrawActive()) {
 			Tptr->OnDraw();
 		}
@@ -210,11 +315,71 @@ namespace basecross {
 		ComponentDraw();
 	}
 
+
+	//--------------------------------------------------------------------------------------
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct GameObjectGroup::Impl {
+		vector< weak_ptr<GameObject> > m_Group;
+		Impl() {}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	class GameObjectGroup;
+	//--------------------------------------------------------------------------------------
+	GameObjectGroup::GameObjectGroup() :
+		ObjectInterface(),
+		pImpl(new Impl())
+	{}
+	GameObjectGroup::~GameObjectGroup() {}
+	//アクセサ
+	const vector< weak_ptr<GameObject> >& GameObjectGroup::GetGroupVector() const {
+		return pImpl->m_Group;
+	}
+	shared_ptr<GameObject> GameObjectGroup::at(size_t index) {
+		if (index >= pImpl->m_Group.size()) {
+			wstring msg = Util::UintToWStr(index);
+			msg += L" >= ";
+			msg += Util::UintToWStr(pImpl->m_Group.size());
+			throw BaseException(
+				L"インデックスが範囲外です",
+				msg,
+				L"GameObjectGroup::at()"
+			);
+		}
+		if (pImpl->m_Group.at(index).expired()) {
+			wstring msg = Util::UintToWStr(index);
+			throw BaseException(
+				L"そのインデックスのオブジェクトは無効です。",
+				msg,
+				L"GameObjectGroup::at()"
+			);
+		}
+		return pImpl->m_Group.at(index).lock();
+	}
+	size_t GameObjectGroup::size() const {
+		return pImpl->m_Group.size();
+	}
+	//操作
+	void GameObjectGroup::IntoGroup(const shared_ptr<GameObject>& Obj) {
+		pImpl->m_Group.push_back(Obj);
+	}
+
+	void GameObjectGroup::AllClear() {
+		pImpl->m_Group.clear();
+	}
+
+
+
 	//--------------------------------------------------------------------------------------
 	//	struct Stage::Impl;
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct Stage::Impl {
+		bool m_UpdateActive;	//updateするかどうか
+
 		//オブジェクトの配列
 		vector< shared_ptr<GameObject> > m_GameObjectVec;
 		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
@@ -226,8 +391,21 @@ namespace basecross {
 		//ライトのポインタ
 		shared_ptr<LightBase> m_LightBase;
 
+		//シェアオブジェクトポインタのマップ
+		map<const wstring, weak_ptr<GameObject> > m_SharedMap;
+		//シェアグループのポインタのマップ
+		map<const wstring, shared_ptr<GameObjectGroup> >  m_SharedGroupMap;
 
-		Impl() :m_DrawViewIndex(0) {}
+
+		vector< shared_ptr<Stage> > m_ChildStageVec;	//子供ステージの配列
+		weak_ptr<Stage> m_ParentStage;		//親ステージ
+
+
+
+		Impl() :
+			m_UpdateActive(true),
+			m_DrawViewIndex(0)
+		{}
 		~Impl() {}
 	};
 
@@ -254,7 +432,154 @@ namespace basecross {
 		}
 	}
 
+	shared_ptr<GameObject> Stage::GetSharedGameObjectEx(const wstring& Key, bool ExceptionActive)const {
+		map<const wstring, weak_ptr<GameObject> >::const_iterator it;
+		//重複キーの検査
+		it = pImpl->m_SharedMap.find(Key);
+		if (it != pImpl->m_SharedMap.end()) {
+			if (it->second.expired()) {
+				//すでに無効
+				if (ExceptionActive) {
+					//例外発生
+					wstring keyerr = Key;
+					throw BaseException(
+						L"オブジェクトが無効です",
+						keyerr,
+						L"Stage::GetSharedGameObject()"
+					);
+				}
+			}
+			return it->second.lock();
+		}
+		else {
+			//指定の名前が見つからなかった
+			if (ExceptionActive) {
+				//例外発生
+				wstring keyerr = Key;
+				throw BaseException(
+					L"オブジェクトが見つかりません",
+					keyerr,
+					L"Stage::GetSharedGameObject()"
+				);
+			}
+		}
+		return nullptr;
+	}
+
+
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
+
+	shared_ptr<GameObject> Stage::GetSharedObject(const wstring& Key, bool ExceptionActive)const {
+		shared_ptr<GameObject> Ptr = GetSharedGameObjectEx(Key, ExceptionActive);
+		return Ptr;
+	}
+
+
+	void Stage::SetSharedGameObject(const wstring& Key, const shared_ptr<GameObject>& Ptr) {
+		map<const wstring, weak_ptr<GameObject> >::iterator it;
+		//重複キーの検査
+		it = pImpl->m_SharedMap.find(Key);
+		if (it != pImpl->m_SharedMap.end()) {
+			//既に存在した
+			//例外発生
+			wstring keyerr = Key;
+			throw BaseException(
+				L"同名のシェアオブジェクトがあります",
+				keyerr,
+				L"Stage::SetSharedGameObjectEx()"
+			);
+		}
+		else {
+			pImpl->m_SharedMap[Key] = Ptr;
+		}
+	}
+
+	shared_ptr<GameObjectGroup> Stage::CreateSharedObjectGroup(const wstring& Key) {
+		try {
+			map<const wstring, shared_ptr<GameObjectGroup> >::iterator it;
+			//重複キーの検査
+			it = pImpl->m_SharedGroupMap.find(Key);
+			if (it != pImpl->m_SharedGroupMap.end()) {
+				//既に存在した
+				//例外発生
+				wstring keyerr = Key;
+				throw BaseException(
+					L"同名のシェアオブジェクト配列があります",
+					keyerr,
+					L"Stage::CreateSharedObjectGroup()"
+				);
+			}
+			else {
+				auto Ptr = ObjectFactory::Create<GameObjectGroup>();
+				pImpl->m_SharedGroupMap[Key] = Ptr;
+				return Ptr;
+			}
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	shared_ptr<GameObjectGroup> Stage::GetSharedObjectGroup(const wstring& Key, bool ExceptionActive)const {
+		//重複キーの検査
+		auto it = pImpl->m_SharedGroupMap.find(Key);
+		if (it != pImpl->m_SharedGroupMap.end()) {
+			//ペアのsecondを返す
+			return it->second;
+		}
+		else {
+			//指定の名前が見つからなかった
+			if (ExceptionActive) {
+				//例外発生
+				wstring keyerr = Key;
+				throw BaseException(
+					L"指定のキーが見つかりません",
+					keyerr,
+					L"Stage::GetSharedObjectGroup() const"
+				);
+			}
+		}
+		return nullptr;
+	}
+
+	void Stage::SetSharedObjectGroup(const wstring& Key, const shared_ptr<GameObjectGroup>& NewPtr) {
+		//重複キーの検査
+		auto it = pImpl->m_SharedGroupMap.find(Key);
+		if (it != pImpl->m_SharedGroupMap.end()) {
+			//例外発生
+			wstring keyerr = Key;
+			throw BaseException(
+				L"同名のシェアオブジェクト配列があります",
+				keyerr,
+				L"Stage::SetSharedObjectGroup()"
+			);
+		}
+		else {
+			//指定の名前が見つからなかった
+			//登録できる
+			pImpl->m_SharedGroupMap[Key] = NewPtr;
+		}
+	}
+
+
+	vector< shared_ptr<Stage> >& Stage::GetChileStageVec() {
+		return pImpl->m_ChildStageVec;
+	}
+	void Stage::AddChileStageBase(const shared_ptr<Stage>& ChildStage) {
+		pImpl->m_ChildStageVec.push_back(ChildStage);
+		ChildStage->SetParentStage(GetThis<Stage>());
+	}
+
+	shared_ptr<Stage> Stage::GetParentStage() const {
+		if (!pImpl->m_ParentStage.expired()) {
+			return  pImpl->m_ParentStage.lock();
+		}
+		return nullptr;
+	}
+	void Stage::SetParentStage(const shared_ptr<Stage>& ParentStage) {
+		pImpl->m_ParentStage = ParentStage;
+	}
+
 
 	void Stage::SetView(const shared_ptr<ViewBase>& v) {
 		pImpl->m_ViewBase = v;
@@ -287,6 +612,11 @@ namespace basecross {
 	}
 
 
+	//アクセサ
+	bool Stage::IsUpdateActive() const { return pImpl->m_UpdateActive; }
+	bool Stage::GetUpdateActive() const { return pImpl->m_UpdateActive; }
+	void Stage::SetUpdateActive(bool b) { pImpl->m_UpdateActive = b; }
+
 
 
 
@@ -305,13 +635,81 @@ namespace basecross {
 				ptr->OnUpdate();
 			}
 		}
+		//自身の更新1
+		if (IsUpdateActive()) {
+			OnUpdate();
+		}
 		//配置オブジェクトのコンポーネント更新1
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				ptr->ComponentUpdate();
 			}
 		}
+		//衝突判定の更新（ステージから呼ぶ）
+		UpdateCollision();
+		//衝突による重力の変化の更新
+		UpdateCollisionGravity();
+		//自身のビューをアップデート
+		if (IsUpdateActive() && pImpl->m_ViewBase) {
+			pImpl->m_ViewBase->OnUpdate();
+		}
+		//衝突判定のメッセージ発行（ステージから呼ぶ）
+		UpdateMessageCollision();
+		//配置オブジェクトのコンポーネント更新3
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->OnLastUpdate();
+			}
+		}
+		//自身の更新3
+		if (IsUpdateActive()) {
+			OnLastUpdate();
+		}
+
+		//コリジョンのリセット
+		for (auto ptr : GetGameObjectVec()) {
+			ptr->CollisionReset();
+		}
+
+
+		//子供ステージの更新
+		for (auto PtrChileStage : GetChileStageVec()) {
+			PtrChileStage->UpdateStage();
+		}
 	}
+
+	//衝突判定の更新（ステージから呼ぶ）
+	void Stage::UpdateCollision() {
+		//衝突判定チェック
+		//配置オブジェクトの衝突チェック
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->CollisionChk();
+			}
+		}
+	}
+
+	void Stage::UpdateCollisionGravity() {
+		//配置オブジェクトの衝突重力更新チェック
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->CollisionGravityChk();
+			}
+		}
+
+	}
+
+	void Stage::UpdateMessageCollision() {
+		//配置オブジェクトの衝突メッセージ発行
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->ToMessageCollision();
+			}
+		}
+
+	}
+
+
 
 	void Stage::DrawShadowmapStage() {
 		for (auto ptr : pImpl->m_GameObjectVec) {
