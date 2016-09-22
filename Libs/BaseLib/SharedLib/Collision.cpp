@@ -27,9 +27,6 @@ namespace basecross {
 
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
 
-
-		IsHitAction m_IsHitAction;
-
 		float m_EscapeSpanMin;
 		float m_EscapeAlignPlus;
 		Impl() :
@@ -38,7 +35,6 @@ namespace basecross {
 			m_PostEventActive(false),
 			m_PostDispatchTime(0),
 			m_EventString(L"CollisionEvent"),
-			m_IsHitAction(IsHitAction::AutoOnObjectRepel),
 			m_IsOnObject(false)
 		{
 		}
@@ -86,8 +82,10 @@ namespace basecross {
 						//相手のCollisionが無効
 						continue;
 					}
-					//衝突判定
-					CollisionTestBase(DestCollisionPtr);
+					if (!OnObjectTestBase(DestCollisionPtr)) {
+						//相手に乗ってなければ衝突判定
+						CollisionTestBase(DestCollisionPtr);
+					}
 				}
 			}
 		}
@@ -150,6 +148,7 @@ namespace basecross {
 
 
 	void Collision::CollisionTestBase(const shared_ptr<Collision>& DestColl) {
+
 		auto DestCollisionSpherePtr = dynamic_pointer_cast<CollisionSphere>(DestColl);
 		auto DestCollisionCapsulePtr = dynamic_pointer_cast<CollisionCapsule>(DestColl);
 		auto DestCollisionObbPtr = dynamic_pointer_cast<CollisionObb>(DestColl);
@@ -160,10 +159,7 @@ namespace basecross {
 			CollisionTest(DestCollisionCapsulePtr);
 		}
 		else if (DestCollisionObbPtr) {
-			if (!OnObjectTest(DestCollisionObbPtr)) {
-				CollisionTest(DestCollisionObbPtr);
-			}
-
+			CollisionTest(DestCollisionObbPtr);
 		}
 	}
 
@@ -223,7 +219,6 @@ namespace basecross {
 		return Ret;
 	}
 	SPHERE CollisionSphere::GetBeforeSphere() const {
-
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
 		Matrix4X4 MatBase;
 		MatBase.Scaling(pImpl->m_MakedDiameter, pImpl->m_MakedDiameter, pImpl->m_MakedDiameter);
@@ -235,7 +230,27 @@ namespace basecross {
 
 
 	void CollisionSphere::SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl) {
-
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		if (PtrGravity) {
+			//オブジェクトの上に乗った
+			SPHERE  SrcSp = GetSphere();
+			SPHERE  DestSp = DestColl->GetSphere();
+			//自分と相手の中心同士の法線を求める
+			Vector3 RotDevY = SrcSp.m_Center - DestSp.m_Center;
+			RotDevY.Normalize();
+			Vector3 RotDev;
+			if (RotDevY.x == 0 && RotDevY.z == 0) {
+				RotDev = Vector3(0, 0, 0);
+			}
+			else {
+				RotDevY *= (PtrGravity->GetDefaultGravity().Length() * RotDevY.y);
+				RotDev = PtrGravity->GetDefaultGravity() + RotDevY;
+			}
+			PtrGravity->SetGravity(RotDev);
+			PtrGravity->SetGravityVelocityZero();
+		}
 	}
 	void CollisionSphere::SetDestRotGravity(const shared_ptr<CollisionCapsule>& DestColl) {
 
@@ -266,8 +281,21 @@ namespace basecross {
 
 
 	bool CollisionSphere::OnObjectTest(const shared_ptr<CollisionSphere>& DestColl) {
-		return false;
-
+		SPHERE SrcSphere = GetSphere();
+		SPHERE  DestSphere = DestColl->GetSphere();
+		auto IsHit = HitTest::SPHERE_SPHERE(SrcSphere, DestSphere);
+		auto Len = Vector3EX::Length(SrcSphere.m_Center - DestSphere.m_Center);
+		auto MaxLen = (SrcSphere.m_Radius + DestSphere.m_Radius) * 1.1f;
+		auto YSpan = SrcSphere.m_Center.y - DestSphere.m_Center.y;
+		if (!IsHit && YSpan >= 0.0f && Len <= MaxLen) {
+			//乗っている
+			SetOnObject(true);
+			return true;
+		}
+		else {
+			//乗ってない
+			return false;
+		}
 	}
 	bool CollisionSphere::OnObjectTest(const shared_ptr<CollisionCapsule>& DestColl) {
 		return false;
@@ -283,8 +311,7 @@ namespace basecross {
 		BottomPoint.Transform(DestObb.GetRotMatrix());
 		BottomPoint += SrcSphere.m_Center;
 		float CenterToRetLen = Vector3EX::Length(SrcSphere.m_Center - Ret);
-
-		if (!IsHit && Vector3EX::Length(Ret - BottomPoint) < (SrcSphere.m_Radius / 1.414f)) {
+		if (!IsHit && Vector3EX::Length(Ret - BottomPoint) < (SrcSphere.m_Radius * 0.2f)) {
 			//乗っている
 			SetOnObject(true);
 			return true;
@@ -316,16 +343,23 @@ namespace basecross {
 		if (HitTest::CollisionTestSphereSphere(SrcBeforSphere, SpanVelocity, DestSphere, 0, ElapsedTime, HitTime)) {
 			//もしFixでなければ衝突前まで戻る
 			if (!IsFixed()) {
+				AddHitObject(DestColl->GetGameObject());
 				BackToBefore(HitTime);
+				AfterCollision(DestColl, HitTime);
 			}
 			//もし相手がFixでなければ相手側も衝突前まで戻る
 			if (!DestColl->IsFixed()) {
+				DestColl->AddHitObject(GetGameObject());
 				DestColl->BackToBefore(HitTime);
+				DestColl->AfterCollision(GetThis<CollisionSphere>(), HitTime);
 			}
 			//相手がFixなら自己退避だけでは衝突している可能性があるので判定をしてエスケープ処理
 			else {
 				CollisionEscape(DestColl);
 			}
+		}
+		else {
+			OnObjectTest(DestColl);
 		}
 	}
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
@@ -389,7 +423,43 @@ namespace basecross {
 	}
 
 	void CollisionSphere::AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime) {
-
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		//衝突後の残った時間で、重力で消された分を移動
+		auto LastTime = ElapsedTime - SpanTime;
+		bool OnObj = false;
+		if (PtrGravity) {
+			OnObj = OnObjectTest(DestColl);
+			if (OnObj) {
+				SetDestRotGravity(DestColl);
+				PtrGravity->SetGravityVelocityZero();
+			}
+			else {
+				PtrGravity->SetGravityDefault();
+				PtrGravity->SetGravityVelocityZero();
+			}
+		}
+		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
+		if (PtrRigidbody) {
+			if (OnObj) {
+				switch (PtrRigidbody->GetIsHitAction()) {
+				case IsHitAction::Repel:
+					PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionSphere>(), DestColl);
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				case IsHitAction::AutoOnObjectRepel:
+				case IsHitAction::Stop:
+				case IsHitAction::Through:
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				}
+			}
+			else {
+				PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionSphere>(), DestColl);
+				PtrRigidbody->UpdateFromTime(LastTime);
+			}
+		}
 	}
 	void CollisionSphere::AfterCollision(const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) {
 
@@ -415,10 +485,21 @@ namespace basecross {
 		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigidbody) {
 			if (OnObj) {
-				PtrRigidbody->UpdateFromTime(LastTime);
+				switch (PtrRigidbody->GetIsHitAction()) {
+				case IsHitAction::Repel:
+					PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionSphere>(), DestColl);
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				case IsHitAction::AutoOnObjectRepel:
+				case IsHitAction::Stop:
+				case IsHitAction::Through:
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				}
 			}
 			else {
-				PtrRigidbody->SetVelocity(0, 0, 0);
+				PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionSphere>(), DestColl);
+				PtrRigidbody->UpdateFromTime(LastTime);
 			}
 		}
 
@@ -651,7 +732,30 @@ namespace basecross {
 	}
 
 	void CollisionObb::SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl) {
-
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		if (PtrGravity) {
+			//オブジェクトの上に乗った
+			OBB  SrcObb = GetObb();
+			SPHERE  DestSp = DestColl->GetSphere();
+			//自分と相手との最近接点を求める
+			Vector3 Ret;
+			HitTest::SPHERE_OBB(DestSp, SrcObb, Ret);
+			//最近接点と相手の中心同士の法線を求める
+			Vector3 RotDevY = Ret - DestSp.m_Center;
+			RotDevY.Normalize();
+			Vector3 RotDev;
+			if (RotDevY.x == 0 && RotDevY.z == 0) {
+				RotDev = Vector3(0, 0, 0);
+			}
+			else {
+				RotDevY *= (PtrGravity->GetDefaultGravity().Length() * RotDevY.y);
+				RotDev = PtrGravity->GetDefaultGravity() + RotDevY;
+			}
+			PtrGravity->SetGravity(RotDev);
+			PtrGravity->SetGravityVelocityZero();
+		}
 	}
 	void CollisionObb::SetDestRotGravity(const shared_ptr<CollisionCapsule>& DestColl) {
 
@@ -662,8 +766,23 @@ namespace basecross {
 
 
 	bool CollisionObb::OnObjectTest(const shared_ptr<CollisionSphere>& DestColl) {
-		return false;
-
+		OBB  SrcObb = GetObb();
+		SPHERE  DestSphere = DestColl->GetSphere();
+		//自分と相手との最近接点を求める
+		Vector3 Ret;
+		auto IsHit = HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret);
+		auto Len = Vector3EX::Length(Ret - DestSphere.m_Center);
+		auto MaxLen = DestSphere.m_Radius * 1.1f;
+		auto YSpan = (SrcObb.m_Center.y - SrcObb.m_Size.y) - DestSphere.m_Center.y;
+		if (!IsHit && YSpan >= 0.0f && Len <= MaxLen) {
+			//乗っている
+			SetOnObject(true);
+			return true;
+		}
+		else {
+			//乗ってない
+			return false;
+		}
 	}
 	bool CollisionObb::OnObjectTest(const shared_ptr<CollisionCapsule>& DestColl) {
 		return false;
@@ -677,37 +796,240 @@ namespace basecross {
 
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//移動以外変化なし
+		OBB SrcObb = GetObb();
+		OBB SrcBeforeObb = GetBeforeObb();
+		Vector3 SrcVelocity = SrcObb.m_Center - SrcBeforeObb.m_Center;
+		SrcVelocity /= ElapsedTime;
+		//相手
+		SPHERE DestSphere = DestColl->GetSphere();
+		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
+		Vector3 DestVelocity = DestSphere.m_Center - DestBeforeSphere.m_Center;
+		DestVelocity /= ElapsedTime;
+		//SPHEREとOBBの扱いが逆になる
+		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
+		float HitTime = 0;
+		if (HitTest::CollisionTestSphereObb(DestBeforeSphere, SpanVelocity, SrcObb, 0, ElapsedTime, HitTime)) {
+			//もしFixでなければ衝突情報の登録
+			if (!IsFixed()) {
+				AddHitObject(DestColl->GetGameObject());
+				BackToBefore(HitTime);
+				AfterCollision(DestColl, HitTime);
 
+			}
+			//もし相手がFixでなければ衝相手側に突情報の登録
+			if (!DestColl->IsFixed()) {
+				DestColl->AddHitObject(GetGameObject());
+				DestColl->BackToBefore(HitTime);
+				DestColl->AfterCollision(GetThis<CollisionObb>(), HitTime);
+			}
+			//相手がFixなら自己退避だけでは衝突している可能性があるので判定をしてエスケープ処理
+			else {
+				CollisionEscape(DestColl);
+			}
+		}
+		else {
+			OnObjectTest(DestColl);
+		}
 	}
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
 
 	}
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//移動以外変化なし
+		OBB SrcObb = GetObb();
+		OBB SrcBeforObb = GetBeforeObb();
+		Vector3 SrcVelocity = SrcObb.m_Center - SrcBeforObb.m_Center;
+		SrcVelocity /= ElapsedTime;
+		//相手
+		OBB DestObb = DestColl->GetObb();
+		OBB DestBeforeObb = DestColl->GetBeforeObb();
+		Vector3 DestVelocity = DestObb.m_Center - DestBeforeObb.m_Center;
+		DestVelocity /= ElapsedTime;
+
+		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		float HitTime = 0;
+		if (HitTest::CollisionTestObbObb(SrcBeforObb, SpanVelocity, DestObb, 0, ElapsedTime, HitTime)) {
+			//もしFixでなければ衝突情報の登録
+			if (!IsFixed()) {
+				AddHitObject(DestColl->GetGameObject());
+				BackToBefore(HitTime);
+				AfterCollision(DestColl, HitTime);
+
+			}
+			//もし相手がFixでなければ衝相手側に突情報の登録
+			if (!DestColl->IsFixed()) {
+				DestColl->AddHitObject(GetGameObject());
+				DestColl->BackToBefore(HitTime);
+				DestColl->AfterCollision(GetThis<CollisionObb>(), HitTime);
+			}
+			//相手がFixなら自己退避だけでは衝突している可能性があるので判定をしてエスケープ処理
+			else {
+				CollisionEscape(DestColl);
+			}
+		}
+		else {
+			OnObjectTest(DestColl);
+		}
+
 
 	}
 
 	void CollisionObb::BackToBefore(float SpanTime) {
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		if (SpanTime <= 0) {
+			SpanTime = 0;
+		}
+		if (SpanTime >= ElapsedTime) {
+			SpanTime = ElapsedTime;
+		}
+		//球の場合は、すべて移動以外変化なしとする
+		OBB SrcObb = GetObb();
+		OBB SrcBeforObb = GetBeforeObb();
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		Vector3 Pos = Lerp::CalculateLerp(SrcBeforObb.m_Center, SrcObb.m_Center, 0, ElapsedTime, SpanTime, Lerp::Linear);
+		PtrTransform->SetPosition(Pos);
+
 	}
 
 	void CollisionObb::AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime) {
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		//衝突後の残った時間で、重力で消された分を移動
+		auto LastTime = ElapsedTime - SpanTime;
+		bool OnObj = false;
+		if (PtrGravity) {
+			OnObj = OnObjectTest(DestColl);
+			if (OnObj) {
+				SetDestRotGravity(DestColl);
+				PtrGravity->SetGravityVelocityZero();
+			}
+			else {
+				PtrGravity->SetGravityDefault();
+				PtrGravity->SetGravityVelocityZero();
+			}
+		}
+		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
+		if (PtrRigidbody) {
+			if (OnObj) {
+				switch (PtrRigidbody->GetIsHitAction()) {
+				case IsHitAction::Repel:
+					PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionObb>(), DestColl);
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				case IsHitAction::AutoOnObjectRepel:
+				case IsHitAction::Stop:
+				case IsHitAction::Through:
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				}
+			}
+			else {
+				PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionObb>(), DestColl);
+				PtrRigidbody->UpdateFromTime(LastTime);
+			}
+		}
+
 
 	}
 	void CollisionObb::AfterCollision(const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) {
 
 	}
 	void CollisionObb::AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime) {
-
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		//衝突後の残った時間で、重力で消された分を移動
+		auto LastTime = ElapsedTime - SpanTime;
+		bool OnObj = false;
+		if (PtrGravity) {
+			OnObj = OnObjectTest(DestColl);
+			if (OnObj) {
+				SetDestRotGravity(DestColl);
+				PtrGravity->SetGravityVelocityZero();
+			}
+			else {
+				PtrGravity->SetGravityDefault();
+				PtrGravity->SetGravityVelocityZero();
+			}
+		}
+		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
+		if (PtrRigidbody) {
+			if (OnObj) {
+				switch (PtrRigidbody->GetIsHitAction()) {
+				case IsHitAction::Repel:
+					PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionObb>(), DestColl);
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				case IsHitAction::AutoOnObjectRepel:
+				case IsHitAction::Stop:
+				case IsHitAction::Through:
+					PtrRigidbody->UpdateFromTime(LastTime);
+					break;
+				}
+			}
+			else {
+				PtrRigidbody->IsHitChangeVelocity(GetThis<CollisionObb>(), DestColl);
+				PtrRigidbody->UpdateFromTime(LastTime);
+			}
+		}
 	}
 
 
 
 	void CollisionObb::CollisionEscape(const shared_ptr<CollisionSphere>& DestColl) {
+		OBB SrcObb = GetObb();
+		SPHERE DestSphere = DestColl->GetSphere();
+		Vector3 Ret;
+		bool Ishit = HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret);
+		if (Ishit) {
+			Vector3 NowSpan = Ret - DestSphere.m_Center;
+			Vector3 NewSpan = NowSpan;
+			NewSpan.Normalize();
+			NewSpan *= (DestSphere.m_Radius * 1.05f);
+			auto MoveSpan = NewSpan - NowSpan;
+			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+			auto Pos = PtrTransform->GetPosition();
+			Pos += MoveSpan;
+			PtrTransform->SetPosition(Pos);
+		}
+
 
 	}
 	void CollisionObb::CollisionEscape(const shared_ptr<CollisionCapsule>& DestColl) {
 
 	}
 	void CollisionObb::CollisionEscape(const shared_ptr<CollisionObb>& DestColl) {
+		OBB SrcObb = GetObb();
+		OBB DestObb = DestColl->GetObb();
+		bool Ishit = HitTest::OBB_OBB(SrcObb, DestObb);
+		if (Ishit) {
+			Vector3 Ret;
+			//SrcのOBBとDestの最近接点を得る
+			HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, Ret);
+			Vector3 Normal = SrcObb.m_Center - Ret;
+			Normal.Normalize();
+			//Normalは退避方向
+			Normal *= 0.01f;
+			SrcObb.m_Center += Normal;
+			UINT count = 0;
+			while (HitTest::OBB_OBB(SrcObb, DestObb)) {
+				SrcObb.m_Center += Normal;
+				count++;
+				if (count >= 50) {
+					break;
+				}
+			}
+			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+			PtrTransform->SetPosition(SrcObb.m_Center);
+		}
+
 
 	}
 

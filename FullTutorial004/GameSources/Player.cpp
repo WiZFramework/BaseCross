@@ -23,14 +23,17 @@ namespace basecross{
 	//初期化
 	void Player::OnCreate() {
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
+		auto Ptr = GetComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(0, 0.125f, 0);
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		PtrRedid->SetIsHitAction(IsHitAction::Stop);
+		//横部分のみ反発
+		PtrRedid->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		//反発係数は0.5（半分）
+		PtrRedid->SetReflection(0.5f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 
@@ -52,9 +55,6 @@ namespace basecross{
 
 		//透明処理
 		SetAlphaActive(true);
-		//0番目のビューのカメラを得る
-		//LookAtCameraである
-		
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
 		if (PtrCamera) {
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
@@ -115,6 +115,27 @@ namespace basecross{
 	}
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {
+		
+		auto PtrCol = GetComponent<CollisionSphere>();
+		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
+		auto GVec = Group->GetGroupVector();
+		auto PtrTrans = GetComponent<Transform>();
+		for (auto& v : GVec) {
+			auto shptr = dynamic_pointer_cast<MoveBox>(v.lock());
+			if (shptr) {
+				auto ParCol = shptr->GetComponent<CollisionObb>();
+				if (PtrCol->OnObjectTest(ParCol)) {
+					//移動ボックスに乗ってる
+					auto ParVelo = shptr->GetComponent<Action>()->GetVelocity();
+					float ElapsedTime = App::GetApp()->GetElapsedTime();
+					ParVelo *= ElapsedTime;
+					auto Pos = PtrTrans->GetPosition();
+					Pos += ParVelo;
+					PtrTrans->SetPosition(Pos);
+					return;
+				}
+			}
+		}
 	}
 
 	//モーションを実装する関数群

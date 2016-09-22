@@ -79,7 +79,6 @@ namespace basecross {
 	//	用途: コンポーネントImplクラス
 	//--------------------------------------------------------------------------------------
 	struct Transform::Impl {
-		weak_ptr<GameObject> m_Parent;	//親ゲームオブジェクト
 		bool m_Init{ false };	//初期化済みかどうか（1回目のUpdateで、Beforeに値を入れる）
 		//1つ前の変数
 		Vector3 m_BeforeScale;
@@ -203,35 +202,21 @@ namespace basecross {
 		return mat;
 	}
 
+	Vector3 Transform::GetVelocity() const {
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Vector3 Velocity = pImpl->m_Position - pImpl->m_BeforePosition;
+		Velocity /= ElapsedTime;
+		return Velocity;
+	}
+
+
 	void Transform::SetToBefore() {
 		pImpl->m_BeforeScale = pImpl->m_Scale;
 		pImpl->m_BeforePivot = pImpl->m_Pivot;
 		pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
 		pImpl->m_BeforePosition = pImpl->m_Position;
 	}
-
-	shared_ptr<GameObject> Transform::GetParent() const {
-		if (!pImpl->m_Parent.expired()) {
-			return pImpl->m_Parent.lock();
-		}
-		return nullptr;
-	}
-	void Transform::SetParent(const shared_ptr<GameObject>& Ptr) {
-		if (Ptr) {
-			if (!pImpl->m_Parent.expired()) {
-				ClearParent();
-			}
-			pImpl->m_Parent = Ptr;
-		}
-		else {
-			ClearParent();
-		}
-	}
-	void Transform::ClearParent() {
-		pImpl->m_Parent.reset();
-	}
-
-
 
 	//操作
 	void Transform::OnUpdate() {
