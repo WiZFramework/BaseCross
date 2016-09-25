@@ -127,7 +127,6 @@ namespace basecross {
 		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 
 		//テクスチャとサンプラーの設定
-		ID3D11ShaderResourceView* pNull[1] = { 0 };
 		pD3D11DeviceContext->PSSetShaderResources(0, 1, m_TextureResource->GetShaderResourceView().GetAddressOf());
 		ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
 		pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);

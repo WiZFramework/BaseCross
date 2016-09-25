@@ -61,7 +61,7 @@ namespace basecross {
 		ID3D11Buffer* pNullConstantBuffer = nullptr;
 		//頂点シェーダに渡す
 		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-		//ピクセルシェーダには渡さない（nullptrを渡す）
+		//ピクセルシェーダに渡す
 		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 		//シェーダの設定
 		pD3D11DeviceContext->VSSetShader(VSPCSprite::GetPtr()->GetShader(), nullptr, 0);

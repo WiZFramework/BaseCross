@@ -29,7 +29,7 @@
 　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
 　親クラスの<b>ObjectInterface</b>は<b>OnCreate()仮想関数</b>を持つインターフェイスクラスです。子クラスはこの仮想関数を実装しなければなりません。<b>ObjectInterface</b>は、自分自身のshared_ptrを作成できるクラスです。（つまりthisポインタのshared_ptr版）。このポインタはオブジェクト配置の時に、簡単に包含関係を作れますので、便利と思われます。<br />
 　一方、<b>ShapeInterfaceクラス</b>は<b>OnUpdate、OnDraw仮想関数</b>を持ちます。こちらは、<b>ObjectInterface</b>ほど重要度は高くありません。<b>OnUpdate、OnDraw仮想関数</b>を作成せずに実装することも可能です。<br />
-　さて、<b>TriangleObjectクラス</b>ん<b>OnCreate()関数</b>は以下のようになります。
+　さて、<b>TriangleObjectクラス</b>の<b>OnCreate()関数</b>は以下のようになります。
 <div class="box1">
 <pre>
 void TriangleObject::OnCreate() {
@@ -296,7 +296,9 @@ void TriangleObject::OnDraw() {
 <hr>
 <!-- フッタ　-->
 <ul class="foot_navi">
+<li><a href="00_00.html">前へ</a></li>
 <li><a href="index.html">目次</a></li>
+<li><a href="00_02.html">次へ</a></li>
 </ul>
 <!-- /フッタ　-->
 

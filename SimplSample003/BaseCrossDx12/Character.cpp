@@ -134,8 +134,9 @@ namespace basecross {
 		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
 			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
 		}
-
+		//ビューポートのセット
 		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		//シザー矩形（クリップ矩形）のセット
 		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
 
 		//レンダーターゲットビューのハンドルを取得
@@ -144,8 +145,9 @@ namespace basecross {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle = Dev->GetDsvHandle();
 		//取得したハンドルをセット
 		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
+		//描画方法のセット（三角形リスト）
 		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//頂点バッファのセット
 		m_CommandList->IASetVertexBuffers(0, 1, &m_SquareMesh->GetVertexBufferView());
 		//インデックスバッファをセット
 		m_CommandList->IASetIndexBuffer(&m_SquareMesh->GetIndexBufferView());
