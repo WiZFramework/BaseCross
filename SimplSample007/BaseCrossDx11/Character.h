@@ -8,16 +8,39 @@
 
 namespace basecross {
 
+	//--------------------------------------------------------------------------------------
+	///	PTスプライト描画
+	//--------------------------------------------------------------------------------------
+	class PTSpriteDraw : public ObjectInterface {
+		bool m_Trace;					///<透明処理するかどうか
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
+	public:
+		PTSpriteDraw(const wstring& TextureFileName, bool Trace);
+		virtual ~PTSpriteDraw() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override;
+		///描画処理
+		void DrawObject(const shared_ptr<MeshResource>& Mesh, DiffuseSpriteConstantBuffer& CBuff);
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	壁スプライト
 	//--------------------------------------------------------------------------------------
 	class WallSprite : public ObjectInterface, public ShapeInterface {
+		//PTスプライト描画
+		shared_ptr<PTSpriteDraw> m_PTSpriteDraw;
 		//メッシュ
 		shared_ptr<MeshResource> m_SquareMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
-		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
 		Vector2 m_Scale;				///<スケーリング
 		Vector2 m_Pos;				///<位置
 	public:
@@ -65,13 +88,14 @@ namespace basecross {
 	///	四角形スプライト
 	//--------------------------------------------------------------------------------------
 	class SquareSprite : public ObjectInterface, public ShapeInterface {
+		//PTスプライト描画
+		shared_ptr<PTSpriteDraw> m_PTSpriteDraw;
 		//メッシュ
 		shared_ptr<MeshResource> m_SquareMesh;
 		//バックアップしておく頂点データ
 		vector<VertexPositionTexture> m_BackupVertices;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
-		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
 		Vector2 m_Scale;				///<スケーリング
 		Vector2 m_Pos;				///<位置
 		float m_TotalTime;

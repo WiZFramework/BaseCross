@@ -1,0 +1,252 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>００７．頂点の変更とテクスチャラッピング</h3>
+　このサンプルは<b>SimplSample007</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0007a.png" width="80%"/>
+<p>図0007a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Z1yCGjLPiaU?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　今項のサンプルのポイントは<b>同じ描画を複数のオブジェクトで行う場合</b>のサンプルです。例えばテクスチャやシェーダに渡すパラメータのみが違う、別のオブジェクトの場合、描画処理は１つのクラスで行ったほうが、同じようなコードをいくつも書く必要がなくなります。<br />
+　また、<b>頂点の変更</b>の方法も今項のテーマと言えます。<b>ポジション</b>を動的に変更する場合もありますが、一番ポピュラーなのは<b>テクスチャUV値の変更</b>でしょう。上記動画を見ればわかる通り、中心にあるオブジェクトは、テクスチャが流れるように描画されます。これは<b>動的にテクスチャUV値の変更</b>を行っています。<br />
+<br />
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionTexture型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
+　またテクスチャも描画します。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、それぞれの四角形を個別に更新する方法が記述されています。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　今項で表示するオブジェクトは2種類です。すなわち、奥の壁になってるオブジェクトと、中心にあるテクスチャが流れるオブジェクトです。<br />
+　前者は<b>WallSpriteクラス</b>です。後者は<b>SquareSpriteクラス</b>です。どちらも、<b>頂点とテクスチャUV</b>を持つ<b>VertexPositionTexture型</b>の頂点を持っています。コンスタントバッファも同じ型です。<br />
+　描画方法が同じなので、<b>描画クラス</b>を別に作成して各オブジェクトに、メンバとしてインスタンスを持たせます。そのクラスが<b>PTSpriteDrawクラス</b>ということになります。<br />
+　<b>Dx12版の初期化</b>は<b>頂点の作成</b>と<b>DX12リソースの初期化</b>が主な仕事です。前者は各オブジェクトで行い、後者は描画クラスがあるので、そちらのほうで初期化を行います。<br />
+　頂点の初期化処理は、<b>WallSpriteクラス</b>は以下のようになってます。
+<div class="box1">
+<pre>
+float HelfSize = 0.5f;
+//頂点配列(縦横10個ずつ表示)
+vector&lt;VertexPositionTexture> vertices = {
+    { VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), <span class="red">Vector2(0.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), <span class="red">Vector2(10, 0.0f)</span>) },
+    { VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), <span class="red">Vector2(0.0f, 10)</span>) },
+    { VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), <span class="red">Vector2(10, 10)</span>) },
+};
+//インデックス配列
+vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+//メッシュの作成（変更できない）
+m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+</pre>
+</div>
+　ここでテクスチャUV値の設定である、赤になっている部分を見てみましょう。この記述で<b>横に10個、縦に10個</b>テクスチャを連続して張り付ける設定になります。<br />
+<br />
+　<b>SquareSpriteクラスの頂点</b>は以下になります。
+<div class="box1">
+<pre>
+float HelfSize = 0.5f;
+//頂点配列
+m_BackupVertices = {
+    { VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), <span class="red">Vector2(0.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), <span class="red">Vector2(4.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), <span class="red">Vector2(0.0f, 1.0f)</span>) },
+    { VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), <span class="red">Vector2(4.0f, 1.0f)</span>) },
+};
+//インデックス配列
+vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+//メッシュの作成（変更できる）
+m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, <span class="red">true</span>);
+</pre>
+</div>
+　この頂点は<b>WallSpriteクラス</b>とは少し違います。まず<b>テクスチャUV値（初期値）</b>ですが、<b>縦は1.0横は4.0</b>に並ぶように作成します。また、頂点を変更するので<b>頂点のバックアップ</b>を作成しておく必要があります。ですので、ローカル上に頂点の配列を作成するのではなく、<b>m_BackupVertices</b>というメンバ変数に作成します。インデックスのほうは変更しないので、そのままローカル上で問題ありません。<br />
+　また、メッシュリソース作成時に<b>頂点変更できる</b>というフラグを設定して作成します。<br />
+<br />
+<h4>■ルートシグネチャ作成■</h4>
+　<b>ルートシグネチャ</b>は<b>PTSpriteDraw::CreateRootSignature()関数</b>で作成します。前項と同じ内容です。<br />
+<br />
+<h4>■デスクプリタヒープ作成■</h4>
+　<b>PTSpriteDraw::CreateDescriptorHeap()関数</b>で作成します。前項と同じ内容です。<br />
+<br />
+<h4>■サンプラー作成■</h4>
+　<b>サンプラー</b>は<b>PTSpriteDraw::CreateSampler()関数</b>で作成します。今項は<b>ラッピング（包み込む）</b>設定で行います。以下がその設定です。
+<div class="box1">
+<pre>
+void PTSpriteDraw::CreateSampler() {
+    auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+    //ラッピングサンプラー
+    DynamicSampler::CreateSampler(SamplerState::LinearWrap, SamplerDescriptorHandle);
+}
+</pre>
+</div>
+<br />
+<h4>■シェーダーリソースビュー作成■</h4>
+　<b>PTSpriteDraw::CreateShaderResourceView()関数</b>で行います。前項と同じです。<b>PTSpriteDrawクラス</b>にはあらかじめテクスチャリソースを初期化しておく必要があります。それは<b>PTSpriteDraw::OnCreate()関数</b>で<b>Dx12リソース作成前</b>に作成してます。<br />
+<br />
+<h4>■コンスタントバッファ作成■</h4>
+　<b>PTSpriteDraw::CreateConstantBuffer()関数</b>で行います。前項と同じです。<br />
+<br />
+<h4>■パイプラインステート作成■</h4>
+　<b>PTSpriteDraw::CreatePipelineState()関数</b>で行います。前項と同じです。<br />
+br />
+<h4>■コマンドリスト作成■</h4>
+　<b>PTSpriteDraw::CreateCommandList()関数</b>です。デフォルト処理です。<br />
+<br />
+<h4>■コンスタントバッファの更新■</h4>
+　<b>PTSpriteDraw::UpdateConstantBuffer()関数</b>です。パラメータに<b>DiffuseSpriteConstantBuffer& CBuff</b>を渡すようになってます。<br />
+<br />
+<h4>■更新処理■</h4>
+　このサンプルの更新処理は<b>頂点の変更</b>です。<b>SquareSpriteクラス</b>のみ頂点を変更します。実装は<b>SquareSprite::UpdateVertex()関数</b>で行います。
+<div class="box1">
+<pre>
+void SquareSprite::UpdateVertex(float ElapsedTime) {
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime > 1.0f) {
+        m_TotalTime = 0;
+    }
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //頂点の変更
+    <span class="red">vector&lt;VertexPositionTexture> new_vertices;
+    for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
+        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        if (UV.x == 0.0f) {
+            UV.x = m_TotalTime;
+        }
+        else if (UV.x == 4.0f) {
+            UV.x += m_TotalTime;
+        }
+        VertexPositionTexture v = VertexPositionTexture(
+            m_BackupVertices[i].position,
+            UV
+        );
+        new_vertices.push_back(v);
+    }</span>
+    //メッシュの頂点の変更
+    m_SquareMesh->UpdateVirtex(new_vertices);
+}
+</pre>
+</div>
+　赤になっているところが頂点の変更です。バックアップの頂点と、変更箇所（UV値）を合わせて、<b>new_vertices配列</b>を作成します。最後に<b>m_SquareMesh->UpdateVirtex()関数</b>に渡します。<br />
+<br />
+<h4>■描画処理■</h4>
+　描画は<b>PTSpriteDraw::DrawObject()関数</b>で行います。この関数は<b>メッシュリソース</b>を引数に持ちます。コンスタントバッファの更新はその前に行っておきます。以下が今回の注目点です。
+<div class="box1">
+<pre>
+void PTSpriteDraw::DrawObject(const shared_ptr&lt;MeshResource>& Mesh) {
+    //中略
+    Mesh->UpdateResources&lt;VertexPositionTexture>(m_CommandList);
+    //中略
+}
+</pre>
+</div>
+　ここでは、メッシュの<b>UpdateResources()関数</b>を呼び出しています。ここの関数は、更新時に呼び出した<b>UpdateVirtex()関数</b>とは違います。メッシュリソースとテクスチャリソースは動的に中身を変更できるわけですが、その変更と、描画直前に呼び出す<b>UpdateResources()関数</b>は別物です。前者はコマンドリストがなくても実行できます。つまりメッシュリソースの内部に保持してあるバッファを更新するだけです。しかし、<b>UpdateResources()関数</b>はそのバッファとシェーダに渡すGPU向けリソースを結びつけます。そのため、描画直前に、メッシュと（必要であればテクスチャも）<b>UpdateResources()関数</b>を呼ぶ必要があります。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<h3>【Dx11版解説】</h3>
+　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+　このサンプルでは、<b>Dx12版</b>同様、<b>PTSpriteDraw</b>という描画用のクラスを作成します。背景の壁、そして中心の流れるテクスチャ両方とも同じシェーダで実装可能なので、描画処理を1箇所にまとめてあります。
+<br />
+<h4>■初期化■</h4>
+　初期化は、<b>頂点の初期化、インデックスの初期化</b>、があります。各オブジェクト側の初期化は<b>Dx12版</b>と変わりません。描画クラス<b>PTSpriteDraw</b>の初期化は、<b>Dx12リソース</b>のようなものはありませんので、テクスチャリソースの作成のみになります。
+<br />
+<h4>■更新処理■</h4>
+　更新は、流れるテクスチャのオブジェクトのみ、<b>頂点の更新</b>を行います。<b>SquareSprite::UpdateVertex()関数</b>です。
+<div class="box1">
+<pre>
+void SquareSprite::UpdateVertex(float ElapsedTime) {
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime > 1.0f) {
+        m_TotalTime = 0;
+    }
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+
+    //頂点の変更
+    <span class="red">//D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
+    D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
+    D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+    //頂点のマップ
+    if (FAILED(pD3D11DeviceContext->Map(m_SquareMesh->GetVertexBuffer().Get(), 
+        0, mapType, 0, &mappedBuffer))) {
+        // Map失敗
+        throw BaseException(
+            L"頂点のMapに失敗しました。",
+            L"if(FAILED(pID3D11DeviceContext->Map()))",
+            L"SquareObject::OnUpdate()"
+        );
+    }</span>
+    //頂点の変更
+    VertexPositionTexture* vertices
+        = (VertexPositionTexture*)mappedBuffer.pData;
+    for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
+        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        if (UV.x == 0.0f) {
+            UV.x = m_TotalTime;
+        }
+        else if (UV.x == 4.0f) {
+            UV.x += m_TotalTime;
+        }
+        vertices[i] = VertexPositionTexture(
+            m_BackupVertices[i].position,
+            UV
+        );
+
+    }
+    <span class="red">//アンマップ
+    pD3D11DeviceContext->Unmap(m_SquareMesh->GetVertexBuffer().Get(), 0);</span>
+}
+</pre>
+</div>
+　赤くなっているところが重要なわけですが、頂点バッファに<b>vertices</b>という変数（ポインタ）をマップして、その内容を書き換えます。書き換えが終わったらアンマップします。
+<br />
+<h4>■描画処理■</h4>
+　描画処理は<b>PTSpriteDraw::DrawObject()関数</b>で行います。引数にメッシュとコンスタントバッファ構造体の参照を渡します。描画処理では、そのパラメータに合わせて描画処理を行います。<b>壁オブジェクト</b>の描画と<b>流れるテクスチャオブジェクト</b>の描画と違いはありません。<br />
+<br />
+<h3>【まとめ】</h3>
+　今回は<b>同じシェーダで描画できるオブジェクト</b>を一つの描画クラスで描画する方法をサンプル化しました。<br />
+　これは<b>フルバージョン</b>における<b>描画コンポーネント</b>と同じような動きになります。<br  />
+　<b>Dx11にせよDx12にせよ</b>描画処理は、GPUに対していろんな設定（パイプライン設定）を行わなければいけないので、各オブジェクトごとに描画をしていたのでは同じようなコードをあちこちに書かなければならないので大変です。バグのもとにもなります。<br />
+　ですので<b>同じシェーダは同じ描画</b>という設計にしたほうが、シンプルになると思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_06.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="00_08.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

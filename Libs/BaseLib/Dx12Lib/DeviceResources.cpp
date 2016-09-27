@@ -398,6 +398,10 @@ namespace basecross {
 	void TextureResource::SetData(const vector<uint8_t>& data) {
 		pImpl->CopyData(data);
 	}
+	void TextureResource::UpdateTexture(const vector<uint8_t>& data) {
+		pImpl->CopyData(data);
+	}
+
 
 	//リソースの更新
 	void TextureResource::UpdateResources(const ComPtr<ID3D12GraphicsCommandList>& commandList) {

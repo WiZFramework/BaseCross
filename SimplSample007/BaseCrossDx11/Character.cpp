@@ -8,79 +8,35 @@
 
 namespace basecross {
 
-
 	//--------------------------------------------------------------------------------------
-	///	壁スプライト実体
+	///	PTスプライト描画
 	//--------------------------------------------------------------------------------------
-	WallSprite::WallSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos) :
-		ObjectInterface(),
-		ShapeInterface(),
+	PTSpriteDraw::PTSpriteDraw(const wstring& TextureFileName, bool Trace) :
 		m_TextureFileName(TextureFileName),
-		m_Trace(Trace),
-		m_Pos(StartPos)
+		m_Trace(Trace)
 	{}
-	WallSprite::~WallSprite() {}
-	void WallSprite::OnCreate() {
-		float HelfSize = 0.5f;
-		//頂点配列(縦横10個ずつ表示)
-		vector<VertexPositionTexture> vertices = {
-			{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(10, 0.0f)) },
-			{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 10)) },
-			{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(10, 10)) },
-		};
-		//インデックス配列
-		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
-		//メッシュの作成（変更できない）
-		m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+
+	void PTSpriteDraw::OnCreate() {
 		//テクスチャの作成
 		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-		//矩形の大きさ
-		float w = static_cast<float>(App::GetApp()->GetGameWidth());
-		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		m_Scale = Vector2(w, h);
 	}
 
-
-	void WallSprite::OnDraw() {
+	///描画処理
+	void PTSpriteDraw::DrawObject(const shared_ptr<MeshResource>& Mesh, DiffuseSpriteConstantBuffer& CBuff) {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
 
-		//行列の定義
-		Matrix4X4 World, Proj;
-		//ワールド行列の決定
-		World.AffineTransformation2D(
-			m_Scale,			//スケーリング
-			Vector2(0, 0),		//回転の中心（重心）
-			0,				//回転角度
-			m_Pos				//位置
-		);
-		//射影行列の決定
-		float w = static_cast<float>(App::GetApp()->GetGameWidth());
-		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.OrthographicLH(w, h, -1.0, 1.0f);
-		//行列の合成
-		World *= Proj;
-
-		//コンスタントバッファの準備
-		DiffuseSpriteConstantBuffer sb;
-		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
-		//デフィーズはすべて通す
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		//行列の設定
-		sb.World = World;
 		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBDiffuseSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+		pD3D11DeviceContext->UpdateSubresource(CBDiffuseSprite::GetPtr()->GetBuffer(), 0, nullptr, &CBuff, 0, 0);
 
 		//ストライドとオフセット
 		UINT stride = sizeof(VertexPositionTexture);
 		UINT offset = 0;
 		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_SquareMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+		pD3D11DeviceContext->IASetVertexBuffers(0, 1, Mesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
 		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(m_SquareMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+		pD3D11DeviceContext->IASetIndexBuffer(Mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
 
 		//描画方法（3角形）
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -120,9 +76,71 @@ namespace basecross {
 		pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
 
 		//描画
-		pD3D11DeviceContext->DrawIndexed(m_SquareMesh->GetNumIndicis(), 0, 0);
+		pD3D11DeviceContext->DrawIndexed(Mesh->GetNumIndicis(), 0, 0);
 		//後始末
 		Dev->InitializeStates();
+
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	壁スプライト実体
+	//--------------------------------------------------------------------------------------
+	WallSprite::WallSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos) :
+		ObjectInterface(),
+		ShapeInterface(),
+		m_TextureFileName(TextureFileName),
+		m_Trace(Trace),
+		m_Pos(StartPos)
+	{}
+	WallSprite::~WallSprite() {}
+	void WallSprite::OnCreate() {
+		float HelfSize = 0.5f;
+		//頂点配列(縦横10個ずつ表示)
+		vector<VertexPositionTexture> vertices = {
+			{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
+			{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(10, 0.0f)) },
+			{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 10)) },
+			{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(10, 10)) },
+		};
+		//インデックス配列
+		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+		//メッシュの作成（変更できない）
+		m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+		//描画オブジェクトの作成
+		m_PTSpriteDraw = ObjectFactory::Create<PTSpriteDraw>(m_TextureFileName, m_Trace);
+		//矩形の大きさ
+		float w = static_cast<float>(App::GetApp()->GetGameWidth());
+		float h = static_cast<float>(App::GetApp()->GetGameHeight());
+		m_Scale = Vector2(w, h);
+	}
+
+
+	void WallSprite::OnDraw() {
+		//行列の定義
+		Matrix4X4 World, Proj;
+		//ワールド行列の決定
+		World.AffineTransformation2D(
+			m_Scale,			//スケーリング
+			Vector2(0, 0),		//回転の中心（重心）
+			0,				//回転角度
+			m_Pos				//位置
+		);
+		//射影行列の決定
+		float w = static_cast<float>(App::GetApp()->GetGameWidth());
+		float h = static_cast<float>(App::GetApp()->GetGameHeight());
+		Proj.OrthographicLH(w, h, -1.0, 1.0f);
+		//行列の合成
+		World *= Proj;
+		//コンスタントバッファの準備
+		DiffuseSpriteConstantBuffer sb;
+		//エミッシブ加算は行わない。
+		sb.Emissive = Color4(0, 0, 0, 0);
+		//デフィーズはすべて通す
+		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		//行列の設定
+		sb.World = World;
+
+		m_PTSpriteDraw->DrawObject(m_SquareMesh, sb);
 	}
 
 
@@ -152,8 +170,8 @@ namespace basecross {
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
 		//メッシュの作成（変更できる）
 		m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, true);
-		//テクスチャの作成
-		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
+		//描画オブジェクトの作成
+		m_PTSpriteDraw = ObjectFactory::Create<PTSpriteDraw>(m_TextureFileName, m_Trace);
 		//矩形の大きさ
 		m_Scale = Vector2(512.0f, 128.0f);
 	}
@@ -209,10 +227,6 @@ namespace basecross {
 	}
 
 	void SquareSprite::OnDraw() {
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-
 		//行列の定義
 		Matrix4X4 World, Proj;
 		//ワールド行列の決定
@@ -228,7 +242,6 @@ namespace basecross {
 		Proj.OrthographicLH(w, h, -1.0, 1.0f);
 		//行列の合成
 		World *= Proj;
-
 		//コンスタントバッファの準備
 		DiffuseSpriteConstantBuffer sb;
 		//エミッシブ加算は行わない。
@@ -237,62 +250,7 @@ namespace basecross {
 		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 		//行列の設定
 		sb.World = World;
-		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBDiffuseSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
-
-		//ストライドとオフセット
-		UINT stride = sizeof(VertexPositionTexture);
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_SquareMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(m_SquareMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		//コンスタントバッファの設定
-		ID3D11Buffer* pConstantBuffer = CBDiffuseSprite::GetPtr()->GetBuffer();
-		ID3D11Buffer* pNullConstantBuffer = nullptr;
-		//頂点シェーダに渡す
-		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-		//ピクセルシェーダに渡す
-		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-		//シェーダの設定
-		pD3D11DeviceContext->VSSetShader(VSPTSprite::GetPtr()->GetShader(), nullptr, 0);
-		pD3D11DeviceContext->PSSetShader(PSPTSprite::GetPtr()->GetShader(), nullptr, 0);
-		//インプットレイアウトの設定
-		pD3D11DeviceContext->IASetInputLayout(VSPTSprite::GetPtr()->GetInputLayout());
-
-		//ブレンドステート
-		if (m_Trace) {
-			//透明処理
-			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
-		}
-		else {
-			//透明処理しない
-			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
-		}
-		//デプスステンシルステート
-		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthNone(), 0);
-		//ラスタライザステート
-		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-
-		//テクスチャとサンプラーの設定
-		ID3D11ShaderResourceView* pNull[1] = { 0 };
-		pD3D11DeviceContext->PSSetShaderResources(0, 1, m_TextureResource->GetShaderResourceView().GetAddressOf());
-		//ラッピングサンプラー
-		ID3D11SamplerState* pSampler = RenderState->GetLinearWrap();
-		pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
-
-		//描画
-		pD3D11DeviceContext->DrawIndexed(m_SquareMesh->GetNumIndicis(), 0, 0);
-		//後始末
-		Dev->InitializeStates();
-
+		m_PTSpriteDraw->DrawObject(m_SquareMesh, sb);
 	}
-
-
-
 }
 //end basecross
