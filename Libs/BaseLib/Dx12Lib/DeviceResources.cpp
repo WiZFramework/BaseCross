@@ -821,6 +821,18 @@ namespace basecross {
 		ShadowTarget->ClearViews();
 	}
 
+	void DeviceResources::StartShadowmapDraw() {
+		auto ShadowTarget = GetShadowMapRenderTarget();
+		ShadowTarget->StartRenderTarget();
+	}
+
+	void DeviceResources::EndShadowmapDraw() {
+		auto ShadowTarget = GetShadowMapRenderTarget();
+		ShadowTarget->EndRenderTarget();
+	}
+
+
+
 
 
 	//通常描画のクリア
@@ -1070,6 +1082,8 @@ namespace basecross {
 		//クリア用オブジェクト
 		ComPtr<ID3D12RootSignature> m_RootSignature;
 		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		//End用コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_EndCommandList;
 
 		Impl(float ShadowMapDimension) :
 			m_ShadowMapDimension(ShadowMapDimension)
@@ -1163,7 +1177,7 @@ namespace basecross {
 			}
 
 			ComPtr<ID3D12PipelineState> PipelineState;
-
+			//クリア用コマンドリスト
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -1175,6 +1189,21 @@ namespace basecross {
 				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
 			);
 			CommandList::Close(pImpl->m_CommandList);
+			//End用コマンドリスト
+			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+				0,
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				Dev->GetCommandAllocator().Get(),
+				PipelineState.Get(),
+				IID_PPV_ARGS(&pImpl->m_EndCommandList)),
+				L"コマンドリストの作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommandList()",
+				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
+			);
+			CommandList::Close(pImpl->m_EndCommandList);
+
+
+			
 		}
 		catch (...) {
 			throw;
@@ -1195,6 +1224,11 @@ namespace basecross {
 
 		pImpl->m_CommandList->RSSetViewports(1, &Dev->GetViewport());
 		pImpl->m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		pImpl->m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			pImpl->m_ShadowmapDepthStencil.Get(), 
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
 		// Record commands.
 		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		CommandList::Close(pImpl->m_CommandList);
@@ -1202,6 +1236,22 @@ namespace basecross {
 	}
 	//レンダリングターゲットを開始する
 	void ShadowMapRenderTarget::StartRenderTarget() {}
+
+	void ShadowMapRenderTarget::EndRenderTarget() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		CommandList::Reset(pImpl->m_EndCommandList);
+		pImpl->m_EndCommandList->SetGraphicsRootSignature(pImpl->m_RootSignature.Get());
+
+		pImpl->m_EndCommandList->RSSetViewports(1, &Dev->GetViewport());
+		pImpl->m_EndCommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		pImpl->m_EndCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			pImpl->m_ShadowmapDepthStencil.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+		CommandList::Close(pImpl->m_EndCommandList);
+		Dev->InsertDrawCommandLists(pImpl->m_EndCommandList.Get());
+	}
+
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE ShadowMapRenderTarget::GetDsvHandle() const {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
