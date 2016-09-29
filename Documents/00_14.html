@@ -1,0 +1,367 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０１４．インスタンス描画</h3>
+　このサンプルは<b>SimplSample014</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0014a.png" width="80%"/>
+<p>図0014a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xkKeGnRrzEQ?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　今項のサンプルは<b>インスタンス描画</b>です。<b>インスタンス描画</b>というのは１回の描画命令に<b>ワールド行列</b>を複数渡すことで、複数のインスタンスの描画を実装します。通常の描画より<b>劇的に</b>速くなります。<br />
+<br />
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormalTexture型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
+　今回描画するオブジェクトは階層になってます。1つ1つの立方体は構造体で<b>CubeObject構造体</b>です。そして、そのインスタンスを管理するのが<b>CubeObjectGroupクラス</b>です。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　初期化は、まず<b>頂点の配列、インデックスの配列</b>を初期化し<b>メッシュ</b>を作成します。インスタンス構築時のパラメータで<b>法線</b>の作成方法を変えます。<b>CubeObjectGroup::CreateBuffers()関数</b>でその処理をしています。<br />
+　メッシュ作成は前項までの例と変わりません。<br />
+　ただ今回は<b>ワールド行列の配列</b>を作成します。<b>CubeObjectGroup::CreateBuffers()関数</b>の一番下に以下の記述があります。<div class="box1">
+<pre>
+void CubeObjectGroup::CreateBuffers() {
+
+    //中略
+
+    //インスタンス行列バッファの作成
+    //Max値で作成する
+    vector&lt;Matrix4X4> matrices(m_MaxInstance);
+    for (auto& m : matrices) {
+        m = Matrix4X4();
+    }
+    //インスタンス描画用の行列のメッシュ（内容変更できる）
+    m_InstanceMatrixMesh = MeshResource::CreateMeshResource(matrices, true);
+}
+</pre>
+</div>
+　このように<b>m_InstanceMatrixMesh</b>に<b>行列の配列</b>を使って<b>メッシュ</b>を作成します。配列のサイズは<b>m_MaxInstance</b>で設定されますが、サンプルでは<b>2000</b>になっています。<br />
+　この<b>CubeObjectGroup::CreateBuffers() 関数</b>は<b>CubeObjectGroup::OnCreate()関数</b>から呼ばれますが、この関数ではメッシュを作成後、今回使用する複数の立方体を、実際に作成します。
+<div class="box1">
+<pre>
+void CubeObjectGroup::OnCreate() {
+    CreateBuffers();
+    //テクスチャの作成
+    m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
+    <span class="red">//インスタンス配列の作成
+    for (UINT count = 0; count &lt; 500; count++) {
+        CubeObject Data;
+        Data.Refresh();
+        m_CubeObjectVec.push_back(Data);
+    }</span>
+
+    //中略
+
+}
+</pre>
+</div>
+　このようにMax値は2000ですが、実装するのは500です。<br />
+　このようにメッシュと、ワールド行列用配列の準備ができたら<b>DX12リソース</b>の初期化を行います。<br />
+<br />
+<h4>■Dx12リソース初期化■</h4>
+　<b>DX12リソース</b>は前回と変わりありません。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>CubeObjectGroup::OnUpdate()関数</b>です。複数の立方体（500個）のそれぞれの更新処理を行ってます<br />
+<div class="box1">
+<pre>
+void CubeObjectGroup::OnUpdate() {
+    if (m_CubeObjectVec.size() >= m_MaxInstance) {
+        throw BaseException(
+            L"インスタンス上限を超えてます",
+            L"if(m_CubeObjectVec.size() >= m_MaxInstance)",
+            L"CubeObjectGroup::OnUpdate()"
+        );
+
+    }
+
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    for (auto& v : m_CubeObjectVec) {
+        v.m_Posision += v.m_Velocity * ElapsedTime;
+        Quaternion QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
+        v.m_Quaternion *= QtSpan;
+        v.m_Quaternion.Normalize();
+        if (v.m_Posision.Length() >= 2.0f) {
+            v.Refresh();
+        }
+    }
+    vector&lt;Matrix4X4> MatVec;
+    for (size_t i = 0; i &lt; m_CubeObjectVec.size(); i++) {
+        Matrix4X4 World;
+        //ワールド行列の決定
+        World.AffineTransformation(
+            m_CubeObjectVec[i].m_Scale,         //スケーリング
+            Vector3(0, 0, 0),       //回転の中心（重心）
+            m_CubeObjectVec[i].m_Quaternion,        //回転角度
+            m_CubeObjectVec[i].m_Posision       //位置
+        );
+        //転置する
+        World.Transpose();
+        MatVec.push_back(World);
+    }
+    <span class="red">//メッシュの頂点の変更
+    m_InstanceMatrixMesh->UpdateVirtex(MatVec);</span>
+}
+</pre>
+</div>
+　このように、それぞれの立方体の更新を行い、それぞれのワールド行列が決定したら、最後に、赤くなってる部分のように、<b>m_InstanceMatrixMeshの更新</b>を行います。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>CubeObjectGroup::DrawObject()関数</b>です。<br />
+　<b>インスタンス描画</b>を行いますので、これまでの描画とは少し違います。
+<div class="box1">
+<pre>
+void CubeObjectGroup::DrawObject() {
+    CommandList::Reset(m_PipelineState, m_CommandList);
+
+    m_CubeMesh->UpdateResources&lt;VertexPositionNormalTexture>(m_CommandList);
+    m_InstanceMatrixMesh->UpdateResources&lt;Matrix4X4>(m_CommandList);
+    m_TextureResource->UpdateResources(m_CommandList);
+
+    //描画
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), 
+        m_SamplerDescriptorHeap.Get() };
+    m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+    for (size_t i = 0; i &lt; m_GPUDescriptorHandleVec.size(); i++) {
+        m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+    }
+    auto Dev = App::GetApp()->GetDeviceResources();
+    m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+    m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+        Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+        Dev->GetFrameIndex(),
+        Dev->GetRtvDescriptorSize());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+        Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+    );
+    m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_CommandList->IASetIndexBuffer(&m_CubeMesh->GetIndexBufferView());
+    <span class="red">//インスタンス描画は、頂点バッファを複数登録する
+    const D3D12_VERTEX_BUFFER_VIEW Buf[2] = { 
+        m_CubeMesh->GetVertexBufferView(),
+        m_InstanceMatrixMesh->GetVertexBufferView() 
+    };
+    m_CommandList->IASetVertexBuffers(0, 2, Buf);</span>
+
+    m_CommandList->DrawIndexedInstanced(m_CubeMesh->GetNumIndicis(), 
+        m_CubeObjectVec.size(), 0, 0, 0);
+
+    //コマンドリストのクローズ
+    CommandList::Close(m_CommandList);
+    //デバイスにコマンドリストを送る
+    Dev->InsertDrawCommandLists(m_CommandList.Get());
+}
+</pre>
+</div>
+　赤くなっているところが<b>インスタンス描画特有</b>の箇所です。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<h3>【Dx11版解説】</h3>
+　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br />
+<h4>■初期化■</h4>
+　<b>Dx11版</b>の初期化は、<b>Dx12版</b>のようにリソース初期化はありません。頂点バッファを作成し、スケール、位置などを初期化します。<br />
+　各々の立方体の配列の初期化も同様です。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>CubeObjectGroup::OnUpdate()関数</b>です。<b>Dx12版</b>との違いは、インスタンスのワールド行列の更新に、頂点の変更と同じような処理を行う部分です。<br />
+<div class="box1">
+<pre>
+void CubeObjectGroup::OnUpdate() {
+    if (m_CubeObjectVec.size() >= m_MaxInstance) {
+        throw BaseException(
+            L"インスタンス上限を超えてます",
+            L"if(m_CubeObjectVec.size() >= m_MaxInstance)",
+            L"CubeObjectGroup::OnUpdate()"
+        );
+
+    }
+
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    for (auto& v : m_CubeObjectVec) {
+        v.m_Posision += v.m_Velocity * ElapsedTime;
+        Quaternion QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
+        v.m_Quaternion *= QtSpan;
+        v.m_Quaternion.Normalize();
+        if (v.m_Posision.Length() >= 2.0f) {
+            v.Refresh();
+        }
+    }
+
+    //デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pDx11Device = Dev->GetD3DDevice();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    //インスタンスバッファにマップ
+    D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
+    D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+    //行列のマップ
+    if (FAILED(pID3D11DeviceContext->Map(m_MatrixBuffer.Get(), 0, mapType, 0, &mappedBuffer))) {
+        // Map失敗
+        throw BaseException(
+            L"行列のMapに失敗しました。",
+            L"if(FAILED(pID3D11DeviceContext->Map()))",
+            L"CubeObjectGroup::OnUpdate()"
+        );
+    }
+    <span class="red">//行列の変更
+    auto* matrices = (Matrix4X4*)mappedBuffer.pData;
+    Matrix4X4 World;
+    for (size_t i = 0; i &lt; m_CubeObjectVec.size(); i++) {
+        //ワールド行列の決定
+        World.AffineTransformation(
+            m_CubeObjectVec[i].m_Scale,         //スケーリング
+            Vector3(0, 0, 0),       //回転の中心（重心）
+            m_CubeObjectVec[i].m_Quaternion,        //回転角度
+            m_CubeObjectVec[i].m_Posision       //位置
+        );
+        //転置する
+        World.Transpose();
+        matrices[i] = World;
+    }
+    //アンマップ
+    pID3D11DeviceContext->Unmap(m_MatrixBuffer.Get(), 0);</span>
+}
+</pre>
+</div>
+　赤くなっているのが、<b>各々のワールド行列（メッシュ）</b>を更新している個所です。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>CubeObjectGroup::OnDraw()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObjectGroup::OnDraw() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderState = Dev->GetRenderState();
+
+    <span class="red">//ストライドとオフセット
+    //形状の頂点バッファと行列バッファを設定
+    UINT stride[2] = { sizeof(VertexPositionNormalTexture), sizeof(Matrix4X4) };
+    UINT offset[2] = { 0, 0 };
+
+    ID3D11Buffer* pBuf[2] = { m_CubeMesh->GetVertexBuffer().Get(), m_MatrixBuffer.Get() };
+    pD3D11DeviceContext->IASetVertexBuffers(0, 2, pBuf, stride, offset);</span>
+    //インデックスバッファのセット
+    pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), 
+        DXGI_FORMAT_R16_UINT, 0);
+
+    //描画方法（3角形）
+    pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    //シェーダの設定
+    pD3D11DeviceContext->VSSetShader(VSPNTInstance::GetPtr()->GetShader(), nullptr, 0);
+    pD3D11DeviceContext->PSSetShader(PSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pD3D11DeviceContext->IASetInputLayout(VSPNTInstance::GetPtr()->GetInputLayout());
+
+    //ブレンドステート
+    //透明処理しない
+    pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+    //デプスステンシルステート
+    pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+    //テクスチャとサンプラーの設定
+    ID3D11ShaderResourceView* pNull[1] = { 0 };
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, 
+        m_TextureResource->GetShaderResourceView().GetAddressOf());
+    ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
+    pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+    //ラスタライザステート（表面描画）
+    pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+
+    //ビュー行列の決定
+    Matrix4X4 View, Proj;
+    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+    //転置する
+    View.Transpose();
+    //射影行列の決定
+    float w = static_cast<float>(App::GetApp()->GetGameWidth());
+    float h = static_cast<float>(App::GetApp()->GetGameHeight());
+    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    //転置する
+    Proj.Transpose();
+    //コンスタントバッファの準備
+    PNTStaticConstantBuffer sb;
+    sb.World = Matrix4X4(); //ワールド行列はダミー
+    sb.View = View;
+    sb.Projection = Proj;
+    //ライティング
+    Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+    LightDir.Normalize();
+    sb.LightDir = LightDir;
+    //ディフューズ
+    sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    //エミッシブ加算は行わない。
+    sb.Emissive = Color4(0, 0, 0, 0);
+    //コンスタントバッファの更新
+    pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 
+        0, nullptr, &sb, 0, 0);
+
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
+    ID3D11Buffer* pNullConstantBuffer = nullptr;
+    //頂点シェーダに渡す
+    pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ピクセルシェーダに渡す
+    pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+    <span class="red">//描画
+    pD3D11DeviceContext->DrawIndexedInstanced(m_CubeMesh->GetNumIndicis(), 
+        m_CubeObjectVec.size(), 0, 0, 0);</span>
+    //後始末
+    Dev->InitializeStates();
+}
+</pre>
+</div>
+　赤くなっているのが<b>インスタンス描画特有</b>の部分です。<b>Dx12版</b>の場合は、メッシュのストライドとオフセットは<b>メッシュのビュー</b>に入ってますが、<b>Dx11版</b>の場合は描画時に設定します。また、<b>Dx12版</b>は<b>DrawIndexedInstanced()関数</b>を常に使用しますが、<b>Dx11版</b>の場合は通常は<b>DrawIndexed()関数</b>で<b>インスタンス描画</b>のときだけ<b>DrawIndexedInstanced()関数</b>を使用しますので、注意しましょう。<br />
+<br />
+<h3>【まとめ】</h3>
+　今回の<b>インスタンス描画</b>というのは、実は、昔からあるテクニックで<b>Dx11やDx12ではじめて対応した</b>ものではありません。シェーダもそんなに変更する必要がなく（頂点シェーダのみの変更で良い）、気軽に高速化を図れるので、知っておくと何かと便利と思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_13.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="00_15.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
