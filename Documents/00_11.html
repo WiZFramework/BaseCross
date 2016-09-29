@@ -1,0 +1,719 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０１１．立方体とテクスチャ</h3>
+　このサンプルは<b>SimplSample011</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0011a.png" width="80%"/>
+<p>図0011a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/JKJbIPsmyWM?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　今回のテーマは<b>３Ｄオブジェクトのテクスチャ</b>です。<b>ライティング、透明処理</b>も行います。<br />
+　今回の頂点型は３Ｄ表現のゲームで、一番多用される型と言えるでしょう。もちろん、物理ライティングや複数のテクスチャの貼り付けなど、高度なテクニックは山ほどありますが、まずは<b>テクスチャとライティング処理</b>されたオブジェクトの描画を実装します。<br />
+<br />
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormalTexture型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　初期化は、まず<b>頂点の配列、インデックスの配列</b>を初期化し<b>メッシュ</b>を作成します。インスタンス構築時のパラメータで<b>法線</b>の作成方法を変えます。<b>CubeObject::CreateBuffers()関数</b>でその処理をしています。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateBuffers() {
+    float HelfSize = 0.5f;
+    vector&lt;Vector3> PosVec = {
+        { Vector3(-HelfSize, HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, -HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, HelfSize) },
+        { Vector3(-HelfSize, HelfSize, HelfSize) },
+        { Vector3(HelfSize, -HelfSize, HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    };
+    vector&lt;UINT> PosIndeces = {
+        0, 1, 2, 3,
+        1, 4, 3, 6,
+        4, 5, 6, 7,
+        5, 0, 7, 2,
+        5, 4, 0, 1,
+        2, 3, 7, 6,
+    };
+
+
+    vector&lt;Vector3> FaceNormalVec = {
+        { Vector3(0, 0, -1.0f) },
+        { Vector3(1.0f, 0, 0) },
+        { Vector3(0, 0, 1.0f) },
+        { Vector3(-1.0f, 0, 0) },
+        { Vector3(0, 1.0f, 0) },
+        { Vector3(0, -1.0f, 0) }
+    };
+
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    UINT BasePosCount = 0;
+    for (int i = 0; i &lt; 6; i++) {
+        for (int j = 0; j &lt; 4; j++) {
+            VertexPositionNormalTexture Data;
+            Data.position = PosVec[PosIndeces[BasePosCount + j]];
+            <span class="red">if (m_Flat)</span> {
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position;
+                Data.normal.Normalize();
+            }
+            else {
+                //フラット表示しない場合は、法線は面の向き
+                Data.normal = FaceNormalVec[i];
+            }
+            <span class="red">switch (j) {
+            case 0:
+                Data.textureCoordinate = Vector2(0, 0);
+                break;
+            case 1:
+                Data.textureCoordinate = Vector2(1.0f, 0);
+                break;
+            case 2:
+                Data.textureCoordinate = Vector2(0, 1.0f);
+                break;
+            case 3:
+                Data.textureCoordinate = Vector2(1.0f, 1.0f);
+                break;
+            }</span>
+            vertices.push_back(Data);
+        }
+
+        indices.push_back((uint16_t)BasePosCount + 0);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 2);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 3);
+        indices.push_back((uint16_t)BasePosCount + 2);
+
+        BasePosCount += 4;
+    }
+
+    //メッシュの作成（変更できない）
+    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+}
+</pre>
+</div>
+　上記、赤くなっているところのうち、<b>if (m_Flat)</b>は<b>フラット表示にするかどうか</b>です。これは前項と変わりません。<br />
+　今項では<b>textureCoordinate</b>という頂点のメンバが追加されました。これは<b>テクスチャのUV値</b>です（スプライトのところでもやりましたね）。<br />
+　メッシュを作成したら<b>DX12リソース</b>の初期化を行います。<br />
+<br />
+<h4>■初期化のメカニズム■</h4>
+　今回のサンプルでは、これまで<b>BaseCrossのユーティリティ関数</b>を使用して<b>Dx12リソース</b>を作成してきましたが、あえて、直接<b>Dx12関数</b>を呼び出す形で各リソースを初期化します。<br />
+　次項のサンプル<b>テクスチャ付き球体の描画</b>では、<b>BaseCrossのユーティリティ関数</b>を使用して初期化します。<br />
+　この違いを学習することで、<b>Dx12初期化に必要な設定は何か</b>が明確になると思います。<br />
+<br/>
+<h4>■ルートシグネチャ作成■</h4>
+　<b>CubeObject::CreateRootSignature()関数</b>です。<b>テクスチャ（シェーダリソース）、サンプラー、コンスタントバッファ</b>を持つ<b>ルートシグネチャ</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateRootSignature() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //もしすでに登録されていたらそれを使用
+    m_RootSignature = Dev->GetRootSignature(L"SrvSmpCbv");
+    if (m_RootSignature != nullptr) {
+        return;
+    }
+    //デスクプリタレンジは3個
+    CD3DX12_DESCRIPTOR_RANGE ranges[3];
+    //0番目はシェーダリソースビュー
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+    //1番目はサンプラー
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+    //2番目はコンスタントバッファ
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+    //ルートパラメータも3個
+    CD3DX12_ROOT_PARAMETER rootParameters[3];
+    //0番目はシェーダリソースビューのレンジをピクセルシェーダへ
+    rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+    //1番目はサンプラーのレンジをピクセルシェーダへ
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+    //2番目はコンスタントバッファのレンジをすべてにシェーダに
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+    //ルートシグネチャの定義
+    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    //ルートシグネチャ定義の初期化（ルートパラメータを設定）
+    rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, 
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    //各ブロブ（バイナリイメージ）
+    ComPtr&lt;ID3DBlob> signature;
+    ComPtr&lt;ID3DBlob> error;
+    //ルートシグネチャ定義のシリアライズ
+    ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+         &signature, &error),
+        L"ルートシグネチャのシリアライズに失敗しました",
+        L"D3D12SerializeRootSignature()",
+        L"CubeObject::CreateRootSignature()"
+    );
+    //ルートシグネチャの作成
+    ThrowIfFailed(
+        Dev->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
+            signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)),
+        L"ルートシグネチャの作成に失敗しました",
+        L"Dev->GetDevice()->CreateRootSignature()",
+        L"CubeObject::CreateRootSignature()"
+    );
+    //ルートシグネチャの登録（Dx12には関係ない）
+    Dev->SetRootSignature(L"SrvSmpCbv", m_RootSignature);
+}
+</pre>
+</div>
+<br />
+<h4>■デスクプリタヒープ作成■</h4>
+　<b>CubeObject::CreateDescriptorHeap()関数</b>です。ルートシグネチャ同様、<b>テクスチャ（シェーダリソース）、サンプラー、コンスタントバッファ</b>を持つ<b>デスクプリタヒープ</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateDescriptorHeap() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    m_CbvSrvDescriptorHandleIncrementSize =
+    Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    //コンスタントバッファとシェーダーリソース用デスクプリタヒープ（合計2個）
+    D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = {};
+    CbvSrvHeapDesc.NumDescriptors = 2;
+    CbvSrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    CbvSrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&CbvSrvHeapDesc, 
+        IID_PPV_ARGS(&m_CbvSrvUavDescriptorHeap)),
+        L"CbvSrvUav用のデスクプリタヒープの作成に失敗しました",
+        L"Dev->GetDevice()->CreateDescriptorHeap()",
+        L"CubeObject::CreateDescriptorHeap()"
+    );
+    //サンプラーデスクプリタヒープ（1個）
+    D3D12_DESCRIPTOR_HEAP_DESC SamplerHeapDesc = {};
+    SamplerHeapDesc.NumDescriptors = 1;
+    SamplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+    SamplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&SamplerHeapDesc, 
+        IID_PPV_ARGS(&m_SamplerDescriptorHeap)),
+        L"サンプラー用のデスクプリタヒープの作成に失敗しました",
+        L"Dev->GetDevice()->CreateDescriptorHeap()",
+        L"CubeObject::CreateDescriptorHeap()"
+    );
+    //GPU側デスクプリタヒープのハンドルの配列の作成
+    m_GPUDescriptorHandleVec.clear();
+    CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
+        m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );
+    m_GPUDescriptorHandleVec.push_back(SrvHandle);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
+        m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );
+    m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+        m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        1,
+        m_CbvSrvDescriptorHandleIncrementSize
+    );
+    m_GPUDescriptorHandleVec.push_back(CbvHandle);
+}
+</pre>
+</div>
+<br />
+<h4>■サンプラー作成■</h4>
+　<b>CubeObject::CreateSampler()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateSampler() {
+    //サンプラーデスクプリタヒープ内のCPU側ハンドルを得る
+    auto SamplerDescriptorHandle 
+    = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+    //サンプラー定義
+    D3D12_SAMPLER_DESC samplerDesc = {};
+    //リニアクランプに設定
+    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //ハンドルとサンプラー定義を結びつける
+    Dev->GetDevice()->CreateSampler(&samplerDesc, SamplerDescriptorHandle);
+}
+</pre>
+</div>
+<br />
+<h4>■シェーダーリソースビュー作成■</h4>
+　<b>CubeObject::CreateShaderResourceView()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateShaderResourceView() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //テクスチャハンドルを取得
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(
+        m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );
+    //テクスチャのシェーダリソースビューを作成
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    //フォーマット(テクスチャリソースから取得)
+    srvDesc.Format = m_TextureResource->GetTextureResDesc().Format;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = m_TextureResource->GetTextureResDesc().MipLevels;
+    //シェーダリソースビューの作成
+    Dev->GetDevice()->CreateShaderResourceView(
+        m_TextureResource->GetTexture().Get(),
+        &srvDesc,
+        srvHandle);
+}
+</pre>
+</div>
+<br/>
+<h4>■コンスタントバッファ作成■</h4>
+　<b>CubeObject::CreateConstantBuffer()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateConstantBuffer() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //コンスタントバッファは256バイトにアラインメント
+    UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
+    //コンスタントバッファリソース（アップロードヒープ）の作成
+    ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+        L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+        L"Dev->GetDevice()->CreateCommittedResource()",
+        L"CubeObject::CreateConstantBuffer()"
+    );
+    //コンスタントバッファのビューを作成
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+    cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+    cbvDesc.SizeInBytes = ConstBuffSize;
+    //コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+    //コンスタントバッファはシェーダリソースビューのあとに設置する
+    //シェーダーリソースは1個で、先頭からインクリメントサイズだけ
+    //離れた場所がコンスタントバッファのハンドルの場所である
+    CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle(
+        m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+        1,
+        m_CbvSrvDescriptorHandleIncrementSize
+    );
+    Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvHandle);
+    //コンスタントバッファのアップロードヒープのマップ
+    CD3DX12_RANGE readRange(0, 0);
+    ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, 
+        reinterpret_cast&lt;void**>(&m_pConstantBuffer)),
+        L"コンスタントバッファのマップに失敗しました",
+        L"pImpl->m_ConstantBufferUploadHeap->Map()",
+        L"CubeObject::CreateConstantBuffer()"
+    );
+}
+</pre>
+</div>
+<br />
+<h4>■パイプラインステート作成■</h4>
+　<b>CubeObject::CreatePipelineState()関数</b>です。<br />
+　透明処理をするかしないかで処理を分けてますの注意しましょう。<b>CullBack、CullFront</b>の２種類のパイプラインステートを作成しています。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreatePipelineState() {
+    //ラスタライザステートの作成（デフォルト）
+    CD3DX12_RASTERIZER_DESC rasterizerStateDesc(D3D12_DEFAULT);
+    //裏面カリングに変更
+    rasterizerStateDesc.CullMode = D3D12_CULL_MODE_BACK;
+    //パイプラインステートの作成
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+    ZeroMemory(&PineLineDesc, sizeof(PineLineDesc));
+    PineLineDesc.InputLayout = { VertexPositionNormalTexture::GetVertexElement(), 
+        VertexPositionNormalTexture::GetNumElements() };
+    PineLineDesc.pRootSignature = m_RootSignature.Get();
+    PineLineDesc.VS =
+    {
+    reinterpret_cast&lt;UINT8*>(VSPNTStatic::GetPtr()->GetShaderComPtr()->GetBufferPointer()),
+    VSPNTStatic::GetPtr()->GetShaderComPtr()->GetBufferSize()
+    };
+    PineLineDesc.PS =
+    {
+    reinterpret_cast&lt;UINT8*>(PSPNTStatic::GetPtr()->GetShaderComPtr()->GetBufferPointer()),
+    PSPNTStatic::GetPtr()->GetShaderComPtr()->GetBufferSize()
+    };
+    PineLineDesc.RasterizerState = rasterizerStateDesc;
+    PineLineDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    PineLineDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    PineLineDesc.SampleMask = UINT_MAX;
+    PineLineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    PineLineDesc.NumRenderTargets = 1;
+    PineLineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    PineLineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    PineLineDesc.SampleDesc.Count = 1;
+    //もし透明ならブレンドステート差し替え
+    if (m_Trace) {
+        D3D12_BLEND_DESC blend_desc;
+        D3D12_RENDER_TARGET_BLEND_DESC Target;
+        ZeroMemory(&blend_desc, sizeof(blend_desc));
+        blend_desc.AlphaToCoverageEnable = false;
+        blend_desc.IndependentBlendEnable = false;
+        ZeroMemory(&Target, sizeof(Target));
+        Target.BlendEnable = true;
+        Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+        Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+        Target.BlendOp = D3D12_BLEND_OP_ADD;
+        Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+        Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+        Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+        Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        for (UINT i = 0; i &lt; D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+            blend_desc.RenderTarget[i] = Target;
+        }
+        PineLineDesc.BlendState = blend_desc;
+    }
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //まずCullBackのパイプラインステートを作成
+    ThrowIfFailed(Dev->GetDevice()->CreateGraphicsPipelineState(&PineLineDesc, 
+        IID_PPV_ARGS(&m_CullBackPipelineState)),
+        L"CullBackパイプラインステートの作成に失敗しました",
+        L"Dev->GetDevice()->CreateGraphicsPipelineState()",
+        L"CubeObject::CreatePipelineState()"
+    );
+    PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+    //続いてCullFrontのパイプラインステートを作成
+    ThrowIfFailed(Dev->GetDevice()->CreateGraphicsPipelineState(&PineLineDesc, 
+        IID_PPV_ARGS(&m_CullFrontPipelineState)),
+        L"CullFrontパイプラインステートの作成に失敗しました",
+        L"Dev->GetDevice()->CreateGraphicsPipelineState()",
+        L"CubeObject::CreatePipelineState()"
+    );
+}
+</pre>
+</div>
+<br />
+<h4>■コマンドリスト作成■</h4>
+　<b>CubeObject::CreateCommandList()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::CreateCommandList() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //コマンドリストは裏面カリングに初期化
+    ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+        0,
+        D3D12_COMMAND_LIST_TYPE_DIRECT,
+        Dev->GetCommandAllocator().Get(),
+        m_CullBackPipelineState.Get(),
+        IID_PPV_ARGS(&m_CommandList)),
+        L"コマンドリストの作成に失敗しました",
+        L"Dev->GetDevice()->CreateCommandList()",
+        L"CubeObject::CreateCommandList()"
+    );
+    ThrowIfFailed(m_CommandList->Close(),
+        L"コマンドリストのクローズに失敗しました",
+        L"commandList->Close()",
+        L"CubeObject::CreateCommandList()"
+    );
+}
+</pre>
+</div>
+<br />
+<h4>■コンスタントバッファの更新■</h4>
+　<b>CubeObject::UpdateConstantBuffer()関数</b>です。<br />
+<div class="box1">
+<pre>
+void CubeObject::UpdateConstantBuffer() {
+    //行列の定義
+    Matrix4X4 World, View, Proj;
+    //ワールド行列の決定
+    World.AffineTransformation(
+        m_Scale,            //スケーリング
+        Vector3(0, 0, 0),       //回転の中心（重心）
+        m_Qt,               //回転角度
+        m_Pos               //位置
+    );
+    //転置する
+    World.Transpose();
+    //ビュー行列の決定
+    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+    //転置する
+    View.Transpose();
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    //転置する
+    Proj.Transpose();
+    //ライティング
+    Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+    LightDir.Normalize();
+    m_StaticConstantBuffer.World = World;
+    m_StaticConstantBuffer.View = View;
+    m_StaticConstantBuffer.Projection = Proj;
+    m_StaticConstantBuffer.LightDir = LightDir;
+    m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+    //更新
+    memcpy(m_pConstantBuffer, reinterpret_cast&lt;void**>(&m_StaticConstantBuffer),
+        sizeof(m_StaticConstantBuffer));
+}
+</pre>
+</div>
+<br />
+<h4>■更新処理■</h4>
+　<b>CubeObject::OnUpdate()関数</b>です。オブジェクトを回転させています。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>CubeObject::DrawObject()関数</b>です。<br />
+　透明処理の描画方法を確認してください。<br />
+　透明の場合は、背面をまず描画してから表面を描画します。（つまり2回描画します）
+<div class="box1">
+<pre>
+void CubeObject::DrawObject(){
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //コマンドリストのリセット
+    if (m_Trace) {
+        ThrowIfFailed(m_CommandList->Reset(Dev->GetCommandAllocator().Get(), 
+            m_CullFrontPipelineState.Get()),
+            L"コマンドリストのリセットに失敗しました",
+            L"m_CommandList->Reset(Dev->GetCommandAllocator().Get(),pipelineState.Get())",
+            L"CubeObject::OnDraw()"
+        );
+    }
+    else {
+        ThrowIfFailed(m_CommandList->Reset(Dev->GetCommandAllocator().Get(), 
+            m_CullBackPipelineState.Get()),
+            L"コマンドリストのリセットに失敗しました",
+            L"m_CommandList->Reset(Dev->GetCommandAllocator().Get(),pipelineState.Get())",
+            L"CubeObject::OnDraw()"
+        );
+    }
+    //メッシュが更新されていればリソース更新
+    m_CubeMesh->UpdateResources&lt;VertexPositionNormalTexture>(m_CommandList);
+    //テクスチャが更新されていればリソース更新
+    m_TextureResource->UpdateResources(m_CommandList);
+    //ルートシグネチャのセット
+    m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    ID3D12DescriptorHeap* ppHeaps[] = 
+    { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
+    //デスクプリタヒープのセット
+    m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+    //GPU側デスクプリタハンドルのセット
+    for (size_t i = 0; i &lt; m_GPUDescriptorHandleVec.size(); i++) {
+        m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+    }
+    //ビューポートのセット
+    m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+    //シザーレクトのセット
+    m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+    //レンダーターゲットビューのハンドルを取得
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = Dev->GetRtvHandle();
+    //デプスステンシルビューのハンドルを取得
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle = Dev->GetDsvHandle();
+    //取得したハンドルをセット
+    m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+    //描画方式（三角形リスト）をセット
+    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //頂点バッファをセット
+    m_CommandList->IASetVertexBuffers(0, 1, &m_CubeMesh->GetVertexBufferView());
+    //インデックスバッファをセット
+    m_CommandList->IASetIndexBuffer(&m_CubeMesh->GetIndexBufferView());
+    //描画
+    m_CommandList->DrawIndexedInstanced(m_CubeMesh->GetNumIndicis(), 1, 0, 0, 0);
+    if (m_Trace) {
+        //透明の場合は、CullBackに変更して2回目描画
+        m_CommandList->SetPipelineState(m_CullBackPipelineState.Get());
+        m_CommandList->DrawIndexedInstanced(m_CubeMesh->GetNumIndicis(), 1, 0, 0, 0);
+    }
+    //コマンドリストのクローズ
+    ThrowIfFailed(m_CommandList->Close(),
+        L"コマンドリストのクローズに失敗しました",
+        L"m_CommandList->Close()",
+        L"CubeObject::OnDraw()"
+    );
+    //デバイスにコマンドリストを送る
+    Dev->InsertDrawCommandLists(m_CommandList.Get());
+}
+</pre>
+</div>
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+　こうしてすべての初期化、すべての描画処理を書き出してみると、かなりいろんな設定などをしなければいけないことがわかります。次項では、これらの初期化処理を<b>BaseCrossのユーティリティ関数</b>をつかって構築します。ぜひ違いを確認しましょう。<br />
+<br />
+<h3>【Dx11版解説】</h3>
+　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br />
+<h4>■初期化■</h4>
+　<b>Dx11版</b>の初期化は、<b>Dx12版</b>のようにリソース初期化はありません。頂点バッファを作成し、スケール、位置などを初期化します。<br />
+　頂点作成時の処理は<b>Dx12版</b>と同じです。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>CubeObject::OnUpdate()関数</b>です。オブジェクトを回転させています。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>CubeObject::OnDraw()関数</b>です。透明処理をする場合としない場合がありますので、注意してください。<br />
+<div class="box1">
+<pre>
+void CubeObject::OnDraw() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderState = Dev->GetRenderState();
+
+    //行列の定義
+    Matrix4X4 World, View, Proj;
+    //ワールド行列の決定
+    World.AffineTransformation(
+        m_Scale,            //スケーリング
+        Vector3(0, 0, 0),       //回転の中心（重心）
+        m_Qt,               //回転角度
+        m_Pos               //位置
+    );
+    //転置する
+    World.Transpose();
+    //ビュー行列の決定
+    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+    //転置する
+    View.Transpose();
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    //転置する
+    Proj.Transpose();
+    //コンスタントバッファの準備
+    PNTStaticConstantBuffer sb;
+    sb.World = World;
+    sb.View = View;
+    sb.Projection = Proj;
+    //ライティング
+    Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+    LightDir.Normalize();
+    sb.LightDir = LightDir;
+    //ディフューズ
+    sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    //エミッシブ加算は行わない。
+    sb.Emissive = Color4(0, 0, 0, 0);
+    //コンスタントバッファの更新
+    pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 
+        0, nullptr, &sb, 0, 0);
+
+    //ストライドとオフセット
+    UINT stride = sizeof(VertexPositionNormalTexture);
+    UINT offset = 0;
+    //頂点バッファのセット
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    //インデックスバッファのセット
+    pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), 
+        DXGI_FORMAT_R16_UINT, 0);
+
+    //描画方法（3角形）
+    pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
+    ID3D11Buffer* pNullConstantBuffer = nullptr;
+    //頂点シェーダに渡す
+    pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ピクセルシェーダに渡す
+    pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //シェーダの設定
+    pD3D11DeviceContext->VSSetShader(VSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
+    pD3D11DeviceContext->PSSetShader(PSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pD3D11DeviceContext->IASetInputLayout(VSPNTStatic::GetPtr()->GetInputLayout());
+
+    //ブレンドステート
+    if (m_Trace) {
+        //透明処理
+        pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), 
+            nullptr, 0xffffffff);
+    }
+    else {
+        //透明処理しない
+        pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), 
+            nullptr, 0xffffffff);
+    }
+
+    //デプスステンシルステート
+    pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+
+    //テクスチャとサンプラーの設定
+    ID3D11ShaderResourceView* pNull[1] = { 0 };
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, 
+        m_TextureResource->GetShaderResourceView().GetAddressOf());
+    ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
+    pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+
+    if (m_Trace) {
+        //透明処理の場合は、ラスタライザステートを変更して2回描画
+        //ラスタライザステート（裏面描画）
+        pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+        //描画
+        pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+        //ラスタライザステート（表面描画）
+        pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+        //描画
+        pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+    }
+    else {
+        //ラスタライザステート（表面描画）
+        pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+        //描画
+        pD3D11DeviceContext->DrawIndexed(m_CubeMesh->GetNumIndicis(), 0, 0);
+    }
+    //後始末
+    Dev->InitializeStates();
+}
+</pre>
+</div>
+<br />
+<h3>【まとめ】</h3>
+　今回はあえて、初期化や描画のソースをできるだけ記してみました。コード分量も含め、<b>Dx12版</b>の設定しなければならないことの多さに戸惑うかもしれません。<br />
+　それだけ<b>Dx12</b>は<b>ゲームプログラマが自分で管理する</b>という考え方が徹底してるといえます。<b>Dx11</b>がやってくれた処理を自分で記述する形になります。<br />
+　このソースをみてただ<b>うんざり</b>するのもいいですが、逆に考えれば<b>Dx12のほうが自由度が高い</b>とも言えます。GPUやDx12のメカニズムにある程度慣れてくれば、Dx12のほうが<b>記述しやすい</b>とおもいます（経験上）。と言いますのは、上記に述べた初期化関数などの処理は<b>一度書けば、あとは使いまわしができる</b>からです。ですから設計によっては<b>Dx11版よりシンプルな形</b>でゲーム制作できるように<b>描画クラス</b>などを構築できます。<br />
+　そのような設計にぜひ挑戦してみてください。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_10.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="00_12.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

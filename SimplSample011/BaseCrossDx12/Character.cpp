@@ -171,7 +171,7 @@ namespace basecross {
 		//ルートシグネチャ定義のシリアライズ
 		ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error),
 			L"ルートシグネチャのシリアライズに失敗しました",
-			L"D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error)",
+			L"D3D12SerializeRootSignature()",
 			L"CubeObject::CreateRootSignature()"
 		);
 		//ルートシグネチャの作成
