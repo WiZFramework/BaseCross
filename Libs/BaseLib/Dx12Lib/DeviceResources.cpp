@@ -1225,12 +1225,13 @@ namespace basecross {
 		pImpl->m_CommandList->RSSetViewports(1, &Dev->GetViewport());
 		pImpl->m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
 
+		// Record commands.
+		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
 		pImpl->m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			pImpl->m_ShadowmapDepthStencil.Get(), 
 			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-		// Record commands.
-		pImpl->m_CommandList->ClearDepthStencilView(pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		CommandList::Close(pImpl->m_CommandList);
 		Dev->InsertDrawCommandLists(pImpl->m_CommandList.Get());
 	}
