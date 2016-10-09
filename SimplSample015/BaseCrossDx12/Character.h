@@ -8,59 +8,12 @@
 
 namespace basecross {
 
-	class Scene;
-	class GameObject;
 
-	//--------------------------------------------------------------------------------------
-	///	平面
-	//--------------------------------------------------------------------------------------
-	class SquareObject : public GameObject {
-		//メッシュ
-		shared_ptr<MeshResource> m_SquareMesh;
-		wstring m_TextureFileName;		///<テクスチャファイル名
-		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief コンストラクタ
-		@param[in]	PtrScene	シーンのポインタ
-		@param[in]	TextureFileName	テクスチャファイル名
-		@param[in]	Scale	スケーリング
-		@param[in]	Qt	初期回転
-		@param[in]	Pos	位置
-		*/
-		//--------------------------------------------------------------------------------------
-		SquareObject(const shared_ptr<Scene> PtrScene,
-			const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~SquareObject();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 初期化
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate() override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 更新
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override;
-	};
 
 	//--------------------------------------------------------------------------------------
 	///	立方体
 	//--------------------------------------------------------------------------------------
-	class CubeObject : public GameObject {
+	class CubeObject : public ObjectInterface, public ShapeInterface {
 		//メッシュ
 		shared_ptr<MeshResource> m_CubeMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
@@ -69,19 +22,76 @@ namespace basecross {
 		Quaternion m_Qt;			///<回転
 		Vector3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
+		bool m_Flat;				///<フラット表示するかどうか
+		void CreateBuffers();
+		void UpdateConstantBuffer();
+
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+
+		///コンスタントバッファ
+		struct StaticConstantBuffer
+		{
+			Matrix4X4 World;
+			Matrix4X4 View;
+			Matrix4X4 Projection;
+			Vector4 LightDir;
+			Color4 Emissive;
+			Color4 Diffuse;
+			StaticConstantBuffer() {
+				memset(this, 0, sizeof(StaticConstantBuffer));
+			};
+		};
+		///コンスタントバッファのオブジェクト側変数
+		StaticConstantBuffer m_StaticConstantBuffer;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_CullBackPipelineState;
+		ComPtr<ID3D12PipelineState> m_CullFrontPipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+
+		///各初期化関数
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+
+		///描画処理
+		void DrawObject();
+
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
-		@param[in]	PtrScene	シーンのポインタ
 		@param[in]	TextureFileName	テクスチャファイル名
-		@param[in]	Scale	スケーリング
-		@param[in]	Qt	初期回転
+		@param[in]	Trace	透明処理するかどうか
 		@param[in]	Pos	位置
+		@param[in]	Flat	フラット表示にするかどうか
 		*/
 		//--------------------------------------------------------------------------------------
-		CubeObject(const shared_ptr<Scene> PtrScene,
-			const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos);
+		CubeObject(const wstring& TextureFileName, bool Trace, const Vector3& Pos, bool Flat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -102,142 +112,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnUpdate()override;
-
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief OBBを得る
-		@return	立方体のOBB
-		*/
-		//--------------------------------------------------------------------------------------
-		OBB GetObb()const;
-
-	};
-
-
-	enum class SphereMotion {
-		RightMotion,
-		LeftMotion
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	球体
-	//--------------------------------------------------------------------------------------
-	class SphereObject : public GameObject {
-		shared_ptr< StateMachine<SphereObject> >  m_StateMachine;	//ステートマシーン
-		//メッシュ
-		shared_ptr<MeshResource> m_SphereMesh;
-		UINT m_Division;				///<分割数
-		wstring m_TextureFileName;		///<テクスチャファイル名
-		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
-		bool m_Trace;					///<透明処理するかどうか
-		float m_MoveXDir;	//X移動方向
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief コンストラクタ
-		@param[in]	PtrScene	シーンのポインタ
-		@param[in]	Division	分割数
-		@param[in]	TextureFileName	テクスチャファイル名
-		@param[in]	Trace	透明処理するかどうか
-		@param[in]	Pos	位置
-		*/
-		//--------------------------------------------------------------------------------------
-		SphereObject(const shared_ptr<Scene> PtrScene,
-			UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~SphereObject();
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief ステートマシンの取得
-		@return	ステートマシン
-		*/
-		//--------------------------------------------------------------------------------------
-		shared_ptr< StateMachine<SphereObject> > GetStateMachine() const {
-			return m_StateMachine;
-		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 初期化
+		@brief 描画
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnCreate() override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 更新
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override;
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief アクションを実行する
-		@param[in]	motion	アクション
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetActionMotion(SphereMotion motion);
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 現在のアクションが終了したかどうか
-		@return	終了していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool IstActionArrived();
-
-
+		virtual void OnDraw()override;
 	};
-
-
-	//--------------------------------------------------------------------------------------
-	//	class RightState : public ObjState<SphereObject>;
-	//	用途: 右向き移動
-	//--------------------------------------------------------------------------------------
-	class RightState : public ObjState<SphereObject>
-	{
-		RightState() {}
-	public:
-		//ステートのインスタンス取得
-		static shared_ptr<RightState> Instance();
-		//ステートに入ったときに呼ばれる関数
-		virtual void Enter(const shared_ptr<SphereObject>& Obj)override;
-		//ステート実行中に毎ターン呼ばれる関数
-		virtual void Execute(const shared_ptr<SphereObject>& Obj)override;
-		//ステートにから抜けるときに呼ばれる関数
-		virtual void Exit(const shared_ptr<SphereObject>& Obj)override;
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	class LeftState : public ObjState<SphereObject>;
-	//	用途: 左向き移動
-	//--------------------------------------------------------------------------------------
-	class LeftState : public ObjState<SphereObject>
-	{
-		LeftState() {}
-	public:
-		//ステートのインスタンス取得
-		static shared_ptr<LeftState> Instance();
-		//ステートに入ったときに呼ばれる関数
-		virtual void Enter(const shared_ptr<SphereObject>& Obj)override;
-		//ステート実行中に毎ターン呼ばれる関数
-		virtual void Execute(const shared_ptr<SphereObject>& Obj)override;
-		//ステートにから抜けるときに呼ばれる関数
-		virtual void Exit(const shared_ptr<SphereObject>& Obj)override;
-	};
-
 
 }
 //end basecross

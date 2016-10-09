@@ -37,7 +37,6 @@
     <Import Project="..\..\Libs\BaseLib\Dx12Lib\Dx12Lib.vcxitems" Label="Shared" />
     <Import Project="..\..\Libs\BaseLib\DxLib\DxLib.vcxitems" Label="Shared" />
     <Import Project="..\DxShared\DxShared.vcxitems" Label="Shared" />
-    <Import Project="TeamSharedDx12\TeamSharedDx12.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -106,7 +105,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Character.h" />
-    <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="ProjectShader.h" />
     <ClInclude Include="resource.h" />
@@ -122,7 +120,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Character.cpp" />
-    <ClCompile Include="Player.cpp" />
     <ClCompile Include="ProjectShader.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -32,6 +32,7 @@ namespace basecross{
 		auto PtrRegid = AddComponent<Rigidbody>();
 		//”½”­ŒW”‚Í0.5i”¼•ªj
 		PtrRegid->SetReflection(0.5f);
+		PtrRegid->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 		//Seek‘€‘Ç
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive‘€‘Ç

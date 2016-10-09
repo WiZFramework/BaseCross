@@ -451,8 +451,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	struct CAPSULE  : public CollisionVolume{
 		float m_Radius;			///< 半径
-		Vector3 m_PointA;		///< 中間部線分の開始点
-		Vector3 m_PointB;		///< 中間部線分の終了点
+		Vector3 m_PointBottom;		///< 中間部線分の開始点
+		Vector3 m_PointTop;		///< 中間部線分の終了点
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
@@ -460,40 +460,40 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		CAPSULE():
 			m_Radius(0.5f),
-			m_PointA(0,-0.5f,0),
-			m_PointB(0,0.5f,0)
+			m_PointBottom(0,-0.5f,0),
+			m_PointTop(0,0.5f,0)
 		{
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
 		@param[in]	Radius	半径
-		@param[in]	PointA	中間部線分の開始点
-		@param[in]	PointB	中間部線分の終了点
+		@param[in]	PointBottom	中間部線分の開始点
+		@param[in]	PointTop	中間部線分の終了点
 		*/
 		//--------------------------------------------------------------------------------------
-		CAPSULE(float Radius,const Vector3& PointA,const Vector3& PointB):
+		CAPSULE(float Radius,const Vector3& PointBottom,const Vector3& PointTop):
 			m_Radius(Radius),
-			m_PointA(PointA),
-			m_PointB(PointB)
+			m_PointBottom(PointBottom),
+			m_PointTop(PointTop)
 		{}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
 		@param[in]	MakedRadius	作成時の半径
-		@param[in]	MakedPointA	作成時の中間部線分の開始点
-		@param[in]	MakedPointB	作成時の中間部線分の終了点
+		@param[in]	MakedPointBottom	作成時の中間部線分の開始点
+		@param[in]	MakedPointTop	作成時の中間部線分の終了点
 		@param[in]	Matrix	変換行列
 		*/
 		//--------------------------------------------------------------------------------------
-		CAPSULE(float MakedRadius,const Vector3& MakedPointA,const Vector3& MakedPointB,
+		CAPSULE(float MakedRadius,const Vector3& MakedPointBottom,const Vector3& MakedPointTop,
 			const Matrix4X4& Matrix):
 			m_Radius(MakedRadius),
-			m_PointA(MakedPointA),
-			m_PointB(MakedPointB)
+			m_PointBottom(MakedPointBottom),
+			m_PointTop(MakedPointTop)
 		{
-			m_PointA.Transform(Matrix);
-			m_PointB.Transform(Matrix);
+			m_PointBottom.Transform(Matrix);
+			m_PointTop.Transform(Matrix);
 			//スケーリングのみ1方向で計算
 			Vector3 Scale = Matrix.ScaleInMatrix();
 			m_Radius *= Scale.x;
@@ -505,7 +505,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		Vector3 GetCenter() const{
-			return m_PointA + ((m_PointB - m_PointA) * 0.5f);
+			return m_PointBottom + ((m_PointTop - m_PointBottom) * 0.5f);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -515,10 +515,10 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetCenter(const Vector3& Center){
-			Vector3 CenterToPointA = ((m_PointA - m_PointB) * 0.5f);
-			Vector3 CenterToPointB = ((m_PointB - m_PointA) * 0.5f);
-			m_PointA = Center + CenterToPointA;
-			m_PointB = Center + CenterToPointB;
+			Vector3 CenterToPointA = ((m_PointBottom - m_PointTop) * 0.5f);
+			Vector3 CenterToPointB = ((m_PointTop - m_PointBottom) * 0.5f);
+			m_PointBottom = Center + CenterToPointA;
+			m_PointTop = Center + CenterToPointB;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -527,7 +527,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		float GetHeightRadius()const{
-			float PointLen = Vector3EX::Length(m_PointB - m_PointA) * 0.5f;
+			float PointLen = Vector3EX::Length(m_PointTop - m_PointBottom) * 0.5f;
 			PointLen += m_Radius;
 			return PointLen;
 		}
@@ -693,7 +693,7 @@ namespace basecross{
 			//まず最近接点を設定
 			float t;
 			Vector3 ClosetPoint;
-			ClosetPtPointSegment(sp.m_Center, cap.m_PointA, cap.m_PointB, t, ClosetPoint);
+			ClosetPtPointSegment(sp.m_Center, cap.m_PointBottom, cap.m_PointTop, t, ClosetPoint);
 			//ClosetPointは、カプセル線分上の点である
 			Vector3 Normal = sp.m_Center - ClosetPoint;
 			Normal.Normalize();
@@ -701,7 +701,7 @@ namespace basecross{
 			//最近接点を設定
 			d = ClosetPoint + Normal;
 			//衝突しているか判別
-			float dist2 = SqDistPointSegment(cap.m_PointA,cap.m_PointB,sp.m_Center);
+			float dist2 = SqDistPointSegment(cap.m_PointBottom,cap.m_PointTop,sp.m_Center);
 			float radius = sp.m_Radius + cap.m_Radius;
 			return dist2 <= radius * radius;
 		}
@@ -721,7 +721,7 @@ namespace basecross{
 			Vector3& retvec1,
 			Vector3& retvec2){
 			float s,t;
-			float dist2 = ClosestPtSegmentSegment(cap1.m_PointA,cap1.m_PointB,cap2.m_PointA,cap2.m_PointB,
+			float dist2 = ClosestPtSegmentSegment(cap1.m_PointBottom,cap1.m_PointTop,cap2.m_PointBottom,cap2.m_PointTop,
 				s,t,retvec1,retvec2);
 			float radius = cap1.m_Radius + cap2.m_Radius;
 			return dist2 <= radius * radius;
@@ -1206,8 +1206,8 @@ namespace basecross{
 			Matrix4X4 ScalMat;
 			ScalMat.Scaling(Scale, Scale, Scale);
 			//各頂点をスケーリング
-			SrcCapsule2.m_PointA = Vector3EX::Transform(SrcBaseCapsule.m_PointA, ScalMat);
-			SrcCapsule2.m_PointB = Vector3EX::Transform(SrcBaseCapsule.m_PointB, ScalMat);
+			SrcCapsule2.m_PointBottom = Vector3EX::Transform(SrcBaseCapsule.m_PointBottom, ScalMat);
+			SrcCapsule2.m_PointTop = Vector3EX::Transform(SrcBaseCapsule.m_PointTop, ScalMat);
 			//中心を移動
 			SrcCapsule2.SetCenter(SrcCapsule.GetCenter() + SrcVelocity * mid);
 
@@ -1301,15 +1301,15 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static Vector3 ClosestPtCapsuleOBB(const CAPSULE& cp, const OBB& obb, int& flg){
 			SPHERE Sp;
-			Sp.m_Center = cp.m_PointA;
+			Sp.m_Center = cp.m_PointBottom;
 			Sp.m_Radius = cp.m_Radius;
 			Vector3 retvec;
 			//スタート位置で最近接点を得る
 			HitTest::SPHERE_OBB(Sp, obb, retvec);
 			//内積を図る
-			Vector3 Base = cp.m_PointB - cp.m_PointA;
+			Vector3 Base = cp.m_PointTop - cp.m_PointBottom;
 			Base.Normalize();
-			Vector3 Dest = retvec - cp.m_PointA;
+			Vector3 Dest = retvec - cp.m_PointBottom;
 			float dot = Base.Dot(Dest);
 			if (dot < 0){
 				//スタート位置の球体の外側
@@ -1317,10 +1317,10 @@ namespace basecross{
 				flg = -1;
 				return retvec;
 			}
-			float  size = Vector3EX::Length(cp.m_PointB - cp.m_PointA);
+			float  size = Vector3EX::Length(cp.m_PointTop - cp.m_PointBottom);
 			if (dot > size){
 				//終点より先にある
-				Sp.m_Center = cp.m_PointB;
+				Sp.m_Center = cp.m_PointTop;
 				HitTest::SPHERE_OBB(Sp, obb, retvec);
 				//終点で最近接点をとる
 				flg = 1;
@@ -1330,7 +1330,7 @@ namespace basecross{
 			HitTest::ClosestPtPointOBB(cp.GetCenter(), obb, retvec);
 			float t;
 			Vector3 SegPoint;
-			HitTest::ClosetPtPointSegment(retvec, cp.m_PointA, cp.m_PointB, t, SegPoint);
+			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
 			Vector3 Span = retvec - SegPoint;
 			Span.Normalize();
 			Span *= cp.m_Radius;
@@ -1351,26 +1351,11 @@ namespace basecross{
 		static bool CAPSULE_OBB(const CAPSULE& cp, const OBB& obb, Vector3& retvec){
 			//スィープさせる球
 			SPHERE StartSp, EndSp;
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
 			//各点とobbの最近接点を得る
-			Vector3 ToObb;
-			HitTest::ClosestPtPointOBB(cp.m_PointA, obb, ToObb);
-			float LenA = Vector3EX::Length(cp.m_PointA - ToObb);
-			HitTest::ClosestPtPointOBB(cp.m_PointB, obb, ToObb);
-			float LenB = Vector3EX::Length(cp.m_PointB - ToObb);
-			if (LenA < LenB){
-				//スタートはA側
-				StartSp.m_Center = cp.m_PointA;
-				StartSp.m_Radius = cp.m_Radius;
-				EndSp.m_Center = cp.m_PointB;
-				EndSp.m_Radius = cp.m_Radius;
-			}
-			else{
-				//スタートはB側
-				StartSp.m_Center = cp.m_PointB;
-				StartSp.m_Radius = cp.m_Radius;
-				EndSp.m_Center = cp.m_PointA;
-				EndSp.m_Radius = cp.m_Radius;
-			}
 			//カプセルとOBBの最近接点を得る（衝突してるかどうかは関係ない）
 			int flg;
 			retvec = ClosestPtCapsuleOBB(cp, obb,flg);
@@ -1408,8 +1393,8 @@ namespace basecross{
 			Matrix4X4 ScalMat;
 			ScalMat.Scaling(Scale, Scale, Scale);
 			//各頂点をスケーリング
-			SrcCapsule2.m_PointA = Vector3EX::Transform(SrcBaseCapsule.m_PointA, ScalMat);
-			SrcCapsule2.m_PointB = Vector3EX::Transform(SrcBaseCapsule.m_PointB, ScalMat);
+			SrcCapsule2.m_PointBottom = Vector3EX::Transform(SrcBaseCapsule.m_PointBottom, ScalMat);
+			SrcCapsule2.m_PointTop = Vector3EX::Transform(SrcBaseCapsule.m_PointTop, ScalMat);
 			//中心を移動
 			SrcCapsule2.SetCenter(SrcCapsule.GetCenter() + SrcVelocity * mid);
 			Vector3 RetVec;

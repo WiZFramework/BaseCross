@@ -40,18 +40,6 @@ struct PSPCTInput
 	float2 tex : TEXCOORD;
 };
 
-struct VSPNInput
-{
-	float4 position : SV_POSITION;
-	float3 norm : NORMAL;
-};
-
-struct PSPNInput
-{
-	float4 position : SV_POSITION;
-	float3 norm : NORMAL;
-};
-
 
 
 struct VSPNTInput

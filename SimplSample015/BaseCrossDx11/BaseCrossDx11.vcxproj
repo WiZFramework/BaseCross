@@ -37,7 +37,6 @@
     <Import Project="..\..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems" Label="Shared" />
     <Import Project="..\..\Libs\BaseLib\DxLib\DxLib.vcxitems" Label="Shared" />
     <Import Project="..\DxShared\DxShared.vcxitems" Label="Shared" />
-    <Import Project="TeamSharedDx11\TeamSharedDx11.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -106,6 +105,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Character.h" />
+    <ClInclude Include="Common\Action.h" />
+    <ClInclude Include="Common\Collision.h" />
+    <ClInclude Include="Common\Common.h" />
+    <ClInclude Include="Common\Components.h" />
+    <ClInclude Include="Common\DrawComponents.h" />
+    <ClInclude Include="Common\GameObject.h" />
+    <ClInclude Include="Common\Gravity.h" />
+    <ClInclude Include="Common\Rigidbody.h" />
+    <ClInclude Include="Common\SharedResources.h" />
+    <ClInclude Include="GameStage.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="ProjectShader.h" />
@@ -113,6 +122,7 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BaseCrossDx11.rc" />
@@ -122,6 +132,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Character.cpp" />
+    <ClCompile Include="Common\Action.cpp" />
+    <ClCompile Include="Common\Collision.cpp" />
+    <ClCompile Include="Common\Components.cpp" />
+    <ClCompile Include="Common\DrawComponents.cpp" />
+    <ClCompile Include="Common\GameObject.cpp" />
+    <ClCompile Include="Common\Gravity.cpp" />
+    <ClCompile Include="Common\Rigidbody.cpp" />
+    <ClCompile Include="Common\SharedResources.cpp" />
+    <ClCompile Include="GameStage.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="ProjectShader.cpp" />
     <ClCompile Include="Scene.cpp" />

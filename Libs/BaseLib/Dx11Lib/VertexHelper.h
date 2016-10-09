@@ -549,6 +549,61 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
+	/// 位置と色とテクスチャと行列を持つ入力レイアウトの定義
+	//--------------------------------------------------------------------------------------
+	const D3D11_INPUT_ELEMENT_DESC VertexPositionColorTextureMatrixLayout[] =
+	{
+		{ "SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",       0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "MATRIX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	/// 位置と色とテクスチャと行列をを持つ頂点の定義
+	//--------------------------------------------------------------------------------------
+	struct VertexPositionColorTextureMatrix
+	{
+		VertexPositionColorTextureMatrix()
+		{ }
+
+		VertexPositionColorTextureMatrix(XMFLOAT3 const& pos, XMFLOAT4 const& col, XMFLOAT2 const& tex,
+			XMFLOAT4X4 const& mat)
+			: position(pos),
+			color(col),
+			textureCoordinate(tex),
+			matrix(mat)
+		{ }
+
+		VertexPositionColorTextureMatrix(FXMVECTOR pos, FXMVECTOR col, FXMVECTOR tex,
+			FXMMATRIX const& mat)
+			: position(pos),
+			color(col),
+			textureCoordinate(tex),
+			matrix(mat)
+		{
+		}
+
+		Vector3 position;
+		Color4 color;
+		Vector2 textureCoordinate;
+		Matrix4X4 matrix;
+
+		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
+			return VertexPositionColorTextureMatrixLayout;
+		}
+		static UINT GetNumElements() {
+			return  ARRAYSIZE(VertexPositionColorTextureMatrixLayout);
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
 	/// 位置と法線とテクスチャと行列を持つ入力レイアウトの定義
 	//--------------------------------------------------------------------------------------
 	const D3D11_INPUT_ELEMENT_DESC VertexPositionNormalTextureMatrixLayout[] =

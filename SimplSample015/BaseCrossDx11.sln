@@ -18,16 +18,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\Dx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxShared", "DxShared\DxShared.vcxitems", "{2D875D87-FFF7-4071-AF2E-B2965A4BDF6C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TeamSharedDx11", "BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems", "{4D30EBB9-82BA-47CE-99A6-70CE7E61ADF0}"
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		DxShared\DxShared.vcxitems*{2d875d87-fff7-4071-af2e-b2965a4bdf6c}*SharedItemsImports = 9
 		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
-		BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems*{4d30ebb9-82ba-47ce-99a6-70ce7e61adf0}*SharedItemsImports = 9
 		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
 		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
-		BaseCrossDx11\TeamSharedDx11\TeamSharedDx11.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
 		DxShared\DxShared.vcxitems*{6926a431-0c26-4d69-9640-271f3dc6c2a5}*SharedItemsImports = 4
 		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
 	EndGlobalSection

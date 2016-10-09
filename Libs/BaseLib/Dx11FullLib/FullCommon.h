@@ -19,5 +19,7 @@
 #include "../SharedLib/Rigidbody.h"
 //描画コンポーネント
 #include "DrawComponents.h"
+//文字列描画コンポーネント
+#include "StringComponents.h"
 //ゲームオブジェクト、ステージなど
 #include "../SharedLib/GameObject.h"

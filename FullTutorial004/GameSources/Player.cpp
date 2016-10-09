@@ -27,7 +27,6 @@ namespace basecross{
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(0, 0.125f, 0);
-
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
 		//横部分のみ反発
@@ -36,22 +35,29 @@ namespace basecross{
 		PtrRedid->SetReflection(0.5f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-
 		//最下地点
 		PtrGravity->SetBaseY(0.125f);
-		//衝突判定をつける
-		auto PtrCol = AddComponent<CollisionSphere>();
+		AddComponent<CollisionSphere>();
+
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+
 		//描画コンポーネントの設定
 		auto PtrDraw = AddComponent<PNTStaticDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
 		PtrDraw->SetTextureResource(L"TRACE_TX");
+
+		//文字列をつける
+		auto PtrString = AddComponent<StringSprite>();
+		PtrString->SetText(L"");
+		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
+
 
 		//透明処理
 		SetAlphaActive(true);
@@ -115,8 +121,70 @@ namespace basecross{
 	}
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {
+
+		//文字列表示
+		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+		wstring FPS(L"FPS: ");
+		FPS += Util::UintToWStr(fps);
+		FPS += L"\n";
+
+
+		auto Pos = GetComponent<Transform>()->GetWorldMatrix().PosInMatrix();
+		wstring PositionStr(L"Position:\t");
+		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		wstring RididStr(L"Velocity:\t");
+		auto Velocity = GetComponent<Rigidbody>()->GetVelocity();
+		RididStr += L"X=" + Util::FloatToWStr(Velocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		wstring GravStr(L"Gravity:\t");
+		auto Grav = GetComponent<Gravity>()->GetGravity();
+		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+
+		wstring GravityStr(L"GravityVelocity:\t");
+		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
+		GravityStr += L"X=" + Util::FloatToWStr(GravityVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		//wstring HitObjectStr(L"HitObject: ");
+		//if (GetComponent<Collision>()->GetHitObjectVec()) {
+		//	HitObjectStr += Util::UintToWStr((UINT)GetComponent<Collision>()->GetHitObject().get()) + L"\n";
+		//}
+		//else {
+		//	HitObjectStr += L"NULL\n";
+		//}
+		//wstring OnObjectStr(L"OnObject: ");
+		//auto OnObject = GetComponent<Gravity>()->GetOnObject();
+		//if (OnObject) {
+		//	OnObjectStr += Util::UintToWStr((UINT)OnObject.get()) + L"\n";
+		//}
+		//else {
+		//	OnObjectStr += L"NULL\nOnObjectClear\n";
+		//}
+
+		wstring statestr = L"JUMP: ";
+		if (m_StateMachine->GetCurrentState() == DefaultState::Instance()) {
+			statestr = L"DEFAULT\n";
+		}
+
+		wstring str = FPS + PositionStr + RididStr + GravStr + GravityStr + statestr ;
+		//文字列をつける
+		auto PtrString = GetComponent<StringSprite>();
+		PtrString->SetText(str);
+
+
+
 		
-		auto PtrCol = GetComponent<CollisionSphere>();
+		shared_ptr<Collision> PtrCol;
+		PtrCol = GetComponent<CollisionSphere>();
 		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
 		auto GVec = Group->GetGroupVector();
 		auto PtrTrans = GetComponent<Transform>();
@@ -202,7 +270,7 @@ namespace basecross{
 		auto PtrGravity = GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		PtrGravity->StartJump(JumpVec, 0);
+		PtrGravity->StartJump(JumpVec);
 	}
 	//Aボタンでジャンプしている間の処理
 	//ジャンプ終了したらtrueを返す

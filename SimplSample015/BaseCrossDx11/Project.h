@@ -7,13 +7,12 @@
 
 
 #include "resource.h"
-//チーム用共有プロジェクト
-#include "TeamSharedDx11/TeamSharedCommon.h"
 
 #include "ProjectShader.h"
+#include "Scene.h"
+#include "GameStage.h"
 #include "Character.h"
 #include "Player.h"
-#include "Scene.h"
 
 
 

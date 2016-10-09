@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{030aed56-db27-40ca-a09b-2ef0e651bc8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -34,6 +37,39 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="ProjectShader.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Action.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Collision.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Components.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DrawComponents.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\GameObject.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Gravity.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Rigidbody.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\SharedResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="GameStage.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
@@ -64,6 +100,33 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="ProjectShader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Action.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Collision.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Components.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\DrawComponents.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\GameObject.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Gravity.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\Rigidbody.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\SharedResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="GameStage.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
