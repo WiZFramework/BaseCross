@@ -173,8 +173,7 @@ namespace basecross{
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 		
-		shared_ptr<Collision> PtrCol;
-		PtrCol = GetComponent<CollisionSphere>();
+		auto PtrCol = GetComponent<CollisionSphere>();
 		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
 		auto GVec = Group->GetGroupVector();
 		auto PtrTrans = GetComponent<Transform>();

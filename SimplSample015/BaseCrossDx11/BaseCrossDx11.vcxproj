@@ -114,6 +114,7 @@
     <ClInclude Include="Common\Gravity.h" />
     <ClInclude Include="Common\Rigidbody.h" />
     <ClInclude Include="Common\SharedResources.h" />
+    <ClInclude Include="Common\StringComponents.h" />
     <ClInclude Include="GameStage.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />

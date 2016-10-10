@@ -24,14 +24,11 @@ namespace basecross {
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
 
 		IsHitAction m_IsHitAction;	//衝突した時の動作定義
-
 		bool m_IsOnObject;		//乗っているオブジェクトがあるかどうか
 
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
 		vector<shared_ptr<Collision>> m_OnObjectVec;	//乗っているオブジェクト
 
-		float m_EscapeSpanMin;
-		float m_EscapeAlignPlus;
 		Impl() :
 			m_Fixed(false),
 			m_SendEventActive(false),
@@ -279,8 +276,6 @@ namespace basecross {
 
 
 	void CollisionSphere::SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl) {
-		//前回のターンからの時間
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
 		if (PtrGravity) {
 			//オブジェクトの上に乗った
@@ -303,8 +298,6 @@ namespace basecross {
 	}
 
 	void CollisionSphere::SetDestRotGravity(const shared_ptr<CollisionObb>& DestColl) {
-		//前回のターンからの時間
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
 		if (PtrGravity) {
 			//オブジェクトの上に乗った
@@ -631,8 +624,6 @@ namespace basecross {
 	}
 
 	void CollisionObb::SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl) {
-		//前回のターンからの時間
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
 		if (PtrGravity) {
 			//オブジェクトの上に乗った
@@ -657,7 +648,24 @@ namespace basecross {
 		}
 	}
 	void CollisionObb::SetDestRotGravity(const shared_ptr<CollisionObb>& DestColl) {
-
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		if (PtrGravity) {
+			//オブジェクトの上に乗った
+			OBB obb = DestColl->GetObb();
+			Vector3 RotDevY = obb.m_Rot[1];
+			Vector3 RotDev;
+			if (RotDevY.x == 0 && RotDevY.z == 0) {
+				RotDev = Vector3(0, 0, 0);
+			}
+			else {
+				RotDevY *= (PtrGravity->GetDefaultGravity().Length() * RotDevY.y);
+				RotDev = PtrGravity->GetDefaultGravity() + RotDevY;
+			}
+			PtrGravity->SetGravity(RotDev);
+			PtrGravity->SetGravityVelocityZero();
+		}
 	}
 
 
@@ -685,6 +693,39 @@ namespace basecross {
 	}
 
 	bool CollisionObb::OnObjectTest(const shared_ptr<CollisionObb>& DestColl) {
+		//自分はOBB
+		OBB SrcObb = GetObb();
+		OBB DestObb = DestColl->GetObb();
+		if (HitTest::OBB_OBB(SrcObb, DestObb)) {
+			return false;
+		}
+
+		Vector3 ChkVec;
+		auto PtrGravity = GetGameObject()->GetComponent<Gravity>(false);
+		if (PtrGravity) {
+			//SrcObbから底辺の４点を求める
+			//中心からの相対距離で作成する
+			vector<Vector3> BottomPoints = {
+				Vector3(SrcObb.m_Size.x, -SrcObb.m_Size.y, SrcObb.m_Size.z),
+				Vector3(-SrcObb.m_Size.x, -SrcObb.m_Size.y, SrcObb.m_Size.z),
+				Vector3(SrcObb.m_Size.x, -SrcObb.m_Size.y, -SrcObb.m_Size.z),
+				Vector3(-SrcObb.m_Size.x, -SrcObb.m_Size.y, -SrcObb.m_Size.z),
+			};
+			for (auto& p : BottomPoints) {
+				Vector3 StartPoint = p + Vector3(0, 0.1f, 0);
+				StartPoint.Transform(DestObb.GetRotMatrix());
+				StartPoint += SrcObb.m_Center;
+				////
+				Vector3 EndPoint = p + Vector3(0, -pImpl->m_ChkOnUnderLaySize, 0);
+				EndPoint.Transform(DestObb.GetRotMatrix());
+				EndPoint += SrcObb.m_Center;
+				//上に乗ってるかどうかを検証
+				//レイを打ち込んでみる
+				if (HitTest::SEGMENT_OBB(StartPoint, EndPoint, DestObb)) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
