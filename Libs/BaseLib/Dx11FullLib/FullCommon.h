@@ -1,6 +1,7 @@
 /*!
 @file FullCommon.h
 @brief Fullバージョン用ライブラリ（Dx11専用含む）用のヘッダをまとめる
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

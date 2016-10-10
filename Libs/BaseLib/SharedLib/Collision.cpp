@@ -1,6 +1,7 @@
 /*!
 @file Collision.cpp
 @brief 衝突判定コンポーネント実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 
@@ -22,10 +23,12 @@ namespace basecross {
 		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
 
+		IsHitAction m_IsHitAction;	//衝突した時の動作定義
 
 		bool m_IsOnObject;		//乗っているオブジェクトがあるかどうか
 
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
+		vector<shared_ptr<Collision>> m_OnObjectVec;	//乗っているオブジェクト
 
 		float m_EscapeSpanMin;
 		float m_EscapeAlignPlus;
@@ -35,6 +38,7 @@ namespace basecross {
 			m_PostEventActive(false),
 			m_PostDispatchTime(0),
 			m_EventString(L"CollisionEvent"),
+			m_IsHitAction(IsHitAction::AutoOnObjectRepel),
 			m_IsOnObject(false)
 		{
 		}
@@ -73,6 +77,7 @@ namespace basecross {
 			return;
 		}
 		auto ObjVec = GetGameObject()->GetStage()->GetGameObjectVec();
+
 		for (auto ObjPtr : ObjVec) {
 			if ((GetGameObject() != ObjPtr) && ObjPtr->IsUpdateActive()) {
 				//相手のCollisionを取得
@@ -82,7 +87,24 @@ namespace basecross {
 						//相手のCollisionが無効
 						continue;
 					}
-					if (!OnObjectTestBase(DestCollisionPtr)) {
+					//乗ってるオブジェクトを書き出す
+					AddOnObjectTest(DestCollisionPtr);
+				}
+			}
+		}
+
+
+
+		for (auto ObjPtr : ObjVec) {
+			if ((GetGameObject() != ObjPtr) && ObjPtr->IsUpdateActive()) {
+				//相手のCollisionを取得
+				auto DestCollisionPtr = ObjPtr->GetComponent<Collision>(false);
+				if (DestCollisionPtr) {
+					if (!DestCollisionPtr->IsUpdateActive()) {
+						//相手のCollisionが無効
+						continue;
+					}
+					if (!ChkOnObjectTest(DestCollisionPtr)) {
 						//相手に乗ってなければ衝突判定
 						CollisionTestBase(DestCollisionPtr);
 					}
@@ -96,11 +118,21 @@ namespace basecross {
 	}
 	void Collision::ClearHitObject() {
 		pImpl->m_HitObjectVec.clear();
+		pImpl->m_OnObjectVec.clear();
 		SetOnObject(false);
 	}
 	vector<shared_ptr<GameObject>>& Collision::GetHitObjectVec() {
 		return pImpl->m_HitObjectVec;
 	}
+
+	IsHitAction Collision::GetIsHitAction() const {
+		return pImpl->m_IsHitAction;
+
+	}
+	void Collision::SetIsHitAction(IsHitAction HitAction) {
+		pImpl->m_IsHitAction = HitAction;
+	}
+
 
 	bool Collision::IsOnObject() {
 		return pImpl->m_IsOnObject;
@@ -120,6 +152,33 @@ namespace basecross {
 		else if (DestCollisionObbPtr) {
 			SetDestRotGravity(DestCollisionObbPtr);
 		}
+	}
+
+
+	bool Collision::AddOnObjectTest(const shared_ptr<Collision>& DestColl) {
+		auto DestCollisionSpherePtr = dynamic_pointer_cast<CollisionSphere>(DestColl);
+		auto DestCollisionObbPtr = dynamic_pointer_cast<CollisionObb>(DestColl);
+		if (DestCollisionSpherePtr) {
+			if (OnObjectTest(DestCollisionSpherePtr)) {
+				pImpl->m_OnObjectVec.push_back(DestColl);
+			}
+		}
+		else if (DestCollisionObbPtr) {
+			if (OnObjectTest(DestCollisionObbPtr)) {
+				pImpl->m_OnObjectVec.push_back(DestColl);
+			}
+		}
+		return false;
+
+	}
+
+	bool Collision::ChkOnObjectTest(const shared_ptr<Collision>& DestColl) {
+		for (auto& v : pImpl->m_OnObjectVec) {
+			if (DestColl == v) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 
@@ -143,6 +202,8 @@ namespace basecross {
 
 		auto DestCollisionSpherePtr = dynamic_pointer_cast<CollisionSphere>(DestColl);
 		auto DestCollisionObbPtr = dynamic_pointer_cast<CollisionObb>(DestColl);
+
+
 		if (DestCollisionSpherePtr) {
 			CollisionTest(DestCollisionSpherePtr);
 		}
@@ -311,7 +372,6 @@ namespace basecross {
 		}
 	}
 
-
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -347,7 +407,7 @@ namespace basecross {
 				CollisionEscape(DestColl);
 			}
 		}
-		OnObjectTest(DestColl);
+
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
@@ -385,8 +445,8 @@ namespace basecross {
 				CollisionEscape(DestColl);
 			}
 		}
-		OnObjectTest(DestColl);
 	}
+
 
 	void CollisionSphere::BackToBefore(float SpanTime) {
 		//前回のターンからの時間
@@ -415,6 +475,7 @@ namespace basecross {
 		if (PtrGravity) {
 			OnObj = OnObjectTest(DestColl);
 			if (OnObj) {
+				SetOnObject(OnObj);
 				SetDestRotGravity(DestColl);
 				PtrGravity->SetGravityVelocityZero();
 			}
@@ -426,7 +487,7 @@ namespace basecross {
 		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigidbody) {
 			if (OnObj) {
-				switch (PtrRigidbody->GetIsHitAction()) {
+				switch (GetIsHitAction()) {
 				case IsHitAction::AutoOnObjectRepel:
 					PtrRigidbody->UpdateFromTime(LastTime);
 					break;
@@ -440,6 +501,7 @@ namespace basecross {
 			}
 		}
 	}
+
 
 	void CollisionSphere::AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime) {
 		//前回のターンからの時間
@@ -451,6 +513,7 @@ namespace basecross {
 		if (PtrGravity) {
 			OnObj = OnObjectTest(DestColl);
 			if (OnObj) {
+				SetOnObject(OnObj);
 				SetDestRotGravity(DestColl);
 				PtrGravity->SetGravityVelocityZero();
 			}
@@ -462,7 +525,7 @@ namespace basecross {
 		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigidbody) {
 			if (OnObj) {
-				switch (PtrRigidbody->GetIsHitAction()) {
+				switch (GetIsHitAction()) {
 				case IsHitAction::AutoOnObjectRepel:
 					PtrRigidbody->UpdateFromTime(LastTime);
 					break;
@@ -477,6 +540,7 @@ namespace basecross {
 		}
 
 	}
+
 
 
 	void CollisionSphere::CollisionEscape(const shared_ptr<CollisionSphere>& DestColl) {
@@ -622,10 +686,7 @@ namespace basecross {
 
 	bool CollisionObb::OnObjectTest(const shared_ptr<CollisionObb>& DestColl) {
 		return false;
-
 	}
-
-
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 		//前回のターンからの時間
@@ -662,7 +723,6 @@ namespace basecross {
 				CollisionEscape(DestColl);
 			}
 		}
-		OnObjectTest(DestColl);
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
@@ -700,8 +760,8 @@ namespace basecross {
 				CollisionEscape(DestColl);
 			}
 		}
-		OnObjectTest(DestColl);
 	}
+
 
 
 	void CollisionObb::BackToBefore(float SpanTime) {
@@ -721,7 +781,6 @@ namespace basecross {
 		PtrTransform->SetPosition(Pos);
 
 	}
-
 	void CollisionObb::AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime) {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -732,6 +791,7 @@ namespace basecross {
 		if (PtrGravity) {
 			OnObj = OnObjectTest(DestColl);
 			if (OnObj) {
+				SetOnObject(true);
 				SetDestRotGravity(DestColl);
 				PtrGravity->SetGravityVelocityZero();
 			}
@@ -743,7 +803,7 @@ namespace basecross {
 		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigidbody) {
 			if (OnObj) {
-				switch (PtrRigidbody->GetIsHitAction()) {
+				switch (GetIsHitAction()) {
 				case IsHitAction::AutoOnObjectRepel:
 					PtrRigidbody->UpdateFromTime(LastTime);
 					break;
@@ -756,8 +816,6 @@ namespace basecross {
 				PtrRigidbody->UpdateFromTime(LastTime);
 			}
 		}
-
-
 	}
 
 	void CollisionObb::AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime) {
@@ -770,6 +828,7 @@ namespace basecross {
 		if (PtrGravity) {
 			OnObj = OnObjectTest(DestColl);
 			if (OnObj) {
+				SetOnObject(true);
 				SetDestRotGravity(DestColl);
 				PtrGravity->SetGravityVelocityZero();
 			}
@@ -781,7 +840,7 @@ namespace basecross {
 		auto PtrRigidbody = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigidbody) {
 			if (OnObj) {
-				switch (PtrRigidbody->GetIsHitAction()) {
+				switch (GetIsHitAction()) {
 				case IsHitAction::AutoOnObjectRepel:
 					PtrRigidbody->UpdateFromTime(LastTime);
 					break;
@@ -795,7 +854,6 @@ namespace basecross {
 			}
 		}
 	}
-
 
 
 	void CollisionObb::CollisionEscape(const shared_ptr<CollisionSphere>& DestColl) {

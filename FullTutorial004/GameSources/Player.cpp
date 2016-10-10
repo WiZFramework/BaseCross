@@ -29,16 +29,16 @@ namespace basecross{
 		Ptr->SetPosition(0, 0.125f, 0);
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//横部分のみ反発
-		PtrRedid->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 		//反発係数は0.5（半分）
 		PtrRedid->SetReflection(0.5f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 		//最下地点
 		PtrGravity->SetBaseY(0.125f);
-		AddComponent<CollisionSphere>();
-
+		//衝突判定
+		auto PtrColl = AddComponent<CollisionSphere>();
+		//横部分のみ反発
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -154,34 +154,24 @@ namespace basecross{
 		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		//wstring HitObjectStr(L"HitObject: ");
-		//if (GetComponent<Collision>()->GetHitObjectVec()) {
-		//	HitObjectStr += Util::UintToWStr((UINT)GetComponent<Collision>()->GetHitObject().get()) + L"\n";
-		//}
-		//else {
-		//	HitObjectStr += L"NULL\n";
-		//}
-		//wstring OnObjectStr(L"OnObject: ");
-		//auto OnObject = GetComponent<Gravity>()->GetOnObject();
-		//if (OnObject) {
-		//	OnObjectStr += Util::UintToWStr((UINT)OnObject.get()) + L"\n";
-		//}
-		//else {
-		//	OnObjectStr += L"NULL\nOnObjectClear\n";
-		//}
-
+		wstring HitObjectStr(L"HitObject: ");
+		if (GetComponent<Collision>()->GetHitObjectVec().size() > 0) {
+			for (auto&v : GetComponent<Collision>()->GetHitObjectVec()) {
+				HitObjectStr += Util::UintToWStr((UINT)v.get()) + L",";
+			}
+			HitObjectStr += L"\n";
+		}
+		else {
+			HitObjectStr += L"NULL\n";
+		}
 		wstring statestr = L"JUMP: ";
 		if (m_StateMachine->GetCurrentState() == DefaultState::Instance()) {
 			statestr = L"DEFAULT\n";
 		}
-
-		wstring str = FPS + PositionStr + RididStr + GravStr + GravityStr + statestr ;
+		wstring str = FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr + statestr ;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
-
-
-
 		
 		shared_ptr<Collision> PtrCol;
 		PtrCol = GetComponent<CollisionSphere>();

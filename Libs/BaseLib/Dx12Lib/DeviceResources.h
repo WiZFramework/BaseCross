@@ -1,6 +1,7 @@
 /*!
 @file DeviceResources.h
 @brief テクスチャ、メッシュ、Dx12デバイスリソース
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

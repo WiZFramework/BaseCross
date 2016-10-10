@@ -1,8 +1,3 @@
-/*!
-@file StringComponents.cpp
-@brief 文字列描画コンポーネント実体
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
-*/
 #include "stdafx.h"
 
 namespace basecross {

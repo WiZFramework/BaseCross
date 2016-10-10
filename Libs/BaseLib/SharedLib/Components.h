@@ -1,6 +1,7 @@
 /*!
 @file Components.h
 @brief コンポーネント
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
 #include "stdafx.h"

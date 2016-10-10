@@ -1,6 +1,7 @@
 /*!
 @file Action.cpp
 @brief アクション系コンポーネント実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

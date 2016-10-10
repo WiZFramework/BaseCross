@@ -10,10 +10,6 @@ namespace basecross {
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneInterface {
-		shared_ptr<CubeObject> m_CubeObject1;				///<立方体オブジェクト1
-		shared_ptr<CubeObject> m_CubeObject2;				///<立方体オブジェクト2
-		shared_ptr<CubeObject> m_CubeObject3;				///<立方体オブジェクト3
-		shared_ptr<CubeObject> m_CubeObject4;				///<立方体オブジェクト4
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

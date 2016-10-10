@@ -376,7 +376,6 @@ namespace basecross{
 		//Rigidbody‚ğ‚Â‚¯‚é
 		auto PtrRigid = AddComponent<Rigidbody>();
 		//‰¡•”•ª‚Ì‚İ”½”­
-		PtrRigid->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 		//”½”­ŒW”‚Í0.5i”¼•ªj
 		PtrRigid->SetReflection(0.5f);
 		//Seek‘€‘Ç
@@ -394,6 +393,8 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obb‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrColl = AddComponent<CollisionObb>();
+		//‰¡•”•ª‚Ì‚İ”½”­
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();

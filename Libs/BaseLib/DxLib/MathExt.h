@@ -3,6 +3,7 @@
 @file MathExt.h
 @brief 行列、クオータニオン、カラーなどの計算クラス<br />
 XNAMATH のラッピングクラス群
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

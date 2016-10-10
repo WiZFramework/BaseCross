@@ -1,6 +1,7 @@
 /*!
 @file VertexHelper.h
 @brief ’¸“_’è‹`A“™
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
 

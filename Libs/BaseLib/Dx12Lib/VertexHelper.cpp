@@ -1,6 +1,7 @@
 /*!
 @file VertexHelper.cpp
 @brief ’¸“_’è‹`A“™À‘Ì
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #include "stdafx.h"

@@ -30,8 +30,6 @@ namespace basecross{
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//横部分のみ反発
-		PtrRedid->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 		//反発係数は0.5（半分）
 		PtrRedid->SetReflection(0.5f);
 		//重力をつける
@@ -41,6 +39,8 @@ namespace basecross{
 		PtrGravity->SetBaseY(0.125f);
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
+		//横部分のみ反発
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -52,6 +52,10 @@ namespace basecross{
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
 		PtrDraw->SetTextureResource(L"TRACE_TX");
+		//文字列をつける
+		auto PtrString = AddComponent<StringSprite>();
+		PtrString->SetText(L"");
+		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
 		//透明処理
 		SetAlphaActive(true);
@@ -120,7 +124,58 @@ namespace basecross{
 	}
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {
-		
+
+		//文字列表示
+		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+		wstring FPS(L"FPS: ");
+		FPS += Util::UintToWStr(fps);
+		FPS += L"\n";
+
+
+		auto Pos = GetComponent<Transform>()->GetWorldMatrix().PosInMatrix();
+		wstring PositionStr(L"Position:\t");
+		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		wstring RididStr(L"Velocity:\t");
+		auto Velocity = GetComponent<Rigidbody>()->GetVelocity();
+		RididStr += L"X=" + Util::FloatToWStr(Velocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		wstring GravStr(L"Gravity:\t");
+		auto Grav = GetComponent<Gravity>()->GetGravity();
+		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+
+		wstring GravityStr(L"GravityVelocity:\t");
+		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
+		GravityStr += L"X=" + Util::FloatToWStr(GravityVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+		wstring HitObjectStr(L"HitObject: ");
+		if (GetComponent<Collision>()->GetHitObjectVec().size() > 0) {
+			for (auto&v : GetComponent<Collision>()->GetHitObjectVec()) {
+				HitObjectStr += Util::UintToWStr((UINT)v.get()) + L",";
+			}
+			HitObjectStr += L"\n";
+		}
+		else {
+			HitObjectStr += L"NULL\n";
+		}
+		wstring statestr = L"JUMP: ";
+		if (m_StateMachine->GetCurrentState() == DefaultState::Instance()) {
+			statestr = L"DEFAULT\n";
+		}
+		wstring str = FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr + statestr;
+		//文字列をつける
+		auto PtrString = GetComponent<StringSprite>();
+		PtrString->SetText(str);
+
 		auto PtrCol = GetComponent<CollisionSphere>();
 		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
 		auto GVec = Group->GetGroupVector();

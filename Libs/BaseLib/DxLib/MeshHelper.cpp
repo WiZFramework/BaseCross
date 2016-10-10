@@ -1,6 +1,7 @@
 /*!
 @file MeshHelper.cpp
 @brief プリミティブ作成関数等実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

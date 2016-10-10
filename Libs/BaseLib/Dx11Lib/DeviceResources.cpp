@@ -1,6 +1,7 @@
 /*!
 @file DeviceResources.cpp
 @brief テクスチャ、メッシュ、Dx11デバイスリソース実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

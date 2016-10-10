@@ -1,6 +1,7 @@
 /*!
 @file App.cpp
 @brief アプリケーションクラス。入力機器等実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

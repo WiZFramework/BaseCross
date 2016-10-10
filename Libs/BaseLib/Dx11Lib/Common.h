@@ -1,6 +1,7 @@
 /*!
 @file Common.h
 @brief ライブラリ用のヘッダをまとめる
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

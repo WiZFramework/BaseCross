@@ -2,6 +2,7 @@
 @file MathVectorEX.h
 @brief ベクトルののnamespaceによる計算<br />
 XNAMATH のラッピング関数群
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

@@ -1,6 +1,7 @@
 /*!
 @file SharedResources.cpp
 @brief 共有のリソース（ビュー、カメラ、ライトなど）実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

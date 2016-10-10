@@ -1,6 +1,7 @@
 /*!
 @file Rigidbody.h
 @brief 物理計算コンポーネント実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 
@@ -660,8 +661,6 @@ namespace basecross {
 		Vector3 m_MinVelocity;			//最低速度（XYZを指定できる）
 		Vector3 m_AngularVelocity;		//回転速度
 
-		IsHitAction m_IsHitAction;	//衝突した時のRigidbodyの動作定義
-
 		float m_Mass;					//質量（キログラム）
 		float m_Reflection;				//反発係数
 		Vector3 m_Force;				//現在のフォース（ステアリング系コンポーネントで変更される）
@@ -672,7 +671,6 @@ namespace basecross {
 			m_MaxSpeed(10.0f),
 			m_MinVelocity(0.01f, 0.01f, 0.01f),
 			m_AngularVelocity(0, 0, 0),
-			m_IsHitAction(IsHitAction::AutoOnObjectRepel),
 			m_Mass(1.0f),
 			m_Reflection(1.0f),
 			m_Force(0, 0, 0),
@@ -724,13 +722,6 @@ namespace basecross {
 	void Rigidbody::SetAngularVelocity(const Vector3& AngularVelocity) { pImpl->m_AngularVelocity = AngularVelocity; }
 	void Rigidbody::SetAngularVelocity(float x, float y, float z) { pImpl->m_AngularVelocity = Vector3(x, y, z); }
 
-	IsHitAction Rigidbody::GetIsHitAction() const {
-		return pImpl->m_IsHitAction;
-	}
-	void Rigidbody::SetIsHitAction(IsHitAction HitAction) {
-		pImpl->m_IsHitAction = HitAction;
-	}
-
 
 	float Rigidbody::GetMass() const { return pImpl->m_Mass; }
 	void Rigidbody::SetMass(float f) { pImpl->m_Mass = f; }
@@ -767,7 +758,7 @@ namespace basecross {
 
 
 	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl, const shared_ptr<CollisionSphere>& DestColl) {
-		switch (GetIsHitAction()) {
+		switch (SrcColl->GetIsHitAction()) {
 		case IsHitAction::Stop:
 			SetVelocity(0, 0, 0);
 			break;
@@ -786,7 +777,7 @@ namespace basecross {
 		}
 	}
 	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl, const shared_ptr<CollisionObb>& DestColl) {
-		switch (GetIsHitAction()) {
+		switch (SrcColl->GetIsHitAction()) {
 		case IsHitAction::Stop:
 			SetVelocity(0,0,0);
 			break;
@@ -810,7 +801,7 @@ namespace basecross {
 
 
 	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionSphere>& DestColl) {
-		switch (GetIsHitAction()) {
+		switch (SrcColl->GetIsHitAction()) {
 			case IsHitAction::Stop:
 				SetVelocity(0, 0, 0);
 				break;
@@ -832,7 +823,7 @@ namespace basecross {
 	}
 
 	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionObb>& DestColl) {
-		switch (GetIsHitAction()) {
+		switch (SrcColl->GetIsHitAction()) {
 		case IsHitAction::Stop:
 			SetVelocity(0, 0, 0);
 			break;

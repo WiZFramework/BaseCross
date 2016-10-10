@@ -1,6 +1,7 @@
 /*!
 @file BaseHelper.cpp
 @brief 例外処理、ヘルパー関数等実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

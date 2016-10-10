@@ -140,6 +140,7 @@
     <ClCompile Include="Common\Gravity.cpp" />
     <ClCompile Include="Common\Rigidbody.cpp" />
     <ClCompile Include="Common\SharedResources.cpp" />
+    <ClCompile Include="Common\StringComponents.cpp" />
     <ClCompile Include="GameStage.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="ProjectShader.cpp" />

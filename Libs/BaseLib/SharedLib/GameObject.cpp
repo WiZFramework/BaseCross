@@ -1,6 +1,7 @@
 /*!
 @file GameObject.cpp
 @brief ゲームオブジェクト、ステージ実体
+@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #include "stdafx.h"
