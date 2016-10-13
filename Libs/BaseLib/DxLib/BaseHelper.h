@@ -1702,6 +1702,49 @@ namespace basecross{
 
 
 	class ObjectFactory;
+	class ObjectInterface;
+
+	//--------------------------------------------------------------------------------------
+	///	イベント構造体
+	//--------------------------------------------------------------------------------------
+	struct Event {
+		///	遅延時間（SendEventの場合は常に0）
+		float m_DispatchTime;
+		///	このメッセージを送ったオブジェクト
+		weak_ptr<ObjectInterface> m_Sender;
+		///	受け取るオブジェクト（nullptrの場合はアクティブステージ内すべてもしくはキーワードで識別するオブジェクト）
+		weak_ptr<ObjectInterface> m_Receiver;
+		///	メッセージ文字列
+		wstring m_MsgStr;
+		///	追加情報をもつオブジェクトのポインタ
+		shared_ptr<void> m_Info;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	DispatchTime	配送までの時間
+		@param[in]	Sender	送り側オブジェクト（nullptr可）
+		@param[in]	Receiver	受け手側オブジェクト
+		@param[in]	MsgStr	メッセージ文字列
+		@param[in]	Info	追加情報をもつユーザーデータ
+		*/
+		//--------------------------------------------------------------------------------------
+		Event(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
+			const wstring& MsgStr, shared_ptr<void>& Info = shared_ptr<void>()) :
+			m_DispatchTime(DispatchTime),
+			m_Sender(Sender),
+			m_Receiver(Receiver),
+			m_MsgStr(MsgStr),
+			m_Info(Info)
+		{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		~Event() {}
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	CreateとPreCreateを持ち、Thisスマートポインタがとれるインターフェイス
@@ -1778,6 +1821,65 @@ namespace basecross{
 		bool IsCreated() {
 			return m_Created;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	イベントのPOST（キューに入れる）
+		@param[in]	DispatchTime	POSTする時間（0で次のターン）
+		@param[in]	Sender	イベント送信者（nullptr可）
+		@param[in]	Receiver	イベント受信者（nullptr不可）
+		@param[in]	MsgStr	メッセージ
+		@param[in,out]	Info	追加情報
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
+			const wstring& MsgStr, shared_ptr<void>& Info = shared_ptr<void>());
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	イベントのPOST（キューに入れる）
+		@param[in]	DispatchTime	POSTする時間（0で次のターン）
+		@param[in]	Sender	イベント送信者（nullptr可）
+		@param[in]	ReceiverKey	受け手側オブジェクトを判別するキー
+		@param[in]	MsgStr	メッセージ
+		@param[in,out]	Info	追加情報
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
+			const wstring& MsgStr, shared_ptr<void>& Info = shared_ptr<void>());
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	イベントのSEND（キューに入れずにそのまま送る）
+		@param[in]	Sender	イベント送信者（nullptr可）
+		@param[in]	ReceiverKey	受け手側オブジェクトを判別するキー
+		@param[in]	MsgStr	メッセージ
+		@param[in,out]	Info	追加情報
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SendEvent(const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
+			const wstring& MsgStr, shared_ptr<void>& Info = shared_ptr<void>());
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	イベントのSEND（キューに入れずにそのまま送る）
+		@param[in]	Sender	イベント送信者（nullptr可）
+		@param[in]	Receiver	イベント受信者（nullptr不可）
+		@param[in]	MsgStr	メッセージ
+		@param[in,out]	Info	追加情報
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SendEvent(const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
+			const wstring& MsgStr, shared_ptr<void>& Info = shared_ptr<void>());
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	イベントを受け取る
+		@param[in]	event	イベント
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnEvent(const shared_ptr<Event>& event) {}
 	private:
 		//コピー禁止
 		ObjectInterface(const ObjectInterface&) = delete;
@@ -1786,9 +1888,6 @@ namespace basecross{
 		ObjectInterface(const ObjectInterface&&) = delete;
 		ObjectInterface& operator=(const ObjectInterface&&) = delete;
 	};
-
-
-
 
 	class Stage;
 	//--------------------------------------------------------------------------------------

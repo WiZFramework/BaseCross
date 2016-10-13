@@ -531,6 +531,32 @@ namespace basecross{
 		}
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	CreateとPreCreateを持ち、Thisスマートポインタがとれるインターフェイス
+	//--------------------------------------------------------------------------------------
+	void ObjectInterface::PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
+		const wstring& MsgStr, shared_ptr<void>& Info) {
+		App::GetApp()->GetEventDispatcher()->PostEvent(DispatchTime, Sender, Receiver, MsgStr, Info);
+	}
+	void ObjectInterface::PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
+		const wstring& MsgStr, shared_ptr<void>& Info) {
+		App::GetApp()->GetEventDispatcher()->PostEvent(DispatchTime, Sender, ReceiverKey, MsgStr, Info);
+
+	}
+
+	void ObjectInterface::SendEvent(const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
+		const wstring& MsgStr, shared_ptr<void>& Info) {
+		App::GetApp()->GetEventDispatcher()->SendEvent(Sender, Receiver, MsgStr, Info);
+	}
+
+	void ObjectInterface::SendEvent(const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
+		const wstring& MsgStr, shared_ptr<void>& Info) {
+		App::GetApp()->GetEventDispatcher()->SendEvent(Sender, ReceiverKey, MsgStr, Info);
+	}
+
+
+
+
 
 }
 //endof  basecross
