@@ -68,5 +68,11 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSShadowmapBone.hlsl">
       <Filter>シェーダファイル</Filter>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBone.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneShadow.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

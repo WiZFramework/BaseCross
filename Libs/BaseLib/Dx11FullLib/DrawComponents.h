@@ -117,6 +117,47 @@ namespace basecross {
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow2)
 
 
+	//PNTBone
+	struct PNTBoneConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Vector4 LightDir;
+		Color4 Emissive;
+		Color4 Diffuse;
+		XMVECTOR Bones[3 * 72];
+		PNTBoneConstantBuffer() {
+			memset(this, 0, sizeof(PNTBoneConstantBuffer));
+		};
+	};
+
+	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBone, PNTBoneConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTBone, VertexPositionNormalTextureSkinning)
+
+	struct PNTBoneShadowConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Vector4 LightDir;
+		Color4 Emissive;
+		Color4 Diffuse;
+		Vector4 LightPos;
+		Vector4 EyePos;
+		XMUINT4 ActiveFlg;			//テクスチャ=xがアクティブかどうか
+		Matrix4X4 LightView;
+		Matrix4X4 LightProjection;
+		XMVECTOR Bones[3 * 72];
+		PNTBoneShadowConstantBuffer() {
+			memset(this, 0, sizeof(PNTBoneShadowConstantBuffer));
+		};
+	};
+	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBoneShadow, PNTBoneShadowConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneShadow, VertexPositionNormalTextureSkinning)
+
+
+
 	class GameObject;
 
 	//--------------------------------------------------------------------------------------
@@ -1249,6 +1290,232 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	//	class PNTStaticModelDraw : public DrawComponent;
+	//	用途: PNTStaticModelDraw描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PNTStaticModelDraw : public Base3DDraw {
+		void DrawWithShadow();
+		void DrawNotShadow();
+	public:
+		explicit PNTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		virtual ~PNTStaticModelDraw();
+		shared_ptr<MeshResource> GetMeshResource() const;
+		void SetMeshResource(const shared_ptr<MeshResource>& MeshRes);
+		void SetMeshResource(const wstring& MeshKey);
+
+		bool GetOwnShadowActive() const;
+		bool IsOwnShadowActive() const;
+		void SetOwnShadowActive(bool b);
+
+		//操作
+		virtual void OnCreate()override;
+		virtual void OnUpdate()override {}
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	アニメーションデータ構造体.
+	//--------------------------------------------------------------------------------------
+	struct	AnimationData
+	{
+		//!	スタートサンプル
+		UINT	m_StartSample;
+		//!	サンプルの長さ
+		UINT	m_SampleLength;
+		//!	ループするかどうか
+		bool	m_IsLoop;
+		//!	アニメが終了したかどうか
+		bool	m_IsAnimeEnd;
+		//!	1秒当たりのフレーム
+		float	m_SamplesParSecond;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ.
+		*/
+		//--------------------------------------------------------------------------------------
+		AnimationData()
+		{
+			ZeroMemory(this, sizeof(AnimationData));
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ.
+		@param[in]	StartSample	スタートフレーム
+		@param[in]	SampleLength	フレームの長さ
+		@param[in]	bLoop	ループするかどうか
+		@param[in]	SamplesParSecond = 30.0f	1秒あたりのフレーム数
+		*/
+		//--------------------------------------------------------------------------------------
+		AnimationData(UINT StartSample, UINT SampleLength, bool bLoop,
+			float SamplesParSecond = 30.0f) :
+			m_StartSample{ StartSample },
+			m_SampleLength{ SampleLength },
+			m_IsLoop{ bLoop },
+			m_IsAnimeEnd{ false },
+			m_SamplesParSecond{ SamplesParSecond }
+		{}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PNTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
+	//--------------------------------------------------------------------------------------
+	class PNTBoneModelDraw : public Base3DDraw {
+		void DrawWithShadow();
+		void DrawNotShadow();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PNTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PNTBoneModelDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュリソースの取得
+		@return	メッシュリソース
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual shared_ptr<MeshResource> GetMeshResource() const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュリソースの設定
+		@param[in]	MeshRes	メッシュリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュリソースの登録
+		@param[in]	MeshKey	登録されているメッシュキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMeshResource(const wstring& MeshKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	自己影描画を行うかどうかの取得
+		@return	自己影描画を行うかどうか
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	自己影描画を行うかどうかの取得
+		@return	自己影描画を行うかどうか
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	自己影描画を行うかどうかの設定
+		@param[in]	b	自己影描画を行うかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetOwnShadowActive(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	開始行列から終了行列の間のt時間時の行列を返す
+		@param[in]	m1	開始の行列
+		@param[in]	m2	終了の行列
+		@param[in]	t	時間（0から1.0f）
+		@param[out]	out	結果を受け取る行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	アニメーションを追加する
+		@param[in]	Name	アニメーション名
+		@param[in]	StartSample	開始サンプル
+		@param[in]	SampleLength	サンプルの長さ
+		@param[in]	Loop	ループするかどうか
+		@param[in]	SamplesParSecond = 30.0f	1秒あたりのサンプル数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
+			float SamplesParSecond = 30.0f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションを変更する
+		@param[in]	AnemationName	アニメーション名（すでに追加されているもの）
+		@param[in]	StartTime = 0.0f	開始からの秒数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ChangeCurrentAnimation(const wstring& AnemationName, float StartTime = 0.0f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーション名を得る
+		@return	アニメーション名（文字列）
+		*/
+		//--------------------------------------------------------------------------------------
+		const wstring& GetCurrentAnimation() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションを進める
+		@param[in]	ElapsedTime	経過時間
+		@return	アニメーションが終了すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool UpdateAnimation(float ElapsedTime);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列を得る
+		@return	ローカルボーン行列配列の先頭ポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		//操作
+		//--------------------------------------------------------------------------------------
+		//	virtual void OnCreate()override;
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 
 
 }

@@ -57,6 +57,12 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTStatic.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBone.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneShadow.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStatic.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
