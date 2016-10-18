@@ -64,6 +64,9 @@ namespace basecross {
 	//PCStatic
 	DECLARE_DX11_VERTEX_SHADER(VSPCStatic, VertexPositionColor)
 	DECLARE_DX11_PIXEL_SHADER(PSPCStatic)
+	//PTStatic
+	DECLARE_DX11_VERTEX_SHADER(VSPTStatic, VertexPositionTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPTStatic)
 	///PCTStatic
 	DECLARE_DX11_VERTEX_SHADER(VSPCTInstance, VertexPositionColorTextureMatrix)
 	DECLARE_DX11_VERTEX_SHADER(VSPCTStatic, VertexPositionColorTexture)
@@ -920,6 +923,68 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	PTDynamic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PTDynamicDraw : public DynamicBaseDraw, public TextureDrawInterface {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PTDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PTDynamicDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点変更できるメッシュを作成する（すでにある場合は差し替える）
+		@param[in]	Vertices	頂点の配列
+		@param[in]	indices		インデックスの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		void CreateMesh(vector<VertexPositionTexture>& Vertices, vector<uint16_t>& indices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点バッファの設定
+		@param[in]	Vertices	頂点配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateVertices(const vector<VertexPositionTexture>& Vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 
 	//--------------------------------------------------------------------------------------

@@ -429,17 +429,402 @@ namespace basecross {
 		pImpl->DrawObject();
 	}
 
+	//--------------------------------------------------------------------------------------
+	// static系コンスタントバッファ
+	//--------------------------------------------------------------------------------------
+	struct StaticConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Color4 Emissive;
+		Color4 Diffuse;
+		StaticConstantBuffer() {
+			memset(this, 0, sizeof(StaticConstantBuffer));
+			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		};
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//ParticleDraw準備のための構造体
+	//--------------------------------------------------------------------------------------
+	struct DrawParticleSprite {
+		//パーティクルのカメラまでの距離
+		float m_ToCaneraLength;
+		//ワールド行列
+		Matrix4X4 m_WorldMatrix;
+		//テクスチャ
+		shared_ptr<TextureResource> m_TextureRes;
+		DrawParticleSprite() :
+			m_ToCaneraLength(0)
+		{}
+	};
+
+	//--------------------------------------------------------------------------------------
+	//ParticleDrawインスタンス描画のための構造体
+	//--------------------------------------------------------------------------------------
+	struct InstanceDrawStr {
+		size_t Start;
+		size_t Count;
+		shared_ptr<TextureResource> Tex;
+		InstanceDrawStr(size_t s, size_t c, shared_ptr<TextureResource> t) :
+			Start(s), Count(c), Tex(t) {}
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct PCTParticleDraw::Impl;
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct PCTParticleDraw::Impl {
-		Impl()
-		{
-		}
+		shared_ptr<MeshResource> m_MeshResource;	///<メッシュリソース
+		shared_ptr<MeshResource> m_InstanceMatrixMesh;	///<マトリクスメッシュ
+		vector<DrawParticleSprite> m_DrawParticleSpriteVec;
+		const size_t m_MaxInstance;				///<インスタンス最大値
+		ComPtr<ID3D11Buffer> m_MatrixBuffer;	///<行列用の頂点バッファ
+
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+
+
+		Impl(size_t MaxInstance) :
+			m_MaxInstance(MaxInstance)
+		{}
 		~Impl() {}
+
+		///各初期化関数
+		//頂点バッファの作成
+		void CreateParticleBuffers();
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView(const shared_ptr<TextureResource>& TexRes);
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		//コンスタントバッファ更新
+		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr);
+		///描画処理
+		void DrawObject();
+
+
+
 	};
+
+	void PCTParticleDraw::Impl::CreateParticleBuffers() {
+		try {
+			float HelfSize = 0.5f;
+			Vector4 col(1.0f, 1.0f, 1.0f, 1.0f);
+			//頂点配列
+			vector<VertexPositionColorTexture> vertices = {
+				{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),  col,Vector2(0.0f, 0.0f)) },
+				{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), col, Vector2(1.0f, 0.0f)) },
+				{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0),  col,Vector2(0.0f, 1.0f)) },
+				{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0),  col, Vector2(1.0f, 1.0f)) },
+			};
+			//インデックス配列
+			vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+			//メッシュの作成
+			m_MeshResource = MeshResource::CreateMeshResource(vertices, indices, false);
+
+			//インスタンス行列バッファの作成
+			//Max値で作成する
+			vector<Matrix4X4> matrices(m_MaxInstance, Matrix4X4());
+			//インスタンス描画用の行列のメッシュ（内容変更できる）
+			m_InstanceMatrixMesh = MeshResource::CreateMeshResource(matrices, true);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	///ルートシグネチャ作成
+	void PCTParticleDraw::Impl::CreateRootSignature() {
+		//ルートシグネチャ
+		m_RootSignature = RootSignature::CreateSrvSmpCbv();
+	}
+	///デスクプリタヒープ作成
+	void PCTParticleDraw::Impl::CreateDescriptorHeap() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CbvSrvDescriptorHandleIncrementSize =
+			Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//CbvSrvデスクプリタヒープ
+		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
+		//サンプラーデスクプリタヒープ
+		m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
+		//GPU側デスクプリタヒープのハンドルの配列の作成
+		m_GPUDescriptorHandleVec.clear();
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SrvHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
+			m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		m_GPUDescriptorHandleVec.push_back(CbvHandle);
+	}
+	///サンプラー作成
+	void PCTParticleDraw::Impl::CreateSampler() {
+		auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
+	}
+	///コンスタントバッファ作成
+	void PCTParticleDraw::Impl::CreateConstantBuffer() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
+
+		//コンスタントバッファリソース（アップロードヒープ）の作成
+		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+			L"Dev->GetDevice()->CreateCommittedResource()",
+			L"PCTParticleDraw::Impl::CreateConstantBuffer()"
+		);
+		//コンスタントバッファのビューを作成
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+		//コンスタントバッファは256バイトにアラインメント
+		cbvDesc.SizeInBytes = ConstBuffSize;
+		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		//コンスタントバッファのアップロードヒープのマップ
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			L"コンスタントバッファのマップに失敗しました",
+			L"pImpl->m_ConstantBufferUploadHeap->Map()",
+			L"PCTParticleDraw::Impl::CreateConstantBuffer()"
+		);
+	}
+	///シェーダーリソースビュー（テクスチャ）作成
+	void PCTParticleDraw::Impl::CreateShaderResourceView(const shared_ptr<TextureResource>& TexRes) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//テクスチャハンドルを作成
+		CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		//テクスチャのシェーダリソースビューを作成
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		//フォーマット
+		srvDesc.Format = TexRes->GetTextureResDesc().Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = TexRes->GetTextureResDesc().MipLevels;
+		//シェーダリソースビュー
+		Dev->GetDevice()->CreateShaderResourceView(
+			TexRes->GetTexture().Get(),
+			&srvDesc,
+			Handle);
+	}
+	///パイプラインステート作成
+	void PCTParticleDraw::Impl::CreatePipelineState() {
+		//パイプラインステートの作成
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+		PipelineState::CreateDefault3D<VertexPositionColorTextureMatrix, VSPCTInstance, PSPCTStatic>(m_RootSignature, PineLineDesc);
+		PineLineDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+		PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+
+		D3D12_BLEND_DESC blend_desc;
+		D3D12_RENDER_TARGET_BLEND_DESC Target;
+		ZeroMemory(&blend_desc, sizeof(blend_desc));
+		blend_desc.AlphaToCoverageEnable = false;
+		blend_desc.IndependentBlendEnable = false;
+		ZeroMemory(&Target, sizeof(Target));
+		Target.BlendEnable = true;
+		Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		Target.BlendOp = D3D12_BLEND_OP_ADD;
+		Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+		Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+		Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+			blend_desc.RenderTarget[i] = Target;
+		}
+		PineLineDesc.BlendState = blend_desc;
+		m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+	}
+	///コマンドリスト作成
+	void PCTParticleDraw::Impl::CreateCommandList() {
+		//コマンドリストは裏面カリングに初期化
+		m_CommandList = CommandList::CreateDefault(m_PipelineState);
+		CommandList::Close(m_CommandList);
+	}
+
+	void PCTParticleDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr) {
+		//行列の定義
+		Matrix4X4 World, ViewMat, ProjMat;
+
+		//カメラを得る
+		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+		//ビューと射影行列を得る
+		ViewMat = CameraPtr->GetViewMatrix();
+		//転置する
+		ViewMat.Transpose();
+		//転置する
+		ProjMat = CameraPtr->GetProjMatrix();
+		ProjMat.Transpose();
+
+		//コンスタントバッファの準備
+		StaticConstantBuffer cb;
+		cb.World = Matrix4X4();	//ワールド行列はダミー
+		cb.View = ViewMat;
+		cb.Projection = ProjMat;
+		//ディフューズ
+		cb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		//エミッシブ加算は行わない。
+		cb.Emissive = Color4(0, 0, 0, 0);
+		//更新
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(StaticConstantBuffer));
+	}
+
+	///描画処理
+
+
+	void PCTParticleDraw::Impl::DrawObject() {
+
+		//カメラ位置でソート
+		auto func = [](DrawParticleSprite& Left, DrawParticleSprite& Right)->bool {
+			return (Left.m_ToCaneraLength > Right.m_ToCaneraLength);
+		};
+		std::sort(m_DrawParticleSpriteVec.begin(), m_DrawParticleSpriteVec.end(), func);
+		//行列の変更
+		vector<Matrix4X4> MatVec;
+		for (auto& v : m_DrawParticleSpriteVec) {
+			Matrix4X4 World = v.m_WorldMatrix;
+			//転置する
+			World.Transpose();
+			MatVec.push_back(World);
+		}
+		//メッシュの頂点の変更
+		m_InstanceMatrixMesh->UpdateVirtex(MatVec);
+
+
+
+		//先頭のテクスチャを得る
+		auto  NowTexPtr = m_DrawParticleSpriteVec[0].m_TextureRes;
+
+		vector<InstanceDrawStr> InstancVec;
+		size_t NowStartIndex = 0;
+		size_t NowDrawCount = 0;
+
+		shared_ptr<TextureResource> NowTexRes = m_DrawParticleSpriteVec[0].m_TextureRes;
+		for (size_t i = 0; i < m_DrawParticleSpriteVec.size(); i++) {
+			if (m_DrawParticleSpriteVec[i].m_TextureRes != NowTexRes) {
+				InstancVec.push_back(InstanceDrawStr(NowStartIndex, NowDrawCount, NowTexRes));
+				NowStartIndex = i;
+				NowDrawCount = 0;
+				NowTexRes = m_DrawParticleSpriteVec[i].m_TextureRes;
+			}
+			else {
+				NowDrawCount++;
+			}
+		}
+		InstancVec.push_back(InstanceDrawStr(NowStartIndex, NowDrawCount, NowTexRes));
+
+
+
+
+		CommandList::Reset(m_PipelineState, m_CommandList);
+
+		m_MeshResource->UpdateResources<VertexPositionColorTexture>(m_CommandList);
+		m_InstanceMatrixMesh->UpdateResources<Matrix4X4>(m_CommandList);
+
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+
+		//描画
+		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
+		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
+			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+		}
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+			Dev->GetFrameIndex(),
+			Dev->GetRtvDescriptorSize());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+		);
+		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_CommandList->IASetIndexBuffer(&m_MeshResource->GetIndexBufferView());
+		//インスタンス描画は、頂点バッファを複数登録する
+		const D3D12_VERTEX_BUFFER_VIEW Buf[2] = {
+			m_MeshResource->GetVertexBufferView(),
+			m_InstanceMatrixMesh->GetVertexBufferView()
+		};
+		m_CommandList->IASetVertexBuffers(0, 2, Buf);
+
+		for (auto& v : InstancVec) {
+			CreateShaderResourceView(v.Tex);
+			v.Tex->UpdateResources(m_CommandList);
+			//描画
+			m_CommandList->DrawIndexedInstanced(m_MeshResource->GetNumIndicis(), v.Count, 0, 0, v.Start);
+		}
+		//コマンドリストのクローズ
+		CommandList::Close(m_CommandList);
+		//デバイスにコマンドリストを送る
+		Dev->InsertDrawCommandLists(m_CommandList.Get());
+		//パーティクルの配列のクリア
+		m_DrawParticleSpriteVec.clear();
+	}
+
+
+
 
 
 
@@ -449,14 +834,56 @@ namespace basecross {
 
 	PCTParticleDraw::PCTParticleDraw(const shared_ptr<GameObject>& GameObjectPtr, size_t MaxInstance):
 		DrawComponent(GameObjectPtr),
-		pImpl(new Impl())
-	{}
+		pImpl(new Impl(MaxInstance))
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
 	PCTParticleDraw::~PCTParticleDraw() {}
+
 	void PCTParticleDraw::AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes) {
+		DrawParticleSprite Item;
+		Item.m_ToCaneraLength = ToCaneraLength;
+		Item.m_WorldMatrix = WorldMatrix;
+		Item.m_TextureRes = TextureRes;
+		pImpl->m_DrawParticleSpriteVec.push_back(Item);
+
 
 	}
-	void PCTParticleDraw::OnCreate(){}
-	void PCTParticleDraw::OnDraw(){}
+	void PCTParticleDraw::OnCreate(){
+		pImpl->CreateParticleBuffers();
+		///各初期化関数呼び出し
+		///ルートシグネチャ作成
+		pImpl->CreateRootSignature();
+		///デスクプリタヒープ作成
+		pImpl->CreateDescriptorHeap();
+		///サンプラー作成
+		pImpl->CreateSampler();
+		///コンスタントバッファ作成
+		pImpl->CreateConstantBuffer();
+		///パイプラインステート作成
+		pImpl->CreatePipelineState();
+		///コマンドリスト作成
+		pImpl->CreateCommandList();
+		//コンスタントバッファの更新
+//		pImpl->UpdateConstantBuffer(GetGameObject());
+
+	}
+	void PCTParticleDraw::OnDraw(){
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		if (pImpl->m_DrawParticleSpriteVec.size() <= 0) {
+			return;
+		}
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject());
+		pImpl->DrawObject();
+	}
 
 
 	//--------------------------------------------------------------------------------------
@@ -558,6 +985,19 @@ namespace basecross {
 		pImpl->m_Diffuse = col;
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	スプライト用コンスタントバッファ
+	//--------------------------------------------------------------------------------------
+	struct SpriteConstantBuffer
+	{
+		Matrix4X4 World;
+		Color4 Emissive;
+		Color4 Diffuse;
+		SpriteConstantBuffer() {
+			memset(this, 0, sizeof(SpriteConstantBuffer));
+			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		};
+	};
 
 	//--------------------------------------------------------------------------------------
 	//	struct PCSpriteDraw::Impl;
@@ -571,19 +1011,6 @@ namespace basecross {
 		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
 		///GPU側デスクプリタのハンドルの配列
 		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
-		///コンスタントバッファ
-		struct SpriteConstantBuffer
-		{
-			Matrix4X4 World;
-			Color4 Emissive;
-			Color4 Diffuse;
-			SpriteConstantBuffer() {
-				memset(this, 0, sizeof(SpriteConstantBuffer));
-				Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-			};
-		};
-		///コンスタントバッファデータ
-		SpriteConstantBuffer m_SpriteConstantBuffer;
 		///コンスタントバッファアップロードヒープ
 		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
 		///コンスタントバッファのGPU側変数
@@ -708,15 +1135,17 @@ namespace basecross {
 		GameObjectPtr->OnGet2DDrawProjMatrix(Proj);
 		//行列の合成
 		World *= Proj;
+		//コンスタントバッファ
+		SpriteConstantBuffer cb;
 		//エミッシブ
-		m_SpriteConstantBuffer.Emissive = Emissive;
+		cb.Emissive = Emissive;
 		//デフィーズはすべて通す
-		m_SpriteConstantBuffer.Diffuse = Diffuse;
+		cb.Diffuse = Diffuse;
 		//行列の設定
-		m_SpriteConstantBuffer.World = World;
+		cb.World = World;
 		//更新
-		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SpriteConstantBuffer),
-			sizeof(m_SpriteConstantBuffer));
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(SpriteConstantBuffer));
 	}
 
 
@@ -917,18 +1346,6 @@ namespace basecross {
 		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
 		///GPU側デスクプリタのハンドルの配列
 		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
-		///コンスタントバッファ
-		struct SpriteConstantBuffer
-		{
-			Matrix4X4 World;
-			Color4 Emissive;
-			Color4 Diffuse;
-			SpriteConstantBuffer() {
-				memset(this, 0, sizeof(SpriteConstantBuffer));
-				Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-			};
-		};
-		SpriteConstantBuffer m_SpriteConstantBuffer;
 		///コンスタントバッファアップロードヒープ
 		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
 		///コンスタントバッファのGPU側変数
@@ -1032,7 +1449,7 @@ namespace basecross {
 	void PTSpriteDraw::Impl::CreateConstantBuffer() {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//コンスタントバッファは256バイトにアラインメント
-		UINT ConstBuffSize = (sizeof(m_SpriteConstantBuffer) + 255) & ~255;
+		UINT ConstBuffSize = (sizeof(SpriteConstantBuffer) + 255) & ~255;
 
 		//コンスタントバッファリソース（アップロードヒープ）の作成
 		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
@@ -1106,15 +1523,16 @@ namespace basecross {
 		GameObjectPtr->OnGet2DDrawProjMatrix(Proj);
 		//行列の合成
 		World *= Proj;
+		SpriteConstantBuffer cb;
 		//エミッシブ
-		m_SpriteConstantBuffer.Emissive = Emissive;
+		cb.Emissive = Emissive;
 		//デフィーズはすべて通す
-		m_SpriteConstantBuffer.Diffuse = Diffuse;
+		cb.Diffuse = Diffuse;
 		//行列の設定
-		m_SpriteConstantBuffer.World = World;
+		cb.World = World;
 		//更新
-		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SpriteConstantBuffer),
-			sizeof(m_SpriteConstantBuffer));
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(SpriteConstantBuffer));
 
 	}
 	///描画処理
@@ -1338,18 +1756,6 @@ namespace basecross {
 		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
 		///GPU側デスクプリタのハンドルの配列
 		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
-		///コンスタントバッファ
-		struct SpriteConstantBuffer
-		{
-			Matrix4X4 World;
-			Color4 Emissive;
-			Color4 Diffuse;
-			SpriteConstantBuffer() {
-				memset(this, 0, sizeof(SpriteConstantBuffer));
-				Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-			};
-		};
-		SpriteConstantBuffer m_SpriteConstantBuffer;
 		///コンスタントバッファアップロードヒープ
 		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
 		///コンスタントバッファのGPU側変数
@@ -1453,7 +1859,7 @@ namespace basecross {
 	void PCTSpriteDraw::Impl::CreateConstantBuffer() {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//コンスタントバッファは256バイトにアラインメント
-		UINT ConstBuffSize = (sizeof(m_SpriteConstantBuffer) + 255) & ~255;
+		UINT ConstBuffSize = (sizeof(SpriteConstantBuffer) + 255) & ~255;
 
 		//コンスタントバッファリソース（アップロードヒープ）の作成
 		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
@@ -1527,15 +1933,16 @@ namespace basecross {
 		GameObjectPtr->OnGet2DDrawProjMatrix(Proj);
 		//行列の合成
 		World *= Proj;
+		SpriteConstantBuffer cb;
 		//エミッシブ
-		m_SpriteConstantBuffer.Emissive = Emissive;
+		cb.Emissive = Emissive;
 		//デフィーズはすべて通す
-		m_SpriteConstantBuffer.Diffuse = Diffuse;
+		cb.Diffuse = Diffuse;
 		//行列の設定
-		m_SpriteConstantBuffer.World = World;
+		cb.World = World;
 		//更新
-		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SpriteConstantBuffer),
-			sizeof(m_SpriteConstantBuffer));
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(SpriteConstantBuffer));
 
 	}
 	///描画処理
@@ -1831,13 +2238,219 @@ namespace basecross {
 		pImpl->m_MeshResource = MeshRes;
 	}
 
+
+
 	//--------------------------------------------------------------------------------------
 	//	struct PCDynamicDraw::Impl;
 	//--------------------------------------------------------------------------------------
 	struct PCDynamicDraw::Impl {
-		Impl()
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		//パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		bool m_Trace;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		///コンスタントバッファ更新
+		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+		///描画処理
+		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace);
+		Impl() :
+			m_Trace(false)
 		{}
 	};
+
+
+	///ルートシグネチャ作成
+	void PCDynamicDraw::Impl::CreateRootSignature() {
+		//コンスタントバッファ付ルートシグネチャ
+		m_RootSignature = RootSignature::CreateCbv();
+	}
+	///デスクプリタヒープ作成
+	void PCDynamicDraw::Impl::CreateDescriptorHeap() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CbvSrvDescriptorHandleIncrementSize
+			= Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//CbvSrvデスクプリタヒープ(コンスタントバッファのみ)
+		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1);
+		//GPU側デスクプリタヒープのハンドルの配列の作成
+		m_GPUDescriptorHandleVec.clear();
+		CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(CbvHandle);
+	}
+	///コンスタントバッファ作成
+	void PCDynamicDraw::Impl::CreateConstantBuffer() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
+		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+			L"Dev->GetDevice()->CreateCommittedResource()",
+			L"PCDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+		//コンスタントバッファのビューを作成
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = ConstBuffSize;
+		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		//コンスタントバッファのアップロードヒープのマップ
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			L"コンスタントバッファのマップに失敗しました",
+			L"pImpl->m_ConstantBufferUploadHeap->Map()",
+			L"PCDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+	}
+	///パイプラインステート作成
+	void PCDynamicDraw::Impl::CreatePipelineState() {
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+		m_PipelineState
+			= PipelineState::CreateDefault3D<VertexPositionColor, VSPCStatic, PSPCStatic>(m_RootSignature, PineLineDesc);
+	}
+	///コマンドリスト作成
+	void PCDynamicDraw::Impl::CreateCommandList() {
+		m_CommandList = CommandList::CreateDefault(m_PipelineState);
+		CommandList::Close(m_CommandList);
+	}
+
+	///コンスタントバッファ更新
+	void PCDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		//行列の定義
+		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
+		//行列の定義
+		Matrix4X4 World, ViewMat, ProjMat;
+		//ワールド行列の決定
+		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+		//転置する
+		World.Transpose();
+		//カメラを得る
+		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+		//ビューと射影行列を得る
+		ViewMat = CameraPtr->GetViewMatrix();
+		//転置する
+		ViewMat.Transpose();
+		//転置する
+		ProjMat = CameraPtr->GetProjMatrix();
+		ProjMat.Transpose();
+		//コンスタントバッファの準備
+		StaticConstantBuffer cb;
+		cb.World = World;
+		cb.View = ViewMat;
+		cb.Projection = ProjMat;
+		//エミッシブ
+		cb.Emissive = Emissive;
+		//デフィーズ
+		cb.Diffuse = Diffuse;
+		//更新
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(StaticConstantBuffer));
+
+	}
+
+	///描画処理
+	void PCDynamicDraw::Impl::DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace) {
+		if (m_Trace != Trace) {
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+			m_PipelineState = PipelineState::CreateDefault3D<VertexPositionColor, VSPCStatic, PSPCStatic>(m_RootSignature, PineLineDesc);
+			//透明の場合はブレンドステート差し替え
+			if (Trace) {
+				D3D12_BLEND_DESC blend_desc;
+				D3D12_RENDER_TARGET_BLEND_DESC Target;
+				ZeroMemory(&blend_desc, sizeof(blend_desc));
+				blend_desc.AlphaToCoverageEnable = false;
+				blend_desc.IndependentBlendEnable = false;
+				ZeroMemory(&Target, sizeof(Target));
+				Target.BlendEnable = true;
+				Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+				Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+				Target.BlendOp = D3D12_BLEND_OP_ADD;
+				Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+				Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+				Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+				Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+					blend_desc.RenderTarget[i] = Target;
+				}
+				PineLineDesc.BlendState = blend_desc;
+				m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+				m_Trace = Trace;
+			}
+		}
+		//コマンドリストのリセット
+		CommandList::Reset(m_PipelineState, m_CommandList);
+
+		MeshRes->UpdateResources<VertexPositionColor>(m_CommandList);
+
+		//描画
+		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get() };
+		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
+			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+		}
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+			Dev->GetFrameIndex(),
+			Dev->GetRtvDescriptorSize());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+		);
+		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_CommandList->IASetIndexBuffer(&MeshRes->GetIndexBufferView());
+		m_CommandList->IASetVertexBuffers(0, 1, &MeshRes->GetVertexBufferView());
+		m_CommandList->DrawIndexedInstanced(MeshRes->GetNumIndicis(), 1, 0, 0, 0);
+
+		//コマンドリストのクローズ
+		CommandList::Close(m_CommandList);
+		//デバイスにコマンドリストを送る
+		Dev->InsertDrawCommandLists(m_CommandList.Get());
+	}
+
 
 
 
@@ -1848,28 +2461,715 @@ namespace basecross {
 		DynamicBaseDraw(GameObjectPtr),
 		pImpl(new Impl())
 	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
 	}
 
 	PCDynamicDraw::~PCDynamicDraw() {}
 
 	void PCDynamicDraw::CreateMesh(vector<VertexPositionColor>& Vertices, vector<uint16_t>& indices) {
+		try {
+			//メッシュの作成（変更できる）
+			auto MeshRes = MeshResource::CreateMeshResource(Vertices, indices, true);
+			SetMeshResource(MeshRes);
+		}
+		catch (...) {
+			throw;
+		}
 	}
 
 	void PCDynamicDraw::UpdateVertices(const vector<VertexPositionColor>& Vertices) {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PCDynamicDraw::UpdateVertices()"
+			);
+		}
+		//メッシュの頂点の変更
+		Mesh->UpdateVirtex(Vertices);
+
 	}
 	void PCDynamicDraw::OnCreate() {
+		///ルートシグネチャ作成
+		pImpl->CreateRootSignature();
+		///デスクプリタヒープ作成
+		pImpl->CreateDescriptorHeap();
+		///コンスタントバッファ作成
+		pImpl->CreateConstantBuffer();
+		///パイプラインステート作成
+		pImpl->CreatePipelineState();
+		///コマンドリスト作成
+		pImpl->CreateCommandList();
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+
 	}
 	void PCDynamicDraw::OnDraw() {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PCDynamicDraw::OnDraw()"
+			);
+		}
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+		pImpl->DrawObject(Mesh, GetGameObject()->IsAlphaActive());
+
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	struct PTDynamicDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PTDynamicDraw::Impl {
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		bool m_Trace;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		///各初期化関数
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		bool m_Wrap;
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView(const shared_ptr<TextureResource>& TextureRes);
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		///コンスタントバッファ更新
+		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+		///描画処理
+		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
+			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
+		Impl() :
+			m_Trace(false),
+			m_Wrap(false)
+		{}
+	};
+
+	///ルートシグネチャ作成
+	void PTDynamicDraw::Impl::CreateRootSignature() {
+		//ルートシグネチャ
+		m_RootSignature = RootSignature::CreateSrvSmpCbv();
+	}
+	///デスクプリタヒープ作成
+	void PTDynamicDraw::Impl::CreateDescriptorHeap() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CbvSrvDescriptorHandleIncrementSize =
+			Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//CbvSrvデスクプリタヒープ
+		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
+		//サンプラーデスクプリタヒープ
+		m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
+		//GPU側デスクプリタヒープのハンドルの配列の作成
+		m_GPUDescriptorHandleVec.clear();
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SrvHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
+			m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		m_GPUDescriptorHandleVec.push_back(CbvHandle);
+	}
+	///サンプラー作成
+	void PTDynamicDraw::Impl::CreateSampler() {
+		auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
+	}
+	///シェーダーリソースビュー作成
+	void PTDynamicDraw::Impl::CreateShaderResourceView(const shared_ptr<TextureResource>& TextureRes) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//テクスチャハンドルを作成
+		CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		//テクスチャのシェーダリソースビューを作成
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		//フォーマット
+		srvDesc.Format = TextureRes->GetTextureResDesc().Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = TextureRes->GetTextureResDesc().MipLevels;
+		//シェーダリソースビュー
+		Dev->GetDevice()->CreateShaderResourceView(
+			TextureRes->GetTexture().Get(),
+			&srvDesc,
+			Handle);
+	}
+	///コンスタントバッファ作成
+	void PTDynamicDraw::Impl::CreateConstantBuffer() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
+
+		//コンスタントバッファリソース（アップロードヒープ）の作成
+		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+			L"Dev->GetDevice()->CreateCommittedResource()",
+			L"PCTDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+		//コンスタントバッファのビューを作成
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+		//コンスタントバッファは256バイトにアラインメント
+		cbvDesc.SizeInBytes = ConstBuffSize;
+		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		//コンスタントバッファのアップロードヒープのマップ
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			L"コンスタントバッファのマップに失敗しました",
+			L"pImpl->m_ConstantBufferUploadHeap->Map()",
+			L"PCTDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+	}
+	///パイプラインステート作成
+	void PTDynamicDraw::Impl::CreatePipelineState() {
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+		m_PipelineState
+			= PipelineState::CreateDefault3D<VertexPositionTexture, VSPTStatic, PSPTStatic>(m_RootSignature, PineLineDesc);
+	}
+	///コマンドリスト作成
+	void PTDynamicDraw::Impl::CreateCommandList() {
+		m_CommandList = CommandList::CreateDefault(m_PipelineState);
+		CommandList::Close(m_CommandList);
+	}
+
+	///コンスタントバッファ更新
+	void PTDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		//行列の定義
+		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
+		//行列の定義
+		Matrix4X4 World, ViewMat, ProjMat;
+		//ワールド行列の決定
+		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+		//転置する
+		World.Transpose();
+		//カメラを得る
+		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+		//ビューと射影行列を得る
+		ViewMat = CameraPtr->GetViewMatrix();
+		//転置する
+		ViewMat.Transpose();
+		//転置する
+		ProjMat = CameraPtr->GetProjMatrix();
+		ProjMat.Transpose();
+		//コンスタントバッファの準備
+		StaticConstantBuffer cb;
+		cb.World = World;
+		cb.View = ViewMat;
+		cb.Projection = ProjMat;
+		//エミッシブ
+		cb.Emissive = Emissive;
+		//デフィーズはすべて通す
+		cb.Diffuse = Diffuse;
+		//更新
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(StaticConstantBuffer));
+
+	}
+	///描画処理
+	void PTDynamicDraw::Impl::DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
+		const shared_ptr<TextureResource>& TextureRes, bool WrapSampler) {
+		if (m_Wrap != WrapSampler) {
+			auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			if (WrapSampler) {
+				//ラッピングサンプラー
+				DynamicSampler::CreateSampler(SamplerState::LinearWrap, SamplerDescriptorHandle);
+			}
+			else {
+				DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
+			}
+			m_Wrap = WrapSampler;
+		}
+		if (m_Trace != Trace) {
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+			m_PipelineState = PipelineState::CreateDefault3D<VertexPositionTexture, VSPTStatic, PSPTStatic>(m_RootSignature, PineLineDesc);
+			//透明の場合はブレンドステート差し替え
+			if (Trace) {
+				D3D12_BLEND_DESC blend_desc;
+				D3D12_RENDER_TARGET_BLEND_DESC Target;
+				ZeroMemory(&blend_desc, sizeof(blend_desc));
+				blend_desc.AlphaToCoverageEnable = false;
+				blend_desc.IndependentBlendEnable = false;
+				ZeroMemory(&Target, sizeof(Target));
+				Target.BlendEnable = true;
+				Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+				Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+				Target.BlendOp = D3D12_BLEND_OP_ADD;
+				Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+				Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+				Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+				Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+					blend_desc.RenderTarget[i] = Target;
+				}
+				PineLineDesc.BlendState = blend_desc;
+				m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+				m_Trace = Trace;
+			}
+		}
+		//コマンドリストのリセット
+		CommandList::Reset(m_PipelineState, m_CommandList);
+
+		MeshRes->UpdateResources<VertexPositionTexture>(m_CommandList);
+		TextureRes->UpdateResources(m_CommandList);
+
+		//描画
+		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
+		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
+			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+		}
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+			Dev->GetFrameIndex(),
+			Dev->GetRtvDescriptorSize());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+		);
+		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_CommandList->IASetIndexBuffer(&MeshRes->GetIndexBufferView());
+		m_CommandList->IASetVertexBuffers(0, 1, &MeshRes->GetVertexBufferView());
+		m_CommandList->DrawIndexedInstanced(MeshRes->GetNumIndicis(), 1, 0, 0, 0);
+
+		//コマンドリストのクローズ
+		CommandList::Close(m_CommandList);
+		//デバイスにコマンドリストを送る
+		Dev->InsertDrawCommandLists(m_CommandList.Get());
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	PTDynamicDraw描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PTDynamicDraw::PTDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		DynamicBaseDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+
+	PTDynamicDraw::~PTDynamicDraw() {}
+
+	void PTDynamicDraw::SetTextureResource(const shared_ptr<TextureResource>& TextureRes) {
+		TextureDrawInterface::SetTextureResource(TextureRes);
+		pImpl->CreateShaderResourceView(TextureRes);
+	}
+	void PTDynamicDraw::SetTextureResource(const wstring& TextureKey) {
+		TextureDrawInterface::SetTextureResource(TextureKey);
+		pImpl->CreateShaderResourceView(GetTextureResource());
+	}
+
+
+	void PTDynamicDraw::CreateMesh(vector<VertexPositionTexture>& Vertices, vector<uint16_t>& indices) {
+		try {
+			//メッシュの作成（変更できる）
+			auto MeshRes = MeshResource::CreateMeshResource(Vertices, indices, true);
+			SetMeshResource(MeshRes);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	void PTDynamicDraw::UpdateVertices(const vector<VertexPositionTexture>& Vertices) {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PTDynamicDraw::UpdateVertices()"
+			);
+		}
+		//メッシュの頂点の変更
+		Mesh->UpdateVirtex(Vertices);
+	}
+
+	void PTDynamicDraw::OnCreate() {
+		///ルートシグネチャ作成
+		pImpl->CreateRootSignature();
+		///デスクプリタヒープ作成
+		pImpl->CreateDescriptorHeap();
+		///サンプラー作成
+		pImpl->CreateSampler();
+		///コンスタントバッファ作成
+		pImpl->CreateConstantBuffer();
+		///パイプラインステート作成
+		pImpl->CreatePipelineState();
+		///コマンドリスト作成
+		pImpl->CreateCommandList();
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+	}
+	void PTDynamicDraw::OnDraw() {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PTDynamicDraw::OnDraw()"
+			);
+		}
+		//テクスチャがなければ描画しない
+		auto shTex = GetTextureResource();
+		if (!shTex) {
+			return;
+		}
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+		pImpl->DrawObject(Mesh, GetGameObject()->IsAlphaActive(),
+			shTex, GetWrapSampler());
+
+	}
+
+
+
 
 
 	//--------------------------------------------------------------------------------------
 	//	struct PCTDynamicDraw::Impl;
 	//--------------------------------------------------------------------------------------
 	struct PCTDynamicDraw::Impl {
-		Impl()
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///CbvSrvのデスクプリタハンドルのインクリメントサイズ
+		UINT m_CbvSrvDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_CbvSrvUavDescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファアップロードヒープ
+		ComPtr<ID3D12Resource> m_ConstantBufferUploadHeap;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		///パイプラインステート
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		bool m_Trace;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+		///各初期化関数
+		///ルートシグネチャ作成
+		void CreateRootSignature();
+		///デスクプリタヒープ作成
+		void CreateDescriptorHeap();
+		///サンプラー作成
+		void CreateSampler();
+		bool m_Wrap;
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView(const shared_ptr<TextureResource>& TextureRes);
+		///コンスタントバッファ作成
+		void CreateConstantBuffer();
+		///パイプラインステート作成
+		void CreatePipelineState();
+		///コマンドリスト作成
+		void CreateCommandList();
+		///コンスタントバッファ更新
+		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+		///描画処理
+		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
+			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
+		Impl() :
+			m_Trace(false),
+			m_Wrap(false)
 		{}
 	};
+
+	///ルートシグネチャ作成
+	void PCTDynamicDraw::Impl::CreateRootSignature() {
+		//ルートシグネチャ
+		m_RootSignature = RootSignature::CreateSrvSmpCbv();
+	}
+	///デスクプリタヒープ作成
+	void PCTDynamicDraw::Impl::CreateDescriptorHeap() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CbvSrvDescriptorHandleIncrementSize =
+			Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//CbvSrvデスクプリタヒープ
+		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
+		//サンプラーデスクプリタヒープ
+		m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
+		//GPU側デスクプリタヒープのハンドルの配列の作成
+		m_GPUDescriptorHandleVec.clear();
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SrvHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
+			m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+			m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		m_GPUDescriptorHandleVec.push_back(CbvHandle);
+	}
+	///サンプラー作成
+	void PCTDynamicDraw::Impl::CreateSampler() {
+		auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
+	}
+	///シェーダーリソースビュー作成
+	void PCTDynamicDraw::Impl::CreateShaderResourceView(const shared_ptr<TextureResource>& TextureRes) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//テクスチャハンドルを作成
+		CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			0,
+			0
+		);
+		//テクスチャのシェーダリソースビューを作成
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		//フォーマット
+		srvDesc.Format = TextureRes->GetTextureResDesc().Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = TextureRes->GetTextureResDesc().MipLevels;
+		//シェーダリソースビュー
+		Dev->GetDevice()->CreateShaderResourceView(
+			TextureRes->GetTexture().Get(),
+			&srvDesc,
+			Handle);
+	}
+	///コンスタントバッファ作成
+	void PCTDynamicDraw::Impl::CreateConstantBuffer() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//コンスタントバッファは256バイトにアラインメント
+		UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
+
+		//コンスタントバッファリソース（アップロードヒープ）の作成
+		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&m_ConstantBufferUploadHeap)),
+			L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+			L"Dev->GetDevice()->CreateCommittedResource()",
+			L"PCTDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+		//コンスタントバッファのビューを作成
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+		//コンスタントバッファは256バイトにアラインメント
+		cbvDesc.SizeInBytes = ConstBuffSize;
+		//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+		//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			1,
+			m_CbvSrvDescriptorHandleIncrementSize
+		);
+		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		//コンスタントバッファのアップロードヒープのマップ
+		CD3DX12_RANGE readRange(0, 0);
+		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			L"コンスタントバッファのマップに失敗しました",
+			L"pImpl->m_ConstantBufferUploadHeap->Map()",
+			L"PCTDynamicDraw::Impl::CreateConstantBuffer()"
+		);
+	}
+	///パイプラインステート作成
+	void PCTDynamicDraw::Impl::CreatePipelineState() {
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+		m_PipelineState
+			= PipelineState::CreateDefault3D<VertexPositionColorTexture, VSPCTStatic, PSPCTStatic>(m_RootSignature, PineLineDesc);
+	}
+	///コマンドリスト作成
+	void PCTDynamicDraw::Impl::CreateCommandList() {
+		m_CommandList = CommandList::CreateDefault(m_PipelineState);
+		CommandList::Close(m_CommandList);
+	}
+
+	///コンスタントバッファ更新
+	void PCTDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
+		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		//行列の定義
+		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
+		//行列の定義
+		Matrix4X4 World, ViewMat, ProjMat;
+		//ワールド行列の決定
+		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+		//転置する
+		World.Transpose();
+		//カメラを得る
+		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+		//ビューと射影行列を得る
+		ViewMat = CameraPtr->GetViewMatrix();
+		//転置する
+		ViewMat.Transpose();
+		//転置する
+		ProjMat = CameraPtr->GetProjMatrix();
+		ProjMat.Transpose();
+		//コンスタントバッファの準備
+		StaticConstantBuffer cb;
+		cb.World = World;
+		cb.View = ViewMat;
+		cb.Projection = ProjMat;
+		//エミッシブ
+		cb.Emissive = Emissive;
+		//デフィーズはすべて通す
+		cb.Diffuse = Diffuse;
+		//更新
+		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
+			sizeof(StaticConstantBuffer));
+
+	}
+	///描画処理
+	void PCTDynamicDraw::Impl::DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
+		const shared_ptr<TextureResource>& TextureRes, bool WrapSampler) {
+		if (m_Wrap != WrapSampler) {
+			auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			if (WrapSampler) {
+				//ラッピングサンプラー
+				DynamicSampler::CreateSampler(SamplerState::LinearWrap, SamplerDescriptorHandle);
+			}
+			else {
+				DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
+			}
+			m_Wrap = WrapSampler;
+		}
+		if (m_Trace != Trace) {
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+			m_PipelineState = PipelineState::CreateDefault3D<VertexPositionColorTexture, VSPCTStatic, PSPCTStatic>(m_RootSignature, PineLineDesc);
+			//透明の場合はブレンドステート差し替え
+			if (Trace) {
+				D3D12_BLEND_DESC blend_desc;
+				D3D12_RENDER_TARGET_BLEND_DESC Target;
+				ZeroMemory(&blend_desc, sizeof(blend_desc));
+				blend_desc.AlphaToCoverageEnable = false;
+				blend_desc.IndependentBlendEnable = false;
+				ZeroMemory(&Target, sizeof(Target));
+				Target.BlendEnable = true;
+				Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+				Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+				Target.BlendOp = D3D12_BLEND_OP_ADD;
+				Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+				Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+				Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+				Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+					blend_desc.RenderTarget[i] = Target;
+				}
+				PineLineDesc.BlendState = blend_desc;
+				m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+				m_Trace = Trace;
+			}
+		}
+		//コマンドリストのリセット
+		CommandList::Reset(m_PipelineState, m_CommandList);
+
+		MeshRes->UpdateResources<VertexPositionColorTexture>(m_CommandList);
+		TextureRes->UpdateResources(m_CommandList);
+
+		//描画
+		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
+		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
+			m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+		}
+		auto Dev = App::GetApp()->GetDeviceResources();
+		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+			Dev->GetFrameIndex(),
+			Dev->GetRtvDescriptorSize());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+		);
+		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_CommandList->IASetIndexBuffer(&MeshRes->GetIndexBufferView());
+		m_CommandList->IASetVertexBuffers(0, 1, &MeshRes->GetVertexBufferView());
+		m_CommandList->DrawIndexedInstanced(MeshRes->GetNumIndicis(), 1, 0, 0, 0);
+
+		//コマンドリストのクローズ
+		CommandList::Close(m_CommandList);
+		//デバイスにコマンドリストを送る
+		Dev->InsertDrawCommandLists(m_CommandList.Get());
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	PCTDynamic描画コンポーネント
@@ -1878,19 +3178,86 @@ namespace basecross {
 		DynamicBaseDraw(GameObjectPtr),
 		pImpl(new Impl())
 	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
 	}
 
 	PCTDynamicDraw::~PCTDynamicDraw() {}
 
+	void PCTDynamicDraw::SetTextureResource(const shared_ptr<TextureResource>& TextureRes) {
+		TextureDrawInterface::SetTextureResource(TextureRes);
+		pImpl->CreateShaderResourceView(TextureRes);
+	}
+	void PCTDynamicDraw::SetTextureResource(const wstring& TextureKey) {
+		TextureDrawInterface::SetTextureResource(TextureKey);
+		pImpl->CreateShaderResourceView(GetTextureResource());
+	}
+
+
 	void PCTDynamicDraw::CreateMesh(vector<VertexPositionColorTexture>& Vertices, vector<uint16_t>& indices) {
+		try {
+			//メッシュの作成（変更できる）
+			auto MeshRes = MeshResource::CreateMeshResource(Vertices, indices, true);
+			SetMeshResource(MeshRes);
+		}
+		catch (...) {
+			throw;
+		}
 	}
 
 	void PCTDynamicDraw::UpdateVertices(const vector<VertexPositionColorTexture>& Vertices) {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PCTDynamicDraw::UpdateVertices()"
+			);
+		}
+		//メッシュの頂点の変更
+		Mesh->UpdateVirtex(Vertices);
 	}
 
 	void PCTDynamicDraw::OnCreate() {
+		///ルートシグネチャ作成
+		pImpl->CreateRootSignature();
+		///デスクプリタヒープ作成
+		pImpl->CreateDescriptorHeap();
+		///サンプラー作成
+		pImpl->CreateSampler();
+		///コンスタントバッファ作成
+		pImpl->CreateConstantBuffer();
+		///パイプラインステート作成
+		pImpl->CreatePipelineState();
+		///コマンドリスト作成
+		pImpl->CreateCommandList();
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
 	}
 	void PCTDynamicDraw::OnDraw() {
+		auto Mesh = GetMeshResource();
+		if (!Mesh) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!Mesh)",
+				L"PCTDynamicDraw::OnDraw()"
+			);
+		}
+		//テクスチャがなければ描画しない
+		auto shTex = GetTextureResource();
+		if (!shTex) {
+			return;
+		}
+		//コンスタントバッファの更新
+		pImpl->UpdateConstantBuffer(GetGameObject(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+		pImpl->DrawObject(Mesh, GetGameObject()->IsAlphaActive(),
+			shTex, GetWrapSampler());
+
 	}
 
 	//--------------------------------------------------------------------------------------

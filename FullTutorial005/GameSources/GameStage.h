@@ -34,10 +34,14 @@ namespace basecross {
 		void CreateScrollSprite();
 		//左上で回転する立方体
 		void CreateRollingCube();
+		//左上で回転するWall立方体
+		void CreateRollingWallCube();
 		//形状が変わる球体
 		void CreateTransSphere();
 		//スパークの作成
 		void CreateSpark();
+		//炎の作成
+		void CreateFire();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

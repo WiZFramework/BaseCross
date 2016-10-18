@@ -25,6 +25,8 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
 		strTexture = DataDir + L"spark.png";
 		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+		strTexture = DataDir + L"fire.png";
+		App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
 		strTexture = DataDir + L"number.png";
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 	}
@@ -221,6 +223,12 @@ namespace basecross {
 	}
 
 
+	//炎の作成
+	void GameStage::CreateFire() {
+		auto MultiFirePtr = AddGameObject<MultiFire>();
+		//シェア配列に炎を追加
+		SetSharedGameObject(L"MultiFire", MultiFirePtr);
+	}
 
 
 	void GameStage::OnCreate() {
@@ -251,6 +259,8 @@ namespace basecross {
 			CreateTransSphere();
 			//スパークの作成
 			CreateSpark();
+			//炎の作成
+			CreateFire();
 			//プレーヤーの作成
 			CreatePlayer();
 		}

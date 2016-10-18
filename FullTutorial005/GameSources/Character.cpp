@@ -45,6 +45,42 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	//class MultiFire : public MultiParticle;
+	//用途: 複数の炎クラス
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	MultiFire::MultiFire(shared_ptr<Stage>& StagePtr) :
+		MultiParticle(StagePtr)
+	{}
+	MultiFire::~MultiFire() {}
+
+	//初期化
+	void MultiFire::OnCreate() {
+	}
+
+	void MultiFire::InsertFire(const Vector3& Pos) {
+		auto ParticlePtr = InsertParticle(4);
+		ParticlePtr->SetEmitterPos(Pos);
+		ParticlePtr->SetTextureResource(L"FIRE_TX");
+		ParticlePtr->SetMaxTime(0.5f);
+		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+			//各パーティクルの移動速度を指定
+			rParticleSprite.m_Velocity = Vector3(
+				rParticleSprite.m_LocalPos.x * 5.0f,
+				rParticleSprite.m_LocalPos.y * 5.0f,
+				rParticleSprite.m_LocalPos.z * 5.0f
+			);
+			//色の指定
+			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
@@ -284,6 +320,83 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	///	左上で回転するWall立方体
+	//--------------------------------------------------------------------------------------
+	RollingWallCube::RollingWallCube(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos) :
+		GameObject(StagePtr),
+		m_TextureKey(TextureKey),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	RollingWallCube::~RollingWallCube() {}
+
+	void RollingWallCube::OnCreate() {
+		SetAlphaActive(m_Trace);
+		Viewport viewport;
+		viewport.Width = static_cast<float>(App::GetApp()->GetGameWidth());
+		viewport.Height = static_cast<float>(App::GetApp()->GetGameHeight());
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0;
+		viewport.MaxDepth = 1.0f;
+		m_Camera = ObjectFactory::Create<Camera>();
+		m_Camera->SetViewPort(viewport);
+		//遠近法無し
+		m_Camera->SetPers(false);
+		m_Camera->CalculateMatrix();
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+		auto PtrDraw = AddComponent<PTDynamicDraw>();
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionTexture new_v;
+			new_v.position = vertices[i].position;
+			new_v.textureCoordinate = vertices[i].textureCoordinate;
+			m_BackupVertices.push_back(new_v);
+		}
+		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		PtrDraw->SetTextureResource(m_TextureKey);
+
+	}
+	const shared_ptr<Camera>& RollingWallCube::OnGetDrawCamera() const {
+		return m_Camera;
+	}
+
+	void RollingWallCube::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+		//for (size_t i = 0; i < m_BackupVertices.size(); i++) {
+		//	m_BackupVertices[i].color.w = sin(m_TotalTime);
+		//}
+		auto PtrDraw = GetComponent<PTDynamicDraw>();
+		PtrDraw->UpdateVertices(m_BackupVertices);
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	形状が変わる球体
 	//--------------------------------------------------------------------------------------
 	TransSphere::TransSphere(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
@@ -300,15 +413,15 @@ namespace basecross{
 	TransSphere::~TransSphere() {}
 
 	void TransSphere::OnCreate() {
-		SetAlphaActive(m_Trace);
 
 		auto PtrTransform = GetComponent<Transform>();
 		PtrTransform->SetScale(m_StartScale);
 		PtrTransform->SetQuaternion(m_StartQt);
 		PtrTransform->SetPosition(m_StartPos);
 
+
+
 		auto PtrDraw = AddComponent<PCTDynamicDraw>();
-		PtrDraw->SetTextureResource(m_TextureKey);
 
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
@@ -323,6 +436,8 @@ namespace basecross{
 
 		}
 		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		PtrDraw->SetTextureResource(m_TextureKey);
+		SetAlphaActive(m_Trace);
 
 	}
 
@@ -475,6 +590,15 @@ namespace basecross{
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		//炎の放出
+		auto PtrSpark = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
+		if (PtrSpark) {
+			PtrSpark->InsertFire(GetComponent<Transform>()->GetPosition());
+		}
+	}
+
 	void SeekObject::OnLastUpdate() {
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新

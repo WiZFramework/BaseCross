@@ -25,6 +25,8 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
 		strTexture = DataDir + L"spark.png";
 		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+		strTexture = DataDir + L"fire.png";
+		App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
 		strTexture = DataDir + L"number.png";
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 	}
@@ -198,6 +200,20 @@ namespace basecross {
 
 	}
 
+	//左上で回転するWall立方体
+	void GameStage::CreateRollingWallCube() {
+		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
+		AddGameObject<RollingWallCube>(
+			L"WALL_TX",
+			false,
+			Vector3(64.0f, 64.0f, 64.0f),
+			Qt,
+			Vector3(-320, 320, 100.0f)
+			);
+
+	}
+
+
 	//形状が変わる球体
 	void GameStage::CreateTransSphere() {
 		AddGameObject<TransSphere>(
@@ -220,6 +236,14 @@ namespace basecross {
 		//エフェクトはZバッファを使用する
 		GetParticleManager()->SetZBufferUse(true);
 	}
+
+	//炎の作成
+	void GameStage::CreateFire() {
+		auto MultiFirePtr = AddGameObject<MultiFire>();
+		//シェア配列に炎を追加
+		SetSharedGameObject(L"MultiFire", MultiFirePtr);
+	}
+
 
 
 
@@ -248,10 +272,14 @@ namespace basecross {
 			CreateScrollSprite();
 			//左上で回転する立方体
 			CreateRollingCube();
+			//左上で回転するWall立方体
+			CreateRollingWallCube();
 			//左上で形状が変わる球体
 			CreateTransSphere();
 			//スパークの作成
 			CreateSpark();
+			//炎の作成
+			CreateFire();
 			//プレーヤーの作成
 			CreatePlayer();
 		}

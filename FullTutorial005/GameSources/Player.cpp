@@ -266,6 +266,7 @@ namespace basecross{
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
 		PtrGravity->StartJump(JumpVec, 0);
+
 	}
 	//Aボタンでジャンプしている間の処理
 	//ジャンプ終了したらtrueを返す

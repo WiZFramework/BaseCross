@@ -38,6 +38,8 @@ namespace basecross {
 		void CreateTransSphere();
 		//スパークの作成
 		void CreateSpark();
+		//炎の作成
+		void CreateFire();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

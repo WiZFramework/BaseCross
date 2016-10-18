@@ -23,6 +23,21 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
+	//class MultiFire : public MultiParticle;
+	//用途: 複数の炎クラス
+	//--------------------------------------------------------------------------------------
+	class MultiFire : public MultiParticle {
+	public:
+		//構築と破棄
+		MultiFire(shared_ptr<Stage>& StagePtr);
+		virtual ~MultiFire();
+		//初期化
+		virtual void OnCreate() override;
+		void InsertFire(const Vector3& Pos);
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	class TraceSprite : public GameObject {
@@ -214,6 +229,64 @@ namespace basecross{
 		virtual void OnUpdate()override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	左上で回転するWall立方体
+	//--------------------------------------------------------------------------------------
+	class RollingWallCube : public GameObject {
+		wstring m_TextureKey;
+		bool m_Trace;
+		Vector3 m_StartScale;
+		Quaternion m_StartQt;
+		Vector3 m_StartPos;
+		float m_TotalTime;
+		//バックアップ頂点データ
+		vector<VertexPositionTexture> m_BackupVertices;
+		//このオブジェクトを描画するカメラ
+		shared_ptr<Camera> m_Camera;
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief コンストラクタ
+		@param[in]	StagePtr	ステージ
+		@param[in]	TextureKey	テクスチャキー
+		@param[in]	Trace	透明処理するかどうか
+		@param[in]	StartScale	初期スケール
+		@param[in]	StartQt	初期回転
+		@param[in]	StartPos	初期位置
+		*/
+		//--------------------------------------------------------------------------------------
+		RollingWallCube(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
+			const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~RollingWallCube();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	このオブジェクトを描画するためのカメラを得る（デフォルトはステージのビューから取得）
+		@return	カメラのshared_ptr
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const shared_ptr<Camera>& OnGetDrawCamera() const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 更新
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override;
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	形状が変わる球体
@@ -305,6 +378,8 @@ namespace basecross{
 
 		//操作
 		virtual void OnUpdate() override;
+		//衝突時
+		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 		virtual void OnLastUpdate() override;
 	};
 

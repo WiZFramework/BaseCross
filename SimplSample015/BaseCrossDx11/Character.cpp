@@ -45,6 +45,43 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	//class MultiFire : public MultiParticle;
+	//用途: 複数の炎クラス
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	MultiFire::MultiFire(shared_ptr<Stage>& StagePtr) :
+		MultiParticle(StagePtr)
+	{}
+	MultiFire::~MultiFire() {}
+
+	//初期化
+	void MultiFire::OnCreate() {
+	}
+
+	void MultiFire::InsertFire(const Vector3& Pos) {
+		auto ParticlePtr = InsertParticle(4);
+		ParticlePtr->SetEmitterPos(Pos);
+		ParticlePtr->SetTextureResource(L"FIRE_TX");
+		ParticlePtr->SetMaxTime(0.5f);
+		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+			//各パーティクルの移動速度を指定
+			rParticleSprite.m_Velocity = Vector3(
+				rParticleSprite.m_LocalPos.x * 5.0f,
+				rParticleSprite.m_LocalPos.y * 5.0f,
+				rParticleSprite.m_LocalPos.z * 5.0f
+			);
+			//色の指定
+			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
@@ -499,6 +536,15 @@ namespace basecross{
 		Pos.y = m_BaseY;
 		PtrTransform->SetPosition(Pos);
 	}
+
+	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		//炎の放出
+		auto PtrSpark = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
+		if (PtrSpark) {
+			PtrSpark->InsertFire(GetComponent<Transform>()->GetPosition());
+		}
+	}
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動

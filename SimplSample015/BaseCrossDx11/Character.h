@@ -23,6 +23,21 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
+	//class MultiFire : public MultiParticle;
+	//用途: 複数の炎クラス
+	//--------------------------------------------------------------------------------------
+	class MultiFire : public MultiParticle {
+	public:
+		//構築と破棄
+		MultiFire(shared_ptr<Stage>& StagePtr);
+		virtual ~MultiFire();
+		//初期化
+		virtual void OnCreate() override;
+		void InsertFire(const Vector3& Pos);
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	class TraceSprite : public GameObject {
@@ -306,6 +321,8 @@ namespace basecross{
 		//操作
 		virtual void OnUpdate() override;
 		virtual void OnLastUpdate() override;
+		//衝突時
+		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 	};
 
 	//--------------------------------------------------------------------------------------
