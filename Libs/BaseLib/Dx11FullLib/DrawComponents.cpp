@@ -2397,6 +2397,53 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
+	//	struct PTStaticDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PTStaticDraw::Impl {
+		Impl()
+		{}
+	};
+	//--------------------------------------------------------------------------------------
+	///	PTStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PTStaticDraw::PTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticBaseDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+	PTStaticDraw::~PTStaticDraw() {}
+
+	void PTStaticDraw::OnDraw() {
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュがなければ描画しない
+		auto MeshRes = GetMeshResource();
+		if (!MeshRes) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!MeshRes)",
+				L"PTStaticDraw::OnDraw()"
+			);
+		}
+		//テクスチャがなければ描画しない
+		auto shTex = GetTextureResource();
+		if (!shTex) {
+			return;
+		}
+		Draw3DPrim::PTDraw(GetGameObject(), MeshRes,
+			shTex, GetWrapSampler(),
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+	}
+
+
+	//--------------------------------------------------------------------------------------
 	//	struct PCTStaticDraw::Impl;
 	//--------------------------------------------------------------------------------------
 	struct PCTStaticDraw::Impl {
@@ -2433,7 +2480,7 @@ namespace basecross {
 			throw BaseException(
 				L"メッシュが作成されていません",
 				L"if (!MeshRes)",
-				L"PCTDynamicDraw::OnDraw()"
+				L"PCTStaticDraw::OnDraw()"
 			);
 		}
 		//テクスチャがなければ描画しない

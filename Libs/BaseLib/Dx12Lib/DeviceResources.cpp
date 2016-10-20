@@ -413,10 +413,12 @@ namespace basecross {
 		textureData.pData = &pImpl->m_Data[0];
 		textureData.RowPitch = GetTextureWidth() * GetPixelSize();
 		textureData.SlicePitch = textureData.RowPitch * GetTextureHeight();
+
 		UpdateSubresources(commandList.Get(),
 			GetTexture().Get(),
 			pImpl->m_TextureUploadHeap.Get(),
 			0, 0, 1, &textureData);
+
 		commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -425,6 +427,7 @@ namespace basecross {
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 			)
 		);
+
 		pImpl->m_DataRefresh = false;
 	}
 
@@ -965,6 +968,9 @@ namespace basecross {
 	}
 
 	void DeviceResources::InsertDrawCommandLists(ID3D12CommandList* Tgt) {
+
+	//	pImpl->m_CommandQueue->ExecuteCommandLists(1, &Tgt);
+
 		pImpl->m_DrawCommandLists.push_back(Tgt);
 	}
 

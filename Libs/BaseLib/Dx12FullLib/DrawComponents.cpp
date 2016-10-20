@@ -643,6 +643,14 @@ namespace basecross {
 	///シェーダーリソースビュー（テクスチャ）作成
 	void PCTParticleDraw::Impl::CreateShaderResourceView(const shared_ptr<TextureResource>& TexRes) {
 		auto Dev = App::GetApp()->GetDeviceResources();
+
+
+
+		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			TexRes->GetTexture().Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+
+
 		//テクスチャハンドルを作成
 		CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
 			m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -661,6 +669,10 @@ namespace basecross {
 			TexRes->GetTexture().Get(),
 			&srvDesc,
 			Handle);
+		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			TexRes->GetTexture().Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
 	}
 	///パイプラインステート作成
 	void PCTParticleDraw::Impl::CreatePipelineState() {
@@ -725,9 +737,8 @@ namespace basecross {
 			sizeof(StaticConstantBuffer));
 	}
 
+
 	///描画処理
-
-
 	void PCTParticleDraw::Impl::DrawObject() {
 
 		//カメラ位置でソート
@@ -770,8 +781,6 @@ namespace basecross {
 		InstancVec.push_back(InstanceDrawStr(NowStartIndex, NowDrawCount, NowTexRes));
 
 
-
-
 		CommandList::Reset(m_PipelineState, m_CommandList);
 
 		m_MeshResource->UpdateResources<VertexPositionColorTexture>(m_CommandList);
@@ -810,8 +819,8 @@ namespace basecross {
 		m_CommandList->IASetVertexBuffers(0, 2, Buf);
 
 		for (auto& v : InstancVec) {
-			CreateShaderResourceView(v.Tex);
 			v.Tex->UpdateResources(m_CommandList);
+			CreateShaderResourceView(v.Tex);
 			//描画
 			m_CommandList->DrawIndexedInstanced(m_MeshResource->GetNumIndicis(), v.Count, 0, 0, v.Start);
 		}
@@ -819,6 +828,8 @@ namespace basecross {
 		CommandList::Close(m_CommandList);
 		//デバイスにコマンドリストを送る
 		Dev->InsertDrawCommandLists(m_CommandList.Get());
+
+
 		//パーティクルの配列のクリア
 		m_DrawParticleSpriteVec.clear();
 	}
@@ -3355,8 +3366,6 @@ namespace basecross {
 		pImpl->m_MeshResource = App::GetApp()->GetResource<MeshResource>(MeshKey);
 	}
 
-
-
 	//--------------------------------------------------------------------------------------
 	//	struct PCStaticDraw::Impl;
 	//--------------------------------------------------------------------------------------
@@ -3380,6 +3389,32 @@ namespace basecross {
 
 	void PCStaticDraw::OnDraw() {
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct PTStaticDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PTStaticDraw::Impl {
+		Impl()
+		{}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PTStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PTStaticDraw::PTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticBaseDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+	}
+
+	PTStaticDraw::~PTStaticDraw() {}
+
+
+	void PTStaticDraw::OnDraw() {
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct PCTStaticDraw::Impl;

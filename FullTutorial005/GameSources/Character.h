@@ -239,8 +239,8 @@ namespace basecross{
 		Quaternion m_StartQt;
 		Vector3 m_StartPos;
 		float m_TotalTime;
-		//バックアップ頂点データ
-		vector<VertexPositionTexture> m_BackupVertices;
+		shared_ptr<MeshResource> m_MeshResource;
+
 		//このオブジェクトを描画するカメラ
 		shared_ptr<Camera> m_Camera;
 	public:

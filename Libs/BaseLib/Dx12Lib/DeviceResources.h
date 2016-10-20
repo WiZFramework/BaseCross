@@ -1506,6 +1506,23 @@ namespace basecross {
 			);
 			return Ret;
 		}
+		static inline  ComPtr<ID3D12GraphicsCommandList> CreateCopy(const ComPtr<ID3D12PipelineState>& pipelineState) {
+			//デバイスの取得
+			auto Dev = App::GetApp()->GetDeviceResources();
+			ComPtr<ID3D12GraphicsCommandList> Ret;
+			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+				0,
+				D3D12_COMMAND_LIST_TYPE_COPY,
+				Dev->GetCommandAllocator().Get(),
+				pipelineState.Get(),
+				IID_PPV_ARGS(&Ret)),
+				L"コマンドリストの作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommandList()",
+				L"CommandList::CreateCopy()"
+			);
+			return Ret;
+		}
+
 		static inline  void Reset(const ComPtr<ID3D12GraphicsCommandList>& commandList) {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();

@@ -355,18 +355,23 @@ namespace basecross{
 		PtrTransform->SetQuaternion(m_StartQt);
 		PtrTransform->SetPosition(m_StartPos);
 
-		auto PtrDraw = AddComponent<PTDynamicDraw>();
+		auto PtrDraw = AddComponent<PTStaticDraw>();
+
 
 		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionTexture> new_vertices;
+
 		vector<uint16_t> indices;
 		MeshUtill::CreateCube(1.0f, vertices, indices);
 		for (size_t i = 0; i < vertices.size(); i++) {
 			VertexPositionTexture new_v;
 			new_v.position = vertices[i].position;
 			new_v.textureCoordinate = vertices[i].textureCoordinate;
-			m_BackupVertices.push_back(new_v);
+			new_vertices.push_back(new_v);
 		}
-		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		m_MeshResource = MeshResource::CreateMeshResource(new_vertices, indices,false);
+
+		PtrDraw->SetMeshResource(m_MeshResource);
 		PtrDraw->SetTextureResource(m_TextureKey);
 
 	}
@@ -387,11 +392,6 @@ namespace basecross{
 		if (m_TotalTime >= XM_PI) {
 			m_TotalTime = 0;
 		}
-		//for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-		//	m_BackupVertices[i].color.w = sin(m_TotalTime);
-		//}
-		auto PtrDraw = GetComponent<PTDynamicDraw>();
-		PtrDraw->UpdateVertices(m_BackupVertices);
 	}
 
 
