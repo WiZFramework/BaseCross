@@ -1,3 +1,7 @@
+/*!
+@file StringComponents.h
+@brief 文字列描画コンポーネント
+*/
 #pragma once
 #include "stdafx.h"
 

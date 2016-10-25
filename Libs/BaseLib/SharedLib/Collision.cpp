@@ -565,6 +565,10 @@ namespace basecross {
 		}
 	}
 
+	void CollisionSphere::OnDraw() {
+		GenericDraw Draw;
+		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_SPHERE"));
+	}
 
 
 	//--------------------------------------------------------------------------------------
@@ -944,6 +948,13 @@ namespace basecross {
 
 
 	}
+
+	void CollisionObb::OnDraw() {
+		GenericDraw Draw;
+		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CUBE"));
+
+	}
+
 
 
 

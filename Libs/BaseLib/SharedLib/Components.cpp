@@ -91,7 +91,10 @@ namespace basecross {
 		Vector3 m_Pivot;
 		Quaternion m_Quaternion;
 		Vector3 m_Position;
-		Impl()
+		Impl():
+			//スケールのみ初期化（他はデフォルト処理でよい）
+			m_BeforeScale(1.0f,1.0f,1.0f),
+			m_Scale(1.0f, 1.0f, 1.0f)
 		{}
 		~Impl() {}
 	};

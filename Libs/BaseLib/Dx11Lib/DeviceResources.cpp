@@ -186,7 +186,9 @@ namespace basecross {
 		BaseResource(),
 		m_IsSkining(false),
 		m_BoneCount(0),
-		m_SampleCount(0)
+		m_SampleCount(0),
+		m_MeshTypeIndex(typeid(VertexPosition)),	//•Ö‹XãVertexPosition‚É‰Šú‰»
+		m_NumStride(sizeof(VertexPosition))
 	{}
 	//”jŠü
 	MeshResource::~MeshResource() {}

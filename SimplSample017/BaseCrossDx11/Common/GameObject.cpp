@@ -264,6 +264,7 @@ namespace basecross {
 		auto Tptr = GetComponent<Transform>();
 		auto RigidPtr = GetComponent<Rigidbody>(false);
 		auto GravityPtr = GetComponent<Gravity>(false);
+		auto CollisionPtr = GetComponent<Collision>(false);
 		//マップを検証してDraw
 		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
 		while (it != pImpl->m_CompOrder.end()) {
@@ -281,13 +282,18 @@ namespace basecross {
 		}
 		//派生クラス対策
 		if (GravityPtr && GravityPtr->IsDrawActive()) {
-			//GravityPtrがあればUpdate()
+			//GravityPtrがあればDraw()
 			GravityPtr->OnDraw();
 		}
 		if (RigidPtr && RigidPtr->IsDrawActive()) {
-			//RigidbodyがあればUpdate()
+			//RigidbodyがあればDraw()
 			RigidPtr->OnDraw();
 		}
+		if (CollisionPtr && CollisionPtr->IsDrawActive()) {
+			//CollisionがあればDraw()
+			CollisionPtr->OnDraw();
+		}
+
 		//TransformのDraw
 		if (Tptr->IsDrawActive()) {
 			Tptr->OnDraw();
@@ -861,6 +867,18 @@ namespace basecross {
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
 
+	//追加待ちになってるオブジェクトを追加する
+	void Stage::SetWaitToObjectVec(){
+		if (pImpl->m_WaitAddObjectVec.size() > 0){
+			for (auto Ptr : pImpl->m_WaitAddObjectVec){
+				pImpl->m_GameObjectVec.push_back(Ptr);
+			}
+		}
+		pImpl->m_WaitAddObjectVec.clear();
+	}
+
+
+
 	shared_ptr<GameObject> Stage::GetSharedObject(const wstring& Key, bool ExceptionActive)const {
 		shared_ptr<GameObject> Ptr = GetSharedGameObjectEx(Key, ExceptionActive);
 		return Ptr;
@@ -1017,6 +1035,8 @@ namespace basecross {
 
 	//ステージ内の更新（シーンからよばれる）
 	void Stage::UpdateStage() {
+		//追加まちオブジェクトの追加
+		SetWaitToObjectVec();
 		//Transformコンポーネントの値をバックアップにコピー
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1274,6 +1294,33 @@ namespace basecross {
 			App::GetApp()->RegisterResource(L"DEFAULT_OCTAHEDRON", MeshResource::CreateOctahedron(1.0f));
 			App::GetApp()->RegisterResource(L"DEFAULT_DODECAHEDRON", MeshResource::CreateDodecahedron(1.0f));
 			App::GetApp()->RegisterResource(L"DEFAULT_ICOSAHEDRON", MeshResource::CreateIcosahedron(1.0f));
+
+			vector<VertexPositionNormalTexture> vertices;
+			vector<VertexPositionColor> new_vertices;
+			vector<uint16_t> indices;
+			MeshUtill::CreateCube(1.0f, vertices, indices);
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionColor new_v;
+				new_v.position = vertices[i].position;
+				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_vertices.push_back(new_v);
+			}
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CUBE", MeshResource::CreateMeshResource(new_vertices, indices,false));
+			vertices.clear();
+			new_vertices.clear();
+			indices.clear();
+			MeshUtill::CreateSphere(1.0f,18, vertices, indices);
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionColor new_v;
+				new_v.position = vertices[i].position;
+				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_vertices.push_back(new_v);
+			}
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_SPHERE", MeshResource::CreateMeshResource(new_vertices, indices, false));
+
+
+			
+
 		}
 		catch (...) {
 			throw;

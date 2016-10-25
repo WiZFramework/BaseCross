@@ -22,7 +22,7 @@ cbuffer SimpleConstantBuffer : register(b0)
 	float4 Diffuse	: packoffset(c14);
 	float4 LightPos	: packoffset(c15);
 	float4 EyePos	: packoffset(c16);
-	uint4 Activeflags	: packoffset(c17);			//フラグ、texture=x
+	uint4 Activeflags	: packoffset(c17);			//フラグ
 	float4x4 LightView	: packoffset(c18);
 	float4x4 LightProjection	: packoffset(c22);
 };

@@ -43,8 +43,11 @@ namespace basecross {
 
 
 
+	//PNStatic
+	IMPLEMENT_DX11_CONSTANT_BUFFER(CBStaticLighting)
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNStatic, App::GetApp()->m_wstrRelativeShadersPath + L"VSPNStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNStatic, App::GetApp()->m_wstrRelativeShadersPath + L"PSPNStatic.cso")
 	//PNTStatic
-	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStatic)
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStatic, App::GetApp()->m_wstrRelativeShadersPath + L"VSPNTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStatic, App::GetApp()->m_wstrRelativeShadersPath + L"PSPNTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticNoTexture, App::GetApp()->m_wstrRelativeShadersPath + L"PSPNTStaticNoTexture.cso")
@@ -287,7 +290,8 @@ namespace basecross {
 				//インプットレイアウトのセット
 				pID3D11DeviceContext->IASetInputLayout(VSShadowmapBone::GetPtr()->GetInputLayout());
 				//ストライドとオフセット
-				UINT stride = sizeof(VertexPositionNormalTextureSkinning);
+				UINT stride = PtrMeshResource->GetNumStride();
+//				UINT stride = sizeof(VertexPositionNormalTextureSkinning);
 				UINT offset = 0;
 				//頂点バッファをセット
 				pID3D11DeviceContext->IASetVertexBuffers(0, 1, PtrMeshResource->GetVertexBuffer().GetAddressOf(), &stride, &offset);
@@ -298,8 +302,9 @@ namespace basecross {
 				//インプットレイアウトのセット
 				pID3D11DeviceContext->IASetInputLayout(VSShadowmap::GetPtr()->GetInputLayout());
 				//ストライドとオフセット
-				UINT stride = sizeof(VertexPositionNormalTexture);
+				UINT stride = PtrMeshResource->GetNumStride();
 				if (IsSkinStride) {
+					//ストライドがスキンだった場合の特殊処理
 					stride = sizeof(VertexPositionNormalTextureSkinning);
 				}
 				UINT offset = 0;
@@ -865,16 +870,17 @@ namespace basecross {
 		if (GetGameObject()->GetAlphaActive()) {
 			//透明処理
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullNone());
 		}
 		else {
 			//透明処理しない
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 		}
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthNone(), 0);
-		//ラスタライザステート
-		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-
 		//描画
 		pD3D11DeviceContext->DrawIndexed(SpriteMesh->GetNumIndicis(), 0, 0);
 		//後始末
@@ -1083,15 +1089,17 @@ namespace basecross {
 		if (GetGameObject()->GetAlphaActive()) {
 			//透明処理
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullNone());
 		}
 		else {
 			//透明処理しない
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 		}
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthNone(), 0);
-		//ラスタライザステート
-		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 		//テクスチャとサンプラーの設定
 		ID3D11ShaderResourceView* pNull[1] = { 0 };
 		pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
@@ -1309,15 +1317,17 @@ namespace basecross {
 		if (GetGameObject()->GetAlphaActive()) {
 			//透明処理
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullNone());
 		}
 		else {
 			//透明処理しない
 			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+			//ラスタライザステート
+			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 		}
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthNone(), 0);
-		//ラスタライザステート
-		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 		//テクスチャとサンプラーの設定
 		ID3D11ShaderResourceView* pNull[1] = { 0 };
 		pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
@@ -1427,6 +1437,77 @@ namespace basecross {
 			//後始末
 			Dev->InitializeStates();
 		}
+
+
+		static void PCWireFrameDraw(const shared_ptr<GameObject>& GameObjectPtr, const shared_ptr<MeshResource>& MeshRes,
+			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+			auto RenderState = Dev->GetRenderState();
+			//行列の定義
+			auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
+			//行列の定義
+			Matrix4X4 World, ViewMat, ProjMat;
+			//ワールド行列の決定
+			World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+			//転置する
+			World.Transpose();
+			//カメラを得る
+			auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+			//ビューと射影行列を得る
+			ViewMat = CameraPtr->GetViewMatrix();
+			//転置する
+			ViewMat.Transpose();
+			//転置する
+			ProjMat = CameraPtr->GetProjMatrix();
+			ProjMat.Transpose();
+			//コンスタントバッファの準備
+			StaticConstantBuffer sb;
+			sb.World = World;
+			sb.View = ViewMat;
+			sb.Projection = ProjMat;
+			//エミッシブ
+			sb.Emissive = Emissive;
+			//デフィーズはすべて通す
+			sb.Diffuse = Diffuse;
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+
+			//ストライドとオフセット
+			UINT stride = sizeof(VertexPositionColor);
+			UINT offset = 0;
+			//頂点バッファのセット
+			pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+			//インデックスバッファのセット
+			pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+
+			//描画方法（3角形）
+			pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBStatic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//シェーダの設定
+			pD3D11DeviceContext->VSSetShader(VSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+			pD3D11DeviceContext->PSSetShader(PSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(VSPCStatic::GetPtr()->GetInputLayout());
+			//ブレンドステート
+			//透明処理しない
+			pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+			//デプスステンシルステート
+			pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+			//ラスタライザステート(ワイアフレーム)
+			pD3D11DeviceContext->RSSetState(RenderState->GetWireframe());
+			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+			//後始末
+			Dev->InitializeStates();
+		}
+
 
 		static void PTDraw(const shared_ptr<GameObject>& GameObjectPtr,
 			const shared_ptr<MeshResource>& MeshRes,
@@ -1633,6 +1714,104 @@ namespace basecross {
 			//後始末
 			Dev->InitializeStates();
 		}
+
+		static void PNNotShadowDraw(const shared_ptr<GameObject>& GameObjectPtr,
+			const shared_ptr<MeshResource>& MeshRes,
+			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+			auto RenderState = Dev->GetRenderState();
+			//行列の定義
+			auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
+			//行列の定義
+			Matrix4X4 World, ViewMat, ProjMat;
+			//ワールド行列の決定
+			World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+			//転置する
+			World.Transpose();
+			//カメラを得る
+			auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+			//ビューと射影行列を得る
+			ViewMat = CameraPtr->GetViewMatrix();
+			//転置する
+			ViewMat.Transpose();
+			//転置する
+			ProjMat = CameraPtr->GetProjMatrix();
+			ProjMat.Transpose();
+
+			//コンスタントバッファの設定
+			StaticLightingConstantBuffer cb1;
+			//行列の設定(転置する)
+			//コンスタントバッファの設定
+			cb1.World = World;
+			cb1.View = ViewMat;
+			cb1.Projection = ProjMat;
+			//ライティング
+			auto StageLight = GameObjectPtr->OnGetDrawLight();
+			cb1.LightDir = StageLight.m_Directional;
+			cb1.LightDir.w = 1.0f;
+			cb1.Emissive = Emissive;
+			cb1.Diffuse = Diffuse;
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBStaticLighting::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
+
+			//ストライドとオフセット
+			UINT stride = sizeof(VertexPositionNormal);
+			UINT offset = 0;
+			//頂点バッファのセット
+			pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+			//インデックスバッファのセット
+			pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+
+			//描画方法（3角形）
+			pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBStaticLighting::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//シェーダの設定
+			pD3D11DeviceContext->VSSetShader(VSPNStatic::GetPtr()->GetShader(), nullptr, 0);
+			pD3D11DeviceContext->PSSetShader(PSPNStatic::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(VSPNStatic::GetPtr()->GetInputLayout());
+			//ブレンドステート
+			if (GameObjectPtr->GetAlphaActive()) {
+				//透明処理
+				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+			}
+			else {
+				//透明処理しない
+				pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+			}
+			//デプスステンシルステート
+			pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+
+			//透明処理なら
+			if (GameObjectPtr->GetAlphaActive()) {
+				//ラスタライザステート(裏描画)
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+				//ラスタライザステート（表描画）
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+			}
+			else {
+				//ラスタライザステート
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+			}
+			//後始末
+			Dev->InitializeStates();
+		}
+
+
 		static void PNTNotShadowDraw(const shared_ptr<GameObject>& GameObjectPtr,
 			const shared_ptr<MeshResource>& MeshRes,
 			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler,
@@ -1659,7 +1838,7 @@ namespace basecross {
 			ProjMat.Transpose();
 
 			//コンスタントバッファの設定
-			PNTStaticConstantBuffer cb1;
+			StaticLightingConstantBuffer cb1;
 			//行列の設定(転置する)
 			//コンスタントバッファの設定
 			cb1.World = World;
@@ -1672,7 +1851,7 @@ namespace basecross {
 			cb1.Emissive = Emissive;
 			cb1.Diffuse = Diffuse;
 			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
+			pD3D11DeviceContext->UpdateSubresource(CBStaticLighting::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
 
 			//ストライドとオフセット
 			UINT stride = sizeof(VertexPositionNormalTexture);
@@ -1686,7 +1865,7 @@ namespace basecross {
 			pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pConstantBuffer = CBStaticLighting::GetPtr()->GetBuffer();
 			ID3D11Buffer* pNullConstantBuffer = nullptr;
 			//頂点シェーダに渡す
 			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
@@ -1738,6 +1917,7 @@ namespace basecross {
 			//後始末
 			Dev->InitializeStates();
 		}
+
 
 		static void PNTWithShadowDraw(const shared_ptr<GameObject>& GameObjectPtr,
 			const shared_ptr<MeshResource>& MeshRes,
@@ -2493,6 +2673,94 @@ namespace basecross {
 			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	struct PNStaticDraw::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct PNStaticDraw::Impl {
+		bool m_OwnShadowActive;
+		Impl() :
+			m_OwnShadowActive(false)
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PNStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PNStaticDraw::PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticBaseDraw(GameObjectPtr),
+		pImpl(new Impl()) {
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+
+	PNStaticDraw::~PNStaticDraw() {}
+
+	void PNStaticDraw::OnCreate() {
+	}
+
+	bool PNStaticDraw::GetOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	bool PNStaticDraw::IsOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	void PNStaticDraw::SetOwnShadowActive(bool b) {
+		pImpl->m_OwnShadowActive = b;
+	}
+
+	void PNStaticDraw::DrawNotShadow() {
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュがなければ描画しない
+		auto MeshRes = GetMeshResource();
+		if (!MeshRes) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!MeshRes)",
+				L"PNStaticDraw::OnDraw()"
+			);
+		}
+		Draw3DPrim::PNNotShadowDraw(GetGameObject(),
+			MeshRes,
+			GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+	}
+
+	void PNStaticDraw::DrawWithShadow() {
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュがなければ描画しない
+		auto MeshRes = GetMeshResource();
+		if (!MeshRes) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!MeshRes)",
+				L"PNStaticDraw::OnDraw()"
+			);
+		}
+		//Draw3DPrim::PNWithShadowDraw(GetGameObject(),
+		//	MeshRes,
+		//	GetEmissive(), GetDiffuse(), GetMeshToTransformMatrix());
+	}
+
+	void PNStaticDraw::OnDraw() {
+		if (GetOwnShadowActive()) {
+			DrawWithShadow();
+		}
+		else {
+			DrawNotShadow();
+		}
+	}
+
 
 
 
@@ -2921,7 +3189,7 @@ namespace basecross {
 		ProjMat.Transpose();
 
 		//コンスタントバッファの設定
-		PNTStaticConstantBuffer cb1;
+		StaticLightingConstantBuffer cb1;
 		ZeroMemory(&cb1, sizeof(cb1));
 		//行列の設定(転置する)
 		//コンスタントバッファの設定
@@ -3002,7 +3270,7 @@ namespace basecross {
 			cb1.Emissive = m.m_Emissive;
 			cb1.Diffuse = m.m_Diffuse;
 			//コンスタントバッファの更新
-			ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pConstantBuffer = CBStaticLighting::GetPtr()->GetBuffer();
 			pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 			pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
 			pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
@@ -3780,6 +4048,20 @@ namespace basecross {
 		}
 	}
 
+
+	//--------------------------------------------------------------------------------------
+	///	汎用描画用（PNTStatic固定）
+	//--------------------------------------------------------------------------------------
+	GenericDraw::GenericDraw() :
+		ObjectInterface() {}
+	GenericDraw::~GenericDraw() {}
+	void GenericDraw::OnCreate() {}
+
+	void GenericDraw::DrawWireFrame(const shared_ptr<GameObject>& GameObj,
+		const shared_ptr<MeshResource>& Mesh) {
+		Draw3DPrim::PCWireFrameDraw(GameObj, Mesh,
+			Color4(0,0,0,0), Color4(1, 1, 1, 1),Matrix4X4());
+	}
 
 }
 //end basecross

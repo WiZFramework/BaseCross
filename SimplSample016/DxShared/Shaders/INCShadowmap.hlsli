@@ -14,8 +14,6 @@ cbuffer ShadowmapConstantBuffer : register( b0 )
 struct VS_INPUT
 {
     float4 vPosition    : SV_POSITION;
-    float3 Normal   : NORMAL;
-    float2 TexCoord : TEXCOORD0;
 };
 
 struct VS_INPUT_WEIGHTS

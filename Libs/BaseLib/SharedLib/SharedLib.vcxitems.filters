@@ -30,6 +30,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Action.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)SpriteStudio5.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Components.cpp">
@@ -51,6 +54,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Action.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)SpriteStudio5.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

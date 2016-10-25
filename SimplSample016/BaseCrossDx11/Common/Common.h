@@ -23,3 +23,5 @@
 #include "StringComponents.h"
 //ゲームオブジェクト、ステージなど
 #include "GameObject.h"
+//スプライトスタジオ
+#include "SpriteStudio5.h"

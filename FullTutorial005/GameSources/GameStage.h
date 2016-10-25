@@ -36,6 +36,8 @@ namespace basecross {
 		void CreateRollingCube();
 		//左上で回転するWall立方体
 		void CreateRollingWallCube();
+		//白い立方体
+		void CreateWhiteCube();
 		//形状が変わる球体
 		void CreateTransSphere();
 		//スパークの作成

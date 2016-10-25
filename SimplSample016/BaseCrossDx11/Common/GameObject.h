@@ -1317,6 +1317,10 @@ namespace basecross {
 			}
 		}
 
+		//追加待ちになってるオブジェクトを追加する
+		void SetWaitToObjectVec();
+
+
 		template<typename T>
 		shared_ptr<T> GetSharedGameObject(const wstring& Key, bool ExceptionActive = true)const {
 			shared_ptr<T> Ptr = dynamic_pointer_cast<T>(GetSharedGameObjectEx(Key, ExceptionActive));

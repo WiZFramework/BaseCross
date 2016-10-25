@@ -446,6 +446,15 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl)override;
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画処理。DrawActiveがtrue時に呼ばれる
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+
+
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -606,6 +615,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl)override;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画処理。DrawActiveがtrue時に呼ばれる
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+
 	private:
 		// pImplイディオム
 		struct Impl;

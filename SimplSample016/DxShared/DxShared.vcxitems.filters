@@ -74,5 +74,17 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneShadow.hlsl">
       <Filter>シェーダファイル</Filter>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNStatic.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPTStatic.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNStatic.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPTStatic.hlsl">
+      <Filter>シェーダファイル</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

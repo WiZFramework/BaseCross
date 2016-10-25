@@ -21,6 +21,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Gravity.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Rigidbody.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SharedResources.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)SpriteStudio5.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Action.cpp" />
@@ -30,5 +31,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Gravity.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Rigidbody.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SharedResources.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)SpriteStudio5.cpp" />
   </ItemGroup>
 </Project>

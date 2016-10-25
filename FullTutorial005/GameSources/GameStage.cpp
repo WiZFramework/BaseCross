@@ -212,8 +212,16 @@ namespace basecross {
 			);
 
 	}
+	//白い立方体
+	void GameStage::CreateWhiteCube() {
+		Quaternion Qt(Vector3(0.0f, 1.0, 1.0), 0);
+		AddGameObject<WhiteCube>(
+			Vector3(1.0f, 1.0f, 1.0f),
+			Qt,
+			Vector3(0.0f,1.0f, 10.0f)
+			);
 
-
+	}
 	//形状が変わる球体
 	void GameStage::CreateTransSphere() {
 		AddGameObject<TransSphere>(
@@ -224,10 +232,6 @@ namespace basecross {
 			Vector3(10.0f, 2.0f, 10.0f)
 			);
 	}
-
-
-
-
 	//スパークの作成
 	void GameStage::CreateSpark() {
 		auto MultiSparkPtr = AddGameObject<MultiSpark>();
@@ -236,7 +240,6 @@ namespace basecross {
 		//エフェクトはZバッファを使用する
 		GetParticleManager()->SetZBufferUse(true);
 	}
-
 	//炎の作成
 	void GameStage::CreateFire() {
 		auto MultiFirePtr = AddGameObject<MultiFire>();
@@ -274,6 +277,8 @@ namespace basecross {
 			CreateRollingCube();
 			//左上で回転するWall立方体
 			CreateRollingWallCube();
+			//白い立方体
+			CreateWhiteCube();
 			//左上で形状が変わる球体
 			CreateTransSphere();
 			//スパークの作成

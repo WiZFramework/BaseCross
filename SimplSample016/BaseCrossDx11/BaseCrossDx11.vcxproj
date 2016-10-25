@@ -114,6 +114,7 @@
     <ClInclude Include="Common\Gravity.h" />
     <ClInclude Include="Common\Rigidbody.h" />
     <ClInclude Include="Common\SharedResources.h" />
+    <ClInclude Include="Common\SpriteStudio5.h" />
     <ClInclude Include="Common\StringComponents.h" />
     <ClInclude Include="GameStage.h" />
     <ClInclude Include="Player.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="Common\Gravity.cpp" />
     <ClCompile Include="Common\Rigidbody.cpp" />
     <ClCompile Include="Common\SharedResources.cpp" />
+    <ClCompile Include="Common\SpriteStudio5.cpp" />
     <ClCompile Include="Common\StringComponents.cpp" />
     <ClCompile Include="GameStage.cpp" />
     <ClCompile Include="Player.cpp" />

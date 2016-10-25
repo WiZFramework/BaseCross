@@ -1,3 +1,7 @@
+/*!
+@file StringComponents.cpp
+@brief 文字列描画コンポーネント実体
+*/
 #include "stdafx.h"
 
 namespace basecross {

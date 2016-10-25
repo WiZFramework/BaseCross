@@ -74,8 +74,8 @@ namespace basecross {
 
 
 
-	//PNTStatic
-	struct PNTStaticConstantBuffer
+	//ライティングを使用する static系コンスタントバッファ
+	struct StaticLightingConstantBuffer
 	{
 		Matrix4X4 World;
 		Matrix4X4 View;
@@ -83,16 +83,20 @@ namespace basecross {
 		Vector4 LightDir;
 		Color4 Emissive;
 		Color4 Diffuse;
-		PNTStaticConstantBuffer() {
-			memset(this, 0, sizeof(PNTStaticConstantBuffer));
+		StaticLightingConstantBuffer() {
+			memset(this, 0, sizeof(StaticLightingConstantBuffer));
 			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTStatic, PNTStaticConstantBuffer)
+	DECLARE_DX11_CONSTANT_BUFFER(CBStaticLighting, StaticLightingConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNStatic, VertexPositionNormal)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStatic, VertexPositionNormalTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPNStatic)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticNoTexture)
+
+
 
 
 	struct PNTStaticShadowConstantBuffer
@@ -105,7 +109,7 @@ namespace basecross {
 		Color4 Diffuse;
 		Vector4 LightPos;
 		Vector4 EyePos;
-		XMUINT4 ActiveFlg;			//テクスチャ=xがアクティブかどうか
+		XMUINT4 ActiveFlg;			//汎用フラグ
 		Matrix4X4 LightView;
 		Matrix4X4 LightProjection;
 		PNTStaticShadowConstantBuffer() {
@@ -1326,6 +1330,75 @@ namespace basecross {
 
 
 
+	//--------------------------------------------------------------------------------------
+	///	PNStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PNStaticDraw : public StaticBaseDraw {
+		void DrawNotShadow();
+		void DrawWithShadow();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PNStaticDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか設定する
+		@param[in]	b		影を描画するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetOwnShadowActive(bool b);
+		//操作
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
 
 
 
@@ -1596,7 +1669,6 @@ namespace basecross {
 		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
 		//操作
 		//--------------------------------------------------------------------------------------
-		//	virtual void OnCreate()override;
 		/*!
 		@brief	OnCreate処理
 		@return	なし
@@ -1623,8 +1695,42 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
-
-
+	//--------------------------------------------------------------------------------------
+	///	汎用描画用（PNTStatic固定）
+	//--------------------------------------------------------------------------------------
+	class GenericDraw :public ObjectInterface {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		GenericDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~GenericDraw();
+		//操作
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ワイアフレーム描画処理
+		@param[in]	GameObj	ゲームオブジェクト
+		@param[in]	Mesh	PCメッシュ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void DrawWireFrame(const shared_ptr<GameObject>& GameObj,
+			const shared_ptr<MeshResource>& Mesh);
+	};
 
 }
 //end basecross

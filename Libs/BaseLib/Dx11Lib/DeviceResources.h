@@ -61,9 +61,11 @@ namespace basecross {
 		ComPtr<ID3D11Buffer> m_IndexBuffer;	//インデックスバッファ
 		UINT m_NumVertices;				//頂点の数
 		UINT m_NumIndicis;				//インデックスの数
+		type_index m_MeshTypeIndex;		//このメッシュの形
+		UINT m_NumStride;				//ストライド数
 		shared_ptr<BackupDataBase> m_BackUpData;
 		vector<MaterialEx> m_MaterialExVec;	//マテリアルの配列（モデルで使用）
-											//以下、ボーン用
+		//以下、ボーン用
 		bool m_IsSkining;
 		UINT m_BoneCount;	//ボーンの数
 		UINT m_SampleCount;	//サンプリング数
@@ -165,6 +167,25 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	ストライド数の取得
+		@return	ストライド数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetNumStride() const {
+			return m_NumStride;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	type_indexの取得
+		@return	type_index
+		*/
+		//--------------------------------------------------------------------------------------
+		type_index GetTypeIndex() const {
+			return m_MeshTypeIndex;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	マテリアル配列の取得
 		@return	マテリアルの配列
 		*/
@@ -231,11 +252,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	バッファを作成する
-		@tparam	T	頂点の型
+		@tparam	T	データの型
 		@param[in]	pDx11Device	デバイス
 		@param[in]	data	データ
 		@param[in]	bindFlags	バインドフラグ
-		@param[out]	pBuffer	頂点バッファ
+		@param[out]	pBuffer	バッファ
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
@@ -547,6 +568,8 @@ namespace basecross {
 			}
 			//頂点数の設定
 			Ptr->m_NumVertices = static_cast<UINT>(vertices.size());
+			Ptr->m_MeshTypeIndex = typeid(T);
+			Ptr->m_NumStride = sizeof(T);
 			return Ptr;
 		}
 		//--------------------------------------------------------------------------------------
@@ -597,6 +620,8 @@ namespace basecross {
 			});
 			//インデックス数の設定
 			Ptr->m_NumIndicis = static_cast<UINT>(indices.size());
+			Ptr->m_MeshTypeIndex = typeid(T);
+			Ptr->m_NumStride = sizeof(T);
 			return Ptr;
 		}
 		//--------------------------------------------------------------------------------------

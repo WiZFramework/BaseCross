@@ -394,6 +394,68 @@ namespace basecross{
 		}
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	”’‚¢—§•û‘Ì
+	//--------------------------------------------------------------------------------------
+	WhiteCube::WhiteCube(const shared_ptr<Stage>& StagePtr,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos):
+		GameObject(StagePtr),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	void WhiteCube::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionNormal> new_vertices;
+
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionNormal new_v;
+			new_v.position = vertices[i].position;
+			new_v.normal = vertices[i].normal;
+			new_vertices.push_back(new_v);
+		}
+		m_MeshResource = MeshResource::CreateMeshResource(new_vertices, indices, false);
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+		auto PtrDraw = AddComponent<PNStaticDraw>();
+		PtrDraw->SetMeshResource(m_MeshResource);
+
+		//‰e‚ð‚Â‚¯‚é
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+
+
+
+
+	}
+	void WhiteCube::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+
+	}
+
+
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -438,6 +500,11 @@ namespace basecross{
 		PtrDraw->CreateMesh(m_BackupVertices, indices);
 		PtrDraw->SetTextureResource(m_TextureKey);
 		SetAlphaActive(m_Trace);
+
+		//‰e‚ð‚Â‚¯‚é
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(PtrDraw->GetMeshResource());
+
 
 	}
 

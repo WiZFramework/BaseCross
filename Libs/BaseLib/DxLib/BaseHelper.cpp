@@ -223,6 +223,30 @@ namespace basecross{
 			throw;
 		}
 	}
+
+	bool CsvFile::ReadCsv(const wstring& str){
+		//データをクリアする
+		pImpl->m_CsvVec.clear();
+		vector<wstring> lineVec;
+		Util::WStrToTokenVector(lineVec, str, L'\n');
+		for (auto& v : lineVec){
+			auto Len = v.size();
+			wstring setstr;
+			if (Len > 0){
+				if (v[Len - 1] == L'\r'){
+					setstr = v.substr(0, Len - 1);
+
+				}
+				else{
+					setstr = v;
+				}
+				pImpl->m_CsvVec.push_back(setstr);
+			}
+		}
+		return true;
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	//	void CsvFile::SaveCsv(
 	//	bool Exp = true	//例外処理するかどうか
