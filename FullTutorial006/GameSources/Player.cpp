@@ -40,6 +40,8 @@ namespace basecross{
 		//横部分のみ反発
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 
+		PtrColl->SetDrawActive(true);
+
 		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
 		SpanMat.DefTransformation(
 			Vector3(1.0f, 1.0f, 1.0f),
@@ -49,6 +51,7 @@ namespace basecross{
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
+
 		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"Chara_R_MESH");
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
@@ -62,6 +65,10 @@ namespace basecross{
 		PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
 		PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
 		PtrDraw->ChangeCurrentAnimation(L"Default");
+
+		PtrDraw->SetLighting(ShaderLighting::Real);
+		PtrDraw->SetEmissive(Color4(0.6, 0.6, 0.6, 0));
+		PtrDraw->SetDiffuse(Color4(0.4, 0.4, 0.4, 1));
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();

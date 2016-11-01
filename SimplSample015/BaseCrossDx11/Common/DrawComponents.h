@@ -92,10 +92,32 @@ namespace basecross {
 	DECLARE_DX11_CONSTANT_BUFFER(CBStaticLighting, StaticLightingConstantBuffer)
 	DECLARE_DX11_VERTEX_SHADER(VSPNStatic, VertexPositionNormal)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStatic, VertexPositionNormalTexture)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticMidium, VertexPositionNormalTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPNStatic)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticNoTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticNoTex)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticMidium)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticMidiumNoTex)
 
+	//リアルライティングを使用する static系コンスタントバッファ
+	struct StaticRealLightingConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Vector4 LightDir;
+		Color4 Emissive;
+		Color4 Diffuse;
+		Vector4 EyePosition;
+		StaticRealLightingConstantBuffer() {
+			memset(this, 0, sizeof(StaticRealLightingConstantBuffer));
+			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		};
+	};
+	DECLARE_DX11_CONSTANT_BUFFER(CBStaticRealLighting, StaticRealLightingConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticReal, VertexPositionNormalTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticReal)
+	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticRealNoTex)
 
 
 
@@ -140,6 +162,29 @@ namespace basecross {
 
 	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBone, PNTBoneConstantBuffer)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTBone, VertexPositionNormalTextureSkinning)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneMidium, VertexPositionNormalTextureSkinning)
+
+
+	//リアルライティングを使用する static系コンスタントバッファ
+	struct PNTBoneRealLightingConstantBuffer
+	{
+		Matrix4X4 World;
+		Matrix4X4 View;
+		Matrix4X4 Projection;
+		Vector4 LightDir;
+		Color4 Emissive;
+		Color4 Diffuse;
+		Vector4 EyePosition;
+		XMVECTOR Bones[3 * 72];
+		PNTBoneRealLightingConstantBuffer() {
+			memset(this, 0, sizeof(PNTBoneRealLightingConstantBuffer));
+			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		};
+	};
+	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBoneRealLighting, PNTBoneRealLightingConstantBuffer)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneReal, VertexPositionNormalTextureSkinning)
+
+
 
 	struct PNTBoneShadowConstantBuffer
 	{
@@ -221,6 +266,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetBlendState(const BlendState state);
+		void SetDeviceBlendState();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デプスステンシルステートの設定
@@ -229,6 +275,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetDepthStencilState(const DepthStencilState state);
+		void SetDeviceDepthStencilState();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ラスタライザステートの設定
@@ -237,6 +284,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetRasterizerState(const RasterizerState state);
+		void SetDeviceRasterizerState();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	サンプラーステートの設定
@@ -245,6 +293,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetSamplerState(const SamplerState state);
+		void SetDeviceSamplerState();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュとワールド行列の間を補完する行列の取得<br />
@@ -723,6 +772,14 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	/// ライティングシェーダ設定用のenum
+	//--------------------------------------------------------------------------------------
+	enum class ShaderLighting {
+		Simple,
+		Midium,
+		Real
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	3D描画コンポーネントの親(3D描画の親)
@@ -788,36 +845,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetDiffuse(const Color4& col);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ビュー行列の取得
-		@return	ビュー行列
-		*/
-		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetViewMatrix() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ビュー行列の設定
-		@param[in]	mat	ビュー行列
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetViewMatrix(const Matrix4X4& mat);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	射影行列の取得
-		@return	射影行列
-		*/
-		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetProjMatrix() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	射影行列の設定
-		@param[in]	mat	射影行列
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetProjMatrix(const Matrix4X4& mat);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1184,7 +1211,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetMeshResource(const wstring& MeshKey);
+		virtual void SetMeshResource(const wstring& MeshKey);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1329,7 +1356,6 @@ namespace basecross {
 	};
 
 
-
 	//--------------------------------------------------------------------------------------
 	///	PNStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
@@ -1424,6 +1450,21 @@ namespace basecross {
 		virtual ~PNTStaticDraw();
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	ライティングを得る
+		@return	シェーダーライティング
+		*/
+		//--------------------------------------------------------------------------------------
+		ShaderLighting GetLighting() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ライティングを設定する
+		@param[in]	Lighting	シェーダーライティング
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetLighting(ShaderLighting Lighting);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	影を描画するかどうか得る
 		@return	影を描画すればtrue
 		*/
@@ -1476,15 +1517,30 @@ namespace basecross {
 	//	class PNTStaticModelDraw : public DrawComponent;
 	//	用途: PNTStaticModelDraw描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PNTStaticModelDraw : public Base3DDraw {
+	class PNTStaticModelDraw : public StaticBaseDraw {
 		void DrawWithShadow();
 		void DrawNotShadow();
 	public:
 		explicit PNTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
 		virtual ~PNTStaticModelDraw();
-		shared_ptr<MeshResource> GetMeshResource() const;
-		void SetMeshResource(const shared_ptr<MeshResource>& MeshRes);
-		void SetMeshResource(const wstring& MeshKey);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ライティングを得る
+		@return	シェーダーライティング
+		*/
+		//--------------------------------------------------------------------------------------
+		ShaderLighting GetLighting() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ライティングを設定する
+		@param[in]	Lighting	シェーダーライティング
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetLighting(ShaderLighting Lighting);
+
+
 
 		bool GetOwnShadowActive() const;
 		bool IsOwnShadowActive() const;
@@ -1567,6 +1623,23 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual ~PNTBoneModelDraw();
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ライティングを得る
+		@return	シェーダーライティング
+		*/
+		//--------------------------------------------------------------------------------------
+		ShaderLighting GetLighting() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ライティングを設定する
+		@param[in]	Lighting	シェーダーライティング
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetLighting(ShaderLighting Lighting);
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュリソースの取得

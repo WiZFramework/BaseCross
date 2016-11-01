@@ -21,6 +21,8 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
 		strTexture = DataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		wstring CursorWav = App::GetApp()->m_wstrRelativeDataPath + L"cursor.wav";
+		App::GetApp()->RegisterWav(L"Cursor", CursorWav);
 	}
 
 	//ビューとライトの作成

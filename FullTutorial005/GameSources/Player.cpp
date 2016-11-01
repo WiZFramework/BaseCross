@@ -58,6 +58,11 @@ namespace basecross{
 		PtrString->SetText(L"");
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
+		//ƒTƒEƒ“ƒh‚ð“o˜^.
+		auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
+		pMultiSoundEffect->AddAudioResource(L"Cursor");
+
+
 
 		//“§–¾ˆ—
 		SetAlphaActive(true);
@@ -120,6 +125,9 @@ namespace basecross{
 		if (PtrSpark) {
 			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
+		auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
+		pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);
+
 		if (GetStateMachine()->GetCurrentState() == JumpState::Instance()) {
 			GetStateMachine()->ChangeState(DefaultState::Instance());
 		}

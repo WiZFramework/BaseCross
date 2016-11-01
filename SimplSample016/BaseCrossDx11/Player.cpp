@@ -57,6 +57,11 @@ namespace basecross{
 		PtrString->SetText(L"");
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
+		//サウンドを登録.
+		auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
+		pMultiSoundEffect->AddAudioResource(L"Cursor");
+
+
 		//透明処理
 		SetAlphaActive(true);
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
@@ -227,6 +232,8 @@ namespace basecross{
 		if (CntlVec[0].bConnected) {
 			//Aボタンが押された瞬間ならジャンプ
 			if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+				auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
+				pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);
 				return true;
 			}
 		}

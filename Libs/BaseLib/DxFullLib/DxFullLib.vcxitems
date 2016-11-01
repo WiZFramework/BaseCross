@@ -36,6 +36,22 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStatic.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticMidium.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticMidiumNoTex.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticReal.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <FileType>Document</FileType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticNoTex.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticRealNoTex.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStaticShadow.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
@@ -65,6 +81,21 @@
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNStatic.hlsl">
       <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneMidium.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneReal.hlsl">
+      <FileType>Document</FileType>
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticMidium.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <FileType>Document</FileType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticReal.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <FileType>Document</FileType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBone.hlsl">
       <ShaderType>Vertex</ShaderType>

@@ -50,7 +50,8 @@ namespace basecross {
 		//シングルライトの作成
 		auto PtrSingleLight = CreateLight<SingleLight>();
 		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		PtrSingleLight->GetLight().SetPositionToDirectional(-1.0f, 1.0f, -1.0f);
+//		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
 	}
 
 

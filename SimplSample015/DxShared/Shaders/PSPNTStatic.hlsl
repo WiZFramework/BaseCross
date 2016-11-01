@@ -30,3 +30,4 @@ float4 main(PSPNTInput input) : SV_TARGET
 	//エミッシブを足す
 	return saturate(Light + Emissive);
 }
+

@@ -237,6 +237,9 @@ namespace basecross{
 		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
 		PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
+		PtrDraw->SetLighting(ShaderLighting::Midium);
+		PtrDraw->SetEmissive(Color4(0.4, 0.4, 0.4, 0));
+		PtrDraw->SetDiffuse(Color4(0.6, 0.6, 0.6, 1));
 
 	}
 
@@ -364,6 +367,7 @@ namespace basecross{
 		auto PtrDraw = AddComponent<PNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
+
 	}
 
 

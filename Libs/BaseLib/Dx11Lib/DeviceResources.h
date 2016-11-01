@@ -116,6 +116,18 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	頂点の型とストライドを設定する
+		@tparam	T	頂点の型
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void SetVertexType() {
+			m_MeshTypeIndex = typeid(T);
+			m_NumStride = sizeof(T);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	プロテクトコンストラクタ<br />
 		構築はスタティック関数を利用する
 		*/
@@ -193,6 +205,16 @@ namespace basecross {
 		const vector<MaterialEx>& GetMaterialExVec()const {
 			return m_MaterialExVec;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マテリアル配列の取得(書き込み用)
+		@return	マテリアルの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		vector<MaterialEx>& GetMaterialExVec(){
+			return m_MaterialExVec;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スキニングするかどうか.<br />
@@ -702,6 +724,42 @@ namespace basecross {
 
 		}
 	};
+
+	class AudioResource;
+	//--------------------------------------------------------------------------------------
+	///	マルチサウンドで使用するアイテム
+	//--------------------------------------------------------------------------------------
+	struct SoundItem {
+		weak_ptr<AudioResource> m_AudioResource;
+		IXAudio2SourceVoice* m_pSourceVoice;
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	マルチオーディオ
+	// ＊コンポーネントではないのでシーンに持たせることができる
+	//--------------------------------------------------------------------------------------
+	class MultiAudioObject : public ObjectInterface {
+	public:
+		//構築と破棄
+		MultiAudioObject();
+		virtual ~MultiAudioObject();
+		//アクセサ
+		shared_ptr<AudioResource> GetAudioResource(const wstring& ResKey, bool ExceptionActive = true) const;
+		//操作
+		shared_ptr<AudioResource> AddAudioResource(const wstring& ResKey);
+		void RemoveAudioResource(const wstring& ResKey);
+		void Start(const wstring& ResKey, const XAUDIO2_BUFFER& Buffer, float Volume = 1.0f);
+		void Start(const wstring& ResKey, size_t LoopCount = 0, float Volume = 1.0f);
+		void Stop(const wstring& ResKey);
+
+		virtual void OnCreate() override {}
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 
 	//汎用的な設定用定義
 
