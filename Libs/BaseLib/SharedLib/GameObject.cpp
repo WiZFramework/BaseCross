@@ -306,13 +306,13 @@ namespace basecross {
 		AddComponent<Transform>();
 	}
 
-	const shared_ptr<Camera>& GameObject::OnGetDrawCamera() const {
+	const shared_ptr<Camera>& GameObject::OnGetDrawCamera()const {
 		//デフォルトはビューのカメラから取り出す
 		auto StageView = GetStage()->GetView();
 		return StageView->GetTargetCamera();
 	}
 
-	const Light& GameObject::OnGetDrawLight() const {
+	const Light& GameObject::OnGetDrawLight()const {
 		//ステージからライトを取り出す
 		auto StageLight = GetStage()->GetLight();
 		return StageLight->GetTargetLight();
@@ -1065,8 +1065,6 @@ namespace basecross {
 		UpdateCollision();
 		//衝突による重力の変化の更新
 		UpdateCollisionGravity();
-		//衝突判定のメッセージ発行（ステージから呼ぶ）
-		UpdateMessageCollision();
 		//自身のビューをアップデート
 		if (IsUpdateActive() && pImpl->m_ViewBase) {
 			pImpl->m_ViewBase->OnUpdate();
@@ -1077,17 +1075,16 @@ namespace basecross {
 				ptr->OnLastUpdate();
 			}
 		}
+		//衝突判定のメッセージ発行（ステージから呼ぶ）
+		UpdateMessageCollision();
 		//自身の更新3
 		if (IsUpdateActive()) {
 			OnLastUpdate();
 		}
-
 		//コリジョンのリセット
 		for (auto ptr : GetGameObjectVec()) {
 			ptr->CollisionReset();
 		}
-
-
 		//子供ステージの更新
 		for (auto PtrChileStage : GetChileStageVec()) {
 			PtrChileStage->UpdateStage();

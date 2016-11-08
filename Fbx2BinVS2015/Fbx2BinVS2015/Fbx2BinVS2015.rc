@@ -1,0 +1,459 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+#include "verrsrc.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 日本語 (日本) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "#include ""verrsrc.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)\r\n"
+    "LANGUAGE 17, 1\r\n"
+    "#include ""res\\Fbx2BinVS2015.rc2""  // Microsoft Visual C++ 以外で編集されたリソース\r\n"
+    "#include ""l.JPN\\afxres.rc""      // 標準コンポーネント\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\Fbx2BinVS2015.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "ファイル(&F)"
+    BEGIN
+        MENUITEM "新規ステージく(&N)",                 ID_32774
+        MENUITEM "FBXファイルを開く(&O)",              ID_32771
+        MENUITEM "バイナリファイルの保存(&S)",             ID_32773
+        MENUITEM "アプリケーションの終了(&X)",             ID_APP_EXIT
+    END
+    POPUP "アニメーション(&A)"
+    BEGIN
+        MENUITEM "FBXファイルを動かす(&M)",             ID_32772
+    END
+    POPUP "ヘルプ(&H)"
+    BEGIN
+        MENUITEM "バージョン情報 Fbx2BinVS2015(&A)...", ID_APP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL, NOINVERT
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT, NOINVERT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT, NOINVERT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY, NOINVERT
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT, NOINVERT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT, NOINVERT
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL, NOINVERT
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "バージョン情報 Fbx2BinVS2015"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "Fbx2BinVS2015, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2016",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
+END
+
+IDD_DIALOG_FILE_SELECT DIALOGEX 0, 0, 317, 129
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "FBXファイルの選択"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,198,108,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,260,108,50,14
+    LTEXT           "FBXファイル名",IDC_STATIC,7,7,44,8
+    LTEXT           "",IDC_STATIC_OPEN_FILENAME,7,20,303,15,0,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "ファイルの参照",IDC_BUTTON_FILEDIALOG_OPEN,240,38,70,13
+    LTEXT           "スケーリング",IDC_STATIC,7,60,36,8
+    EDITTEXT        IDC_EDIT_SCALING,49,60,32,14,ES_AUTOHSCROLL
+    LTEXT           "表示位置補正",IDC_STATIC,122,60,49,8
+    EDITTEXT        IDC_EDIT_POS_X,194,60,25,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_POS_Y,240,60,25,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_POS_Z,286,60,25,14,ES_AUTOHSCROLL
+    LTEXT           "X:",IDC_STATIC,180,60,8,8
+    LTEXT           "Y:",IDC_STATIC,228,60,8,8
+    LTEXT           "Z:",IDC_STATIC,274,60,8,8
+    CONTROL         "スキンメッシュであってもスタティックとして読み込む",IDC_CHECK_READ_STATICMESH,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,82,167,10
+END
+
+IDD_DIALOG_ANIME_MOVE DIALOGEX 0, 0, 213, 116
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "アニメーションの設定"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "再生開始",IDOK,77,95,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,156,95,50,14
+    LTEXT           "フレーム数",IDC_STATIC,7,19,40,8
+    EDITTEXT        IDC_EDIT_FRAME_RATE,55,17,23,12,ES_AUTOHSCROLL
+    LTEXT           "フレーム / 秒（例: 5から30程度）",IDC_STATIC,87,19,119,8
+    LTEXT           "再生秒",IDC_STATIC,7,36,38,8
+    EDITTEXT        IDC_EDIT_ANIME_START_SEC,55,34,25,12,ES_AUTOHSCROLL
+    LTEXT           "秒目から",IDC_STATIC,85,36,33,8
+    EDITTEXT        IDC_EDIT_ANIME_END_SEC,122,34,25,12,ES_AUTOHSCROLL
+    LTEXT           "秒目まで",IDC_STATIC,152,36,40,8
+    CONTROL         "ループする",IDC_CHECK_LOOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,52,48,10
+    LTEXT           "アニメーションは画面ダブルクリックで中断／再実行できます",IDC_STATIC,7,67,199,8
+END
+
+IDD_DIALOG_SAVE_BINFILE DIALOGEX 0, 0, 309, 97
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "スタティックメッシュのバイナリファイル保存"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,198,76,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,252,76,50,14
+    LTEXT           "保存ファイル名",IDC_STATIC,7,7,48,8
+    LTEXT           "",IDC_STATIC_SAVE_BINFILENAME,7,22,295,14,WS_BORDER | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "拡張子変更",IDC_BUTTON_UPDATE_EXT,221,44,73,17
+    CONTROL         "表示スケーリングを維持する",IDC_CHECK_NOW_SCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,46,102,10
+    LTEXT           "現在のスケーリング",IDC_STATIC,7,63,59,8
+    LTEXT           "",IDC_STATIC_SCALING,83,60,38,13,WS_BORDER,WS_EX_CLIENTEDGE
+END
+
+IDD_DIALOG_CHANGE_EXT DIALOGEX 0, 0, 157, 83
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "拡張子変更"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,21,62,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,86,62,50,14
+    LTEXT           "新しい拡張子",IDC_STATIC,7,7,46,8
+    EDITTEXT        IDC_EDIT_NEW_EXT,67,7,35,14,ES_AUTOHSCROLL
+    LTEXT           "拡張子はドットを含めないで記述",IDC_STATIC,7,28,104,8
+END
+
+IDD_DIALOG_SAVE_BINFILE_SKIN DIALOGEX 0, 0, 309, 147
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "スキンメッシュのバイナリファイル保存"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,198,126,50,14
+    PUSHBUTTON      "キャンセル",IDCANCEL,252,126,50,14
+    LTEXT           "保存ファイル名",IDC_STATIC,7,7,48,8
+    LTEXT           "",IDC_STATIC_SAVE_BINFILENAME_SKIN,7,22,295,15,WS_BORDER | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    CONTROL         "表示スケーリングを維持する",IDC_CHECK_NOW_SCALE_SKIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,46,100,14
+    LTEXT           "現在のスケーリング",IDC_STATIC,7,68,59,8
+    LTEXT           "",IDC_STATIC_SCALING_SKIN,79,65,44,15,WS_BORDER | NOT WS_GROUP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "拡張子変更",IDC_BUTTON_UPDATE_EXT_SKIN,215,44,79,18
+    LTEXT           "保存するサンプル数",IDC_STATIC,8,90,77,8
+    EDITTEXT        IDC_EDIT_FRAME_RATE_SKIN,90,88,23,12,ES_AUTOHSCROLL
+    LTEXT           "サンプル / 秒（例: 10から30程度）",IDC_STATIC,122,90,130,8
+    LTEXT           "保存秒",IDC_STATIC,7,107,25,8
+    EDITTEXT        IDC_EDIT_ANIME_START_SEC_SKIN,90,105,25,12,ES_AUTOHSCROLL
+    LTEXT           "秒目から",IDC_STATIC,120,107,29,8
+    EDITTEXT        IDC_EDIT_ANIME_END_SEC_SKIN,153,105,25,12,ES_AUTOHSCROLL
+    LTEXT           "秒目まで",IDC_STATIC,187,107,29,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041104B0"
+        BEGIN
+            VALUE "CompanyName", "TODO: <会社名>"
+            VALUE "FileDescription", "Fbx2BinVS2015"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "Fbx2BinVS2015.exe"
+            VALUE "LegalCopyright", "TODO: (C) <会社名>.  All rights reserved."
+            VALUE "OriginalFilename", "Fbx2BinVS2015.exe"
+            VALUE "ProductName", "TODO: <製品名>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x411, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_DIALOG_FILE_SELECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 122
+    END
+
+    IDD_DIALOG_ANIME_MOVE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 206
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 109
+    END
+
+    IDD_DIALOG_SAVE_BINFILE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 90
+    END
+
+    IDD_DIALOG_CHANGE_EXT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 150
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 76
+    END
+
+    IDD_DIALOG_SAVE_BINFILE_SKIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 140
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_FILE_SELECT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_ANIME_MOVE AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_SAVE_BINFILE AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_CHANGE_EXT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_SAVE_BINFILE_SKIN AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDP_OLE_INIT_FAILED     "OLE の初期化に失敗しました。OLE ライブラリのバージョンが正しいことを確認してください。"
+END
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "Fbx2BinVS2015"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "Fbx2BinVS2015"
+    AFX_IDS_IDLEMESSAGE     "準備完了"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "プログラム情報、バージョン、著作権を表示します。\nバージョン情報"
+    ID_APP_EXIT             "アプリケーションを終了し、ファイルの保存を指示\n終了"
+END
+
+STRINGTABLE
+BEGIN
+    ID_NEXT_PANE            "次のウィンドウに切り替える\n次のペイン"
+    ID_PREV_PANE            "前のウィンドウに切り替える\n前のペイン"
+END
+
+STRINGTABLE
+BEGIN
+    ID_WINDOW_SPLIT         "作業中のウィンドウを分割\n分割"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR           "選択範囲を消去\n消去"
+    ID_EDIT_CLEAR_ALL       "すべて消去\nすべて消去"
+    ID_EDIT_COPY            "選択範囲をコピーしてクリップボードに保存\nコピー"
+    ID_EDIT_CUT             "選択範囲を切り取ってクリップボードに保存\n切り取り"
+    ID_EDIT_FIND            "指定した文字列の検索\n検索"
+    ID_EDIT_PASTE           "クリップボードの内容を貼り付け\n貼り付け"
+    ID_EDIT_REPEAT          "直前に行った動作を繰り返す\n繰り返し"
+    ID_EDIT_REPLACE         "指定した文字列を他の文字列で置換\n置換"
+    ID_EDIT_SELECT_ALL      "ファイル内のすべてを選択\nすべて選択"
+    ID_EDIT_UNDO            "直前に行った動作を元に戻す\n元に戻す"
+    ID_EDIT_REDO            "取り消した操作をやり直す\nやり直す"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCSIZE          "ウィンドウのサイズを変更"
+    AFX_IDS_SCMOVE          "ウィンドウの位置を変更"
+    AFX_IDS_SCMINIMIZE      "ウィンドウを最小化する"
+    AFX_IDS_SCMAXIMIZE      "ウィンドウを最大化する"
+    AFX_IDS_SCNEXTWINDOW    "次のウィンドウに切り替える"
+    AFX_IDS_SCPREVWINDOW    "前のウィンドウに切り替える"
+    AFX_IDS_SCCLOSE         "作業中のウィンドウを閉じ、変更したファイルの保存を指示"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCRESTORE       "ウィンドウを通常のサイズに戻す"
+    AFX_IDS_SCTASKLIST      "タスク一覧をアクティブにする"
+END
+
+#endif    // 日本語 (日本) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+LANGUAGE 17, 1
+#include "res\Fbx2BinVS2015.rc2"  // Microsoft Visual C++ 以外で編集されたリソース
+#include "l.JPN\afxres.rc"      // 標準コンポーネント
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

@@ -60,6 +60,9 @@ namespace basecross{
 		//透明処理をする
 		SetAlphaActive(true);
 
+		//最初は元気な行動
+		m_SeekBehavior = FineSeekBehavior::Instance();
+		m_FineTiredTime = 0;
 		//ステートマシンの構築
 		m_StateMachine = make_shared< StateMachine<SeekObject> >(GetThis<SeekObject>());
 		//最初のステートをSeekFarStateに設定
@@ -82,47 +85,6 @@ namespace basecross{
 		auto LenVec = GetPlayerPosition() - MyPos;
 		return LenVec.Length();
 	}
-
-	//モーションを実装する関数群
-	void  SeekObject::SeekStartMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(GetPlayerPosition());
-
-	}
-	bool  SeekObject::SeekUpdateMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetTargetPosition(GetPlayerPosition());
-		if (GetPlayerLength() <= m_StateChangeSize) {
-			return true;
-		}
-		return false;
-	}
-	void  SeekObject::SeekEndMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
-	}
-
-	void  SeekObject::ArriveStartMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(GetPlayerPosition());
-	}
-	bool  SeekObject::ArriveUpdateMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(GetPlayerPosition());
-		if (GetPlayerLength() > m_StateChangeSize) {
-			//プレイヤーとの距離が一定以上ならtrue
-			return true;
-		}
-		return false;
-	}
-	void  SeekObject::ArriveEndMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		//Arriveコンポーネントを無効にする
-		PtrArrive->SetUpdateActive(false);
-	}
-
 	//操作
 	void SeekObject::OnUpdate() {
 		//ステートマシンのUpdateを行う
@@ -154,6 +116,119 @@ namespace basecross{
 		Pos.y = m_BaseY;
 		PtrTransform->SetPosition(Pos);
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	Seekオブジェクトの元気な行動
+	//--------------------------------------------------------------------------------------
+	shared_ptr<FineSeekBehavior> FineSeekBehavior::Instance() {
+		static shared_ptr<FineSeekBehavior> instance(new FineSeekBehavior);
+		return instance;
+	}
+
+	void FineSeekBehavior::FarEnter(const shared_ptr<SeekObject>& Obj) {
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(true);
+		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
+	}
+	void FineSeekBehavior::FarExecute(const shared_ptr<SeekObject>& Obj){
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+
+		//５秒経過したら疲れた行動になる
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Obj->m_FineTiredTime += ElapsedTime;
+		if (Obj->m_FineTiredTime >= 3.0f) {
+			Obj->m_FineTiredTime = 0;
+			Obj->m_SeekBehavior = TiredSeekBehavior::Instance();
+			PtrSeek->SetWeight(0.2f);
+			auto PtrDraw = Obj->GetComponent<PNTStaticDraw>();
+			PtrDraw->SetEmissive(Color4(0.5f, 0.0, 0.0, 1.0f));
+		}
+
+		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
+		if (Obj->GetPlayerLength() <= Obj->m_StateChangeSize) {
+			Obj->GetStateMachine()->ChangeState(NearState::Instance());
+		}
+	}
+	void FineSeekBehavior::FarExit(const shared_ptr<SeekObject>& Obj) {
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(false);
+	}
+	void FineSeekBehavior::NearEnter(const shared_ptr<SeekObject>& Obj) {
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		PtrArrive->SetUpdateActive(true);
+		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
+	}
+	void FineSeekBehavior::NearExecute(const shared_ptr<SeekObject>& Obj){
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
+		if (Obj->GetPlayerLength() > Obj->m_StateChangeSize) {
+			Obj->GetStateMachine()->ChangeState(FarState::Instance());
+		}
+	}
+
+	void FineSeekBehavior::NearExit(const shared_ptr<SeekObject>& Obj){
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		//Arriveコンポーネントを無効にする
+		PtrArrive->SetUpdateActive(false);
+	}
+
+	//--------------------------------------------------------------------------------------
+	//	Seekオブジェクトの疲れた行動
+	//--------------------------------------------------------------------------------------
+	shared_ptr<TiredSeekBehavior> TiredSeekBehavior::Instance() {
+		static shared_ptr<TiredSeekBehavior> instance(new TiredSeekBehavior);
+		return instance;
+	}
+
+	void TiredSeekBehavior::FarEnter(const shared_ptr<SeekObject>& Obj) {
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(true);
+		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
+	}
+	void TiredSeekBehavior::FarExecute(const shared_ptr<SeekObject>& Obj) {
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+
+		//５秒経過したら元気な行動になる
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Obj->m_FineTiredTime += ElapsedTime;
+		if (Obj->m_FineTiredTime >= 3.0f) {
+			Obj->m_FineTiredTime = 0;
+			Obj->m_SeekBehavior = FineSeekBehavior::Instance();
+			PtrSeek->SetWeight(1.0f);
+			auto PtrDraw = Obj->GetComponent<PNTStaticDraw>();
+			PtrDraw->SetEmissive(Color4(0.0f, 0.0, 0.0, 0.0f));
+		}
+
+
+		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
+		if (Obj->GetPlayerLength() <= Obj->m_StateChangeSize) {
+			Obj->GetStateMachine()->ChangeState(NearState::Instance());
+		}
+	}
+	void TiredSeekBehavior::FarExit(const shared_ptr<SeekObject>& Obj) {
+		auto PtrSeek = Obj->GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(false);
+	}
+	void TiredSeekBehavior::NearEnter(const shared_ptr<SeekObject>& Obj) {
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		PtrArrive->SetUpdateActive(true);
+		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
+	}
+	void TiredSeekBehavior::NearExecute(const shared_ptr<SeekObject>& Obj) {
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
+		if (Obj->GetPlayerLength() > Obj->m_StateChangeSize) {
+			Obj->GetStateMachine()->ChangeState(FarState::Instance());
+		}
+	}
+
+	void TiredSeekBehavior::NearExit(const shared_ptr<SeekObject>& Obj) {
+		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
+		//Arriveコンポーネントを無効にする
+		PtrArrive->SetUpdateActive(false);
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
@@ -163,15 +238,13 @@ namespace basecross{
 		return instance;
 	}
 	void FarState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->SeekStartMoton();
+		Obj->GetSeekBehavior()->FarEnter(Obj);
 	}
 	void FarState::Execute(const shared_ptr<SeekObject>& Obj) {
-		if (Obj->SeekUpdateMoton()) {
-			Obj->GetStateMachine()->ChangeState(NearState::Instance());
-		}
+		Obj->GetSeekBehavior()->FarExecute(Obj);
 	}
 	void FarState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->SeekEndMoton();
+		Obj->GetSeekBehavior()->FarExit(Obj);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -183,15 +256,13 @@ namespace basecross{
 		return instance;
 	}
 	void NearState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->ArriveStartMoton();
+		Obj->GetSeekBehavior()->NearEnter(Obj);
 	}
 	void NearState::Execute(const shared_ptr<SeekObject>& Obj) {
-		if (Obj->ArriveUpdateMoton()) {
-			Obj->GetStateMachine()->ChangeState(FarState::Instance());
-		}
+		Obj->GetSeekBehavior()->NearExecute(Obj);
 	}
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->ArriveEndMoton();
+		Obj->GetSeekBehavior()->NearExit(Obj);
 	}
 
 	//--------------------------------------------------------------------------------------

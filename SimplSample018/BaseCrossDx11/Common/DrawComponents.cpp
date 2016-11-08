@@ -363,8 +363,9 @@ namespace basecross {
 			//ビュー行列の決定
 			auto StageView = PtrStage->GetView();
 			//ライトの取得
-			auto StageLight = PtrStage->GetLight();
-			Vector3 LightDir = -1.0 * StageLight->GetTargetLight().m_Directional;
+			
+			auto StageLight = PtrGameObject->OnGetDrawLight();
+			Vector3 LightDir = -1.0 * StageLight.m_Directional;
 			Vector3 LightAt = StageView->GetTargetCamera()->GetAt();
 			Vector3 LightEye = LightAt + (LightDir * GetLightHeight());
 			//ライトのビューと射影を計算
@@ -2195,7 +2196,12 @@ namespace basecross {
 			cb1.LightPos.w = 1.0f;
 			cb1.EyePos = CameraPtr->GetEye();
 			cb1.EyePos.w = 1.0f;
-			cb1.ActiveFlg.x = 1;
+			if (TextureRes) {
+				cb1.ActiveFlg.x = 1;
+			}
+			else {
+				cb1.ActiveFlg.x = 0;
+			}
 			Matrix4X4 LightView, LightProj;
 			//ライトのビューと射影を計算
 			LightView.LookAtLH(LightEye, LightAt, Vector3(0, 1.0f, 0));
@@ -2249,14 +2255,24 @@ namespace basecross {
 			//デプスステンシルステート
 			pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
 			//テクスチャとサンプラーの設定
-			ID3D11ShaderResourceView* pNull[1] = { 0 };
-			pD3D11DeviceContext->PSSetShaderResources(0, 1, TextureRes->GetShaderResourceView().GetAddressOf());
-			//ラッピングサンプラー
-			ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
-			if (WrapSampler) {
-				pSampler = RenderState->GetLinearWrap();
+
+			ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+			ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+			if (TextureRes) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, TextureRes->GetShaderResourceView().GetAddressOf());
+				//ラッピングサンプラー
+				ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
+				if (WrapSampler) {
+					pSampler = RenderState->GetLinearWrap();
+				}
+				pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
 			}
-			pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
 			//シャドウマップのレンダラーターゲット
 			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
 			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
@@ -3039,9 +3055,6 @@ namespace basecross {
 		}
 		//テクスチャがなければ描画しない
 		auto shTex = GetTextureResource();
-		if (!shTex) {
-			return;
-		}
 		Draw3DPrim::PNTNotShadowDraw(GetGameObject(),
 			MeshRes,
 			shTex, GetWrapSampler(),
@@ -3065,7 +3078,7 @@ namespace basecross {
 		//テクスチャがなければ描画しない
 		auto shTex = GetTextureResource();
 		if (!shTex) {
-			return;
+	//		return;
 		}
 		Draw3DPrim::PNTWithShadowDraw(GetGameObject(),
 			MeshRes,

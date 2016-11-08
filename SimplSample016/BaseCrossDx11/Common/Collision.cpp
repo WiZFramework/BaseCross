@@ -93,6 +93,19 @@ namespace basecross {
 
 		for (auto ObjPtr : ObjVec) {
 			if ((GetGameObject() != ObjPtr) && ObjPtr->IsUpdateActive()) {
+				//‚·‚Å‚É“¯‚¶‘ŠŽè‚ÆÕ“Ë‚µ‚Ä‚é‚©‚Ç‚¤‚©
+				if (pImpl->m_HitObjectVec.size() > 0) {
+					bool chk = false;
+					for (auto& v : pImpl->m_HitObjectVec) {
+						if (v == ObjPtr) {
+							chk = true;
+							break;
+						}
+					}
+					if (chk) {
+						continue;
+					}
+				}
 				//‘ŠŽè‚ÌCollision‚ðŽæ“¾
 				auto DestCollisionPtr = ObjPtr->GetComponent<Collision>(false);
 				if (DestCollisionPtr) {

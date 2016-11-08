@@ -217,6 +217,7 @@ namespace basecross {
 	struct LookAtCamera::Impl {
 		weak_ptr<GameObject> m_TargetObject;	//目標となるオブジェクト
 		float m_ToTargetLerp;	//目標を追いかける際の補間値
+		Vector3 m_TargetToAt;	//目標から視点を調整する位置ベクトル
 
 
 		float m_RadY;
@@ -236,6 +237,7 @@ namespace basecross {
 
 		Impl() :
 			m_ToTargetLerp(1.0f),
+			m_TargetToAt(0,0,0),
 			m_RadY(0.5f),
 			m_RadXZ(0),
 			m_CameraUpDownSpeed(0.02f),
@@ -281,6 +283,27 @@ namespace basecross {
 		pImpl->m_ToTargetLerp = f;
 	}
 
+	float LookAtCamera::GetMaxArm() const {
+		return pImpl->m_MaxArm;
+
+	}
+	void LookAtCamera::SetMaxArm(float f) {
+		pImpl->m_MaxArm = f;
+	}
+	float LookAtCamera::GetMinArm() const {
+		return pImpl->m_MinArm;
+	}
+	void LookAtCamera::SetMinArm(float f) {
+		pImpl->m_MinArm = f;
+	}
+
+	Vector3 LookAtCamera::GetTargetToAt() const {
+		return pImpl->m_TargetToAt;
+
+	}
+	void LookAtCamera::SetTargetToAt(const Vector3& v) {
+		pImpl->m_TargetToAt = v;
+	}
 
 	void LookAtCamera::OnUpdate() {
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
@@ -341,7 +364,8 @@ namespace basecross {
 				//目指したい場所
 				Matrix4X4 ToAtMat = TargetPtr->GetComponent<Transform>()->GetWorldMatrix();
 				Vector3 ToAt = ToAtMat.PosInMatrixSt();
-				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0f, Lerp::Linear);
+				NewAt += pImpl->m_TargetToAt;
+				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0, Lerp::Linear);
 			}
 			//アームの変更
 			//Dパッド下
@@ -363,7 +387,9 @@ namespace basecross {
 				}
 			}
 			////目指したい場所にアームの値と腕ベクトルでEyeを調整
-			NewEye = NewAt + ArmVec * pImpl->m_Arm;
+			Vector3 ToEye = NewAt + ArmVec * pImpl->m_Arm;
+			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
+//			NewEye = NewAt + ArmVec * pImpl->m_Arm;
 		}
 		SetEye(NewEye);
 		SetAt(NewAt);

@@ -2252,6 +2252,249 @@ namespace basecross{
 	};
 
 
+
+	template<typename T>
+	class Behavior : public ObjectInterface {
+	public:
+		Behavior() {}
+		virtual ~Behavior() {}
+	public:
+		virtual void OnCreate() {}
+		virtual void Enter(const shared_ptr<T>& Obj) {}
+		virtual void Execute(const shared_ptr<T>& Obj) {}
+		virtual void Execute2(const shared_ptr<T>& Obj) {}
+		virtual void Sleep(const shared_ptr<T>& Obj) {}
+		virtual void Exit(const shared_ptr<T>& Obj) {}
+		virtual void WakeUp(const shared_ptr<T>& Obj) {}
+	};
+
+
+	template <typename T>
+	class BehaviorMachine : public ObjectInterface
+	{
+	private:
+		//この行動マシンを持つオーナー
+		weak_ptr<T> m_Owner;
+		map<wstring, shared_ptr< Behavior<T> > > m_BehaviorMap;
+		stack<shared_ptr< Behavior<T> >> m_BehaviorStack;
+		size_t m_MaxStack;
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	owner	オーナーのポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit BehaviorMachine(const shared_ptr<T>& owner) :
+			m_Owner(owner),
+			m_MaxStack(10)
+		{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~BehaviorMachine() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を登録する
+		@param[in]	Name	行動名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename BT, typename... Ts>
+		shared_ptr< BT >  AddBehavior(const wstring& Name, Ts&&... params) {
+			auto it = m_BehaviorMap.find(Name);
+			if (it != m_BehaviorMap.end()) {
+				auto retPtr = dynamic_pointer_cast<BT>(it->second);
+				if (retPtr) {
+					return retPtr;
+				}
+			}
+			auto Ptr = ObjectFactory::CreateWithParam< BT >(params...);
+			m_BehaviorMap[Name] = Ptr;
+			return Ptr;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を得る
+		@param[in]	Name	行動名
+		@param[in]	ExceptionActive	見つからなかったときに例外を出すかどうか
+		@return	行動
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<Behavior<T>>  GetBehavior(const wstring& Name, bool ExceptionActive = true) const {
+			auto it = m_BehaviorMap.find(Name);
+			if (it != m_BehaviorMap.end()) {
+				return it->second;
+			}
+			else {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"その行動は見つかりません",
+						Name,
+						L"BehaviorMachine::GetBehavior()"
+					);
+				}
+			}
+			return nullptr;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動名を得る
+		@param[in]	Ptr	行動
+		@return	なし（見つからなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		wstring GetBehaviorName(const shared_ptr<Behavior<T>>& Ptr) const {
+			auto it = m_BehaviorMap.begin();
+			while (it != m_BehaviorMap.end()) {
+				if (Ptr == it->second) {
+					return it->first;
+				}
+				it++;
+			}
+			throw BaseException(
+				L"その行動は見つかりません",
+				L"登録しましたか",
+				L"BehaviorMachine::GetBehaviorName()"
+			);
+			return L"";
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のカレント行動名を得る
+		@return	なし（見つからなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		wstring GetCurrentName() const {
+			if (!m_BehaviorStack.empty()) {
+				return GetBehaviorName(m_BehaviorStack.top());
+			}
+			return L"";
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタックの最大値を得る
+		@return	スタックの最大数
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t GetMaxStack() const {
+			return m_MaxStack;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタックの最大値を設定する
+		@param[in]	s	スタックの最大数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMaxStack(size_t s) {
+			m_MaxStack = s;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動をpushして開始する
+		@param[in]	Name	行動名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Push(const wstring& Name) {
+			auto Ptr = GetBehavior(Name);
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr) {
+				if (m_BehaviorStack.size() >= m_MaxStack) {
+					throw BaseException(
+						L"これ以上行動スタックに追加できません。",
+						L"追加する場合はSetMaxStack()関数で増やしてください",
+						L"BehaviorMachine::Push()"
+					);
+				}
+				if (!m_BehaviorStack.empty()) {
+					m_BehaviorStack.top()->Sleep(ow_shptr);
+				}
+				m_BehaviorStack.push(Ptr);
+				Ptr->Enter(ow_shptr);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動をpopして前の行動に戻る。popの結果、行動が空になることもある
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Pop() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_BehaviorStack.empty()) {
+				m_BehaviorStack.top()->Exit(ow_shptr);
+				m_BehaviorStack.pop();
+				if (!m_BehaviorStack.empty()) {
+					m_BehaviorStack.top()->WakeUp(ow_shptr);
+				}
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動スタックをクリアする。現在の行動があればPopExitを送りそのあとでクリアする。
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Clear() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_BehaviorStack.empty()) {
+				m_BehaviorStack.top()->Exit(ow_shptr);
+			}
+			while (!m_BehaviorStack.empty()) {
+				m_BehaviorStack.pop();
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動スタックをクリアし、あらためて最初の行動を登録する
+		@param[in]	Name	登録する行動名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Reset(const wstring& Name) {
+			Clear();
+			Push(Name);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を実行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Update() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && m_BehaviorStack.size() > 0) {
+				m_BehaviorStack.top()->Execute(ow_shptr);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動2を実行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Update2() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && m_BehaviorStack.size() > 0) {
+				m_BehaviorStack.top()->Execute2(ow_shptr);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() {}
+	};
+
+
+
+
 }
 
 //end basecross
