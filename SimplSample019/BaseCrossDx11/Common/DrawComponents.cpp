@@ -269,6 +269,7 @@ namespace basecross {
 	float Shadowmap::Impl::m_ViewHeight(32.0f);
 
 
+
 	//--------------------------------------------------------------------------------------
 	//	class Shadowmap : public Component;
 	//	用途: シャドウマップコンポーネント（前処理用）

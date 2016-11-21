@@ -39,9 +39,6 @@
     <ClInclude Include="ProjectShader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Common\Action.h">
       <Filter>Common</Filter>
     </ClInclude>

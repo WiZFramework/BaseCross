@@ -5,7 +5,6 @@
 
 #pragma once
 
-
 #include "resource.h"
 
 #include "ProjectShader.h"
@@ -15,5 +14,6 @@
 #include "Character.h"
 #include "Enemy.h"
 #include "Player.h"
+
 
 

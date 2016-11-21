@@ -226,8 +226,8 @@ namespace basecross {
 		float m_CameraUpDownSpeed;
 		//カメラを下げる下限角度
 		float m_CameraUnderRot;
-		float	m_Arm;
 		//腕の長さの設定
+		float m_ArmLen;
 		float m_MaxArm;
 		float m_MinArm;
 		//回転スピード
@@ -242,7 +242,7 @@ namespace basecross {
 			m_RadXZ(0),
 			m_CameraUpDownSpeed(0.02f),
 			m_CameraUnderRot(0.1f),
-			m_Arm(5.0f),
+			m_ArmLen(5.0f),
 			m_MaxArm(20.0f),
 			m_MinArm(2.0f),
 			m_RotSpeed(1.0f),
@@ -283,6 +283,23 @@ namespace basecross {
 		pImpl->m_ToTargetLerp = f;
 	}
 
+	float LookAtCamera::GetArmLengh() const {
+		return pImpl->m_ArmLen;
+	}
+
+	void LookAtCamera::UpdateArmLengh() {
+		auto Vec = GetEye() - GetAt();
+		pImpl->m_ArmLen = Vec.Length();
+		if (pImpl->m_ArmLen >= pImpl->m_MaxArm) {
+			//m_MaxArm以上離れないようにする
+			pImpl->m_ArmLen = pImpl->m_MaxArm;
+		}
+		if (pImpl->m_ArmLen <= pImpl->m_MinArm) {
+			//m_MinArm以下近づかないようにする
+			pImpl->m_ArmLen = pImpl->m_MinArm;
+		}
+	}
+
 	float LookAtCamera::GetMaxArm() const {
 		return pImpl->m_MaxArm;
 
@@ -297,6 +314,14 @@ namespace basecross {
 		pImpl->m_MinArm = f;
 	}
 
+	float LookAtCamera::GetRotSpeed() const {
+		return pImpl->m_RotSpeed;
+
+	}
+	void LookAtCamera::SetRotSpeed(float f) {
+		pImpl->m_RotSpeed = abs(f);
+	}
+
 	Vector3 LookAtCamera::GetTargetToAt() const {
 		return pImpl->m_TargetToAt;
 
@@ -304,6 +329,25 @@ namespace basecross {
 	void LookAtCamera::SetTargetToAt(const Vector3& v) {
 		pImpl->m_TargetToAt = v;
 	}
+
+	void LookAtCamera::SetAt(const Vector3& At) {
+		Camera::SetAt(At);
+		Vector3 ArmVec = GetEye() - GetAt();
+		ArmVec.Normalize();
+		ArmVec *= pImpl->m_ArmLen;
+		Vector3 NewEye = GetAt() + ArmVec;
+		SetEye(NewEye);
+	}
+	void LookAtCamera::SetAt(float x, float y, float z) {
+		Camera::SetAt(x,y,z);
+		Vector3 ArmVec = GetEye() - GetAt();
+		ArmVec.Normalize();
+		ArmVec *= pImpl->m_ArmLen;
+		Vector3 NewEye = GetAt() + ArmVec;
+		SetEye(NewEye);
+
+	}
+
 
 	void LookAtCamera::OnUpdate() {
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
@@ -362,37 +406,37 @@ namespace basecross {
 			auto TargetPtr = GetTargetObject();
 			if (TargetPtr) {
 				//目指したい場所
-				Matrix4X4 ToAtMat = TargetPtr->GetComponent<Transform>()->GetWorldMatrix();
-				Vector3 ToAt = ToAtMat.PosInMatrixSt();
-				NewAt += pImpl->m_TargetToAt;
+				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetPosition();
+				ToAt += pImpl->m_TargetToAt;
 				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0, Lerp::Linear);
 			}
 			//アームの変更
 			//Dパッド下
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
 				//カメラ位置を引く
-				pImpl->m_Arm += pImpl->m_ZoomSpeed;
-				if (pImpl->m_Arm >= pImpl->m_MaxArm) {
+				pImpl->m_ArmLen += pImpl->m_ZoomSpeed;
+				if (pImpl->m_ArmLen >= pImpl->m_MaxArm) {
 					//m_MaxArm以上離れないようにする
-					pImpl->m_Arm = pImpl->m_MaxArm;
+					pImpl->m_ArmLen = pImpl->m_MaxArm;
 				}
 			}
 			//Dパッド上
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
 				//カメラ位置を寄る
-				pImpl->m_Arm -= pImpl->m_ZoomSpeed;
-				if (pImpl->m_Arm <= pImpl->m_MinArm) {
+				pImpl->m_ArmLen -= pImpl->m_ZoomSpeed;
+				if (pImpl->m_ArmLen <= pImpl->m_MinArm) {
 					//m_MinArm以下近づかないようにする
-					pImpl->m_Arm = pImpl->m_MinArm;
+					pImpl->m_ArmLen = pImpl->m_MinArm;
 				}
 			}
 			////目指したい場所にアームの値と腕ベクトルでEyeを調整
-			Vector3 ToEye = NewAt + ArmVec * pImpl->m_Arm;
+			Vector3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
 			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
-//			NewEye = NewAt + ArmVec * pImpl->m_Arm;
+//			NewEye = NewAt + ArmVec * ArmLen;
 		}
-		SetEye(NewEye);
 		SetAt(NewAt);
+		SetEye(NewEye);
+		UpdateArmLengh();
 		Camera::OnUpdate();
 	}
 
