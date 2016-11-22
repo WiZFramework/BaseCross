@@ -34,6 +34,12 @@ namespace basecross{
 		strTexture = DataDir + L"Balloon0.png";
 		App::GetApp()->RegisterTexture(L"BALLOON_0_TX", strTexture);
 
+
+		wstring ModelDir = DataDir + L"Model\\";
+		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(ModelDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"PLAYER_MESH", StaticModelMesh);
+
+
 		Shadowmap::SetViewSize(8.0f);
 
 	}

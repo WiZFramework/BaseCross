@@ -43,19 +43,26 @@ namespace basecross{
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetDrawActive(true);
+
+		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.DefTransformation(
+			Vector3(0.8, 0.8, 0.8),
+			Vector3(0.0f, XM_PI, 0.0f),
+			Vector3(0.0f, -0.5f, 0.0f)
+		);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-
+		ShadowPtr->SetMeshResource(L"PLAYER_MESH");
+		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
 		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+		PtrDraw->SetMeshResource(L"PLAYER_MESH");
+		PtrDraw->SetMeshToTransformMatrix(SpanMat);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -64,8 +71,6 @@ namespace basecross{
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
 
-		//透明処理
-		SetAlphaActive(true);
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
 		if (PtrCamera) {
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
