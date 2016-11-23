@@ -2112,6 +2112,31 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void Exit(const shared_ptr<T>& Obj) = 0;
+		//以下、階層化による追加メソッド（純粋仮想関数にしない）
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Update2のときに実行される
+		@param[in]	Obj	ステートを保持するオブジェクト
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void Execute2(const shared_ptr<T>& Obj) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	上にステートがpushされたときに呼ばれる
+		@param[in]	Obj	ステートを保持するオブジェクト
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void Sleep(const shared_ptr<T>& Obj) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	上のステートがpopされたときに呼ばれる
+		@param[in]	Obj	ステートを保持するオブジェクト
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void WakeUp(const shared_ptr<T>& Obj) {}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -2252,6 +2277,343 @@ namespace basecross{
 	};
 
 
+
+
+	//--------------------------------------------------------------------------------------
+	///	階層化ステートマシン実装テンプレートクラス(抽象クラス)
+	/*!
+	@tparam T	オーナーの型
+	*/
+	//--------------------------------------------------------------------------------------
+	template <typename T>
+	class LayeredStateMachine
+	{
+	private:
+		//この行動マシンを持つオーナー
+		weak_ptr<T> m_Owner;
+		stack<shared_ptr< ObjState<T> >> m_StateStack;
+		size_t m_MaxStack;
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	owner	オーナーのポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit LayeredStateMachine(const shared_ptr<T>& owner) :
+			m_Owner(owner)
+		{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~LayeredStateMachine() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のトップステートを得る
+		@return	トップステートのポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr< ObjState<T> > GetTopState() const {
+			if (m_StateStack.empty()) {
+				return nullptr;
+			}
+			else {
+				return m_StateStack.top();
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタックの最大値を得る
+		@return	スタックの最大数
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t GetMaxStack() const {
+			return m_MaxStack;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタックの最大値を設定する
+		@param[in]	s	スタックの最大数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMaxStack(size_t s) {
+			if (m_StateStack.size() >= s) {
+				throw BaseException(
+					L"新しい設定のスタック数をすでに超えています。",
+					L"スタック数を減らさないでください",
+					L"LayeredStateMachine::SetMaxStack()"
+				);
+			}
+			m_MaxStack = s;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートをpushして開始する
+		@param[in]	Ptr	新しいステート
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Push(const shared_ptr< ObjState<T> >& Ptr) {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr) {
+				if (m_StateStack.size() >= m_MaxStack) {
+					throw BaseException(
+						L"これ以上行動スタックに追加できません。",
+						L"追加する場合はSetMaxStack()関数で増やしてください",
+						L"LayeredStateMachine::Push()"
+					);
+				}
+				if (!m_StateStack.empty()) {
+					m_StateStack.top()->Sleep(ow_shptr);
+				}
+				m_StateStack.push(Ptr);
+				Ptr->Enter(ow_shptr);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートをpopして前のステートに戻る。popの結果、行動が空になることもある
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Pop() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_StateStack.empty()) {
+				m_StateStack.top()->Exit(ow_shptr);
+				m_StateStack.pop();
+				if (!m_StateStack.empty()) {
+					m_StateStack.top()->WakeUp(ow_shptr);
+				}
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートスタックをクリアする。現在のステートがあればExitを送りそのあとでクリアする。
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Clear() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_StateStack.empty()) {
+				m_StateStack.top()->Exit(ow_shptr);
+			}
+			while (!m_StateStack.empty()) {
+				m_StateStack.pop();
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートスタックをクリアし、あらためて最初のステートを登録する
+		@param[in]	Ptr	登録するステート
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Reset(const shared_ptr< ObjState<T> >& Ptr) {
+			Clear();
+			Push(Ptr);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートを実行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Update() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_StateStack.empty()) {
+				m_StateStack.top()->Execute(ow_shptr);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動2を実行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Update2() {
+			auto ow_shptr = m_Owner.lock();
+			if (ow_shptr && !m_StateStack.empty()) {
+				m_BehaviorStack.top()->Execute2(ow_shptr);
+			}
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	コマンド
+	/*!
+	@tparam T	オーナーの型
+	*/
+	//--------------------------------------------------------------------------------------
+	template <typename T>
+	class ObjCommand {
+	public:
+		ObjCommand() {}
+		virtual ~ObjCommand() {}
+		virtual void Excute(const shared_ptr<T>& Obj) = 0;
+	};
+
+	//各シングルトンインスタンス作成マクロ
+#define DECLARE_SINGLETON_INSTANCE(InsType)	static shared_ptr<InsType> Instance();
+#define IMPLEMENT_SINGLETON_INSTANCE(InsType)	shared_ptr<InsType> InsType::Instance() { \
+	static shared_ptr<InsType> instance; \
+	if(!instance) { instance = shared_ptr<InsType>(new InsType); }return instance;}
+
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	コントローラ入力ハンドラ
+	/*!
+	@tparam T	オーナーの型
+	*/
+	//--------------------------------------------------------------------------------------
+	template <typename T>
+	class InputHandler {
+		ObjCommand<T>* m_ButtonDpadUp;
+		ObjCommand<T>* m_ButtonDpadDown;
+		ObjCommand<T>* m_ButtonDpadLeft;
+		ObjCommand<T>* m_ButtonDpadRight;
+		ObjCommand<T>* m_ButtonStart;
+		ObjCommand<T>* m_ButtonBack;
+		ObjCommand<T>* m_ButtonLeftThumb;
+		ObjCommand<T>* m_ButtonRightThumb;
+		ObjCommand<T>* m_ButtonLeftShoulder;
+		ObjCommand<T>* m_ButtonRightShoulder;
+		ObjCommand<T>* m_ButtonA;
+		ObjCommand<T>* m_ButtonB;
+		ObjCommand<T>* m_ButtonX;
+		ObjCommand<T>* m_ButtonY;
+	public:
+		InputHandler() :
+			m_ButtonDpadUp(nullptr),
+			m_ButtonDpadDown(nullptr),
+			m_ButtonDpadLeft(nullptr),
+			m_ButtonDpadRight(nullptr),
+			m_ButtonStart(nullptr),
+			m_ButtonBack(nullptr),
+			m_ButtonLeftThumb(nullptr),
+			m_ButtonRightThumb(nullptr),
+			m_ButtonLeftShoulder(nullptr),
+			m_ButtonRightShoulder(nullptr),
+			m_ButtonA(nullptr),
+			m_ButtonB(nullptr),
+			m_ButtonX(nullptr),
+			m_ButtonY(nullptr)
+		{}
+		~InputHandler() {}
+		void SetButtonDpadUp(ObjCommand<T>* b) {
+			m_ButtonDpadUp = b;
+		}
+		void SetButtonDpadDown(ObjCommand<T>* b) {
+			m_ButtonDpadDown = b;
+		}
+
+		void SetButtonDpadLeft(ObjCommand<T>* b) {
+			m_ButtonDpadLeft = b;
+		}
+		void SetButtonDpadRight(ObjCommand<T>* b) {
+			m_ButtonDpadRight = b;
+		}
+		void SetButtonStart(ObjCommand<T>* b) {
+			m_ButtonStart = b;
+		}
+		void SetButtonBack(ObjCommand<T>* b) {
+			m_ButtonBack = b;
+		}
+		void SetButtonLeftThumb(ObjCommand<T>* b) {
+			m_ButtonLeftThumb = b;
+		}
+		void SetButtonRightThumb(ObjCommand<T>* b) {
+			m_ButtonRightThumb = b;
+		}
+		void SetButtonLeftShoulder(ObjCommand<T>* b) {
+			m_ButtonLeftShoulder = b;
+		}
+		void SetButtonRightShoulder(ObjCommand<T>* b) {
+			m_ButtonRightShoulder = b;
+		}
+		void SetButtonA(ObjCommand<T>* b) {
+			m_ButtonA = b;
+		}
+		void SetButtonB(ObjCommand<T>* b) {
+			m_ButtonB = b;
+		}
+		void SetButtonX(ObjCommand<T>* b) {
+			m_ButtonX = b;
+		}
+		void SetButtonY(ObjCommand<T>* b) {
+			m_ButtonY = b;
+		}
+		ObjCommand<T>* HandleInput() {
+			//コントローラの取得
+			auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+			if (CntlVec[0].bConnected) {
+				//DPAD_UPボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_DPAD_UP) {
+					return m_ButtonDpadUp;
+				}
+				//DPAD_DOWNボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
+					return m_ButtonDpadDown;
+				}
+
+				//DPAD_LEFTボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_DPAD_LEFT) {
+					return m_ButtonDpadLeft;
+				}
+				//DPAD_RIGHTボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_DPAD_RIGHT) {
+					return m_ButtonDpadRight;
+				}
+
+				//STARTボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_START) {
+					return m_ButtonStart;
+				}
+				//BACKボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_BACK) {
+					return m_ButtonBack;
+				}
+				//LEFT_THUMBボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_LEFT_THUMB) {
+					return m_ButtonLeftThumb;
+				}
+				//RIGHT_THUMBボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_RIGHT_THUMB) {
+					return m_ButtonRightThumb;
+				}
+				//LEFT_SHOULDERボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) {
+					return m_ButtonLeftShoulder;
+				}
+				//RIGHT_SHOULDERボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) {
+					return m_ButtonRightShoulder;
+				}
+				//Aボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+					return m_ButtonA;
+				}
+				//Bボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+					return m_ButtonB;
+				}
+				//Xボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_X) {
+					return m_ButtonX;
+				}
+				//Yボタンが押された瞬間
+				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_Y) {
+					return m_ButtonY;
+				}
+			}
+			return nullptr;
+		}
+	};
 
 	template<typename T>
 	class Behavior : public ObjectInterface {

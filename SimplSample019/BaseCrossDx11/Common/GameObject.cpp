@@ -798,10 +798,13 @@ namespace basecross {
 		map<const wstring, shared_ptr<GameObjectGroup> >  m_SharedGroupMap;
 		vector< shared_ptr<Stage> > m_ChildStageVec;	//子供ステージの配列
 		weak_ptr<Stage> m_ParentStage;		//親ステージ
+		//シャドウマップを使うかどうか
+		bool m_IsShadowmapDraw;
 
 		Impl() :
 			m_UpdateActive(true),
-			m_DrawViewIndex(0)
+			m_DrawViewIndex(0),
+			m_IsShadowmapDraw(true)
 		{}
 		~Impl() {}
 	};
@@ -1121,16 +1124,23 @@ namespace basecross {
 
 	}
 
+	//シャドウマップを使うかどうか
+	bool Stage::IsShadowmapDraw() const {
+		return pImpl->m_IsShadowmapDraw;
+	}
+	void Stage::SetShadowmapDraw(bool b) {
+		pImpl->m_IsShadowmapDraw = b;
+	}
 
 
+	//ステージ内のシャドウマップ描画（ステージからよばれる）
 	void Stage::DrawShadowmapStage() {
 		for (auto ptr : pImpl->m_GameObjectVec) {
 			ptr->DrawShadowmap();
 		}
 	}
 
-
-	//ステージ内の描画（シーンからよばれる）
+	//ステージ内の描画（ステージからよばれる）
 	void Stage::DrawStage() {
 		//レイヤーの取得と設定
 		set<int> DrawLayers;
@@ -1252,11 +1262,52 @@ namespace basecross {
 		pImpl->m_SpriteVec.clear();
 		pImpl->m_Object3DNormalVec.clear();
 		pImpl->m_Object3DAlphaVec.clear();
+	}
+
+	//ステージ内のすべての描画（シーンからよばれる）
+	void Stage::RenderStage() {
+		//描画デバイスの取得
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto MultiPtr = dynamic_pointer_cast<MultiView>(GetView());
+		if (MultiPtr) {
+			for (size_t i = 0; i < MultiPtr->GetViewSize(); i++) {
+				MultiPtr->SetTargetIndex(i);
+				if (IsShadowmapDraw()) {
+					Dev->ClearShadowmapViews();
+					Dev->StartShadowmapDraw();
+					DrawShadowmapStage();
+					Dev->EndShadowmapDraw();
+				}
+				//デフォルト描画の開始
+				Dev->StartDefultDraw();
+				RsSetViewport(MultiPtr->GetTargetViewport());
+				DrawStage();
+				//デフォルト描画の終了
+				Dev->EndDefultDraw();
+			}
+			//描画が終わったら更新処理用に先頭のカメラにターゲットを設定する
+			MultiPtr->SetTargetIndex(0);
+		}
+		else {
+			if (IsShadowmapDraw()) {
+				Dev->ClearShadowmapViews();
+				Dev->StartShadowmapDraw();
+				DrawShadowmapStage();
+				Dev->EndShadowmapDraw();
+			}
+			//デフォルト描画の開始
+			Dev->StartDefultDraw();
+			RsSetViewport(GetView()->GetTargetViewport());
+			DrawStage();
+			//デフォルト描画の終了
+			Dev->EndDefultDraw();
+		}
 		//子供ステージの描画
 		for (auto PtrChileStage : pImpl->m_ChildStageVec) {
-			PtrChileStage->DrawStage();
+			PtrChileStage->RenderStage();
 		}
 	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1351,16 +1402,7 @@ namespace basecross {
 			//描画デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
-			Dev->ClearShadowmapViews();
-			Dev->StartShadowmapDraw();
-			pImpl->m_ActiveStage->DrawShadowmapStage();
-			Dev->EndShadowmapDraw();
-			//デフォルト描画の開始
-			Dev->StartDefultDraw();
-			pImpl->m_ActiveStage->DrawStage();
-			//デフォルト描画の終了
-			Dev->EndDefultDraw();
-
+			pImpl->m_ActiveStage->RenderStage();
 
 		}
 	}

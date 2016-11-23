@@ -2393,16 +2393,15 @@ namespace basecross {
 		//レンダリングターゲットとステンシルを設定
 		pD3D11DeviceContext->OMSetRenderTargets(1, &pV, pImpl->m_DepthStencilView.Get());
 		//ビューポートの設定
-		pD3D11DeviceContext->RSSetViewports(1, &GetViewport());
+		auto ViewPort = GetViewport();
+		pD3D11DeviceContext->RSSetViewports(1, &ViewPort);
 
 		D3D11_RECT rect;
 		rect.left = 0;
 		rect.top = 0;
-		rect.right = 600;
-		rect.bottom = 600;
+		rect.right = (LONG)ViewPort.Width;
+		rect.bottom = (LONG)ViewPort.Height;
 		pD3D11DeviceContext->RSSetScissorRects(1, &rect);
-
-
 
 		//シェーダーリソースビューのクリア
 		ID3D11ShaderResourceView* pNull[1] = { nullptr };

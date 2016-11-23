@@ -7,6 +7,27 @@
 #include "stdafx.h"
 
 namespace basecross {
+	//ビューポート設定
+	inline void RsSetViewport(const Viewport& vp) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+		D3D11_VIEWPORT vp11;
+		vp11.Height = vp.Height;
+		vp11.Width = vp.Width;
+		vp11.MinDepth = vp.MinDepth;
+		vp11.MaxDepth = vp.MaxDepth;
+		vp11.TopLeftX = vp.TopLeftX;
+		vp11.TopLeftY = vp.TopLeftY;
+		pID3D11DeviceContext->RSSetViewports(1, &vp11);
+		CD3D11_RECT rect(
+			(LONG)vp11.TopLeftX,
+			(LONG)vp11.TopLeftY,
+			(LONG)vp11.TopLeftX + (LONG)vp11.Width,
+			(LONG)vp11.TopLeftY + (LONG)vp11.Height
+		);
+		pID3D11DeviceContext->RSSetScissorRects(1, &rect);
+	}
+
 
 
 	//Shadow

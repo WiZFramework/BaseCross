@@ -536,9 +536,139 @@ namespace basecross {
 		return pImpl->m_ViewItem.m_Viewport;
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	struct MultiView::Impl;
+	//--------------------------------------------------------------------------------------
+	struct MultiView::Impl {
+		vector<ViewItem> m_ViewItemVec;
+		size_t m_TargetIndex;
+		Impl():
+			m_TargetIndex(0)
+		{
+		}
+		~Impl() {}
+	};
+
+	MultiView::MultiView(const shared_ptr<Stage>& StagePtr) :
+		ViewBase(StagePtr), pImpl(new Impl())
+	{}
+
+	MultiView::~MultiView() {}
+
+	size_t MultiView::AddView(const Viewport& v, const shared_ptr<Camera>& c) {
+		ViewItem Item;
+		Item.m_Viewport = v;
+		Item.m_Camera = c;
+		size_t ret = pImpl->m_ViewItemVec.size();
+		pImpl->m_ViewItemVec.push_back(Item);
+		return ret;
+	}
+	size_t MultiView::GetViewSize()const {
+		return pImpl->m_ViewItemVec.size();
+	}
+	void MultiView::SetViewport(size_t Index, const Viewport& v) {
+		if (Index >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(Index),
+				L"MultiView::SetViewport()"
+			);
+		}
+		pImpl->m_ViewItemVec[Index].m_Viewport = v;
+	}
+	const Viewport& MultiView::GetViewport(size_t Index) const {
+		if (Index >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(Index),
+				L"MultiView::GetViewport()"
+			);
+		}
+		return pImpl->m_ViewItemVec[Index].m_Viewport;
+	}
+	void MultiView::SetCamera(size_t Index, const shared_ptr<Camera>& c) {
+		if (Index >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(Index),
+				L"MultiView::SetCamera()"
+			);
+		}
+		pImpl->m_ViewItemVec[Index].m_Camera = c;
+	}
+	const shared_ptr<Camera>& MultiView::GetCamera(size_t Index)const {
+		if (Index >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(Index),
+				L"MultiView::GetCamera()"
+			);
+		}
+		return pImpl->m_ViewItemVec[Index].m_Camera;
+	}
+	size_t MultiView::GetTargetIndex()const {
+		if (pImpl->m_ViewItemVec.empty()) {
+			throw BaseException(
+				L"ビューが設定されてないのでこのコマンドは無意味です",
+				L"if (pImpl->m_ViewItemVec.empty())",
+				L"MultiView::GetTargetIndex()"
+			);
+		}
+		return pImpl->m_TargetIndex;
+	}
+	void MultiView::SetTargetIndex(size_t Index) {
+		if (Index >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(Index),
+				L"MultiView::SetTargetIndex()"
+			);
+		}
+		pImpl->m_TargetIndex = Index;
+	}
+	void MultiView::ChangeNextView() {
+		pImpl->m_TargetIndex++;
+		if (pImpl->m_TargetIndex >= pImpl->m_ViewItemVec.size()) {
+			pImpl->m_TargetIndex = 0;
+		}
+	}
+	const shared_ptr<Camera>& MultiView::GetTargetCamera() const {
+		if (pImpl->m_TargetIndex >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(pImpl->m_TargetIndex),
+				L"MultiView::GetTargetCamera()"
+			);
+		}
+		return pImpl->m_ViewItemVec[pImpl->m_TargetIndex].m_Camera;
+	}
+	const Viewport& MultiView::GetTargetViewport() const {
+		if (pImpl->m_TargetIndex >= pImpl->m_ViewItemVec.size()) {
+			throw BaseException(
+				L"インデックスが範囲外です。",
+				Util::UintToWStr(pImpl->m_TargetIndex),
+				L"MultiView::GetTargetViewport()"
+			);
+		}
+		return pImpl->m_ViewItemVec[pImpl->m_TargetIndex].m_Viewport;
+	}
+
+	void MultiView::OnCreate() {
+	}
+	void MultiView::OnUpdate() {
+		for (auto& v : pImpl->m_ViewItemVec) {
+			v.m_Camera->OnUpdate();
+		}
+	}
+
+
+
+
+
+
 
 	//--------------------------------------------------------------------------------------
-	///	struct ViewBase::Impl;
+	///	struct LightBase::Impl;
 	//--------------------------------------------------------------------------------------
 	struct LightBase::Impl {
 		weak_ptr<Stage> m_Stage;

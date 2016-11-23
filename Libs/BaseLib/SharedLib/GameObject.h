@@ -1407,11 +1407,19 @@ namespace basecross {
 		//衝突メッセージの発行
 		virtual void UpdateMessageCollision();
 
-		//ステージ内のシャドウマップ描画（シーンからよばれる）
-		virtual void DrawShadowmapStage();
+		//シャドウマップを使うかどうか
+		bool IsShadowmapDraw() const;
+		void SetShadowmapDraw(bool b);
 
-		//ステージ内の描画（シーンからよばれる）
+
+		//ステージ内のシャドウマップ描画（ステージからよばれる）
+		virtual void DrawShadowmapStage();
+		//ステージ内の描画（ステージからよばれる）
 		virtual void DrawStage();
+		//ステージ内のすべての描画（シーンからよばれる）
+		virtual void RenderStage();
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	前初期化
