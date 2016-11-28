@@ -134,6 +134,12 @@ namespace basecross {
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
+		CreateSharedObjectGroup(L"AttackBall");
+		//アタックボールは10個用意する
+		for (int i = 0; i < 10; i++) {
+			AddGameObject<AttackBall>();
+		}
+
 		//プレーヤーの作成
 		auto PlayerPtr = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
