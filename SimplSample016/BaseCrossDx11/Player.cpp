@@ -35,8 +35,6 @@ namespace basecross{
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 
-		//最下地点
-		PtrGravity->SetBaseY(0.125f);
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
 		//横部分のみ反発
@@ -248,7 +246,7 @@ namespace basecross{
 		auto PtrGravity = GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		PtrGravity->StartJump(JumpVec, 0);
+		PtrGravity->StartJump(JumpVec, 0.01);
 	}
 	//Aボタンでジャンプしている間の処理
 	//ジャンプ終了したらtrueを返す

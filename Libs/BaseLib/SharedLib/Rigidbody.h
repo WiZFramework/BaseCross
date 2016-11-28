@@ -1002,20 +1002,21 @@ namespace basecross {
 		void SetForce(float x, float y, float z);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	減速値を得る。減速値は0から-1の間に設定する。<br />
-		実際には質量と掛けた値が0から-1の間が有効である。それを超えた場合は、いずれかにクランプされる
-		@return	減速値
+		@brief	減速フォースを得る。減速フォースは最終的に速度にブレーキを掛ける。<br />
+		実際には質量で割った値（逆加速）が計算され適用される
+		@return	減速フォース
 		*/
 		//--------------------------------------------------------------------------------------
-		float GetFriction() const;
+		float GetFrictionForce() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	減速値を設定する
-		@param[in]	f	減速値
+		@brief	減速フォースを設定する。減速フォースは最終的に速度にブレーキを掛ける。<br />
+		実際には質量で割った値（逆加速）が計算され適用される
+		@param[in]	f	減速フォース
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetFriction(float f);
+		void SetFrictionForce(float f);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	フォース（力）の最大値を得る。
@@ -1031,21 +1032,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetMaxForce(float f);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	衝突時にIsHitActionに合わせてVelocityを変更する
-		@param[in]	SrcColl	自分ののコリジョン
-		@param[in]	DestColl	相手のコリジョン
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl,const shared_ptr<CollisionSphere>& DestColl);
-		void IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl, const shared_ptr<CollisionObb>& DestColl);
-
-		void IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionSphere>& DestColl);
-		void IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionObb>& DestColl);
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定した時間だけ速度に従って移動する

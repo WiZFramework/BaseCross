@@ -11,8 +11,8 @@ namespace basecross {
 	//	ゲームステージクラス
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
-		//リソースの作成
-		void CreateResourses();
+		//ビューとライトの作成
+		void CreateViewLight();
 	public:
 		//構築と破棄
 		GameStage() :Stage() {}

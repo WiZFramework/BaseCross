@@ -3310,6 +3310,7 @@ namespace basecross {
 
 		for (auto& m : MatVec) {
 			cb1.Emissive = m.m_Emissive;
+			cb1.Emissive.w = 0;
 			cb1.Diffuse = m.m_Diffuse;
 			//コンスタントバッファの更新
 			ID3D11Buffer* pConstantBuffer = CBPNTStaticShadow::GetPtr()->GetBuffer();
@@ -3446,6 +3447,7 @@ namespace basecross {
 					cb1.LightDir.w = 1.0f;
 					//Simpleはモデルの色
 					cb1.Emissive = m.m_Emissive;
+					cb1.Emissive.w = 0;
 					cb1.Diffuse = m.m_Diffuse;
 					//コンスタントバッファの更新
 					pD3D11DeviceContext->UpdateSubresource(CBStaticLighting::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
@@ -3492,6 +3494,7 @@ namespace basecross {
 					cb1.LightDir.w = 1.0f;
 					//Midiumはモデルの色とオブジェクトの色を合成
 					cb1.Emissive = m.m_Emissive + GetEmissive();
+					cb1.Emissive.w = 0;
 					cb1.Diffuse = (m.m_Diffuse + GetDiffuse()) / 2.0f;
 					//コンスタントバッファの更新
 					pD3D11DeviceContext->UpdateSubresource(CBStaticLighting::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
@@ -3537,6 +3540,7 @@ namespace basecross {
 					cb1.LightDir.w = 1.0f;
 					//Realはモデルの色とオブジェクトの色を合成
 					cb1.Emissive = m.m_Emissive + GetEmissive();
+					cb1.Emissive.w = 0;
 					cb1.Diffuse = (m.m_Diffuse + GetDiffuse()) / 2.0f;
 					cb1.EyePosition = CameraPtr->GetEye();
 					cb1.EyePosition.w = 1.0f;

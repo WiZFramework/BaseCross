@@ -387,7 +387,6 @@ namespace basecross{
 
 
 
-
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
 	//	用途: 追いかける配置オブジェクト
@@ -423,9 +422,9 @@ namespace basecross{
 
 		//操作
 		virtual void OnUpdate() override;
+		virtual void OnLastUpdate() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
-		virtual void OnLastUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

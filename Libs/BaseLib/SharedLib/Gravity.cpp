@@ -16,14 +16,12 @@ namespace basecross {
 		Vector3 m_DefaultGravity;		//自由落下加速度
 		Vector3 m_Gravity;				//現在の重力加速度
 		Vector3 m_GravityVelocity;		//重力加速度による現在の速度
-		float m_BaseY;	//最下落下地点
 
 	public:
 		Impl() :
 			m_DefaultGravity(0, -9.8f, 0),
-			m_Gravity(0, 0, 0),
-			m_GravityVelocity(0, 0, 0),
-			m_BaseY(0)
+			m_Gravity(m_DefaultGravity),
+			m_GravityVelocity(0, 0, 0)
 		{}
 		~Impl() {}
 	};
@@ -88,23 +86,16 @@ namespace basecross {
 	void Gravity::SetGravityVelocityZero() {
 		pImpl->m_GravityVelocity.Zero();
 	}
-	float Gravity::GetBaseY() const {
-		return pImpl->m_BaseY;
-	}
-	void Gravity::SetBaseY(float y) {
-		pImpl->m_BaseY = y;
-	}
 
 	void Gravity::StartJump(const Vector3& StartVec, float EscapeSpan) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = PtrTransform->GetPosition();
 		SetGravityVelocity(StartVec);
-		SetGravityDefault();
-		//ジャンプして親オブジェクトボリュームから脱出できないとき対応
 		Vector3 EscapeVec = StartVec;
+		//ジャンプして親オブジェクトボリュームから脱出できないとき対応
 		EscapeVec *= EscapeSpan;
+		auto Pos = PtrTransform->GetPosition();
 		Pos += EscapeVec;
-		PtrTransform->SetPosition(Pos);
+		PtrTransform->ResetPosition(Pos);
 	}
 	void Gravity::StartJump(float x, float y, float z, float EscapeSpan) {
 		StartJump(Vector3(x, y, z), EscapeSpan);
@@ -116,26 +107,9 @@ namespace basecross {
 		//自由落下加速度を計算
 		pImpl->m_GravityVelocity += pImpl->m_Gravity * CalcTime;
 		Pos += pImpl->m_GravityVelocity * CalcTime;
-
-		if (pImpl->m_Gravity.y <= 0) {
-			if (Pos.y <= pImpl->m_BaseY) {
-				Pos.y = pImpl->m_BaseY;
-				SetGravityVelocityZero();
-				SetGravityZero();
-			}
-		}
-		else {
-			if (Pos.y >= pImpl->m_BaseY) {
-				Pos.y = pImpl->m_BaseY;
-				SetGravityVelocityZero();
-				SetGravityZero();
-			}
-		}
 		//位置を設定
 		PtrTransform->SetPosition(Pos);
 	}
-
-
 
 	//操作
 	void Gravity::OnUpdate() {

@@ -19,6 +19,7 @@ namespace basecross {
 		shared_ptr<Collision> GetCollision()const;
 		shared_ptr<CollisionSphere> GetCollisionSphere()const;
 		shared_ptr<CollisionObb> GetCollisionObb()const;
+		shared_ptr<CollisionRect> GetCollisionRect()const;
 
 		void SetRigidbody(const shared_ptr<Rigidbody>& Ptr);
 		void SetGravity(const shared_ptr<Gravity>& Ptr);
@@ -26,6 +27,7 @@ namespace basecross {
 		void SetCollision(const shared_ptr<Collision>& Ptr);
 		void SetCollisionSphere(const shared_ptr<CollisionSphere>& Ptr);
 		void SetCollisionObb(const shared_ptr<CollisionObb>& Ptr);
+		void SetCollisionRect(const shared_ptr<CollisionRect>& Ptr);
 
 		void AddMakedComponent(type_index TypeIndex, const shared_ptr<Component>& Ptr);
 		template<typename T>
@@ -466,6 +468,58 @@ namespace basecross {
 		}
 
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionRectコンポーネントの取得
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionRect> GetComponent<CollisionRect>(bool ExceptionActive)const {
+			auto Ptr = GetCollisionRect();
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"コンポーネントが見つかりません",
+						L"CollisionObb",
+						L"GameObject::GetComponent<CollisionRect>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionRectコンポーネントの派生クラスの取得
+		@tparam	T	取得する型（CollisionRectに型変換できるもの）
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		shared_ptr<T> GetDynamicCollisionRect(bool ExceptionActive = true)const {
+			auto Ptr = dynamic_pointer_cast<T>(GetCollisionRect());
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"指定の型へはCollisionRectからキャストできません",
+						Util::GetWSTypeName<T>(),
+						L"GameObject::GetDynamicCollisionRect<T>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -818,6 +872,53 @@ namespace basecross {
 		}
 
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionRectコンポーネントの追加
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionRect> AddComponent<CollisionRect>() {
+			auto Ptr = GetCollisionRect();
+			if (Ptr) {
+				return Ptr;
+			}
+			else {
+				//無ければ新たに制作する
+				auto CollisionRectPtr = ObjectFactory::Create<CollisionRect>(GetThis<GameObject>());
+				SetCollisionRect(CollisionRectPtr);
+				return CollisionRectPtr;
+			}
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionRectコンポーネントの派生クラスの追加
+		@tparam	T	取得する型（CollisionRectに型変換できるもの）
+		@tparam	Ts	可変長変数の型
+		@param[in]	params	このコンポーネントを構築するのに使用するパラメータ。（第2パラメータ以降）
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T, typename... Ts>
+		shared_ptr<T> AddDynamicCollisionRect(Ts&&... params) {
+			//現在の検索は行わず、そのままセットする
+			shared_ptr<T> newPtr = ObjectFactory::Create<T>(GetThis<GameObject>(), params...);
+			//CollisionRectにキャストしてみる
+			auto RetPtr = dynamic_pointer_cast<CollisionRect>(newPtr);
+			if (!RetPtr) {
+				//キャストできない
+				throw BaseException(
+					L"そのコンポーネントはCollisionRectにキャストできません。",
+					Util::GetWSTypeName<T>(),
+					L"GameObject::AddDynamicCollisionRect<T>()"
+				);
+			}
+			SetCollisionRect(newPtr);
+			return newPtr;
+		}
+
 
 
 		//--------------------------------------------------------------------------------------
@@ -940,14 +1041,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void CollisionChk();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	重力チェック（ステージより呼ばれる）。ヒットオブジェクトがなければ重力をデフォルトにする
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void CollisionGravityChk();
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突メッセージの発行（ステージより呼ばれる）。
@@ -1403,7 +1496,7 @@ namespace basecross {
 		//衝突判定の更新（ステージから呼ぶ）
 		virtual void UpdateCollision();
 		//Collisionを監査する重力のチェック（ステージから呼ぶ）
-		virtual void UpdateCollisionGravity();
+//		virtual void UpdateCollisionGravity();
 		//衝突メッセージの発行
 		virtual void UpdateMessageCollision();
 

@@ -31,8 +31,6 @@ namespace basecross {
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-		//最下地点
-		PtrGravity->SetBaseY(0.125f);
 		//Rigidbodyをつける
 		auto PtrRigid = AddComponent<Rigidbody>();
 		//横部分のみ反発
@@ -232,8 +230,6 @@ namespace basecross {
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-		//最下地点
-		PtrGravity->SetBaseY(0.05f);
 		//Rigidbodyをつける
 		auto PtrRigid = AddComponent<Rigidbody>();
 		//横部分のみ反発

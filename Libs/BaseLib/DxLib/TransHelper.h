@@ -542,22 +542,24 @@ namespace basecross{
 		Vector3 m_Center;     //中心点の座標
 		Vector3 m_Rot[2];  //XY の各座標軸の傾きを表す方向ベクトル
 		float m_UVec[2];     //XY座標軸に沿った長さの半分（中心点から面までの長さ）
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ（何もしない）
-		*/
-		//--------------------------------------------------------------------------------------
-		COLRECT() {}
+		float m_BaseXSize;	//制作時のサイズX（各種計算に使う）
+		float m_BaseYSize;	//制作時のサイズY（各種計算に使う）
+		Matrix4X4 m_Matrix;	//行列（各種計算に使う）
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ<br />
-		横の基本大きさ、縦の基本大きさをと変換行列を与えてRECTを完成させる
+		横の基本大きさ、縦の基本大きさをと変換行列を与えてRECTを完成させる<br />
+		COLRECTはデフォルトコンストラクタはない。
 		@param[in]	BaseXSize	横方向の大きさ
 		@param[in]	BaseYSize	縦方向の大きさ
 		@param[in]	Matrix	変換行列
 		*/
 		//--------------------------------------------------------------------------------------
-		COLRECT(float BaseXSize, float BaseYSize, const Matrix4X4& Matrix) {
+		COLRECT(float BaseXSize, float BaseYSize, const Matrix4X4& Matrix):
+			m_BaseXSize(BaseXSize),
+			m_BaseYSize(BaseYSize),
+			m_Matrix(Matrix)
+			{
 			m_Center.x = Matrix._41;
 			m_Center.y = Matrix._42;
 			m_Center.z = Matrix._43;
@@ -569,6 +571,24 @@ namespace basecross{
 			m_Rot[0] = Vector3EX::Normalize(VecX);
 			m_Rot[1] = Vector3EX::Normalize(VecY);
 		}
+		PLANE GetPLANE() const {
+			//表面上に3つの点を使ってPLANEを作成
+			//1つ目の点は中心
+			Vector3 Point0 = m_Center;
+			float MakedHalfX = m_BaseXSize * 0.5f;
+			float MakedHalfY = m_BaseYSize * 0.5f;
+			//2つ目は-0.5,-0.5,0の点をワールド変換したもの
+			Vector3 Point1(-MakedHalfX, -MakedHalfY,0);
+			Point1.Transform(m_Matrix);
+			//3つ目は-0.5,0.5,0の点をワールド変換したもの
+			Vector3 Point2(MakedHalfX, -MakedHalfY, 0);
+			Point2.Transform(m_Matrix);
+			//3点を使って面を作成
+			PLANE ret(Point0, Point1, Point2);
+			return ret;
+		}
+
+
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -1148,6 +1168,151 @@ namespace basecross{
 
 			return true;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	点とCOLRECTとの最近接点を得る
+		@param[in]	p	点
+		@param[in]	rect	COLRECT
+		@param[out]	retvec	最近接点が代入される参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointCOLRECT(const Vector3& point, const COLRECT& rect,
+			Vector3& retvec) {
+			Vector3 d = point - rect.m_Center;
+			retvec = rect.m_Center;
+			for (int i = 0; i < 2; i++) {
+				float dist = Vector3EX::Dot(d, rect.m_Rot[i]);
+				if (dist > rect.m_UVec[i]) {
+					dist = rect.m_UVec[i];
+				}
+				if (dist < -rect.m_UVec[i]) {
+					dist = -rect.m_UVec[i];
+				}
+				retvec += rect.m_Rot[i] * dist;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	球とCOLRECTとの衝突判定
+		@param[in]	sp	球
+		@param[in]	rect	COLRECT
+		@param[out]	retvec	最近接点が代入される参照
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_COLRECT(const SPHERE& sp, const COLRECT& rect, Vector3& retvec) {
+			//四角形との最近接点を得る
+			ClosestPtPointCOLRECT(sp.m_Center, rect, retvec);
+			//最近接点が半径以下なら衝突している
+			if (Vector3EX::Length(sp.m_Center - retvec) <= sp.m_Radius) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Sphereと動かないRectの衝突判定
+		@param[in]	SrcSp	Srcの球
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestRect	Dest矩形
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestSphereRect(const SPHERE& SrcSp, const Vector3& SrcVelocity,
+			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			SPHERE SrcSp2;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
+			SrcSp2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcSp.m_Radius;
+			Vector3 RetVec;
+			if (!HitTest::SPHERE_COLRECT(SrcSp2, DestRect, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestSphereRect(SrcSp, SrcVelocity, DestRect, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestSphereRect(SrcSp, SrcVelocity, DestRect, mid, EndTime, HitTime);
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBとPLANEとの衝突判定
+		@param[in]	obb	OBB
+		@param[in]	plane	PLANE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_PLANE(const OBB& obb, const PLANE& plane) {
+			float r = obb.m_Size.x * abs(Vector3EX::Dot(plane.m_Normal, obb.m_Rot[0]))
+				+ obb.m_Size.y * abs(Vector3EX::Dot(plane.m_Normal, obb.m_Rot[1]))
+				+ obb.m_Size.z * abs(Vector3EX::Dot(plane.m_Normal, obb.m_Rot[2]));
+			float s = Vector3EX::Dot(plane.m_Normal, obb.m_Center) - plane.m_DotValue;
+			return abs(s) <= r;
+		}
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBとCOLRECTとの衝突判定
+		@param[in]	obb	OBB
+		@param[in]	rect	COLRECT
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_COLRECT(const OBB& obb, const COLRECT& rect) {
+			if (OBB_PLANE(obb, rect.GetPLANE())) {
+				//平面と交差していた時のみOBBと調査
+				OBB obb2(Vector3(rect.m_BaseXSize, rect.m_BaseYSize, 1.0f), rect.m_Matrix);
+				return OBB_OBB(obb, obb2);
+			}
+			return false;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Obbと動かないRectの衝突判定
+		@param[in]	SrcObb	SrcのObb
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestRect	Dest矩形
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestObbRect(const OBB& SrcObb, const Vector3& SrcVelocity,
+			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			OBB SrcObb2;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcObb2.m_Center = SrcObb.m_Center + SrcVelocity * mid;
+			//OBBの各辺の長さを拡大
+			SrcObb2.m_Size.x = (mid - StartTime) * SrcVelocity.Length() + SrcObb.m_Size.x;
+			SrcObb2.m_Size.y = (mid - StartTime) * SrcVelocity.Length() + SrcObb.m_Size.y;
+			SrcObb2.m_Size.z = (mid - StartTime) * SrcVelocity.Length() + SrcObb.m_Size.z;
+			if (!HitTest::OBB_COLRECT(SrcObb2, DestRect)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestObbRect(SrcObb, SrcVelocity, DestRect, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestObbRect(SrcObb, SrcVelocity, DestRect, mid, EndTime, HitTime);
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Sphereと動かないSphereの衝突判定

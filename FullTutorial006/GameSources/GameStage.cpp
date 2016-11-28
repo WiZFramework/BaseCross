@@ -62,16 +62,11 @@ namespace basecross {
 		auto PtrTrans = Ptr->GetComponent<Transform>();
 		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
-		Matrix4X4 WorldMat;
-		WorldMat.DefTransformation(
-			Vector3(200.0f, 200.0f, 1.0f),
-			Qt,
-			Vector3(0.0f, 0.0f, 0.0f)
-		);
-		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
+		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
 
+		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
 		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
 		//描画コンポーネントに形状（メッシュ）を設定

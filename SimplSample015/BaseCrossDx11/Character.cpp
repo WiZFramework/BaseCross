@@ -388,8 +388,6 @@ namespace basecross{
 	}
 
 
-
-
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
 	//	用途: 追いかける配置オブジェクト
@@ -398,7 +396,7 @@ namespace basecross{
 	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
-		m_BaseY(m_StartPos.y),
+		m_BaseY(0.125f),
 		m_StateChangeSize(5.0f)
 	{
 	}
@@ -406,14 +404,14 @@ namespace basecross{
 
 	//初期化
 	void SeekObject::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
+		auto PtrTransform = AddComponent<Transform>();
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
-		//Rigidbodyをつける
-		auto PtrRigid = AddComponent<Rigidbody>();
+		//操舵系のコンポーネントをつける場合はRigidbodyをつける
+		auto PtrRegid = AddComponent<Rigidbody>();
 		//反発係数は0.5（半分）
-		PtrRigid->SetReflection(0.5f);
+		PtrRegid->SetReflection(0.5f);
 		//Seek操舵
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive操舵
@@ -429,8 +427,11 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obbの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionObb>();
-		//横部分のみ反発
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+
+		//重力をつける
+		auto PtrGravity = AddComponent<Gravity>();
+
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -511,6 +512,10 @@ namespace basecross{
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+	}
+
 	void SeekObject::OnLastUpdate() {
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
@@ -531,20 +536,7 @@ namespace basecross{
 			NowQt.Slerp(NowQt, Qt, 0.1f);
 			PtrTransform->SetQuaternion(NowQt);
 		}
-		//常にyはm_BaseY
-		auto Pos = PtrTransform->GetPosition();
-		Pos.y = m_BaseY;
-		PtrTransform->SetPosition(Pos);
 	}
-
-	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
-		//炎の放出
-		auto PtrSpark = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
-		if (PtrSpark) {
-			PtrSpark->InsertFire(GetComponent<Transform>()->GetPosition());
-		}
-	}
-
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
@@ -584,6 +576,7 @@ namespace basecross{
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
 		Obj->ArriveEndMoton();
 	}
+
 
 
 	//--------------------------------------------------------------------------------------

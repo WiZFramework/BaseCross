@@ -30,11 +30,9 @@ namespace basecross{
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
 		//反発係数は0.5（半分）
-		PtrRedid->SetReflection(0.5f);
+	//	PtrRedid->SetReflection(0.5f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-		//最下地点
-		PtrGravity->SetBaseY(0.125f);
 		//衝突判定
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
@@ -198,26 +196,6 @@ namespace basecross{
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 		
-		auto PtrCol = GetComponent<CollisionSphere>();
-		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
-		auto GVec = Group->GetGroupVector();
-		auto PtrTrans = GetComponent<Transform>();
-		for (auto& v : GVec) {
-			auto shptr = dynamic_pointer_cast<MoveBox>(v.lock());
-			if (shptr) {
-				auto ParCol = shptr->GetComponent<CollisionObb>();
-				if (PtrCol->OnObjectTest(ParCol)) {
-					//移動ボックスに乗ってる
-					auto ParVelo = shptr->GetComponent<Action>()->GetVelocity();
-					float ElapsedTime = App::GetApp()->GetElapsedTime();
-					ParVelo *= ElapsedTime;
-					auto Pos = PtrTrans->GetPosition();
-					Pos += ParVelo;
-					PtrTrans->SetPosition(Pos);
-					return;
-				}
-			}
-		}
 	}
 
 	//モーションを実装する関数群

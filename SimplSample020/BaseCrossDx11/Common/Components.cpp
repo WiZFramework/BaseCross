@@ -194,6 +194,13 @@ namespace basecross {
 	void Transform::SetPosition(float x, float y, float z) {
 		SetPosition(Vector3(x, y, z));
 	}
+
+	void Transform::ResetPosition(const Vector3& Position) {
+		pImpl->m_BeforePosition = Position;
+		pImpl->m_Position = Position;
+	}
+
+
 	Matrix4X4 Transform::GetWorldMatrix() const{
 		Matrix4X4 mat;
 		mat.AffineTransformation(

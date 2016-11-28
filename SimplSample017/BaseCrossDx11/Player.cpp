@@ -35,8 +35,6 @@ namespace basecross{
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 
-		//最下地点
-		PtrGravity->SetBaseY(0.125f);
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
 		//横部分のみ反発
@@ -260,7 +258,7 @@ namespace basecross{
 		auto PtrGravity = GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		PtrGravity->StartJump(JumpVec, 0);
+		PtrGravity->StartJump(JumpVec, 0.01);
 		//アニメーションを変更する
 		auto PtrDraw = GetComponent<PNTBoneModelDraw>();
 		PtrDraw->ChangeCurrentAnimation(L"Hit");

@@ -58,8 +58,6 @@ namespace basecross{
 		PtrRedit->SetReflection(0.2f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-		//最下地点
-		PtrGravity->SetBaseY(0.5f);
 		//衝突判定をつける(OBB)
 		//auto PtrCol = AddComponent<CollisionObb>();
 		//CollisionSphereを使う場合は、OBBを無効にして以下を有効にする
@@ -271,7 +269,7 @@ namespace basecross{
 	bool Player::IsRailChangeMotion() {
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrGra = GetComponent<Gravity>();
-		if (PtrTrans->GetPosition().y > PtrGra->GetBaseY()) {
+		if (PtrTrans->GetPosition().y > 0.5f) {
 			//何かの上に乗ってる時は変更できない
 			return false;
 		}

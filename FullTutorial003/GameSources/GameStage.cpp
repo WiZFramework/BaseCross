@@ -52,23 +52,16 @@ namespace basecross {
 		auto PtrTrans = Ptr->GetComponent<Transform>();
 		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
-		Matrix4X4 WorldMat;
-		WorldMat.DefTransformation(
-			Vector3(200.0f, 200.0f, 1.0f),
-			Qt,
-			Vector3(0.0f, 0.0f, 0.0f)
-		);
-		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
+		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
-
+		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
 		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
 		//自分に影が映りこむようにする
 		DrawComp->SetOwnShadowActive(true);
-
 		//描画コンポーネントテクスチャの設定
 		DrawComp->SetTextureResource(L"SKY_TX");
 	}
@@ -78,6 +71,7 @@ namespace basecross {
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
 		vector< vector<Vector3> > Vec = {
+
 			{
 				Vector3(5.0f, 0.5f, 5.0f),
 				Vector3(0.0f, 0.0f, 0.0f),
@@ -113,6 +107,11 @@ namespace basecross {
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
+		CreateSharedObjectGroup(L"AttackBall");
+		//アタックボールは10個用意する
+		for (int i = 0; i < 10; i++) {
+			AddGameObject<AttackBall>();
+		}
 		//プレーヤーの作成
 		auto PlayerPtr = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加

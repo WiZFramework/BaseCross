@@ -9,18 +9,15 @@ namespace basecross {
 
 	class CollisionSphere;
 	class CollisionObb;
+	class CollisionRect;
 
 	//--------------------------------------------------------------------------------------
 	///	 衝突した時の動作定義
 	//--------------------------------------------------------------------------------------
 	enum class IsHitAction {
-		Stop,		///<速度をストップする
-		AutoOnObjectRepel,	///<物体に乗ったときに自動的に反発をストップする
+		AutoOnObjectRepel,	///<反発
+		Slide,	//滑る
 	};
-
-
-
-
 
 	//--------------------------------------------------------------------------------------
 	///	 衝突判定コンポーネントの親クラス
@@ -62,7 +59,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetFixed(bool b);
+		virtual void SetFixed(bool b);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 更新処理
@@ -95,7 +92,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		vector<shared_ptr<GameObject>>& GetHitObjectVec();
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突した時のアクションを得る。
@@ -111,90 +107,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetIsHitAction(IsHitAction HitAction);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってるオブジェクトがあるかどうか
-		@return	乗ってるオブジェクトがあればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool IsOnObject();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってるオブジェクトがあるかをセット
-		@param[in]	b	ある場合はtrue
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetOnObject(bool b);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット呼び出し側
-		@param[in]	DestColl	相手のCollisio
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetDestRotGravityBase(const shared_ptr<Collision>& DestColl);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionSphere
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl) = 0;
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionObb
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionObb>& DestColl) = 0;
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief Collisionの上に乗っているかテストして追加する
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		bool AddOnObjectTest(const shared_ptr<Collision>& DestColl);
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 上に乗っている配列に該当するかチェックする
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		bool ChkOnObjectTest(const shared_ptr<Collision>& DestColl);
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief Collisionの上に乗っているかテストの呼び出し側
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		bool OnObjectTestBase(const shared_ptr<Collision>& DestColl);
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionSphereの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionSphere>& DestColl) = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionObbの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionObb>& DestColl) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突テスト親
@@ -221,31 +133,51 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief １つ前のターンからの指定時間の位置に戻る
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	SpanTime	時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(float SpanTime) = 0;
+		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
 		@param[in]	SpanTime	衝突時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime) = 0;
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
 		@param[in]	SpanTime	衝突時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime) = 0;
-
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	衝突時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -262,7 +194,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl) = 0;
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionRect>& DestColl) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。デフォルトは何も行わない
@@ -347,43 +286,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		SPHERE GetBeforeSphere() const;
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionSphere
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl)override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionObb
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionObb>& DestColl)override;
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionSphereの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionSphere>& DestColl)override;
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionObbの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionObb>& DestColl)override;
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突テスト
@@ -392,7 +294,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionTest(const shared_ptr<CollisionSphere>& DestColl)override;
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとの衝突テスト
@@ -403,32 +304,52 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl)override;
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief １つ前のターンからの指定時間の位置に戻る
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	SpanTime	時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(float SpanTime)override;
+		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@param[in]	SpanTime	処理する時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime)override;
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	処理する時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
 		@param[in]	SpanTime	衝突時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
-
-
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -445,7 +366,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl)override;
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionRect>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -453,8 +381,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
-
-
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -519,42 +445,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		OBB GetBeforeObb() const;
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionSphere
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionSphere>& DestColl)override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 乗ってる相手の角度に合わせて重力をセット
-		@param[in]	DestColl	相手のCollisionObb
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void SetDestRotGravity(const shared_ptr<CollisionObb>& DestColl)override;
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionSphereの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionSphere>& DestColl)override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief CollisionObbの上に乗っているかテスト
-		@param[in]	DestColl	相手のコリジョン
-		@return	乗っていなければfalse
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool OnObjectTest(const shared_ptr<CollisionObb>& DestColl)override;
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突テスト
@@ -573,32 +463,51 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl)override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief １つ前のターンからの指定時間の位置に戻る
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	SpanTime	時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(float SpanTime)override;
-
+		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@param[in]	SpanTime	処理する時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionSphere>& DestColl, float SpanTime)override;
-
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	処理する時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
 		@param[in]	DestColl	相手のコリジョン
 		@param[in]	SpanTime	衝突時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -615,7 +524,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl)override;
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionRect>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -629,6 +545,174 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	class CollisionRect : public Collision ;
+	//	用途: Rect(矩形)衝突判定コンポーネント
+	//--------------------------------------------------------------------------------------
+	class CollisionRect : public Collision {
+	protected:
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit CollisionRect(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~CollisionRect();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	固定衝突オブジェクトかどうかを設定する
+		@param[in]	b	固定衝突オブジェクトならtrue
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetFixed(bool b)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	作成時の1辺の長さを得る
+		@return	作成時の1辺の長さ
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetMakedSize() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	作成時の1辺の長さを設定する
+		@param[in]	f	作成時の1辺の長さ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMakedSize(float f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のCOLRECT境界ボリュームを得る
+		@return	現在のCOLRECT境界ボリューム
+		*/
+		//--------------------------------------------------------------------------------------
+		COLRECT GetColRect() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	1ターン前のCOLRECT境界ボリュームを得る
+		@return	1ターン前のCOLRECT境界ボリューム
+		*/
+		//--------------------------------------------------------------------------------------
+		COLRECT GetBeforeColRect() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionSphereとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionSphere>& DestColl) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionObbとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl)override{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief １つ前のターンからの指定時間の位置に戻る
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	SpanTime	時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionSphereとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	処理する時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionObbとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	処理する時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突後処理
+		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
+		@param[in]	DestColl	相手のコリジョン
+		@param[in]	SpanTime	衝突時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionSphereからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionSphere>& DestColl)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionObbからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionObb>& DestColl)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectからのエスケープ
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionEscape(const shared_ptr<CollisionRect>& DestColl)override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画処理。DrawActiveがtrue時に呼ばれる
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 
 
 }

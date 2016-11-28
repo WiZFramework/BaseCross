@@ -16,7 +16,7 @@ namespace basecross{
 	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
-		m_BaseY(m_StartPos.y),
+		m_BaseY(0.125f),
 		m_StateChangeSize(5.0f)
 	{
 	}
@@ -47,8 +47,11 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obb‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrColl = AddComponent<CollisionObb>();
-		//‰¡•”•ª‚Ì‚İ”½”­
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+
+		//d—Í‚ğ‚Â‚¯‚é
+		auto PtrGravity = AddComponent<Gravity>();
+
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -152,7 +155,7 @@ namespace basecross{
 		//í‚Éy‚Ím_BaseY
 		auto Pos = PtrTransform->GetPosition();
 		Pos.y = m_BaseY;
-		PtrTransform->SetPosition(Pos);
+//		PtrTransform->SetPosition(Pos);
 	}
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;

@@ -663,7 +663,7 @@ namespace basecross {
 		float m_Mass;					//質量（キログラム）
 		float m_Reflection;				//反発係数
 		Vector3 m_Force;				//現在のフォース（ステアリング系コンポーネントで変更される）
-		float m_Friction;				//摩擦係数（Forceの逆向きに働く必ず0から-1.0の間）
+		float m_FrictionForce;			//減速のフォース（速度の逆向きに働く）
 		float m_MaxForce;				//最高フォース
 		Impl() :
 			m_Velocity(0, 0, 0),
@@ -673,7 +673,7 @@ namespace basecross {
 			m_Mass(1.0f),
 			m_Reflection(1.0f),
 			m_Force(0, 0, 0),
-			m_Friction(0),
+			m_FrictionForce(0.0f),
 			m_MaxForce(30.0f)
 		{}
 		~Impl() {}
@@ -695,8 +695,14 @@ namespace basecross {
 	void Rigidbody::SetVelocity(const Vector3& Velocity) {
 		pImpl->m_Velocity = Velocity;
 		pImpl->m_Velocity.ClampLength(0, pImpl->m_MaxSpeed);
-		if (pImpl->m_Velocity.Length() < pImpl->m_MinVelocity.Length()) {
-			pImpl->m_Velocity.Zero();
+		if (abs(pImpl->m_Velocity.x) < abs(pImpl->m_MinVelocity.x)) {
+			pImpl->m_Velocity.x = 0;
+		}
+		if (abs(pImpl->m_Velocity.y) < abs(pImpl->m_MinVelocity.y)) {
+			pImpl->m_Velocity.y = 0;
+		}
+		if (abs(pImpl->m_Velocity.z) < abs(pImpl->m_MinVelocity.z)) {
+			pImpl->m_Velocity.z = 0;
 		}
 	}
 	void Rigidbody::SetVelocity(float x, float y, float z) {
@@ -723,7 +729,16 @@ namespace basecross {
 
 
 	float Rigidbody::GetMass() const { return pImpl->m_Mass; }
-	void Rigidbody::SetMass(float f) { pImpl->m_Mass = f; }
+	void Rigidbody::SetMass(float f) {
+		if (f <= 0) {
+			throw BaseException(
+				L"質量は0以下は設定できません。",
+				L"if (f <= 0) ",
+				L"Rigidbody::SetMass()"
+			);
+		}
+		pImpl->m_Mass = f; 
+	}
 
 	float Rigidbody::GetReflection() const {
 		return pImpl->m_Reflection;
@@ -736,116 +751,16 @@ namespace basecross {
 	void Rigidbody::SetForce(const Vector3& Force) { pImpl->m_Force = Force; }
 	void Rigidbody::SetForce(float x, float y, float z) { pImpl->m_Force = Vector3(x, y, z); }
 
-	float Rigidbody::GetFriction() const {
-		return pImpl->m_Friction;
+	float Rigidbody::GetFrictionForce() const {
+		return pImpl->m_FrictionForce;
 	}
-	void Rigidbody::SetFriction(float f) {
-		if (f >= 0) {
-			pImpl->m_Friction = 0.0f;
-		}
-		else if (f <= -1.0f) {
-			pImpl->m_Friction = -1.0f;
-		}
-		else {
-			pImpl->m_Friction = f;
-		}
+	void Rigidbody::SetFrictionForce(float f) {
+		pImpl->m_FrictionForce = f;
 	}
 
 
 	float Rigidbody::GetMaxForce() const { return pImpl->m_MaxForce; }
 	void Rigidbody::SetMaxForce(float f) { pImpl->m_MaxForce = f; }
-
-
-	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl, const shared_ptr<CollisionSphere>& DestColl) {
-		switch (SrcColl->GetIsHitAction()) {
-		case IsHitAction::Stop:
-			SetVelocity(0, 0, 0);
-			break;
-		case IsHitAction::AutoOnObjectRepel:
-		{
-			SPHERE sp = SrcColl->GetSphere();
-			SPHERE destsp = DestColl->GetSphere();
-			Vector3 Normal = destsp.m_Center - sp.m_Center;
-			Normal.Normalize();
-			auto Ref = Vector3EX::Reflect(GetVelocity(), Normal);
-			//反発係数
-			Ref *= GetReflection();
-			SetVelocity(Ref);
-		}
-		break;
-		}
-	}
-	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionSphere>& SrcColl, const shared_ptr<CollisionObb>& DestColl) {
-		switch (SrcColl->GetIsHitAction()) {
-		case IsHitAction::Stop:
-			SetVelocity(0,0,0);
-			break;
-		case IsHitAction::AutoOnObjectRepel:
-			{
-				SPHERE sp = SrcColl->GetSphere();
-				OBB obb = DestColl->GetObb();
-				Vector3 Ret;
-				HitTest::SPHERE_OBB(sp, obb, Ret);
-				Vector3 Normal = Ret - sp.m_Center;
-				Normal.Normalize();
-				auto Ref = Vector3EX::Reflect(GetVelocity(), Normal);
-				//反発係数
-				Ref *= GetReflection();
-				SetVelocity(Ref);
-			}
-			break;
-		}
-
-	}
-
-
-	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionSphere>& DestColl) {
-		switch (SrcColl->GetIsHitAction()) {
-			case IsHitAction::Stop:
-				SetVelocity(0, 0, 0);
-				break;
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				OBB obb = SrcColl->GetObb();
-				SPHERE sp = DestColl->GetSphere();
-				Vector3 Ret;
-				HitTest::SPHERE_OBB(sp, obb, Ret);
-				Vector3 Normal = sp.m_Center - Ret;
-				Normal.Normalize();
-				auto Ref = Vector3EX::Reflect(GetVelocity(), Normal);
-				//反発係数
-				Ref *= GetReflection();
-				SetVelocity(Ref);
-			}
-			break;
-		}
-	}
-
-	void Rigidbody::IsHitChangeVelocity(const shared_ptr<CollisionObb>& SrcColl, const shared_ptr<CollisionObb>& DestColl) {
-		switch (SrcColl->GetIsHitAction()) {
-		case IsHitAction::Stop:
-			SetVelocity(0, 0, 0);
-			break;
-		case IsHitAction::AutoOnObjectRepel:
-		{
-			OBB SrcObb = SrcColl->GetObb();
-			OBB DestObb = DestColl->GetObb();
-			Vector3 Ret;
-			//SrcのOBBとDestの最近接点を得る
-			HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, Ret);
-			Vector3 Normal = SrcObb.m_Center - Ret;
-			Normal.Normalize();
-			auto Ref = Vector3EX::Reflect(GetVelocity(), Normal);
-			//反発係数
-			Ref *= GetReflection();
-			SetVelocity(Ref);
-		}
-		break;
-		}
-
-	}
-
-
 
 	void Rigidbody::UpdateFromTime(float CalcTime) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
@@ -854,30 +769,26 @@ namespace basecross {
 		//フォースが変更されていたら
 		if (pImpl->m_Force.Length() > 0) {
 			//フォースが0以上なら
+			pImpl->m_Force.ClampLength(0, pImpl->m_MaxForce);
 			//質量を計算して加速を求める
 			Vector3 Accel = pImpl->m_Force / pImpl->m_Mass;
 			pImpl->m_Velocity += Accel * CalcTime;
 		}
-		if (pImpl->m_Velocity.Length() >= pImpl->m_MaxSpeed) {
-			pImpl->m_Velocity.ClampLength(0, pImpl->m_MaxSpeed);
-		}
-		//減速値を求める
-		auto  Friction = pImpl->m_Mass * pImpl->m_Friction;
-		if (Friction <= -1.0f) {
-			Friction = -1.0f;
-		}
-		else if (Friction >= 0.0f) {
-			Friction = 0.0f;
-		}
-		Vector3 VFriction = pImpl->m_Velocity * Friction;
-		pImpl->m_Velocity += VFriction;
-		if (abs(pImpl->m_Velocity.x) < pImpl->m_MinVelocity.x) {
+
+		//摩擦加速を求める
+		Vector3 FrictionForce = pImpl->m_Velocity * -1.0f;
+		FrictionForce *= pImpl->m_FrictionForce;
+		Vector3 FrictionAccel = FrictionForce / pImpl->m_Mass;
+		pImpl->m_Velocity += FrictionAccel * CalcTime;
+
+		pImpl->m_Velocity.ClampLength(0, pImpl->m_MaxSpeed);
+		if (abs(pImpl->m_Velocity.x) < abs(pImpl->m_MinVelocity.x)) {
 			pImpl->m_Velocity.x = 0;
 		}
-		if (abs(pImpl->m_Velocity.y) < pImpl->m_MinVelocity.y) {
+		if (abs(pImpl->m_Velocity.y) < abs(pImpl->m_MinVelocity.y)) {
 			pImpl->m_Velocity.y = 0;
 		}
-		if (abs(pImpl->m_Velocity.z) < pImpl->m_MinVelocity.z) {
+		if (abs(pImpl->m_Velocity.z) < abs(pImpl->m_MinVelocity.z)) {
 			pImpl->m_Velocity.z = 0;
 		}
 		Quaternion QtSpan;
