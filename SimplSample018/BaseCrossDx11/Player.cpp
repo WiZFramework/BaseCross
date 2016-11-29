@@ -45,7 +45,7 @@ namespace basecross{
 		SetToAnimeMatrix(m_ToAnimeMatrixLeft);
 
 		auto PtrT = GetComponent<Transform>();
-		PtrT->SetScale(1.0f, 1.0f, 1.0f);
+		PtrT->SetScale(1.0f,1.0f,1.0f);
 		PtrT->SetPosition(Vector3(0, 0.5f, m_ZRail[m_ZRailIndex]));
 		//親クラスのクリエイトを呼ぶ
 		SS5ssae::OnCreate();
@@ -58,8 +58,6 @@ namespace basecross{
 		PtrRedit->SetReflection(0.2f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
-		//最下地点
-		PtrGravity->SetBaseY(0.5f);
 		//衝突判定をつける(OBB)
 		//auto PtrCol = AddComponent<CollisionObb>();
 		//CollisionSphereを使う場合は、OBBを無効にして以下を有効にする
@@ -222,7 +220,7 @@ namespace basecross{
 		auto PtrGravity = GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		PtrGravity->StartJump(JumpVec, 0.05f);
+		PtrGravity->StartJump(JumpVec);
 		auto PtrCol = GetComponent<Collision>();
 		//親があったら切り離す
 		//		PtrTrans->SetParent(nullptr);
@@ -271,7 +269,7 @@ namespace basecross{
 	bool Player::IsRailChangeMotion() {
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrGra = GetComponent<Gravity>();
-		if (PtrTrans->GetPosition().y > PtrGra->GetBaseY()) {
+		if (PtrTrans->GetPosition().y > 0.7f) {
 			//何かの上に乗ってる時は変更できない
 			return false;
 		}
@@ -652,6 +650,7 @@ namespace basecross{
 	void  AttackState::Exit(const shared_ptr<Player>& Obj) {
 		Obj->SetFps(30.0f);
 	}
+
 
 
 }

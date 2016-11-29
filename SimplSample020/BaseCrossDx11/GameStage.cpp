@@ -75,6 +75,7 @@ namespace basecross {
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
 
+		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
 		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
 		//描画コンポーネントに形状（メッシュ）を設定

@@ -185,7 +185,29 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		//最初に衝突するオブジェクトがあったとき
+		//スパークの放出
+		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
+		if (PtrSpark) {
+			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
+		}
 	}
+
+	void Player::OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) {
+		//継続して衝突するオブジェクトがあったとき
+		//ここには衝突継続中の処理を記述
+	}
+
+	void Player::OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {
+		//1ターン前は衝突していたオブジェクトがあったとき
+		//ファイアの放出
+		auto PtriFire = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
+		if (PtriFire) {
+			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
+		}
+	}
+
+
 
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {

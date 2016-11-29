@@ -24,7 +24,11 @@ namespace basecross {
 
 		IsHitAction m_IsHitAction;	//衝突した時の動作定義
 
+		vector<shared_ptr<GameObject>> m_BeforHitObjectVec;	//1つ前にヒットしたオブジェクト
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
+		vector<shared_ptr<GameObject>> m_TempHitObjectVec;	//汎用ヒットしたオブジェクト
+
+
 
 		Impl() :
 			m_Fixed(false),
@@ -104,12 +108,87 @@ namespace basecross {
 	void Collision::AddHitObject(const shared_ptr<GameObject>& DestObject) {
 		pImpl->m_HitObjectVec.push_back(DestObject);
 	}
+
+	void Collision::SetToBeforHitObject() {
+		pImpl->m_BeforHitObjectVec.resize(pImpl->m_HitObjectVec.size());
+		pImpl->m_BeforHitObjectVec = pImpl->m_HitObjectVec;
+	}
+
 	void Collision::ClearHitObject() {
 		pImpl->m_HitObjectVec.clear();
+		pImpl->m_TempHitObjectVec.clear();
 	}
 	vector<shared_ptr<GameObject>>& Collision::GetHitObjectVec() {
 		return pImpl->m_HitObjectVec;
 	}
+
+	void Collision::FindIfCollisionVector(
+		shared_ptr<GameObject> Tgt,
+		vector<shared_ptr<GameObject>>& SetVec,
+		const vector<shared_ptr<GameObject>>& ScanVec,
+		bool IsFind
+	) {
+		if (IsFind) {
+			for (auto& v : ScanVec) {
+				if (Tgt == v) {
+					//見つかったらセットしてリターン
+					SetVec.push_back(Tgt);
+					return;
+				}
+			}
+		}
+		else {
+			for (auto& v : ScanVec) {
+				if (Tgt == v) {
+					//見つかったらリターン
+					return;
+				}
+			}
+			//見つからなかったらセット
+			SetVec.push_back(Tgt);
+		}
+	}
+
+
+
+	vector<shared_ptr<GameObject>>& Collision::GetNewHitObjectVec() {
+		pImpl->m_TempHitObjectVec.clear();
+		for (auto v : pImpl->m_HitObjectVec) {
+			FindIfCollisionVector(
+				v,
+				pImpl->m_TempHitObjectVec,
+				pImpl->m_BeforHitObjectVec,
+				false
+			);
+		}
+		return pImpl->m_TempHitObjectVec;
+	}
+	vector<shared_ptr<GameObject>>& Collision::GetExcuteHitObjectVec() {
+		pImpl->m_TempHitObjectVec.clear();
+		for (auto v : pImpl->m_HitObjectVec) {
+			FindIfCollisionVector(
+				v,
+				pImpl->m_TempHitObjectVec,
+				pImpl->m_BeforHitObjectVec,
+				true
+			);
+		}
+		return pImpl->m_TempHitObjectVec;
+	}
+	vector<shared_ptr<GameObject>>& Collision::GetExitHitObjectVec() {
+		pImpl->m_TempHitObjectVec.clear();
+		for (auto v : pImpl->m_BeforHitObjectVec) {
+			FindIfCollisionVector(
+				v,
+				pImpl->m_TempHitObjectVec,
+				pImpl->m_HitObjectVec,
+				false
+			);
+		}
+		return pImpl->m_TempHitObjectVec;
+	}
+
+
 
 	IsHitAction Collision::GetIsHitAction() const {
 		return pImpl->m_IsHitAction;

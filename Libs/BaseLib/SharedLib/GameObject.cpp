@@ -235,6 +235,7 @@ namespace basecross {
 	void GameObject::CollisionReset() {
 		auto CollisionPtr = GetComponent<Collision>(false);
 		if (CollisionPtr) {
+			CollisionPtr->SetToBeforHitObject();
 			CollisionPtr->ClearHitObject();
 		}
 	}
@@ -249,8 +250,19 @@ namespace basecross {
 
 	void GameObject::ToMessageCollision() {
 		auto CollisionPtr = GetComponent<Collision>(false);
-		if (CollisionPtr && CollisionPtr->GetHitObjectVec().size() > 0) {
-			OnCollision(CollisionPtr->GetHitObjectVec());
+		if (CollisionPtr) {
+			auto& VecPtr = CollisionPtr->GetNewHitObjectVec();
+			if (!VecPtr.empty()) {
+				OnCollision(VecPtr);
+			}
+			VecPtr = CollisionPtr->GetExcuteHitObjectVec();
+			if (!VecPtr.empty()) {
+				OnCollisionExcute(VecPtr);
+			}
+			VecPtr = CollisionPtr->GetExitHitObjectVec();
+			if (!VecPtr.empty()) {
+				OnCollisionExit(VecPtr);
+			}
 		}
 	}
 

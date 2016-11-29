@@ -388,6 +388,8 @@ namespace basecross{
 	}
 
 
+
+
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
 	//	用途: 追いかける配置オブジェクト
@@ -514,6 +516,12 @@ namespace basecross{
 	}
 
 	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		//ファイアの放出
+		auto PtriFire = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
+		if (PtriFire) {
+			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
+		}
+
 	}
 
 	void SeekObject::OnLastUpdate() {
@@ -576,7 +584,6 @@ namespace basecross{
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
 		Obj->ArriveEndMoton();
 	}
-
 
 
 	//--------------------------------------------------------------------------------------

@@ -173,7 +173,7 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
+		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);

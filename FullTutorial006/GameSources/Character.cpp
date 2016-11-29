@@ -39,6 +39,10 @@ namespace basecross{
 		//Arriveは無効にしておく
 		PtrArrive->SetUpdateActive(false);
 
+		//重力をつける
+		auto PtrGravity = AddComponent<Gravity>();
+
+
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"ObjectGroup");
 		//グループに自分自身を追加
@@ -111,10 +115,6 @@ namespace basecross{
 			NowQt.Slerp(NowQt, Qt, 0.1f);
 			PtrTransform->SetQuaternion(NowQt);
 		}
-		//常にyはm_BaseY
-		auto Pos = PtrTransform->GetPosition();
-		Pos.y = m_BaseY;
-		PtrTransform->SetPosition(Pos);
 	}
 
 	//--------------------------------------------------------------------------------------

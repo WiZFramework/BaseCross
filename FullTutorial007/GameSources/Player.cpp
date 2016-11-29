@@ -269,7 +269,7 @@ namespace basecross{
 	bool Player::IsRailChangeMotion() {
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrGra = GetComponent<Gravity>();
-		if (PtrTrans->GetPosition().y > 0.5f) {
+		if (PtrTrans->GetPosition().y > 0.7f) {
 			//‰½‚©‚Ìã‚Éæ‚Á‚Ä‚é‚Í•ÏX‚Å‚«‚È‚¢
 			return false;
 		}

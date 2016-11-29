@@ -644,7 +644,7 @@ namespace basecross {
 		//透明処理
 		pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
 		//デプスステンシルステート
-		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthRead(), 0);
 		//テクスチャとサンプラーの設定
 		ID3D11ShaderResourceView* pNull[1] = { 0 };
 		ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
