@@ -128,7 +128,6 @@ namespace basecross{
 		virtual void OnUpdate() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
-		virtual void OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) override;
 		virtual void OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) override;
 		//ターンの最終更新時
 		virtual void OnLastUpdate() override;

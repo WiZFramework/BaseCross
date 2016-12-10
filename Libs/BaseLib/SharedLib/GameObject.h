@@ -172,6 +172,35 @@ namespace basecross {
 		shared_ptr<Stage> GetStage(bool ExceptionActive = true) const;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	所属するステージを得る(型チェックあり)
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	所属するステージ
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		shared_ptr<T> GetTypeStage(bool ExceptionActive = true) const {
+			auto StagePtr = GetStage(ExceptionActive);
+			if (!StagePtr) {
+				return nullptr;
+			}
+			auto TargetPtr = dynamic_pointer_cast<T>(StagePtr);
+			if (!TargetPtr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"ステージがありましたが、型キャストできません",
+						Util::GetWSTypeName<T>(),
+						L"GameObject::GetTypeStage<T>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return TargetPtr;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	所属するステージを設定する
 		@param[in]	stage	所属するステージ
 		@return	なし
@@ -1506,13 +1535,10 @@ namespace basecross {
 			return newPtr;
 		}
 
-
 		//ステージ内の更新（シーンからよばれる）
 		virtual void UpdateStage();
 		//衝突判定の更新（ステージから呼ぶ）
 		virtual void UpdateCollision();
-		//Collisionを監査する重力のチェック（ステージから呼ぶ）
-//		virtual void UpdateCollisionGravity();
 		//衝突メッセージの発行
 		virtual void UpdateMessageCollision();
 
@@ -1616,6 +1642,30 @@ namespace basecross {
 			SetActiveStage(StagePtr);
 			return Ptr;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	アクティブなステージを設定して初期化する
+		@tparam	T	取得する型（Stageに型変換できるもの）
+		@tparam	Ts	可変長変数の型
+		@param[in]	params	このステージを構築するのに使用するパラメータ。
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T, typename... Ts>
+		shared_ptr<T> ResetActiveStageWithParam(Ts&&... params) {
+			auto Ptr = ObjectFactory::CreateWithParam<T>(params...);
+			auto StagePtr = dynamic_pointer_cast<Stage>(Ptr);
+			if (!StagePtr) {
+				throw BaseException(
+					L"以下はStageに型キャストできません。",
+					Util::GetWSTypeName<T>(),
+					L"SceneBase::ResetActiveStageWithParam<T>()"
+				);
+			}
+			SetActiveStage(StagePtr);
+			return Ptr;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	シーンを変化させる

@@ -139,7 +139,7 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//Õ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Slide);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		//•¶š—ñ‚ğ‚Â‚¯‚é
 		auto PtrString = AddComponent<StringSprite>();

@@ -72,7 +72,7 @@ namespace basecross{
 		//Õ“Ë”»’è
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//‰¡•”•ª‚Ì‚İ”½”­
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
 //		PtrColl->SetDrawActive(true);
 
 		//•¶š—ñ‚ğ‚Â‚¯‚é

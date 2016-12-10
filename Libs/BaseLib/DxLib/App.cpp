@@ -466,7 +466,8 @@ namespace basecross {
 		m_FullScreen{ FullScreen },
 		m_GameWidth{ Width },
 		m_GameHeight{ Height },
-		m_Timer()
+		m_Timer(),
+		m_ScriptsDirActive(false)
 	{
 		try {
 			//基準ディレクトリの設定
@@ -537,6 +538,37 @@ namespace basecross {
 			m_wstrShadersPath = m_wstrDataPath + L"Shaders\\";
 			m_wstrRelativeShadersPath = m_wstrRelativeDataPath + L"Shaders\\";
 
+			//Scriptsディレクトリを探す
+			m_wstrScriptsPath = m_wstrDir;
+			m_wstrScriptsPath += L"scripts";
+			//まず、実行ファイルと同じディレクトリを探す
+			RetCode = GetFileAttributes(m_wstrScriptsPath.c_str());
+			if (RetCode == 0xFFFFFFFF) {
+				//失敗した
+				m_wstrScriptsPath = m_wstrDir;
+				m_wstrScriptsPath += L"..\\scripts";
+				RetCode = GetFileAttributes(m_wstrDataPath.c_str());
+				if (RetCode == 0xFFFFFFFF) {
+					//再び失敗した
+					//Scriptsディレクトリは必須ではないので再び
+					//実行ファイルと同じディレクトリに設定
+					m_ScriptsDirActive = false;
+					m_wstrScriptsPath = L"";
+					m_wstrScriptsPath += L"";
+				}
+				else {
+					m_ScriptsDirActive = true;
+					m_wstrScriptsPath += L"\\";
+					//相対パスの設定
+					m_wstrRelativeScriptsPath = L"..\\scripts\\";
+				}
+			}
+			else {
+				m_ScriptsDirActive = true;
+				m_wstrScriptsPath += L"\\";
+				//相対パスの設定
+				m_wstrRelativeScriptsPath = L"scripts\\";
+			}
 
 			////デバイスリソースの構築
 			m_DeviceResources = shared_ptr<DeviceResources>(new DeviceResources(hWnd, FullScreen, Width, Height));

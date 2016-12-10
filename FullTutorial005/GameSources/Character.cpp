@@ -574,7 +574,7 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obb‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrColl = AddComponent<CollisionObb>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		//d—Í‚ğ‚Â‚¯‚é
 		auto PtrGravity = AddComponent<Gravity>();

@@ -154,6 +154,7 @@ BOOL CFbx2BinVS2015App::OnIdle(LONG lCount)
 	//XV•`‰æˆ—
 	App::GetApp()->UpdateDraw(1);
 
+
 	return TRUE;
 }
 

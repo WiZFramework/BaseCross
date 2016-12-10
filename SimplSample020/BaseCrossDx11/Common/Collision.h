@@ -17,6 +17,7 @@ namespace basecross {
 	enum class IsHitAction {
 		AutoOnObjectRepel,	///<反発
 		Slide,	//滑る
+		AutoOnParent,	//親子関係を実装
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -193,6 +194,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief /GravityとRigidbodyの後処理（Collision共通）
+		@param[in]	DestColl	相手のCollision
+		@param[in]	ContactBase	スライドの基準となる法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AfterCollisionSub(const shared_ptr<Collision>& DestColl,const Vector3& ContactBase);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereとの衝突後処理

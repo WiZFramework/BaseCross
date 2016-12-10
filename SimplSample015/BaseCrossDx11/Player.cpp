@@ -139,7 +139,7 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Slide);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -191,11 +191,6 @@ namespace basecross{
 		if (PtrSpark) {
 			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
-	}
-
-	void Player::OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) {
-		//継続して衝突するオブジェクトがあったとき
-		//ここには衝突継続中の処理を記述
 	}
 
 	void Player::OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {

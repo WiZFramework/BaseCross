@@ -62,6 +62,7 @@ namespace basecross{
 		//auto PtrCol = AddComponent<CollisionObb>();
 		//CollisionSphereを使う場合は、OBBを無効にして以下を有効にする
 		auto PtrCol = AddComponent<CollisionSphere>();
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
 		//コリジョンを表示する場合は以下を設定
 		PtrCol->SetDrawActive(true);
 

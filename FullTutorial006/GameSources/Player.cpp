@@ -35,8 +35,8 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//Õ“Ë”»’è
 		auto PtrColl = AddComponent<CollisionSphere>();
-		//‰¡•”•ª‚Ì‚İ”½”­
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		//e‚Ì‰e‹¿‚ğó‚¯‚é
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		PtrColl->SetDrawActive(true);
 

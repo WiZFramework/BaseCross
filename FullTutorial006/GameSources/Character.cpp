@@ -51,8 +51,8 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obb‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrColl = AddComponent<CollisionObb>();
-		//‰¡•”•ª‚Ì‚İ”½”­
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		//e‚Ì‰e‹¿‚ğó‚¯‚é
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();

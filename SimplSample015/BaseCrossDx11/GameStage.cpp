@@ -189,6 +189,17 @@ namespace basecross {
 			Vector2(160.0f, 40.0f),Vector2(500.0f,-280.0f));
 	}
 
+	//スコアスプライト作成
+	void GameStage::CreateScoreSprite() {
+		AddGameObject<ScoreSprite>(4,
+			L"NUMBER_TX", 
+			true,
+			Vector2(320.0f, 80.0f), 
+			Vector2(0.0f,300.0f));
+	}
+
+
+
 	//左上で回転する立方体
 	void GameStage::CreateRollingCube() {
 		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
@@ -254,6 +265,8 @@ namespace basecross {
 			CreateWallSprite();
 			//スクロールするスプライト作成
 			CreateScrollSprite();
+			//スコアスプライト作成
+			CreateScoreSprite();
 			//左上で回転する立方体
 			CreateRollingCube();
 			//左上で形状が変わる球体
@@ -268,6 +281,15 @@ namespace basecross {
 		catch (...) {
 			throw;
 		}
+	}
+
+	void GameStage::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += ElapsedTime;
+		auto ScorPtr = GetSharedGameObject<ScoreSprite>(L"ScoreSprite");
+		ScorPtr->SetScore(m_TotalTime);
+
+
 	}
 
 }

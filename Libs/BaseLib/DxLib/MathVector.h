@@ -1417,6 +1417,53 @@ namespace basecross{
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	現在のベクトルと法線ベクトルからスライドするベクトルを得てthisに設定する。
+		@param[in]	Normal	法線ベクトル
+		@param[in]	RefractionIndex	屈折率
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Slide(const Vector3& Norm) {
+			//thisと法線から直行線の長さ（内積で求める）
+			float Len = Dot(Norm);
+			//その長さに伸ばす
+			Vector3 Contact = Norm * Len;
+			//スライドする方向は現在のベクトルから引き算
+			*this = (*this - Contact);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スクリーン座標のthisをパラメータによって３D空間に射影する。
+		@param[in]	ViewportX	ビューポートの左
+		@param[in]	ViewportY	ビューポートの上
+		@param[in]	ViewportWidth	ビューポートの幅
+		@param[in]	ViewportHeight	ビューポートの高さ
+		@param[in]	ViewportMinZ	ビューポートの奥行最小値
+		@param[in]	ViewportMaxZ	ビューポートの奥行最大値
+		@param[in]	Projection	射影行列
+		@param[in]	View	ビュー行列
+		@param[in]	World	ワールド行列
+		@return	なし（thisに結果を代入する）
+		*/
+		//--------------------------------------------------------------------------------------
+		void Unproject(float ViewportX,float ViewportY,float ViewportWidth,float ViewportHeight,
+			float ViewportMinZ,float ViewportMaxZ,
+			const XMMATRIX& Projection, const XMMATRIX& View, const XMMATRIX& World
+			) {
+			*this = XMVector3Unproject(XMVECTOR(*this),
+				ViewportX,
+				ViewportY,
+				ViewportWidth,
+				ViewportHeight,
+				ViewportMinZ,
+				ViewportMaxZ,
+				Projection,
+				View,
+				World
+			);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	thisをmによってトランスフォームされたベクトルを設定する(XMMATRIX版)。
 		@param[in]	m	トランスフォームする行列
 		@return	なし

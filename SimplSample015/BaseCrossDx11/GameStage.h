@@ -32,6 +32,8 @@ namespace basecross {
 		void CreateWallSprite();
 		//スクロールするスプライト作成
 		void CreateScrollSprite();
+		//スコアスプライト作成
+		void CreateScoreSprite();
 		//左上で回転する立方体
 		void CreateRollingCube();
 		//形状が変わる球体
@@ -42,12 +44,17 @@ namespace basecross {
 		void CreateFire();
 		//プレイヤーの作成
 		void CreatePlayer();
+
+		float m_TotalTime;
 	public:
 		//構築と破棄
-		GameStage() :Stage() {}
+		GameStage() :Stage(), m_TotalTime(0){}
 		virtual ~GameStage() {}
 		//初期化
 		virtual void OnCreate()override;
+
+		virtual void OnUpdate()override;
+
 	};
 
 

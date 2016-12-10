@@ -214,6 +214,89 @@ namespace basecross {
 		}
 	}
 
+	void Collision::AfterCollisionSub(const shared_ptr<Collision>& DestColl, const Vector3& ContactBase) {
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		//親の速度
+		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
+		auto DestVelo = PtrDestTransform->GetPosition() - PtrDestTransform->GetBeforePosition();
+
+		//RigidbodyとGravityはそれぞれの速度の分散を設定する
+		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
+
+		Vector3 Slide(0, 0, 0);
+		bool horizontal = false;
+		if (PtrGrav) {
+			auto Grav = PtrGrav->GetGravity();
+			Grav.Normalize();
+			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
+				auto GravVelo = PtrGrav->GetGravityVelocity();
+				float dot = DestVelo.Dot(Grav);
+				if (dot > 0) {
+					auto DotVec = Grav * dot;
+					GravVelo -= DotVec;
+					PtrGrav->SetGravityVelocity(GravVelo);
+				}
+				else {
+					PtrGrav->SetGravityVelocityZero();
+				}
+				horizontal = true;
+			}
+			else {
+				//最近接点から直行線の長さ（内積で求める）
+				Slide = Vector3EX::Slide(PtrGrav->GetGravityVelocity(), ContactBase);
+				PtrGrav->SetGravityVelocity(Slide);
+				horizontal = false;
+			}
+		}
+
+		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
+		if (PtrRigid) {
+			switch (GetIsHitAction()) {
+			case IsHitAction::AutoOnObjectRepel:
+			{
+				if (horizontal) {
+					Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
+					PtrRigid->SetVelocity(Slide);
+				}
+				else {
+					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
+					//反発係数
+					Ref *= PtrRigid->GetReflection();
+					PtrRigid->SetVelocity(Ref);
+				}
+			}
+			break;
+			case IsHitAction::Slide:
+				Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
+				PtrRigid->SetVelocity(Slide);
+				break;
+			case IsHitAction::AutoOnParent:
+			{
+				if (horizontal) {
+					//位置を親に合わせる
+					auto Pos = PtrTransform->GetPosition();
+					Pos += DestVelo;
+					PtrTransform->ResetPosition(Pos);
+					//乗っているときはスライドさせる
+					Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
+					PtrRigid->SetVelocity(Slide);
+				}
+				else {
+					//乗ってないときは反発
+					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
+					//反発係数
+					Ref *= PtrRigid->GetReflection();
+					PtrRigid->SetVelocity(Ref);
+				}
+			}
+			break;
+			default:
+				break;
+			}
+		}
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct CollisionSphere::Impl;
@@ -419,67 +502,16 @@ namespace basecross {
 		//接点へのベクトル
 		Vector3 ContactBase = sp2.m_Center - sp.m_Center;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+
 		auto Pos = sp.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
 
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = false;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-				horizontal = true;
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-			break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 	}
 
 
@@ -491,67 +523,16 @@ namespace basecross {
 		//接点へのベクトル
 		Vector3 ContactBase = Ret - sp.m_Center;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+
 		auto Pos = sp.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
 
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = false;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-				horizontal = true;
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-				break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 	}
 
 	void CollisionSphere::AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime) {
@@ -562,67 +543,17 @@ namespace basecross {
 		//接点へのベクトル
 		Vector3 ContactBase = Ret - sp.m_Center;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+
+
 		auto Pos = sp.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
 
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = true;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-			break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
-
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 	}
 
 
@@ -874,67 +805,16 @@ namespace basecross {
 		//接点へのベクトル
 		Vector3 ContactBase = sp.m_Center - Ret;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+
 		auto Pos = obb.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
 
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = false;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-				horizontal = true;
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-			break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 	}
 
 	void CollisionObb::AfterCollision(const Vector3 TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime) {
@@ -946,67 +826,15 @@ namespace basecross {
 		//接点へのベクトル
 		Vector3 ContactBase = Ret - obb.m_Center;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto Pos = obb.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
 
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = false;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-				horizontal = true;
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-			break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 	}
 
 
@@ -1015,70 +843,15 @@ namespace basecross {
 		COLRECT rect = DestColl->GetColRect();
 		//Rectのベクトル
 		Vector3 ContactBase = DestColl->GetColRect().GetPLANE().m_Normal;
-	//	Vector3 ContactBase = Vector3(0,1.0,0);
-//		ContactBase *= -1.0f;
 		ContactBase.Normalize();
-		//最近接点から直行線の長さ（内積で求める）
-		float Len = Vector3EX::Dot(TotalVelocoty, ContactBase);
-		Vector3 Contact = ContactBase * Len;
-		//滑る方向は速度から接点へのベクトルを引き算
-		Vector3 Slide = TotalVelocoty - Contact;
+		//スライドする方向を計算
+		Vector3 Slide = Vector3EX::Slide(TotalVelocoty, ContactBase);
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto Pos = obb.m_Center + Slide * SpanTime;
 		PtrTransform->SetToBefore();
 		PtrTransform->SetPosition(Pos);
-
-		//RigidbodyとGravityはそれぞれの速度の分散を設定する
-		auto PtrGrav = GetGameObject()->GetComponent<Gravity>(false);
-		bool horizontal = false;
-		if (PtrGrav) {
-			auto Grav = PtrGrav->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, ContactBase) <= 0.01f) {
-				PtrGrav->SetGravityVelocityZero();
-				horizontal = true;
-			}
-			else {
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrGrav->GetGravityVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrGrav->GetGravityVelocity() - Contact;
-				PtrGrav->SetGravityVelocity(Slide);
-				horizontal = false;
-			}
-		}
-
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
-		if (PtrRigid) {
-			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
-			{
-				if (horizontal) {
-					//最近接点から直行線の長さ（内積で求める）
-					Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-					Contact = ContactBase * Len;
-					Slide = PtrRigid->GetVelocity() - Contact;
-					PtrRigid->SetVelocity(Slide);
-				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
-			}
-			break;
-			case IsHitAction::Slide:
-				//最近接点から直行線の長さ（内積で求める）
-				Len = Vector3EX::Dot(PtrRigid->GetVelocity(), ContactBase);
-				Contact = ContactBase * Len;
-				Slide = PtrRigid->GetVelocity() - Contact;
-				PtrRigid->SetVelocity(Slide);
-				break;
-			default:
-				break;
-			}
-		}
+		//GravityとRigidbodyの後処理（Collision共通）
+		AfterCollisionSub(DestColl, ContactBase);
 
 	}
 

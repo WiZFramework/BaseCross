@@ -18,6 +18,7 @@ namespace basecross {
 	enum class IsHitAction {
 		AutoOnObjectRepel,	///<”½”­
 		Slide,	//ŠŠ‚é
+		AutoOnParent,	//eqŠÖŒW‚ğÀ‘•
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -194,6 +195,10 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime) = 0;
+
+		void AfterCollisionSub(const shared_ptr<Collision>& DestColl,const Vector3& ContactBase);
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphere‚Æ‚ÌÕ“ËŒãˆ—
