@@ -156,13 +156,25 @@ namespace basecross {
 	void GameStage::CreateSphere() {
 		//配列の初期化
 		vector<Vector3> Vec = {
-			{ 20.0f, 0, 25.0f },
-			{ 20.0f, 0, 0.0f },
+			{ 20.0f, 0, 20.0f },
 		};
 		//配置オブジェクトの作成
 		for (auto v : Vec) {
 			AddGameObject<SphereObject>(v);
 		}
+	}
+
+	//ヒットするカプセルの作成
+	void GameStage::CreateCapsule() {
+		//配列の初期化
+		vector<Vector3> Vec = {
+			{ 20.0f, 0, 0.0f },
+		};
+		//配置オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<CapsuleObject>(v);
+		}
+
 	}
 
 	//固定のモデルの作成
@@ -190,6 +202,8 @@ namespace basecross {
 			CreateMoveBox();
 			//球体作成
 			CreateSphere();
+			//カプセルの作成
+			CreateCapsule();
 			//固定のモデルの作成
 			CreateStaticModel();
 			//追いかけるオブジェクトの作成

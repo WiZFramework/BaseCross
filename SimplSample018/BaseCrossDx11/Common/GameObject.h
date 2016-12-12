@@ -17,6 +17,7 @@ namespace basecross {
 		shared_ptr<Gravity> GetGravity()const;
 		shared_ptr<Collision> GetCollision()const;
 		shared_ptr<CollisionSphere> GetCollisionSphere()const;
+		shared_ptr<CollisionCapsule> GetCollisionCapsule()const;
 		shared_ptr<CollisionObb> GetCollisionObb()const;
 		shared_ptr<CollisionRect> GetCollisionRect()const;
 
@@ -25,6 +26,7 @@ namespace basecross {
 		void SetTransform(const shared_ptr<Transform>& Ptr);
 		void SetCollision(const shared_ptr<Collision>& Ptr);
 		void SetCollisionSphere(const shared_ptr<CollisionSphere>& Ptr);
+		void SetCollisionCapsule(const shared_ptr<CollisionCapsule>& Ptr);
 		void SetCollisionObb(const shared_ptr<CollisionObb>& Ptr);
 		void SetCollisionRect(const shared_ptr<CollisionRect>& Ptr);
 
@@ -443,6 +445,60 @@ namespace basecross {
 			return Ptr;
 		}
 
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionCapsuleコンポーネントの取得
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionCapsule> GetComponent<CollisionCapsule>(bool ExceptionActive)const {
+			auto Ptr = GetCollisionCapsule();
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"コンポーネントが見つかりません",
+						L"CollisionCapsule",
+						L"GameObject::GetComponent<CollisionCapsule>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionCapsuleコンポーネントの派生クラスの取得
+		@tparam	T	取得する型（CollisionCapsuleに型変換できるもの）
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		shared_ptr<T> GetDynamicCollisionCapsule(bool ExceptionActive = true)const {
+			auto Ptr = dynamic_pointer_cast<T>(GetCollisionCapsule());
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"指定の型へはCollisionSphereからキャストできません",
+						Util::GetWSTypeName<T>(),
+						L"GameObject::GetDynamicCollisionCapsule<T>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	CollisionObbコンポーネントの取得
@@ -851,6 +907,55 @@ namespace basecross {
 			return newPtr;
 		}
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionCapsuleコンポーネントの追加
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionCapsule> AddComponent<CollisionCapsule>() {
+			auto Ptr = GetCollisionCapsule();
+			if (Ptr) {
+				return Ptr;
+			}
+			else {
+				//無ければ新たに制作する
+				auto CollisionCapsulePtr = ObjectFactory::Create<CollisionCapsule>(GetThis<GameObject>());
+				SetCollisionCapsule(CollisionCapsulePtr);
+				return CollisionCapsulePtr;
+			}
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionCapsuleコンポーネントの派生クラスの追加
+		@tparam	T	取得する型（CollisionCapsuleに型変換できるもの）
+		@tparam	Ts	可変長変数の型
+		@param[in]	params	このコンポーネントを構築するのに使用するパラメータ。（第2パラメータ以降）
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T, typename... Ts>
+		shared_ptr<T> AddDynamicCollisionCapsule(Ts&&... params) {
+			//現在の検索は行わず、そのままセットする
+			shared_ptr<T> newPtr = ObjectFactory::Create<T>(GetThis<GameObject>(), params...);
+			//CollisionCapsuleにキャストしてみる
+			auto RetPtr = dynamic_pointer_cast<CollisionCapsule>(newPtr);
+			if (!RetPtr) {
+				//キャストできない
+				throw BaseException(
+					L"そのコンポーネントはCollisionCapsuleにキャストできません。",
+					Util::GetWSTypeName<T>(),
+					L"GameObject::AddDynamicCollisionCapsule<T>()"
+				);
+			}
+			SetCollisionCapsule(newPtr);
+			return newPtr;
+		}
+
+
+
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1062,13 +1167,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	衝突判定チェック（ステージより呼ばれる）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void CollisionChk();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突メッセージの発行（ステージより呼ばれる）。

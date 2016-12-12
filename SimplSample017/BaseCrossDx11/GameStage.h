@@ -8,7 +8,6 @@
 
 namespace basecross {
 
-
 	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス
 	//--------------------------------------------------------------------------------------
@@ -19,8 +18,18 @@ namespace basecross {
 		void CreateViewLight();
 		//プレートの作成
 		void CreatePlate();
+		//追いかけるオブジェクトの作成
+		void CreateSeekObject();
+		//固定のボックスの作成
+		void CreateFixedBox();
+		//上下移動しているボックスの作成
+		void CreateMoveBox();
 		//固定のモデルの作成
 		void CreateStaticModel();
+		//ヒットする球体の作成
+		void CreateSphere();
+		//ヒットするカプセルの作成
+		void CreateCapsule();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

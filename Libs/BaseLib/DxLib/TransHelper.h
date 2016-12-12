@@ -1562,7 +1562,7 @@ namespace basecross{
 			retvec = ClosestPtCapsuleOBB(cp, obb,flg);
 			float HitTime;
 			Vector3 Velocity = EndSp.m_Center - StartSp.m_Center;
-			if (CollisionTestSphereObb(StartSp, Velocity,obb, 0, 1.0f, HitTime)){
+			if (CollisionTestSphereObb(StartSp, Velocity,obb, 0,1.0f, HitTime)){
 				return true;
 			}
 			return false;
@@ -1610,6 +1610,94 @@ namespace basecross{
 				return true;
 			}
 			return CollisionTestCapsuleObb(SrcCapsule, SrcVelocity, DestObb, mid, EndTime, HitTime);
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEとCOLRECTとの衝突判定
+		@param[in]	obb	OBB
+		@param[in]	rect	COLRECT
+		@param[in]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_COLRECT(const CAPSULE& cp, const COLRECT& rect, Vector3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			//下から上
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+
+			PLANE p = rect.GetPLANE();
+			float t;
+			Vector3 q;
+			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
+			//仮に下の点で初期化
+			Vector3 Centor = StartSp.m_Center;
+			if (t <= 0) {
+				Centor = StartSp.m_Center;
+			}
+			else if (t >= 1.0f) {
+				Centor = EndSp.m_Center;
+			}
+			else {
+				Centor = q;
+			}
+			//Centerは、線上の面との最近接点
+			//球ととCOLRECTの最近接点を得る（衝突してるかどうかは関係ない）
+			ClosestPtPointCOLRECT(Centor, rect, retvec);
+			float HitTime;
+			Vector3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereRect(StartSp, Velocity, rect, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Capsuleと動かないRectの衝突判定
+		@param[in]	SrcCapsule	Srcの球
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestRect	Dest矩形
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestCapsuleRect(const CAPSULE& SrcCapsule, const Vector3& SrcVelocity,
+			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			CAPSULE SrcCapsule2 = SrcCapsule;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcCapsule2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcCapsule.m_Radius;
+			float Scale = SrcCapsule2.m_Radius / SrcCapsule.m_Radius;
+			//中心が原点の元のカプセルを作成
+			CAPSULE SrcBaseCapsule = SrcCapsule;
+			SrcBaseCapsule.SetCenter(Vector3(0, 0, 0));
+			//原点カプセルでスケーリング
+			//スケーリング行列の作成
+			Matrix4X4 ScalMat;
+			ScalMat.Scaling(Scale, Scale, Scale);
+			//各頂点をスケーリング
+			SrcCapsule2.m_PointBottom = Vector3EX::Transform(SrcBaseCapsule.m_PointBottom, ScalMat);
+			SrcCapsule2.m_PointTop = Vector3EX::Transform(SrcBaseCapsule.m_PointTop, ScalMat);
+			//中心を移動
+			SrcCapsule2.SetCenter(SrcCapsule.GetCenter() + SrcVelocity * mid);
+			Vector3 RetVec;
+			if (!HitTest::CAPSULE_COLRECT(SrcCapsule2, DestRect, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestCapsuleRect(SrcCapsule, SrcVelocity, DestRect, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestCapsuleRect(SrcCapsule, SrcVelocity, DestRect, mid, EndTime, HitTime);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

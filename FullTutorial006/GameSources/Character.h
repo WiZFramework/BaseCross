@@ -209,6 +209,20 @@ namespace basecross{
 		//‘€ì
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	class CapsuleObject : public GameObject;
+	//	—p“r: áŠQ•¨ƒJƒvƒZƒ‹
+	//--------------------------------------------------------------------------------------
+	class CapsuleObject : public GameObject {
+		Vector3 m_StartPos;
+	public:
+		//\’z‚Æ”jŠü
+		CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		virtual ~CapsuleObject();
+		//‰Šú‰»
+		virtual void OnCreate() override;
+		//‘€ì
+	};
 
 
 

@@ -26,7 +26,8 @@ namespace basecross{
 		auto Ptr = GetComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+//		Ptr->SetPosition(0, 0.125f, 0);
+		Ptr->SetPosition(0, 0.25f, 0);
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
@@ -36,9 +37,11 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 
 		//衝突判定をつける
-		auto PtrCol = AddComponent<CollisionSphere>();
+//		auto PtrCol = AddComponent<CollisionSphere>();
+		auto PtrCol = AddComponent<CollisionCapsule>();
 		//横部分のみ反発
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrCol->SetDrawActive(true);
 
 		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
 		SpanMat.DefTransformation(

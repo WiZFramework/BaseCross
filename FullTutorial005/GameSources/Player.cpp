@@ -107,7 +107,7 @@ namespace basecross{
 	//構築と破棄
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
-		m_MaxSpeed(30.0f),	//最高速度
+		m_MaxSpeed(40.0f),	//最高速度
 		m_Decel(0.95f),	//減速値
 		m_Mass(1.0f)	//質量
 	{}
@@ -131,7 +131,7 @@ namespace basecross{
 		auto Ptr = AddComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+		Ptr->SetPosition(0, 1.0f, 0);
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
@@ -139,7 +139,8 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrCol->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -189,7 +190,7 @@ namespace basecross{
 		//スパークの放出
 		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
 		if (PtrSpark) {
-			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
+//			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
 	}
 
@@ -203,7 +204,7 @@ namespace basecross{
 		//ファイアの放出
 		auto PtriFire = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
 		if (PtriFire) {
-			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
+//			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
 		}
 	}
 

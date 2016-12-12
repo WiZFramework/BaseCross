@@ -68,6 +68,11 @@ namespace basecross {
 		return dynamic_pointer_cast<CollisionSphere>(pImpl->m_Collision);
 	}
 
+	shared_ptr<CollisionCapsule> GameObject::GetCollisionCapsule()const {
+		return dynamic_pointer_cast<CollisionCapsule>(pImpl->m_Collision);
+	}
+
+
 	shared_ptr<CollisionObb> GameObject::GetCollisionObb()const {
 		return dynamic_pointer_cast<CollisionObb>(pImpl->m_Collision);
 	}
@@ -93,6 +98,12 @@ namespace basecross {
 		Ptr->AttachGameObject(GetThis<GameObject>());
 		pImpl->m_Collision = Ptr;
 	}
+
+	void GameObject::SetCollisionCapsule(const shared_ptr<CollisionCapsule>& Ptr) {
+		Ptr->AttachGameObject(GetThis<GameObject>());
+		pImpl->m_Collision = Ptr;
+	}
+
 
 	void GameObject::SetCollisionObb(const shared_ptr<CollisionObb>& Ptr) {
 		Ptr->AttachGameObject(GetThis<GameObject>());
@@ -234,18 +245,11 @@ namespace basecross {
 	void GameObject::CollisionReset() {
 		auto CollisionPtr = GetComponent<Collision>(false);
 		if (CollisionPtr) {
-			CollisionPtr->SetToBeforHitObject();
+			CollisionPtr->SetToBeforeHitObject();
 			CollisionPtr->ClearHitObject();
 		}
 	}
 
-	void GameObject::CollisionChk() {
-		auto CollisionPtr = GetComponent<Collision>(false);
-		if (CollisionPtr && CollisionPtr->IsUpdateActive()) {
-			//CollisionがあればUpdate()
-			CollisionPtr->OnUpdate();
-		}
-	}
 
 	void GameObject::ToMessageCollision() {
 		auto CollisionPtr = GetComponent<Collision>(false);
@@ -1111,7 +1115,11 @@ namespace basecross {
 		//配置オブジェクトの衝突チェック
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
-				ptr->CollisionChk();
+				auto CollisionPtr = ptr->GetComponent<Collision>(false);
+				if (CollisionPtr) {
+					//CollisionがあればUpdate()
+					CollisionPtr->OnUpdate();
+				}
 			}
 		}
 	}
@@ -1369,6 +1377,21 @@ namespace basecross {
 				new_vertices.push_back(new_v);
 			}
 			App::GetApp()->RegisterResource(L"DEFAULT_PC_SPHERE", MeshResource::CreateMeshResource(new_vertices, indices, false));
+
+			vertices.clear();
+			new_vertices.clear();
+			indices.clear();
+			Vector3 PointA(0, -1.0f / 2.0f, 0);
+			Vector3 PointB(0, 1.0f / 2.0f, 0);
+			//Capsuleの作成(ヘルパー関数を利用)
+			MeshUtill::CreateCapsule(1.0f, PointA, PointB,18, vertices, indices);
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionColor new_v;
+				new_v.position = vertices[i].position;
+				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_vertices.push_back(new_v);
+			}
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CAPSULE", MeshResource::CreateMeshResource(new_vertices, indices, false));
 
 			vertices.clear();
 			new_vertices.clear();

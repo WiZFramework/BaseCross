@@ -40,7 +40,7 @@ namespace basecross{
 		//衝突判定
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();

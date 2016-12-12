@@ -28,6 +28,8 @@ namespace basecross {
 		void CreateStaticModel();
 		//ヒットする球体の作成
 		void CreateSphere();
+		//ヒットするカプセルの作成
+		void CreateCapsule();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

@@ -393,9 +393,6 @@ namespace basecross{
 		PtrAction->SetLooped(true);
 		//アクション開始
 		PtrAction->Run();
-
-
-
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
@@ -441,6 +438,33 @@ namespace basecross{
 
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	class CapsuleObject : public GameObject;
+	//	用途: 障害物カプセル
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	CapsuleObject::CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+		GameObject(StagePtr),
+		m_StartPos(StartPos)
+	{}
+	CapsuleObject::~CapsuleObject() {}
+	//初期化
+	void CapsuleObject::OnCreate() {
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetPosition(m_StartPos);
+		PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
+		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+		//Capsuleの衝突判定をつける
+		auto CollPtr = AddComponent<CollisionCapsule>();
+		CollPtr->SetFixed(true);
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
+		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
+		PtrDraw->SetTextureResource(L"WALL_TX");
+
+	}
 
 
 
