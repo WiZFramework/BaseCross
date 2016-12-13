@@ -186,11 +186,15 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
+		}
+
 		//最初に衝突するオブジェクトがあったとき
 		//スパークの放出
 		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
 		if (PtrSpark) {
-//			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
+			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
 	}
 

@@ -139,7 +139,7 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -185,6 +185,9 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
+		}
 		//最初に衝突するオブジェクトがあったとき
 		//スパークの放出
 		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);

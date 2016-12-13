@@ -223,6 +223,86 @@ namespace basecross {
 	}
 
 
+	//でこぼこ床の作成
+	void GameStage::CreateUnevenGround() {
+		//でこぼこ床のデータの作成
+		AddGameObject<UnevenGroundData>();
+		//配列の初期化
+		vector< vector<Vector3> > Vec = {
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 15.0f)
+			},
+
+
+		};
+		//オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<UnevenGround>(v[0], v[1], v[2]);
+		}
+
+	}
 
 
 	//スパークの作成
@@ -271,6 +351,8 @@ namespace basecross {
 			CreateRollingCube();
 			//左上で形状が変わる球体
 			CreateTransSphere();
+			//でこぼこ床の作成
+			CreateUnevenGround();
 			//スパークの作成
 			CreateSpark();
 			//炎の作成

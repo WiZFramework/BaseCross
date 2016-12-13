@@ -40,6 +40,8 @@ namespace basecross {
 		void CreateWhiteCube();
 		//形状が変わる球体
 		void CreateTransSphere();
+		//でこぼこ床の作成
+		void CreateUnevenGround();
 		//スパークの作成
 		void CreateSpark();
 		//炎の作成

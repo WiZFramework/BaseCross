@@ -537,6 +537,45 @@ namespace basecross{
 		//‘€ì
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	class UnevenGroundData : public GameObject;
+	//	—p“r: ‚Å‚±‚Ú‚±°‚Ìƒf[ƒ^
+	//--------------------------------------------------------------------------------------
+	class UnevenGroundData : public GameObject {
+		vector<TRIANGLE> m_Triangles;
+	public:
+		//\’z‚Æ”jŠü
+		UnevenGroundData(const shared_ptr<Stage>& StagePtr);
+		virtual ~UnevenGroundData();
+		//‰Šú‰»
+		virtual void OnCreate() override;
+		//OŠpŒ`‚Ì”z—ñ‚ğ•Ô‚·
+		const vector<TRIANGLE>& GetTriangles() const {
+			return m_Triangles;
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class UnevenGround : public GameObject;
+	//	—p“r: ‚Å‚±‚Ú‚±°
+	//--------------------------------------------------------------------------------------
+	class UnevenGround : public GameObject {
+		Vector3 m_Scale;
+		Vector3 m_Rotation;
+		Vector3 m_Position;
+	public:
+		//\’z‚Æ”jŠü
+		UnevenGround(const shared_ptr<Stage>& StagePtr,
+			const Vector3& Scale,
+			const Vector3& Rotation,
+			const Vector3& Position);
+		virtual ~UnevenGround();
+		//‰Šú‰»
+		virtual void OnCreate() override;
+		//‘€ì
+	};
 
 
 }

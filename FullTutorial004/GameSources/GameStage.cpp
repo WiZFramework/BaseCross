@@ -162,7 +162,86 @@ namespace basecross {
 		}
 	}
 
+	//でこぼこ床の作成
+	void GameStage::CreateUnevenGround() {
+		//でこぼこ床のデータの作成
+		AddGameObject<UnevenGroundData>();
+		//配列の初期化
+		vector< vector<Vector3> > Vec = {
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 5.0f)
+			},
 
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 15.0f)
+			},
+
+
+		};
+		//オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<UnevenGround>(v[0], v[1], v[2]);
+		}
+
+	}
 
 	void GameStage::OnCreate() {
 		try {
@@ -178,6 +257,8 @@ namespace basecross {
 			CreateMoveBox();
 			//球体作成
 			CreateSphere();
+			//でこぼこ床の作成
+			CreateUnevenGround();
 			//追いかけるオブジェクトの作成
 			CreateSeekObject();
 			//プレーヤーの作成

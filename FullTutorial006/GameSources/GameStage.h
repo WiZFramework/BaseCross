@@ -30,6 +30,8 @@ namespace basecross {
 		void CreateSphere();
 		//ヒットするカプセルの作成
 		void CreateCapsule();
+		//でこぼこ床の作成
+		void CreateUnevenGround();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

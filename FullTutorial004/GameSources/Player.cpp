@@ -186,10 +186,16 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
+		}
 	}
 
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {
+
+
+
 		//文字列表示
 		//行動
 		wstring BEHAVIOR;

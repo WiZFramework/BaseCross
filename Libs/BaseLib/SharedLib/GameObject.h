@@ -20,17 +20,13 @@ namespace basecross {
 		shared_ptr<CollisionSphere> GetCollisionSphere()const;
 		shared_ptr<CollisionCapsule> GetCollisionCapsule()const;
 		shared_ptr<CollisionObb> GetCollisionObb()const;
+		shared_ptr<CollisionTriangles> GetCollisionTriangles()const;
 		shared_ptr<CollisionRect> GetCollisionRect()const;
 
 		void SetRigidbody(const shared_ptr<Rigidbody>& Ptr);
 		void SetGravity(const shared_ptr<Gravity>& Ptr);
 		void SetTransform(const shared_ptr<Transform>& Ptr);
 		void SetCollision(const shared_ptr<Collision>& Ptr);
-		void SetCollisionSphere(const shared_ptr<CollisionSphere>& Ptr);
-		void SetCollisionCapsule(const shared_ptr<CollisionCapsule>& Ptr);
-		void SetCollisionObb(const shared_ptr<CollisionObb>& Ptr);
-		void SetCollisionRect(const shared_ptr<CollisionRect>& Ptr);
-
 		void AddMakedComponent(type_index TypeIndex, const shared_ptr<Component>& Ptr);
 		template<typename T>
 		shared_ptr<T> SearchDynamicComponent()const {
@@ -552,6 +548,60 @@ namespace basecross {
 			return Ptr;
 		}
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionTrianglesコンポーネントの取得
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionTriangles> GetComponent<CollisionTriangles>(bool ExceptionActive)const {
+			auto Ptr = GetCollisionTriangles();
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"コンポーネントが見つかりません",
+						L"CollisionTriangles",
+						L"GameObject::GetComponent<CollisionTriangles>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionTrianglesコンポーネントの派生クラスの取得
+		@tparam	T	取得する型（CollisionTrianglesに型変換できるもの）
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		shared_ptr<T> GetDynamicCollisionTriangles(bool ExceptionActive = true)const {
+			auto Ptr = dynamic_pointer_cast<T>(GetCollisionTriangles());
+			if (!Ptr) {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"指定の型へはCollisionTrianglesからキャストできません",
+						Util::GetWSTypeName<T>(),
+						L"GameObject::GetDynamicCollisionTriangles<T>()"
+					);
+				}
+				else {
+					return nullptr;
+				}
+			}
+			return Ptr;
+		}
+
+
+
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -567,7 +617,7 @@ namespace basecross {
 				if (ExceptionActive) {
 					throw BaseException(
 						L"コンポーネントが見つかりません",
-						L"CollisionObb",
+						L"CollisionRect",
 						L"GameObject::GetComponent<CollisionRect>()"
 					);
 				}
@@ -876,7 +926,7 @@ namespace basecross {
 			else {
 				//無ければ新たに制作する
 				auto CollisionSpherePtr = ObjectFactory::Create<CollisionSphere>(GetThis<GameObject>());
-				SetCollisionSphere(CollisionSpherePtr);
+				SetCollision(CollisionSpherePtr);
 				return CollisionSpherePtr;
 			}
 		}
@@ -904,7 +954,7 @@ namespace basecross {
 					L"GameObject::AddDynamicCollisionSphere<T>()"
 				);
 			}
-			SetCollisionSphere(newPtr);
+			SetCollision(newPtr);
 			return newPtr;
 		}
 
@@ -923,7 +973,7 @@ namespace basecross {
 			else {
 				//無ければ新たに制作する
 				auto CollisionCapsulePtr = ObjectFactory::Create<CollisionCapsule>(GetThis<GameObject>());
-				SetCollisionCapsule(CollisionCapsulePtr);
+				SetCollision(CollisionCapsulePtr);
 				return CollisionCapsulePtr;
 			}
 		}
@@ -951,7 +1001,7 @@ namespace basecross {
 					L"GameObject::AddDynamicCollisionCapsule<T>()"
 				);
 			}
-			SetCollisionCapsule(newPtr);
+			SetCollision(newPtr);
 			return newPtr;
 		}
 
@@ -973,7 +1023,7 @@ namespace basecross {
 			else {
 				//無ければ新たに制作する
 				auto CollisionObbPtr = ObjectFactory::Create<CollisionObb>(GetThis<GameObject>());
-				SetCollisionObb(CollisionObbPtr);
+				SetCollision(CollisionObbPtr);
 				return CollisionObbPtr;
 			}
 		}
@@ -1001,9 +1051,59 @@ namespace basecross {
 					L"GameObject::AddDynamicCollisionObb<T>()"
 				);
 			}
-			SetCollisionObb(newPtr);
+			SetCollision(newPtr);
 			return newPtr;
 		}
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionTrianglesコンポーネントの追加
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <>
+		shared_ptr<CollisionTriangles> AddComponent<CollisionTriangles>() {
+			auto Ptr = GetCollisionTriangles();
+			if (Ptr) {
+				return Ptr;
+			}
+			else {
+				//無ければ新たに制作する
+				auto CollisionTrianglesPtr = ObjectFactory::Create<CollisionTriangles>(GetThis<GameObject>());
+				SetCollision(CollisionTrianglesPtr);
+				return CollisionTrianglesPtr;
+			}
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionTrianglesコンポーネントの派生クラスの追加
+		@tparam	T	取得する型（CollisionTrianglesに型変換できるもの）
+		@tparam	Ts	可変長変数の型
+		@param[in]	params	このコンポーネントを構築するのに使用するパラメータ。（第2パラメータ以降）
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T, typename... Ts>
+		shared_ptr<T> AddDynamicCollisionTriangles(Ts&&... params) {
+			//現在の検索は行わず、そのままセットする
+			shared_ptr<T> newPtr = ObjectFactory::Create<T>(GetThis<GameObject>(), params...);
+			//CollisionTrianglesにキャストしてみる
+			auto RetPtr = dynamic_pointer_cast<CollisionTriangles>(newPtr);
+			if (!RetPtr) {
+				//キャストできない
+				throw BaseException(
+					L"そのコンポーネントはCollisionTrianglesにキャストできません。",
+					Util::GetWSTypeName<T>(),
+					L"GameObject::AddDynamicCollisionTriangles<T>()"
+				);
+			}
+			SetCollision(newPtr);
+			return newPtr;
+		}
+
+
 
 
 		//--------------------------------------------------------------------------------------
@@ -1021,7 +1121,7 @@ namespace basecross {
 			else {
 				//無ければ新たに制作する
 				auto CollisionRectPtr = ObjectFactory::Create<CollisionRect>(GetThis<GameObject>());
-				SetCollisionRect(CollisionRectPtr);
+				SetCollision(CollisionRectPtr);
 				return CollisionRectPtr;
 			}
 		}
@@ -1049,7 +1149,7 @@ namespace basecross {
 					L"GameObject::AddDynamicCollisionRect<T>()"
 				);
 			}
-			SetCollisionRect(newPtr);
+			SetCollision(newPtr);
 			return newPtr;
 		}
 

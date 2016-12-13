@@ -50,9 +50,14 @@ namespace basecross{
 		//分離行動をつける
 		AddComponent<SeparationSteering>(Group);
 		//Obbの衝突判定をつける
-		auto PtrColl = AddComponent<CollisionObb>();
+//		auto PtrColl = AddComponent<CollisionObb>();
+		//CollisionSphereの衝突判定をつける
+		auto PtrColl = AddComponent<CollisionSphere>();
 		//親の影響を受ける
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		//Y方向のスケーリングで球を計算
+		PtrColl->SetCalcScaling(CalcScaling::YScale);
+		PtrColl->SetDrawActive(true);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -462,6 +467,108 @@ namespace basecross{
 		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
 		auto PtrDraw = AddComponent<PNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
+		PtrDraw->SetTextureResource(L"WALL_TX");
+
+	}
+
+	//--------------------------------------------------------------------------------------
+	//	class UnevenGroundData : public GameObject;
+	//	用途: でこぼこ床のデータ
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	UnevenGroundData::UnevenGroundData(const shared_ptr<Stage>& StagePtr) :
+		GameObject(StagePtr)
+	{}
+	UnevenGroundData::~UnevenGroundData() {}
+	//初期化
+	void UnevenGroundData::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices =
+		{
+			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vector3(0.0f, 0.5f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vector3(0.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 1.0f)) },
+		};
+		//インデックス配列
+		vector<uint16_t> indices = {
+			0, 1, 2,
+			1, 3, 2 ,
+			1, 4, 5 ,
+			3, 1, 5
+		};
+		wstring CheckStr = L"UnevenGroundMesh";
+		//リソースが登録されているか確認し、登録されてなければ作成
+		//こうしておくとほかのステージでもメッシュを使える
+		if (!App::GetApp()->CheckResource<MeshResource>(CheckStr)) {
+			//頂点を使って表示用メッシュリソースの作成
+			auto mesh = MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, false);
+			//表示用メッシュをリソースに登録
+			App::GetApp()->RegisterResource(CheckStr, mesh);
+			//ワイアフレーム表示用のメッシュの作成
+			vector<VertexPositionColor> new_vertices;
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionColor new_v;
+				new_v.position = vertices[i].position;
+				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_vertices.push_back(new_v);
+			}
+			//ワイアフレームメッシュをリソースに登録
+			App::GetApp()->RegisterResource(L"UnevenGroundWireMesh", MeshResource::CreateMeshResource(new_vertices, indices, false));
+		}
+		//三角形衝突判定用の三角形の配列を作成
+		//こちらはステージ単位
+		size_t i = 0;
+		while (i < indices.size()) {
+			TRIANGLE tr;
+			tr.m_A = vertices[indices[i]].position;
+			tr.m_B = vertices[indices[i + 1]].position;
+			tr.m_C = vertices[indices[i + 2]].position;
+			m_Triangles.push_back(tr);
+			i += 3;
+		}
+
+		//自分自身をシェアオブジェクトに登録
+		GetStage()->SetSharedGameObject(L"UnevenGroundData", GetThis<UnevenGroundData>());
+
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class UnevenGround : public GameObject;
+	//	用途: でこぼこ床
+	//--------------------------------------------------------------------------------------
+	UnevenGround::UnevenGround(const shared_ptr<Stage>& StagePtr,
+		const Vector3& Scale,
+		const Vector3& Rotation,
+		const Vector3& Position) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position)
+	{
+	}
+	UnevenGround::~UnevenGround() {}
+	//初期化
+	void UnevenGround::OnCreate() {
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_Scale);
+		PtrTransform->SetRotation(m_Rotation);
+		PtrTransform->SetPosition(m_Position);
+
+		auto DataPtr = GetStage()->GetSharedGameObject<UnevenGroundData>(L"UnevenGroundData");
+		//三角形コリジョン
+		auto PtrTriangle = AddComponent<CollisionTriangles>();
+		PtrTriangle->SetMakedTriangles(DataPtr->GetTriangles());
+		PtrTriangle->SetWireFrameMesh(L"UnevenGroundWireMesh");
+		PtrTriangle->SetDrawActive(true);
+
+		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		PtrDraw->SetMeshResource(L"UnevenGroundMesh");
+		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"WALL_TX");
 
 	}

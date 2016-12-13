@@ -1819,11 +1819,12 @@ namespace basecross {
 		@brief	ワイアフレーム描画処理
 		@param[in]	GameObj	ゲームオブジェクト
 		@param[in]	Mesh	PCメッシュ
+
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		void DrawWireFrame(const shared_ptr<GameObject>& GameObj,
-			const shared_ptr<MeshResource>& Mesh);
+			const shared_ptr<MeshResource>& Mesh,const Matrix4X4& MeshToTransformMatrix = Matrix4X4());
 	};
 
 }

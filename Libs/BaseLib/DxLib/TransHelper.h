@@ -534,6 +534,39 @@ namespace basecross{
 		}
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	衝突判定に使用する三角形（時計回り）
+	//--------------------------------------------------------------------------------------
+	struct TRIANGLE {
+		Vector3 m_A;
+		Vector3 m_B;
+		Vector3 m_C;
+		void Set(const Vector3& baseA, const Vector3& baseB, const Vector3& baseC,
+			const Matrix4X4& m) {
+			m_A = Vector3EX::Transform(baseA, m);
+			m_B = Vector3EX::Transform(baseB, m);
+			m_C = Vector3EX::Transform(baseC, m);
+		}
+		TRIANGLE(){}
+		TRIANGLE(const Vector3& baseA, const Vector3& baseB, const Vector3& baseC,
+			const Matrix4X4& m) {
+			Set(baseA,baseB,baseC,m);
+		}
+		Vector3 GetNormal()const {
+			Vector3 Ret =
+				Vector3EX::Cross(
+					m_B - m_A,
+					m_C - m_A
+				);
+			return Ret;
+		}
+		PLANE GetPLANE() const {
+			//3点を使って面を作成
+			PLANE ret(m_A, m_B, m_C);
+			return ret;
+		}
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	衝突判定に使用するRECT
@@ -611,6 +644,36 @@ namespace basecross{
 			if(n > max) return max;
 			return n;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	chkをmin_vおよびmax_vと比較して最小または最大のベクトルを設定する
+		@param[in]	chk	チェックするベクトル
+		@param[in,out]	min_v	比較して最小値を設定するベクトル
+		@param[in,out]	max_v	比較して最大値を設定するベクトル
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ChkSetMinMax(const Vector3& chk, Vector3& min_v, Vector3& max_v) {
+			if (min_v.x > chk.x) {
+				min_v.x = chk.x;
+			}
+			if (max_v.x < chk.x) {
+				max_v.x = chk.x;
+			}
+			if (min_v.y > chk.y) {
+				min_v.y = chk.y;
+			}
+			if (max_v.y < chk.y) {
+				max_v.y = chk.y;
+			}
+			if (min_v.z > chk.z) {
+				min_v.z = chk.z;
+			}
+			if (max_v.z < chk.z) {
+				max_v.z = chk.z;
+			}
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	点が面の裏側にあるかどうか判定
@@ -784,6 +847,66 @@ namespace basecross{
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	pointから見た三角形の最近接点を得る
+		@param[in]	point	基準点
+		@param[in]	t	三角形
+		@param[out]	retvec	最近接点を返す参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointTriangle(const Vector3& point,const TRIANGLE& t,Vector3& retvec) {
+			Vector3 ab = t.m_B - t.m_A;
+			Vector3 ac = t.m_C - t.m_A;
+			Vector3 ap = point - t.m_A;
+			float d1 = ab.Dot(ap);
+			float d2 = ac.Dot(ap);
+			if (d1 <= 0.0f && d2 <= 0.0f) {
+				retvec = t.m_A;
+				return;
+			}
+
+			Vector3 bp = point - t.m_B;
+			float d3 = ab.Dot(bp);
+			float d4 = ac.Dot(bp);
+			if (d3 >= 0.0f && d4 <= d3) {
+				retvec = t.m_B;
+				return;
+			}
+			float vc = d1 * d4 - d3 * d2;
+			if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+				float v = d1 / (d1 - d3);
+				retvec = v * ab + t.m_A;
+				return;
+			}
+
+			Vector3 cp = point - t.m_C;
+			float d5 = ab.Dot(cp);
+			float d6 = ac.Dot(cp);
+			if (d6 >= 0.0f && d5 <= d6) {
+				retvec = t.m_C;
+				return;
+			}
+			float vb = d5 * d2 - d1 * d6;
+
+			if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+				float w = d2 / (d2 - d6);
+				retvec = w * ac + t.m_A;
+				return;
+			}
+
+			float va = d3 * d6 - d5 * d4;
+			if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+				float w = (d4 - d3) / ((d4 - d3) + (d5 -d6));
+				retvec = w * (t.m_C - t.m_B) + t.m_B;
+				return;
+			}
+			float denon = 1.0f / (va + vb + vc);
+			float v = vb * denon;
+			float w = vc * denon;
+			retvec = ab * v + ac * w + t.m_A;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	pointから見たOBBの最近接点を得る
 		@param[in]	point	基準点
 		@param[in]	obb	OBB
@@ -929,6 +1052,8 @@ namespace basecross{
 				}
 				return false;
 		}
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	AABBとAABBとの衝突判定
@@ -1244,6 +1369,7 @@ namespace basecross{
 			return CollisionTestSphereRect(SrcSp, SrcVelocity, DestRect, mid, EndTime, HitTime);
 		}
 
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OBBとPLANEとの衝突判定
@@ -1277,6 +1403,56 @@ namespace basecross{
 			}
 			return false;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREとTRIANGLEとの衝突判定
+		@param[in]	sp	SPHERE
+		@param[in]	tri	TRIANGLE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_TRIANGLE(const SPHERE& sp, const TRIANGLE& tri, Vector3& retvec) {
+			ClosestPtPointTriangle(sp.m_Center, tri, retvec);
+			Vector3 v = retvec - sp.m_Center;
+			return v.Dot(v) <= sp.m_Radius * sp.m_Radius;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Sphereと動かないTriangleの衝突判定
+		@param[in]	SrcSp	Srcの球
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestRect	Dest矩形
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestSphereTriangle(const SPHERE& SrcSp, const Vector3& SrcVelocity,
+			const TRIANGLE& DestTri, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			SPHERE SrcSp2;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
+			SrcSp2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcSp.m_Radius;
+			Vector3 RetVec;
+			if (!HitTest::SPHERE_TRIANGLE(SrcSp2, DestTri, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestSphereTriangle(SrcSp, SrcVelocity, DestTri, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestSphereTriangle(SrcSp, SrcVelocity, DestTri, mid, EndTime, HitTime);
+		}
+
+
+
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1540,6 +1716,131 @@ namespace basecross{
 			flg = 0;
 			return retvec;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとAabbの最近接点を得る
+		@param[in]	cp	カプセル
+		@param[in]	aabb	AABB
+		@param[out]	flg	位置関係
+		@return	最近接点
+		*/
+		//--------------------------------------------------------------------------------------
+		static Vector3 ClosestPtCapsuleAABB(const CAPSULE& cp, const AABB& aabb, int& flg) {
+			SPHERE Sp;
+			Sp.m_Center = cp.m_PointBottom;
+			Sp.m_Radius = cp.m_Radius;
+			Vector3 retvec;
+			//スタート位置で最近接点を得る
+			HitTest::SPHERE_AABB(Sp, aabb, retvec);
+			//内積を図る
+			Vector3 Base = cp.m_PointTop - cp.m_PointBottom;
+			Base.Normalize();
+			Vector3 Dest = retvec - cp.m_PointBottom;
+			float dot = Base.Dot(Dest);
+			if (dot < 0) {
+				//スタート位置の球体の外側
+				//retvecは有効
+				flg = -1;
+				return retvec;
+			}
+			float  size = Vector3EX::Length(cp.m_PointTop - cp.m_PointBottom);
+			if (dot > size) {
+				//終点より先にある
+				Sp.m_Center = cp.m_PointTop;
+				HitTest::SPHERE_AABB(Sp, aabb, retvec);
+				//終点で最近接点をとる
+				flg = 1;
+				return retvec;
+			}
+			//中心とaabbの最近接点を得る
+			HitTest::ClosestPtPointAABB(cp.GetCenter(), aabb, retvec);
+			float t;
+			Vector3 SegPoint;
+			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
+			Vector3 Span = retvec - SegPoint;
+			Span.Normalize();
+			Span *= cp.m_Radius;
+			SegPoint += Span;
+			retvec = SegPoint;
+			flg = 0;
+			return retvec;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとAABBの衝突判定
+		@param[in]	cp	カプセル
+		@param[in]	aabb	AABB
+		@param[out]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_AABB(const CAPSULE& cp, const AABB& aabb, Vector3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+			//各点とaabbの最近接点を得る
+			//カプセルとAABBの最近接点を得る（衝突してるかどうかは関係ない）
+			int flg;
+			retvec = ClosestPtCapsuleAABB(cp, aabb, flg);
+			float HitTime;
+			Vector3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereAabb(StartSp, Velocity, aabb, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルと動かないAABBの衝突判定
+		@param[in]	SrcCapsule	Srcのカプセル
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestAabb	DestのAABB
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestCapsuleAabb(const CAPSULE& SrcCapsule, const Vector3& SrcVelocity,
+			const AABB& DestAabb, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			CAPSULE SrcCapsule2 = SrcCapsule;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcCapsule2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcCapsule.m_Radius;
+			float Scale = SrcCapsule2.m_Radius / SrcCapsule.m_Radius;
+			//中心が原点の元のカプセルを作成
+			CAPSULE SrcBaseCapsule = SrcCapsule;
+			SrcBaseCapsule.SetCenter(Vector3(0, 0, 0));
+			//原点カプセルでスケーリング
+			//スケーリング行列の作成
+			Matrix4X4 ScalMat;
+			ScalMat.Scaling(Scale, Scale, Scale);
+			//各頂点をスケーリング
+			SrcCapsule2.m_PointBottom = Vector3EX::Transform(SrcBaseCapsule.m_PointBottom, ScalMat);
+			SrcCapsule2.m_PointTop = Vector3EX::Transform(SrcBaseCapsule.m_PointTop, ScalMat);
+			//中心を移動
+			SrcCapsule2.SetCenter(SrcCapsule.GetCenter() + SrcVelocity * mid);
+			Vector3 RetVec;
+			if (!HitTest::CAPSULE_AABB(SrcCapsule2, DestAabb, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestCapsuleAabb(SrcCapsule, SrcVelocity, DestAabb, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestCapsuleAabb(SrcCapsule, SrcVelocity, DestAabb, mid, EndTime, HitTime);
+		}
+
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カプセルとObbの衝突判定
@@ -1614,8 +1915,100 @@ namespace basecross{
 
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	CAPSULEとTRIANGLEとの衝突判定
+		@param[in]	cp	CAPSULE
+		@param[in]	rect	COLRECT
+		@param[in]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_TRIANGLE(const CAPSULE& cp, const TRIANGLE& tri, Vector3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			//下から上
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+
+			PLANE p = tri.GetPLANE();
+			float t;
+			Vector3 q;
+			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
+			//仮に下の点で初期化
+			Vector3 Centor = StartSp.m_Center;
+			if (t <= 0) {
+				Centor = StartSp.m_Center;
+			}
+			else if (t >= 1.0f) {
+				Centor = EndSp.m_Center;
+			}
+			else {
+				Centor = q;
+			}
+			//Centerは、線上の面との最近接点
+			//点とTRIANGLEの最近接点を得る（衝突してるかどうかは関係ない）
+			ClosestPtPointTriangle(Centor, tri, retvec);
+			float HitTime;
+			Vector3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereTriangle(StartSp, Velocity, tri, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Capsuleと動かないTriangleの衝突判定
+		@param[in]	SrcCapsule	Srcのカプセル
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestTri		Dest三角形
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestCapsuleTriangle(const CAPSULE& SrcCapsule, const Vector3& SrcVelocity,
+			const TRIANGLE& DestTri, float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			CAPSULE SrcCapsule2 = SrcCapsule;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcCapsule2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcCapsule.m_Radius;
+			float Scale = SrcCapsule2.m_Radius / SrcCapsule.m_Radius;
+			//中心が原点の元のカプセルを作成
+			CAPSULE SrcBaseCapsule = SrcCapsule;
+			SrcBaseCapsule.SetCenter(Vector3(0, 0, 0));
+			//原点カプセルでスケーリング
+			//スケーリング行列の作成
+			Matrix4X4 ScalMat;
+			ScalMat.Scaling(Scale, Scale, Scale);
+			//各頂点をスケーリング
+			SrcCapsule2.m_PointBottom = Vector3EX::Transform(SrcBaseCapsule.m_PointBottom, ScalMat);
+			SrcCapsule2.m_PointTop = Vector3EX::Transform(SrcBaseCapsule.m_PointTop, ScalMat);
+			//中心を移動
+			SrcCapsule2.SetCenter(SrcCapsule.GetCenter() + SrcVelocity * mid);
+			Vector3 RetVec;
+			if (!HitTest::CAPSULE_TRIANGLE(SrcCapsule2, DestTri, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestCapsuleTriangle(SrcCapsule, SrcVelocity, DestTri, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestCapsuleTriangle(SrcCapsule, SrcVelocity, DestTri, mid, EndTime, HitTime);
+		}
+
+
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	CAPSULEとCOLRECTとの衝突判定
-		@param[in]	obb	OBB
+		@param[in]	cp	CAPSULE
 		@param[in]	rect	COLRECT
 		@param[in]	retvec	最近接点
 		@return	衝突していればtrue

@@ -26,6 +26,8 @@ namespace basecross {
 		void CreateMoveBox();
 		//ヒットする球体の作成
 		void CreateSphere();
+		//でこぼこ床の作成
+		void CreateUnevenGround();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

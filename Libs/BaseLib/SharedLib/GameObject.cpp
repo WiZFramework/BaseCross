@@ -78,6 +78,11 @@ namespace basecross {
 		return dynamic_pointer_cast<CollisionObb>(pImpl->m_Collision);
 	}
 
+	shared_ptr<CollisionTriangles> GameObject::GetCollisionTriangles()const {
+		return dynamic_pointer_cast<CollisionTriangles>(pImpl->m_Collision);
+	}
+
+
 	shared_ptr<CollisionRect> GameObject::GetCollisionRect()const {
 		return dynamic_pointer_cast<CollisionRect>(pImpl->m_Collision);
 	}
@@ -95,27 +100,6 @@ namespace basecross {
 		Ptr->AttachGameObject(GetThis<GameObject>());
 		pImpl->m_Collision = Ptr;
 	}
-	void GameObject::SetCollisionSphere(const shared_ptr<CollisionSphere>& Ptr) {
-		Ptr->AttachGameObject(GetThis<GameObject>());
-		pImpl->m_Collision = Ptr;
-	}
-
-	void GameObject::SetCollisionCapsule(const shared_ptr<CollisionCapsule>& Ptr) {
-		Ptr->AttachGameObject(GetThis<GameObject>());
-		pImpl->m_Collision = Ptr;
-	}
-
-
-	void GameObject::SetCollisionObb(const shared_ptr<CollisionObb>& Ptr) {
-		Ptr->AttachGameObject(GetThis<GameObject>());
-		pImpl->m_Collision = Ptr;
-	}
-
-	void GameObject::SetCollisionRect(const shared_ptr<CollisionRect>& Ptr) {
-		Ptr->AttachGameObject(GetThis<GameObject>());
-		pImpl->m_Collision = Ptr;
-	}
-
 
 	void GameObject::SetTransform(const shared_ptr<Transform>& Ptr) {
 		Ptr->AttachGameObject(GetThis<GameObject>());

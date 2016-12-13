@@ -4632,9 +4632,9 @@ namespace basecross {
 	void GenericDraw::OnCreate() {}
 
 	void GenericDraw::DrawWireFrame(const shared_ptr<GameObject>& GameObj,
-		const shared_ptr<MeshResource>& Mesh) {
+		const shared_ptr<MeshResource>& Mesh, const Matrix4X4& MeshToTransformMatrix) {
 		Draw3DPrim::PCWireFrameDraw(GameObj, Mesh,
-			Color4(0,0,0,0), Color4(1, 1, 1, 1),Matrix4X4());
+			Color4(0,0,0,0), Color4(1, 1, 1, 1), MeshToTransformMatrix);
 	}
 
 }
