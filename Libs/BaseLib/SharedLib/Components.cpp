@@ -86,15 +86,24 @@ namespace basecross {
 		Vector3 m_BeforePivot;
 		Quaternion m_BeforeQuaternion;
 		Vector3 m_BeforePosition;
+		//再計算抑制用変数
+		bool m_BeforeChangeed;
+		Matrix4X4 m_BeforeWorldMatrix;
 		//現在の変数
 		Vector3 m_Scale;
 		Vector3 m_Pivot;
 		Quaternion m_Quaternion;
 		Vector3 m_Position;
+		//再計算抑制用変数
+		bool m_Changeed;
+		Matrix4X4 m_WorldMatrix;
+
 		Impl():
 			//スケールのみ初期化（他はデフォルト処理でよい）
 			m_BeforeScale(1.0f,1.0f,1.0f),
-			m_Scale(1.0f, 1.0f, 1.0f)
+			m_Scale(1.0f, 1.0f, 1.0f),
+			m_BeforeChangeed(true),
+			m_Changeed(true)
 		{}
 		~Impl() {}
 	};
@@ -131,14 +140,22 @@ namespace basecross {
 		return pImpl->m_BeforePosition;
 	}
 
-	Matrix4X4 Transform::GetBeforeWorldMatrix() const{
-		Matrix4X4 mat;
-		mat.AffineTransformation(pImpl->m_BeforeScale,
-			pImpl->m_BeforePivot, 
-			pImpl->m_BeforeQuaternion, 
-			pImpl->m_BeforePosition
-		);
-		return mat;
+	bool Transform::IsSameBeforeWorldMatrix(const Matrix4X4& mat) const {
+		return mat.EqualInt(GetBeforeWorldMatrix());
+	}
+
+
+	const Matrix4X4& Transform::GetBeforeWorldMatrix() const{
+		if (pImpl->m_BeforeChangeed) {
+			pImpl->m_BeforeWorldMatrix.AffineTransformation(
+				pImpl->m_BeforeScale,
+				pImpl->m_BeforePivot,
+				pImpl->m_BeforeQuaternion,
+				pImpl->m_BeforePosition
+			);
+			pImpl->m_BeforeChangeed = false;
+		}
+		return pImpl->m_BeforeWorldMatrix;
 	}
 
 
@@ -149,6 +166,7 @@ namespace basecross {
 	}
 
 	void Transform::SetScale(const Vector3& Scale) {
+		pImpl->m_Changeed = true;
 		pImpl->m_Scale = Scale;
 	}
 	void Transform::SetScale(float x, float y, float z) {
@@ -159,6 +177,7 @@ namespace basecross {
 		return pImpl->m_Pivot;
 	}
 	void Transform::SetPivot(const Vector3& Pivot) {
+		pImpl->m_Changeed = true;
 		pImpl->m_Pivot = Pivot;
 	}
 	void Transform::SetPivot(float x, float y, float z) {
@@ -169,6 +188,7 @@ namespace basecross {
 		return pImpl->m_Quaternion;
 	}
 	void Transform::SetQuaternion(const Quaternion& quaternion) {
+		pImpl->m_Changeed = true;
 		pImpl->m_Quaternion = quaternion;
 		pImpl->m_Quaternion.Normalize();
 	}
@@ -177,6 +197,7 @@ namespace basecross {
 	}
 
 	void Transform::SetRotation(const Vector3& Rot) {
+		pImpl->m_Changeed = true;
 		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Rot);
 		SetQuaternion(Qt);
@@ -190,6 +211,7 @@ namespace basecross {
 	}
 
 	void Transform::SetPosition(const Vector3& Position) {
+		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 	void Transform::SetPosition(float x, float y, float z) {
@@ -197,20 +219,29 @@ namespace basecross {
 	}
 
 	void Transform::ResetPosition(const Vector3& Position) {
+		pImpl->m_BeforeChangeed = true;
 		pImpl->m_BeforePosition = Position;
+		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 
 
-	Matrix4X4 Transform::GetWorldMatrix() const{
-		Matrix4X4 mat;
-		mat.AffineTransformation(
-			pImpl->m_Scale,
-			pImpl->m_Pivot,
-			pImpl->m_Quaternion,
-			pImpl->m_Position
-		);
-		return mat;
+	bool Transform::IsSameWorldMatrix(const Matrix4X4& mat) const {
+		return mat.EqualInt(GetWorldMatrix());
+	}
+
+
+	const Matrix4X4& Transform::GetWorldMatrix() const{
+		if (pImpl->m_Changeed) {
+			pImpl->m_WorldMatrix.AffineTransformation(
+				pImpl->m_Scale,
+				pImpl->m_Pivot,
+				pImpl->m_Quaternion,
+				pImpl->m_Position
+			);
+			pImpl->m_Changeed = false;
+		}
+		return pImpl->m_WorldMatrix;
 	}
 
 	Vector3 Transform::GetVelocity() const {
@@ -223,10 +254,22 @@ namespace basecross {
 
 
 	void Transform::SetToBefore() {
-		pImpl->m_BeforeScale = pImpl->m_Scale;
-		pImpl->m_BeforePivot = pImpl->m_Pivot;
-		pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
-		pImpl->m_BeforePosition = pImpl->m_Position;
+		if (pImpl->m_BeforeScale != pImpl->m_Scale) {
+			pImpl->m_BeforeChangeed = true;
+			pImpl->m_BeforeScale = pImpl->m_Scale;
+		}
+		if (pImpl->m_BeforePivot != pImpl->m_Pivot) {
+			pImpl->m_BeforeChangeed = true;
+			pImpl->m_BeforePivot = pImpl->m_Pivot;
+		}
+		if (pImpl->m_BeforeQuaternion != pImpl->m_Quaternion) {
+			pImpl->m_BeforeChangeed = true;
+			pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
+		}
+		if (pImpl->m_BeforePosition != pImpl->m_Position) {
+			pImpl->m_BeforeChangeed = true;
+			pImpl->m_BeforePosition = pImpl->m_Position;
+		}
 	}
 
 	//操作

@@ -1658,6 +1658,25 @@ namespace basecross{
 		//”äŠr
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	this‚ª‚à‚¤ˆê‚Â‚Ìs—ñ‚Æ“™‚µ‚¢‚©‚Ç‚¤‚©‚ğŒŸØ‚·‚é(UINT”Å)
+		@param[in]	other	”äŠrŒ³
+		@return	“™‚µ‚¯‚ê‚Îtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool EqualInt(const Matrix4X4& other)const {
+			auto m = XMMATRIX(*this);
+			auto o = XMMATRIX(other);
+			for (UINT i = 0; i < 4; i++) {
+				auto v = (Vector4)XMVectorEqualInt(m.r[i], o.r[i]);
+				if (!v.x || !v.y || !v.z || !v.w) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	this‚ª‚à‚¤ˆê‚Â‚Ìs—ñ‚Æ“™‚µ‚¢‚©‚Ç‚¤‚©‚ğŒŸØ‚·‚é
 		@param[in]	other	”äŠrŒ³
 		@return	“™‚µ‚¯‚ê‚Îtrue

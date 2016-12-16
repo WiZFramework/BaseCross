@@ -394,7 +394,6 @@ namespace basecross{
 	class SeekObject : public GameObject {
 		shared_ptr< StateMachine<SeekObject> >  m_StateMachine;	//ステートマシーン
 		Vector3 m_StartPos;
-		float m_BaseY;
 		float m_StateChangeSize;
 		//ユーティリティ関数群
 		//プレイヤーの位置を返す

@@ -297,9 +297,13 @@ namespace basecross{
 		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
 		SpanMat.DefTransformation(
 			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f,0, 0.0f),
-			Vector3(0.0f, 0.0f, 0.0f)
+			Vector3(0.0f, 0.0f, 0.0f),
+			Vector3(0.0f, -0.25f, 0.0f)
 		);
+
+		auto PtrColl = AddComponent<CollisionCapsule>();
+		PtrColl->SetFixed(true);
+		PtrColl->SetDrawActive(true);
 
 
 		//影をつける（シャドウマップを描画する）

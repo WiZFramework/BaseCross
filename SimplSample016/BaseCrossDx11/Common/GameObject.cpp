@@ -762,7 +762,103 @@ namespace basecross {
 		DrawCom->OnDraw();
 	}
 
+	struct CillisionItem {
+		shared_ptr<Collision> m_Collision;
+		SPHERE m_EnclosingSphere;
+		float m_MinX;
+		float m_MaxX;
+		float m_MinY;
+		float m_MaxY;
+		float m_MinZ;
+		float m_MaxZ;
+		bool operator==(const CillisionItem& other)const {
+			if (this == &other) {
+				return true;
+			}
+			return false;
+		}
 
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct CollisionAdmin::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct CollisionAdmin::Impl {
+		vector<CillisionItem> m_ItemVec;
+		Impl()
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	衝突判定管理者
+	//--------------------------------------------------------------------------------------
+	CollisionAdmin::CollisionAdmin(const shared_ptr<Stage>& StagePtr):
+		GameObject(StagePtr),
+		pImpl(new Impl())
+	{}
+	CollisionAdmin::~CollisionAdmin() {}
+
+	void CollisionAdmin::OnCreate() {
+
+	}
+
+	void CollisionAdmin::CollisionSub(size_t SrcIndex) {
+		CillisionItem& Src = pImpl->m_ItemVec[SrcIndex];
+		for (auto& v : pImpl->m_ItemVec) {
+			if (Src == v) {
+				continue;
+			}
+			if (Src.m_MinX > v.m_MaxX || Src.m_MaxX < v.m_MinX) {
+				continue;
+			}
+			if (Src.m_MinY > v.m_MaxY || Src.m_MaxY < v.m_MinY) {
+				continue;
+			}
+			if (Src.m_MinZ > v.m_MaxZ || Src.m_MaxZ < v.m_MinZ) {
+				continue;
+			}
+			if (v.m_Collision->IsHitObject(Src.m_Collision->GetGameObject())) {
+				continue;
+			}
+			//衝突判定(Destに呼んでもらう。ダブルデスパッチ呼び出し)
+			v.m_Collision->CollisionCall(Src.m_Collision);
+		}
+	}
+
+
+	void CollisionAdmin::OnUpdate() {
+		pImpl->m_ItemVec.clear();
+		auto& ObjVec = GetStage()->GetGameObjectVec();
+		for (auto& v : ObjVec) {
+			if (v->IsUpdateActive()) {
+				auto Col = v->GetComponent<Collision>(false);
+				if (Col && Col->IsUpdateActive()) {
+					CillisionItem Item;
+					Item.m_Collision = Col;
+					Item.m_EnclosingSphere = Col->GetEnclosingSphere();
+					Item.m_MinX = Item.m_EnclosingSphere.m_Center.x - Item.m_EnclosingSphere.m_Radius;
+					Item.m_MaxX = Item.m_EnclosingSphere.m_Center.x + Item.m_EnclosingSphere.m_Radius;
+
+					Item.m_MinY = Item.m_EnclosingSphere.m_Center.y - Item.m_EnclosingSphere.m_Radius;
+					Item.m_MaxY = Item.m_EnclosingSphere.m_Center.y + Item.m_EnclosingSphere.m_Radius;
+
+					Item.m_MinZ = Item.m_EnclosingSphere.m_Center.z - Item.m_EnclosingSphere.m_Radius;
+					Item.m_MaxZ = Item.m_EnclosingSphere.m_Center.z + Item.m_EnclosingSphere.m_Radius;
+
+					pImpl->m_ItemVec.push_back(Item);
+				}
+			}
+		}
+		for (size_t i = 0; i < pImpl->m_ItemVec.size(); i++) {
+			if (!pImpl->m_ItemVec[i].m_Collision->IsFixed()) {
+				CollisionSub(i);
+			}
+		}
+	}
 
 
 	//--------------------------------------------------------------------------------------
@@ -774,6 +870,8 @@ namespace basecross {
 		bool m_UpdateActive;
 		//パーティクルマネージャ
 		shared_ptr<ParticleManager> m_ParticleManager;
+		//コリジョン管理者
+		shared_ptr<CollisionAdmin> m_CollisionAdmin;
 		//オブジェクトの配列
 		vector< shared_ptr<GameObject> > m_GameObjectVec;
 		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
@@ -1034,6 +1132,8 @@ namespace basecross {
 	void Stage::OnPreCreate() {
 		//パーティクルマネージャの作成
 		pImpl->m_ParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>());
+		//コリジョン管理者の作成
+		pImpl->m_CollisionAdmin = ObjectFactory::Create<CollisionAdmin>(GetThis<Stage>());
 	}
 
 
@@ -1094,18 +1194,11 @@ namespace basecross {
 	}
 
 	//衝突判定の更新（ステージから呼ぶ）
+	//衝突判定をカスタマイズするためには
+	//この関数を多重定義する
 	void Stage::UpdateCollision() {
-		//衝突判定チェック
-		//配置オブジェクトの衝突チェック
-		for (auto ptr : GetGameObjectVec()) {
-			if (ptr->IsUpdateActive()) {
-				auto CollisionPtr = ptr->GetComponent<Collision>(false);
-				if (CollisionPtr) {
-					//CollisionがあればUpdate()
-					CollisionPtr->OnUpdate();
-				}
-			}
-		}
+		//衝突判定管理者のUpdate
+		pImpl->m_CollisionAdmin->OnUpdate();
 	}
 
 	void Stage::UpdateMessageCollision() {

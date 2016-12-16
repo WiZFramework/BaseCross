@@ -543,7 +543,6 @@ namespace basecross{
 	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
-		m_BaseY(0.125f),
 		m_StateChangeSize(5.0f)
 	{
 	}
@@ -598,12 +597,11 @@ namespace basecross{
 
 	//ユーティリティ関数群
 	Vector3 SeekObject::GetPlayerPosition() const {
-		//もしプレイヤーが初期化化されてない場合には、Vector3(0,m_BaseY,0)を返す
-		Vector3 PlayerPos(0, m_BaseY, 0);
+		//もしプレイヤーが初期化化されてない場合には、Vector3(0,0.125f,0)を返す
+		Vector3 PlayerPos(0, 0.125f, 0);
 		auto PtrPlayer = GetStage()->GetSharedGameObject<Player>(L"Player", false);
 		if (PtrPlayer) {
 			PlayerPos = PtrPlayer->GetComponent<Transform>()->GetPosition();
-			PlayerPos.y = m_BaseY;
 		}
 		return PlayerPos;
 	}
@@ -670,11 +668,11 @@ namespace basecross{
 	}
 
 	void SeekObject::OnLastUpdate() {
+		auto PtrTrans = GetComponent<Transform>();
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
-		auto PtrTransform = GetComponent<Transform>();
 		Vector3 Velocity = PtrRigidbody->GetVelocity();
 		if (Velocity.Length() > 0.0f) {
 			Vector3 Temp = Velocity;
@@ -684,10 +682,10 @@ namespace basecross{
 			Qt.RotationRollPitchYaw(0, ToAngle, 0);
 			Qt.Normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			Quaternion NowQt = PtrTrans->GetQuaternion();
 			//現在と目標を補間（10分の1）
 			NowQt.Slerp(NowQt, Qt, 0.1f);
-			PtrTransform->SetQuaternion(NowQt);
+			PtrTrans->SetQuaternion(NowQt);
 		}
 	}
 	//--------------------------------------------------------------------------------------

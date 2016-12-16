@@ -186,6 +186,9 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
+		}
 	}
 
 	//ターンの最終更新時

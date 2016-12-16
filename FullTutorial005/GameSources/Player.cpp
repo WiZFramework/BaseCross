@@ -131,7 +131,7 @@ namespace basecross{
 		auto Ptr = AddComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 1.0f, 0);
+		Ptr->SetPosition(0, 0.125f, 0);
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
@@ -219,7 +219,6 @@ namespace basecross{
 		//文字列表示
 		//行動
 		wstring BEHAVIOR;
-
 		if (m_PlayerBehavior == DefaultPlayerBehavior::Instance()) {
 			BEHAVIOR = L"DEFAULT行動: Aボタンでジャンプ。Bボタンで行動切り替え\n";
 		}
@@ -227,14 +226,14 @@ namespace basecross{
 			BEHAVIOR = L"ATTACK行動: Aボタンでアタック。Bボタンで行動切り替え\n";
 		}
 
-
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
 		FPS += L"\n";
 
+		auto PtrTrans = GetComponent<Transform>();
+		auto Pos = PtrTrans->GetPosition();
 
-		auto Pos = GetComponent<Transform>()->GetPosition();
 		wstring PositionStr(L"Position:\t");
 		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
@@ -248,7 +247,8 @@ namespace basecross{
 
 		wstring GravStr(L"Gravity:\t");
 
-		auto Grav = GetComponent<Gravity>()->GetGravity();
+		auto GravPtr = GetComponent<Gravity>();
+		auto Grav = GravPtr->GetGravity();
 		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
 		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
 		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";

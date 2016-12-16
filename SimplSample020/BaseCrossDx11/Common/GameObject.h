@@ -1555,6 +1555,26 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	衝突判定管理者
+	//--------------------------------------------------------------------------------------
+	class CollisionAdmin : public GameObject {
+		void CollisionSub(size_t SrcIndex);
+	public:
+		//構築と消滅
+		explicit CollisionAdmin(const shared_ptr<Stage>& StagePtr);
+		virtual ~CollisionAdmin();
+		//初期化
+		virtual void OnCreate() override;
+		virtual void OnUpdate() override;
+	private:
+		//Implイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	ステージクラス

@@ -65,47 +65,6 @@ namespace basecross {
 	}
 
 	//操作
-
-	void Collision::OnUpdate() {
-		//Collisionが有効かどうか
-		if (!IsUpdateActive()) {
-			return;
-		}
-		//Fixedかどうか
-		if (IsFixed()) {
-			return;
-		}
-		auto& ObjVec = GetGameObject()->GetStage()->GetGameObjectVec();
-		for (auto& ObjPtr : ObjVec) {
-			if ((GetGameObject() != ObjPtr) && ObjPtr->IsUpdateActive()) {
-				//すでに同じ相手と衝突してるかどうか
-				if (pImpl->m_HitObjectVec.size() > 0) {
-					bool chk = false;
-					for (auto& v : pImpl->m_HitObjectVec) {
-						if (v == ObjPtr) {
-							chk = true;
-							break;
-						}
-					}
-					if (chk) {
-						continue;
-					}
-				}
-				//相手のCollisionを取得
-				auto DestCollisionPtr = ObjPtr->GetComponent<Collision>(false);
-				if (DestCollisionPtr) {
-					if (!DestCollisionPtr->IsUpdateActive()) {
-						//相手のCollisionが無効
-						continue;
-					}
-					//衝突判定(相手に呼んでもらう。ダブルデスパッチ呼び出し)
-					DestCollisionPtr->CollisionCall(GetThis<Collision>());
-				}
-			}
-		}
-
-	}
-
 	void Collision::AddHitObject(const shared_ptr<GameObject>& DestObject) {
 		pImpl->m_HitObjectVec.push_back(DestObject);
 	}
@@ -121,6 +80,17 @@ namespace basecross {
 	}
 	vector<shared_ptr<GameObject>>& Collision::GetHitObjectVec() {
 		return pImpl->m_HitObjectVec;
+	}
+
+	bool Collision::IsHitObject(const shared_ptr<GameObject>& Obj) const {
+		if (pImpl->m_HitObjectVec.size() > 0) {
+			for (auto& v : pImpl->m_HitObjectVec) {
+				if (v == Obj) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	vector<shared_ptr<GameObject>>& Collision::GetBeforeHitObjectVec() {
@@ -407,6 +377,7 @@ namespace basecross {
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
+		//Sphere同士はCillisionWrappedSphere()は呼び出さない
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -450,6 +421,10 @@ namespace basecross {
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -496,6 +471,11 @@ namespace basecross {
 
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -539,6 +519,7 @@ namespace basecross {
 		}
 	}
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionTriangles>& DestColl) {
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -550,7 +531,7 @@ namespace basecross {
 		SPHERE SrcSphere = GetSphere();
 		SPHERE SrcBeforSphere = GetBeforeSphere();
 		//相手まずはAABBで調査
-		AABB WrapAABB = DestColl->GetWrapedAABB();
+		AABB WrapAABB = DestColl->GetWrappedAABB();
 		//ラッピングAABBは静止している
 		Vector3 SpanVelocity = SrcVelocity;
 		float HitTime = 0;
@@ -870,6 +851,15 @@ namespace basecross {
 		}
 	}
 
+	SPHERE  CollisionSphere::GetEnclosingSphere()const {
+		SPHERE SrcSphere = GetSphere();
+		SPHERE SrcBeforSphere = GetBeforeSphere();
+
+		SPHERE Src = HitTest::SphereEnclosingSphere(SrcSphere, SrcBeforSphere);
+		return Src;
+	}
+
+
 
 	void CollisionSphere::OnDraw() {
 		GenericDraw Draw;
@@ -905,10 +895,26 @@ namespace basecross {
 		float m_MakedHeight;			//作成時高さ
 		//配列ボリュームと衝突時に衝突した配列を特定するインデックス
 		size_t m_IsHitVolumeIndex;
+
+		Matrix4X4 m_BeforeWorldMatrix;
+		Matrix4X4 m_WorldMatrix;
+		CAPSULE m_BeforeWorldCapsule;
+		CAPSULE m_WorldCapsule;
+
+		bool m_FirstBeforeCalc;
+		bool m_FirstCalc;
+
 		Impl() :
 			m_MakedDiameter(1.0f),
 			m_MakedHeight(1.0f),
-			m_IsHitVolumeIndex(0)
+			m_IsHitVolumeIndex(0),
+			m_BeforeWorldMatrix(),
+			m_WorldMatrix(),
+			m_BeforeWorldCapsule(),
+			m_WorldCapsule(),
+			m_FirstBeforeCalc(true),
+			m_FirstCalc(true)
+
 		{}
 		~Impl() {}
 	};
@@ -952,33 +958,41 @@ namespace basecross {
 
 	CAPSULE CollisionCapsule::GetCapsule() const {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
-		//このオブジェクトのCAPSULEを作成
-		CAPSULE Ret(
-			pImpl->m_MakedDiameter * 0.5f, 
-			Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
-			Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
-			PtrT->GetWorldMatrix());
-		return Ret;
+		if (pImpl->m_FirstCalc || !PtrT->IsSameWorldMatrix(pImpl->m_WorldMatrix)) {
+			pImpl->m_WorldMatrix = PtrT->GetWorldMatrix();
+			pImpl->m_WorldCapsule = CAPSULE(
+				pImpl->m_MakedDiameter * 0.5f,
+				Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
+				Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
+				pImpl->m_WorldMatrix);
+			pImpl->m_FirstCalc = false;
+		}
+		return pImpl->m_WorldCapsule;
 	}
 
 	CAPSULE CollisionCapsule::GetBeforeCapsule() const {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
-		//このオブジェクトのCAPSULEを作成
-		CAPSULE Ret(
-			pImpl->m_MakedDiameter * 0.5f,
-			Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
-			Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
-			PtrT->GetBeforeWorldMatrix());
-		return Ret;
+		if (pImpl->m_FirstBeforeCalc || !PtrT->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)) {
+			pImpl->m_BeforeWorldMatrix = PtrT->GetBeforeWorldMatrix();
+			pImpl->m_BeforeWorldCapsule = CAPSULE(
+				pImpl->m_MakedDiameter * 0.5f,
+				Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
+				Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
+				pImpl->m_BeforeWorldMatrix);
+			pImpl->m_FirstBeforeCalc = false;
+		}
+		return pImpl->m_BeforeWorldCapsule;
 	}
 
 	void CollisionCapsule::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionCapsule>());
 	}
 
-
-
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1023,6 +1037,10 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1066,6 +1084,10 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1120,7 +1142,7 @@ namespace basecross {
 		CAPSULE SrcCapsule = GetCapsule();
 		CAPSULE SrcBeforCapsule = GetBeforeCapsule();
 		//相手まずはAABBで調査
-		AABB WrapAABB = DestColl->GetWrapedAABB();
+		AABB WrapAABB = DestColl->GetWrappedAABB();
 		//ラッピングAABBは静止している
 		Vector3 SpanVelocity = SrcVelocity;
 		float HitTime = 0;
@@ -1459,6 +1481,16 @@ namespace basecross {
 
 	}
 
+	SPHERE  CollisionCapsule::GetEnclosingSphere()const {
+		CAPSULE SrcCapsule = GetCapsule();
+		CAPSULE SrcBeforCapsule = GetBeforeCapsule();
+
+		SPHERE Src = HitTest::SphereEnclosingSphere(SrcCapsule.GetWrappedSPHERE(), SrcBeforCapsule.GetWrappedSPHERE());
+		return Src;
+	}
+
+
+
 	void CollisionCapsule::OnDraw() {
 		GenericDraw Draw;
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CAPSULE"));
@@ -1472,9 +1504,25 @@ namespace basecross {
 	struct CollisionObb::Impl {
 		float m_Size;					//作成時のサイズ
 		float m_ChkOnUnderLaySize;
+
+		Matrix4X4 m_BeforeWorldMatrix;
+		Matrix4X4 m_WorldMatrix;
+		OBB m_BeforeWorldObb;
+		OBB m_WorldObb;
+
+		bool m_FirstBeforeCalc;
+		bool m_FirstCalc;
+
+
 		Impl() :
 			m_Size(1.0f),
-			m_ChkOnUnderLaySize(0.1f)
+			m_ChkOnUnderLaySize(0.1f),
+			m_BeforeWorldMatrix(),
+			m_WorldMatrix(),
+			m_BeforeWorldObb(),
+			m_WorldObb(),
+			m_FirstBeforeCalc(true),
+			m_FirstCalc(true)
 		{}
 		~Impl() {}
 	};
@@ -1506,27 +1554,38 @@ namespace basecross {
 
 	OBB CollisionObb::GetObb() const {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
-		Matrix4X4 MatBase;
-		MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
-		MatBase *= PtrT->GetWorldMatrix();
-		OBB Ret(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
-		return Ret;
+		if (pImpl->m_FirstCalc || !PtrT->IsSameWorldMatrix(pImpl->m_WorldMatrix)) {
+			pImpl->m_WorldMatrix = PtrT->GetWorldMatrix();
+			Matrix4X4 MatBase;
+			MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
+			MatBase *= pImpl->m_WorldMatrix;
+			pImpl->m_WorldObb = OBB(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
+			pImpl->m_FirstCalc = false;
+		}
+		return pImpl->m_WorldObb;
 	}
 	OBB CollisionObb::GetBeforeObb() const {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
-		Matrix4X4 MatBase;
-		MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
-		MatBase *= PtrT->GetBeforeWorldMatrix();
-		OBB Ret(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
-		return Ret;
+		if (pImpl->m_FirstBeforeCalc || !PtrT->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)) {
+			pImpl->m_BeforeWorldMatrix = PtrT->GetBeforeWorldMatrix();
+			Matrix4X4 MatBase;
+			MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
+			MatBase *= pImpl->m_BeforeWorldMatrix;
+			pImpl->m_BeforeWorldObb = OBB(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
+			pImpl->m_FirstBeforeCalc = false;
+		}
+		return pImpl->m_BeforeWorldObb;
 	}
 
 	void CollisionObb::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionObb>());
 	}
 
-
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1570,6 +1629,12 @@ namespace basecross {
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
+
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1614,6 +1679,12 @@ namespace basecross {
 
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
+
+		if (!CillisionWrappedSphere(DestColl)) {
+			//Sphereの重なりがないなら終了
+			return;
+		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1907,6 +1978,15 @@ namespace basecross {
 		}
 	}
 
+	SPHERE  CollisionObb::GetEnclosingSphere()const {
+		OBB SrcObb = GetObb();
+		OBB SrcBeforeObb = GetBeforeObb();
+
+		SPHERE Src = HitTest::SphereEnclosingSphere(SrcObb.GetWrappedSPHERE(), SrcBeforeObb.GetWrappedSPHERE());
+		return Src;
+	}
+
+
 
 	void CollisionObb::OnDraw() {
 		GenericDraw Draw;
@@ -1920,8 +2000,24 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct CollisionTriangles::Impl {
 		vector<TRIANGLE> m_MakedTriangles;
+		vector<TRIANGLE> m_WorldTriangles;
+		vector<TRIANGLE> m_BeforWorldTriangles;
+
+		Matrix4X4 m_BeforeWorldMatrix;
+		Matrix4X4 m_WorldMatrix;
+		bool m_FirstBeforeCalc;
+		bool m_FirstCalc;
+
+		AABB m_WrappedAABB;
 		wstring m_WireFrameMeshKey;
-		Impl()
+		Impl() :
+			m_WorldTriangles(),
+			m_BeforWorldTriangles(),
+			m_BeforeWorldMatrix(),
+			m_WorldMatrix(),
+			m_FirstBeforeCalc(true),
+			m_FirstCalc(true),
+			m_WrappedAABB(Vector3(0, 0, 0), Vector3(0, 0, 0))
 		{}
 		~Impl() {}
 	};
@@ -1974,56 +2070,79 @@ namespace basecross {
 
 	void CollisionTriangles::GetTriangles(vector<TRIANGLE>& trivec) const {
 		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
-		auto mat = TrasnsPtr->GetWorldMatrix();
-		if (!pImpl->m_MakedTriangles.empty()) {
-			trivec.clear();
-			for (auto& v : pImpl->m_MakedTriangles) {
-				TRIANGLE set(v.m_A, v.m_B, v.m_C, mat);
-				trivec.push_back(set);
+		if (pImpl->m_FirstCalc || !TrasnsPtr->IsSameWorldMatrix(pImpl->m_WorldMatrix)) {
+			pImpl->m_WorldMatrix = TrasnsPtr->GetWorldMatrix();
+			if (!pImpl->m_MakedTriangles.empty()) {
+				pImpl->m_WorldTriangles.clear();
+				for (auto& v : pImpl->m_MakedTriangles) {
+					TRIANGLE set(v.m_A, v.m_B, v.m_C, pImpl->m_WorldMatrix);
+					pImpl->m_WorldTriangles.push_back(set);
+				}
 			}
+			pImpl->m_FirstCalc = false;
+		}
+		if (!pImpl->m_WorldTriangles.empty()) {
+			trivec.resize(pImpl->m_WorldTriangles.size());
+			trivec = pImpl->m_WorldTriangles;
 		}
 	}
 
 	void CollisionTriangles::GetBeforeTriangles(vector<TRIANGLE>& trivec) const {
 		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
-		auto mat = TrasnsPtr->GetBeforeWorldMatrix();
-		if (!pImpl->m_MakedTriangles.empty()) {
-			trivec.clear();
-			for (auto& v : pImpl->m_MakedTriangles) {
-				TRIANGLE set(v.m_A, v.m_B, v.m_C, mat);
-				trivec.push_back(set);
+		if (pImpl->m_FirstBeforeCalc || !TrasnsPtr->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)){
+			pImpl->m_BeforeWorldMatrix = TrasnsPtr->GetBeforeWorldMatrix();
+			if (!pImpl->m_MakedTriangles.empty()) {
+				pImpl->m_BeforWorldTriangles.clear();
+				for (auto& v : pImpl->m_MakedTriangles) {
+					TRIANGLE set(v.m_A, v.m_B, v.m_C, pImpl->m_BeforeWorldMatrix);
+					pImpl->m_BeforWorldTriangles.push_back(set);
+				}
 			}
+			pImpl->m_FirstBeforeCalc = false;
+		}
+		if (!pImpl->m_BeforWorldTriangles.empty()) {
+			trivec.resize(pImpl->m_BeforWorldTriangles.size());
+			trivec = pImpl->m_BeforWorldTriangles;
 		}
 	}
 
-	AABB CollisionTriangles::GetWrapedAABB() {
-		Vector3 min_v(0, 0, 0);
-		Vector3 max_v(0, 0, 0);
-		vector<TRIANGLE> trivec;
-		GetBeforeTriangles(trivec);
-		if (!trivec.empty()) {
-			bool first = true;
-			for (auto& v : trivec) {
-				if (first) {
-					min_v = v.m_A;
-					max_v = v.m_A;
-					first = false;
+	AABB CollisionTriangles::GetWrappedAABB()const {
+		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
+		if (
+			pImpl->m_FirstBeforeCalc || pImpl->m_FirstCalc || 
+			!TrasnsPtr->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix) ||
+			!TrasnsPtr->IsSameWorldMatrix(pImpl->m_WorldMatrix)
+			) {
+			Vector3 min_v(0, 0, 0);
+			Vector3 max_v(0, 0, 0);
+			vector<TRIANGLE> trivec;
+			trivec.clear();
+			GetBeforeTriangles(trivec);
+			if (!trivec.empty()) {
+				bool first = true;
+				for (auto& v : trivec) {
+					if (first) {
+						min_v = v.m_A;
+						max_v = v.m_A;
+						first = false;
+					}
+					HitTest::ChkSetMinMax(v.m_A, min_v, max_v);
+					HitTest::ChkSetMinMax(v.m_B, min_v, max_v);
+					HitTest::ChkSetMinMax(v.m_C, min_v, max_v);
 				}
-				HitTest::ChkSetMinMax(v.m_A, min_v, max_v);
-				HitTest::ChkSetMinMax(v.m_B, min_v, max_v);
-				HitTest::ChkSetMinMax(v.m_C, min_v, max_v);
 			}
-		}
-		trivec.clear();
-		GetTriangles(trivec);
-		if (!trivec.empty()) {
-			for (auto& v : trivec) {
-				HitTest::ChkSetMinMax(v.m_A, min_v, max_v);
-				HitTest::ChkSetMinMax(v.m_B, min_v, max_v);
-				HitTest::ChkSetMinMax(v.m_C, min_v, max_v);
+			trivec.clear();
+			GetTriangles(trivec);
+			if (!trivec.empty()) {
+				for (auto& v : trivec) {
+					HitTest::ChkSetMinMax(v.m_A, min_v, max_v);
+					HitTest::ChkSetMinMax(v.m_B, min_v, max_v);
+					HitTest::ChkSetMinMax(v.m_C, min_v, max_v);
+				}
 			}
+			pImpl->m_WrappedAABB = AABB(min_v, max_v);
 		}
-		return AABB(min_v, max_v);
+		return pImpl->m_WrappedAABB;
 	}
 
 
@@ -2031,6 +2150,15 @@ namespace basecross {
 	void CollisionTriangles::CollisionCall(const shared_ptr<Collision>& Src){
 		Src->CollisionTest(GetThis<CollisionTriangles>());
 	}
+
+	SPHERE  CollisionTriangles::GetEnclosingSphere()const {
+		AABB aabb = GetWrappedAABB();
+		SPHERE src;
+		src.m_Radius = (aabb.m_Max - aabb.m_Min).Length();
+		src.m_Center = aabb.GetCenter();
+		return src;
+	}
+
 
 	void CollisionTriangles::OnDraw() {
 		GenericDraw Draw;
@@ -2110,6 +2238,13 @@ namespace basecross {
 		Src->CollisionTest(GetThis<CollisionRect>());
 	}
 
+	SPHERE  CollisionRect::GetEnclosingSphere()const {
+		COLRECT SrcColRect = GetColRect();
+		COLRECT SrcBeforeColRect = GetBeforeColRect();
+
+		SPHERE Src = HitTest::SphereEnclosingSphere(SrcColRect.GetWrappedSPHERE(), SrcBeforeColRect.GetWrappedSPHERE());
+		return Src;
+	}
 
 
 	void CollisionRect::OnDraw() {

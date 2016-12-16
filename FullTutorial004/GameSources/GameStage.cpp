@@ -178,7 +178,6 @@ namespace basecross {
 				Vector3(0.0f, -XM_PIDIV2, 0.0f),
 				Vector3(-3.0f, 0.0f, 5.0f)
 			},
-
 			{
 				Vector3(1.0f, 1.0f, 1.0f),
 				Vector3(0.0f, XM_PIDIV2, 0.0f),
@@ -189,7 +188,6 @@ namespace basecross {
 				Vector3(0.0f, -XM_PIDIV2, 0.0f),
 				Vector3(-3.0f, 0.0f, 7.0f)
 			},
-
 			{
 				Vector3(1.0f, 1.0f, 1.0f),
 				Vector3(0.0f, XM_PIDIV2, 0.0f),
@@ -233,8 +231,6 @@ namespace basecross {
 				Vector3(0.0f, -XM_PIDIV2, 0.0f),
 				Vector3(-3.0f, 0.0f, 15.0f)
 			},
-
-
 		};
 		//オブジェクトの作成
 		for (auto v : Vec) {
