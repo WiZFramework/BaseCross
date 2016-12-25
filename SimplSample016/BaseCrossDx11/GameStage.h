@@ -39,8 +39,14 @@ namespace basecross {
 		void CreateViewLight();
 		//プレートの作成
 		void CreatePlate();
+		//セルマップの作成
+		void CreateStageCellMap();
+		//固定のボックスの作成
+		void CreateFixedBox();
 		//プレイヤーの作成
 		void CreatePlayer();
+		//敵の作成
+		void CreateEnemy();
 	public:
 		//構築と破棄
 		GameStage() :Stage() {}

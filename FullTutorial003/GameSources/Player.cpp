@@ -63,7 +63,7 @@ namespace basecross{
 	}
 
 	void AttackBall::OnUpdate() {
-		Rect2D<float> rect(-25.0f, -25.0f, 25.0f, 25.0f);
+		Rect2D<float> rect(-10.f, 0.0f, 10.0f, 37.0f);
 		Point2D<float> point;
 		auto PtrTransform = GetComponent<Transform>();
 		point.x = PtrTransform->GetPosition().x;
@@ -105,8 +105,9 @@ namespace basecross{
 	//	用途: プレイヤー
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	Player::Player(const shared_ptr<Stage>& StagePtr) :
+	Player::Player(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
+		m_StartPos(StartPos),
 		m_MaxSpeed(30.0f),	//最高速度
 		m_Decel(0.95f),	//減速値
 		m_Mass(1.0f)	//質量
@@ -131,16 +132,17 @@ namespace basecross{
 		auto Ptr = AddComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+		Ptr->SetPosition(m_StartPos);
 
 		//Rigidbodyをつける
-		auto PtrRedid = AddComponent<Rigidbody>();
+		auto PtrRigid = AddComponent<Rigidbody>();
+		//反発係数は0.5（半分）
+		PtrRigid->SetReflection(0.5f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Slide);
-		PtrCol->SetDrawActive(true);
+		PtrCol->SetIsHitAction(IsHitAction::AutoOnParent);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();

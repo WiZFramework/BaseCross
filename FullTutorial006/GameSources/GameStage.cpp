@@ -80,7 +80,7 @@ namespace basecross {
 		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
 		//îzóÒÇÃèâä˙âª
 		vector<Vector3> Vec = {
-			{ 0, 0.125f, 10.0f },
+			{ 0, 2.0f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
 			{ 0, 0.125f, -10.0f },
@@ -237,6 +237,207 @@ namespace basecross {
 				Vector3(0.0f, -XM_PIDIV2, 0.0f),
 				Vector3(-3.0f, 0.0f, 15.0f)
 			},
+
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 15.0f)
+			},
+
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 15.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 15.0f)
+			},
+
 
 
 		};

@@ -47,6 +47,8 @@ namespace basecross{
 	//	用途: プレイヤー
 	//--------------------------------------------------------------------------------------
 	class Player : public GameObject {
+		//スタート位置
+		Vector3 m_StartPos;
 		//行動関数クラス
 		shared_ptr<PlayerBehavior> m_PlayerBehavior;
 		//階層化ステートマシーン
@@ -80,7 +82,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Player(const shared_ptr<Stage>& StagePtr);
+		Player(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

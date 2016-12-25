@@ -30,7 +30,76 @@ namespace basecross{
 		//操作
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	敵
+	//--------------------------------------------------------------------------------------
+	class Enemy : public GameObject {
+		weak_ptr<StageCellMap> m_CelMap;
+		Vector3 m_Scale;
+		Vector3 m_StartRotation;
+		Vector3 m_StartPosition;
+		vector<CellIndex> m_CellPath;
+		//現在の自分のセルインデックス
+		int m_CellIndex;
+		//めざす（次の）のセルインデックス
+		int m_NextCellIndex;
+		//ターゲットのセルインデックス
+		int m_TargetCellIndex;
+		shared_ptr<StateMachine<Enemy>> m_StateMachine;
+	public:
+		//構築と破棄
+		Enemy(const shared_ptr<Stage>& StagePtr,
+			const shared_ptr<StageCellMap>& CellMap,
+			const Vector3& Scale,
+			const Vector3& Rotation,
+			const Vector3& Position
+		);
+		virtual ~Enemy();
+		//プレイヤーの検索
+		bool SearchPlayer();
 
+		//デフォルト行動
+		bool DefaultBehavior();
+		//Seek行動
+		bool SeekBehavior();
+		//アクセサ
+		shared_ptr< StateMachine<Enemy> > GetStateMachine() const {
+			return m_StateMachine;
+		}
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+		virtual void OnLastUpdate() override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	デフォルトステート
+	//--------------------------------------------------------------------------------------
+	class EnemyDefault : public ObjState<Enemy>
+	{
+		EnemyDefault() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(EnemyDefault)
+		virtual void Enter(const shared_ptr<Enemy>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	プレイヤーを追いかけるステート
+	//--------------------------------------------------------------------------------------
+	class EnemySeek : public ObjState<Enemy>
+	{
+		EnemySeek() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(EnemySeek)
+		virtual void Enter(const shared_ptr<Enemy>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy>& Obj)override;
+	};
 
 }
 //end basecross

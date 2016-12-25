@@ -396,6 +396,7 @@ namespace basecross{
 		*this = XMVector3Transform(XMVECTOR(*this), XMMATRIX(m));
 	}
 
+
 	//--------------------------------------------------------------------------------------
 	///	Vector3EX（3次元ベクトル）ネームスペース
 	//--------------------------------------------------------------------------------------
@@ -1178,6 +1179,27 @@ namespace basecross{
 
 	};
 	//end Vector4EX
+
+	void Vector3::WorldToSCreen(const Matrix4X4& m, float ViewWidth, float ViewHeight) {
+		Vector4 Pos4 = *this;
+		Pos4.w = 1.0f;
+		//座標変換
+		Pos4.Transform(m);
+		//遠近
+		Pos4.x /= Pos4.w;
+		Pos4.y /= Pos4.w;
+		Pos4.z /= Pos4.w;
+		//座標単位の修正
+		Pos4.x += 1.0f;
+		Pos4.y += 1.0f;
+		Pos4.y = 2.0f - Pos4.y;
+		//ビューポート変換
+		Pos4.x *= (ViewWidth * 0.5f);
+		Pos4.y *= (ViewHeight * 0.5f);
+		*this = XMVECTOR(Pos4);
+	}
+
+
 
 
 }

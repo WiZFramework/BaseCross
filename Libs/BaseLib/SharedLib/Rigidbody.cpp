@@ -281,6 +281,7 @@ namespace basecross {
 				pImpl->m_WanderRadius, pImpl->m_WanderDistance, pImpl->m_WanderJitter, pImpl->m_WanderTarget) * GetWeight();
 			Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 			RigidPtr->SetForce(Force);
+
 		}
 	}
 
@@ -649,7 +650,6 @@ namespace basecross {
 			RigidPtr->SetForce(Force);
 		}
 	}
-
 
 	//--------------------------------------------------------------------------------------
 	//	struct Rigidbody::Impl;

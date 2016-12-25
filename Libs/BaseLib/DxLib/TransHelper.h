@@ -114,6 +114,34 @@ namespace basecross{
 		}
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	XZ方向のセルに使用するインデックス
+	//--------------------------------------------------------------------------------------
+	struct CellIndex {
+		int x;
+		int z;
+		CellIndex() :
+			//無効値で初期化
+			x(-1), z(-1)
+		{}
+		CellIndex(int xx, int zz) :
+			x(xx), z(zz)
+		{
+		}
+		bool operator==(const CellIndex& other)const {
+			return (x == other.x && z == other.z);
+		}
+		bool operator!=(const CellIndex& other)const {
+			return ((x != other.x) || (z != other.z));
+		}
+		static int GetHeuristic(const CellIndex& Cell1, const CellIndex& Cell2) {
+			int spanX = abs(Cell1.x - Cell2.x);
+			int spanZ = abs(Cell1.z - Cell2.z);
+			//どちらか長いほうを返す
+			return (spanX >= spanZ) ? spanX : spanZ;
+		}
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	XZ矩形(Z方向プラスの矩形)
@@ -239,7 +267,9 @@ namespace basecross{
 		@brief	コンストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		AABB() {}
+		AABB():
+			m_Min(0,0,0),
+			m_Max(0, 0, 0){}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
@@ -307,6 +337,18 @@ namespace basecross{
 		void Move(const Vector3& MoveVec) {
 			m_Min += MoveVec;
 			m_Max += MoveVec;
+		}
+		bool PtInAABB(const Vector3& point) {
+			if (
+				point.x >= m_Min.x && point.x < m_Max.x
+				&&
+				point.y >= m_Min.y && point.y < m_Max.y
+				&&
+				point.z >= m_Min.z && point.z < m_Max.z
+				) {
+				return true;
+			}
+			return false;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -659,6 +701,62 @@ namespace basecross{
 			sp.m_Center = m_Center;
 			return sp;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	包み込むAABBを得る
+		@return	AABB
+		*/
+		//--------------------------------------------------------------------------------------
+		AABB GetWrappedAABB() const {
+			float Half = 0.5f;
+			Vector3 Vec[] = {
+				Vector3(-Half,-Half,-Half),
+				Vector3(Half,-Half,-Half),
+				Vector3(Half,-Half,Half),
+				Vector3(-Half,-Half,Half),
+
+				Vector3(-Half,Half,-Half),
+				Vector3(Half,Half,-Half),
+				Vector3(Half,Half,Half),
+				Vector3(-Half,Half,Half),
+			};
+			bool First = true;
+			AABB ret;
+			auto m = GetWorldMatrix();
+			for (auto& v : Vec) {
+				v.Transform(m);
+				if (First) {
+					ret.m_Min = v;
+					ret.m_Max = v;
+					First = false;
+				}
+				else {
+					if (ret.m_Min.x > v.x) {
+						ret.m_Min.x = v.x;
+					}
+					if (ret.m_Max.x < v.x) {
+						ret.m_Max.x = v.x;
+					}
+
+					if (ret.m_Min.y > v.y) {
+						ret.m_Min.y = v.y;
+					}
+					if (ret.m_Max.y < v.y) {
+						ret.m_Max.y = v.y;
+					}
+
+					if (ret.m_Min.z > v.z) {
+						ret.m_Min.z = v.z;
+					}
+					if (ret.m_Max.z < v.z) {
+						ret.m_Max.z = v.z;
+					}
+				}
+			}
+			return ret;
+		}
+
 	};
 
 
@@ -845,7 +943,13 @@ namespace basecross{
 			sp.m_Center = GetCenter();
 			return sp;
 		}
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	包み込むAABBを得る
+		@return	AABB
+		*/
+		//--------------------------------------------------------------------------------------
+		AABB GetWrappedAABB() const;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -1068,9 +1172,40 @@ namespace basecross{
 			return sp;
 		}
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	包み込むAABBを得る
+		@return	AABB
+		*/
+		//--------------------------------------------------------------------------------------
+		AABB GetWrappedAABB() const {
+			AABB ret;
+			ret.m_Min = m_Vertex[0];
+			ret.m_Max = m_Vertex[0];
+			for (int i = 1; i < 4; i++) {
+				if (ret.m_Min.x > m_Vertex[i].x) {
+					ret.m_Min.x = m_Vertex[i].x;
+				}
+				if (ret.m_Max.x < m_Vertex[i].x) {
+					ret.m_Max.x = m_Vertex[i].x;
+				}
 
+				if (ret.m_Min.y > m_Vertex[i].y) {
+					ret.m_Min.y = m_Vertex[i].y;
+				}
+				if (ret.m_Max.y < m_Vertex[i].y) {
+					ret.m_Max.y = m_Vertex[i].y;
+				}
 
-
+				if (ret.m_Min.z > m_Vertex[i].z) {
+					ret.m_Min.z = m_Vertex[i].z;
+				}
+				if (ret.m_Max.z < m_Vertex[i].z) {
+					ret.m_Max.z = m_Vertex[i].z;
+				}
+			}
+			return ret;
+		}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -1532,8 +1667,6 @@ namespace basecross{
 				}
 				return false;
 		}
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	AABBとAABBとの衝突判定
@@ -1551,6 +1684,24 @@ namespace basecross{
 				return false;
 			return true;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	AABBとAABBとの衝突判定(minもしくはmaxが同じ値だったら衝突してない)
+		@param[in]	a	AABB1
+		@param[in]	b	AABB2
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool AABB_AABB_NOT_EQUAL(const AABB& a, const AABB& b) {
+			if (a.m_Max.x <= b.m_Min.x || a.m_Min.x >= b.m_Max.x)
+				return false;
+			if (a.m_Max.y <= b.m_Min.y || a.m_Min.y >= b.m_Max.y)
+				return false;
+			if (a.m_Max.z <= b.m_Min.z || a.m_Min.z >= b.m_Max.z)
+				return false;
+			return true;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	AABB aがAABB ｂに完全に含まれるか判定
@@ -2653,6 +2804,16 @@ namespace basecross{
 			return CollisionTestObbObbSub(SrcObb, SrcVelocity,DestObb, StartTime, EndTime,HitTime);
 		}
 	};
+
+	inline AABB CAPSULE::GetWrappedAABB() const {
+		SPHERE sp_bottom, sp_top;
+		sp_bottom.m_Center = m_PointBottom;
+		sp_bottom.m_Radius = m_Radius;
+		sp_top.m_Center = m_PointBottom;
+		sp_top.m_Radius = m_Radius;
+		return HitTest::AABB_OR_AABB(sp_bottom.GetWrappedAABB(), sp_top.GetWrappedAABB());
+
+	}
 
 
 }

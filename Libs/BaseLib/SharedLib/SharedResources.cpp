@@ -776,7 +776,7 @@ namespace basecross {
 		);
 		WanderTarget.Normalize();
 		WanderTarget *= WanderRadius;
-		Vector3 wander_target = WanderTarget + Vector3(WanderDistance, 0, 0);
+		Vector3 wander_target = WanderTarget + Vector3(WanderDistance, 0, WanderDistance);
 		wander_target.Transform(Matrix);
 		return wander_target - Matrix.PosInMatrix();
 	}

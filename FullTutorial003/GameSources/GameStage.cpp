@@ -19,6 +19,8 @@ namespace basecross {
 		App::GetApp()->GetDataDirectory(DataDir);
 		wstring strTexture = DataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+		strTexture = DataDir + L"trace2.png";
+		App::GetApp()->RegisterTexture(L"TRACE2_TX", strTexture);
 		strTexture = DataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
 		strTexture = DataDir + L"wall.jpg";
@@ -33,8 +35,6 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-
-
 
 		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
 		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
@@ -52,9 +52,9 @@ namespace basecross {
 		auto PtrTrans = Ptr->GetComponent<Transform>();
 		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
-		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
+		PtrTrans->SetScale(20.0f, 40.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
+		PtrTrans->SetPosition(0.0f, 0.0f, 20.0f);
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
 		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
@@ -66,42 +66,203 @@ namespace basecross {
 		DrawComp->SetTextureResource(L"SKY_TX");
 	}
 
+	//セルマップの作成
+	void GameStage::CreateStageCellMap() {
+		auto Group = CreateSharedObjectGroup(L"CellMap");
+		float  PieceSize = 1.0f;
+		auto Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);
+		//セルマップの区画を表示する場合は以下の設定
+		Ptr->SetDrawActive(true);
+		//さらにセルのインデックスとコストを表示する場合は以下の設定
+		Ptr->SetCellStringActive(true);
+		SetSharedGameObject(L"StageCellMap1", Ptr);
+		//グループに追加
+		Group->IntoGroup(Ptr);
+
+		Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
+		//セルマップの区画を表示する場合は以下の設定
+		Ptr->SetDrawActive(true);
+		//さらにセルのインデックスとコストを表示する場合は以下の設定
+		//Ptr->SetCellStringActive(true);
+		SetSharedGameObject(L"StageCellMap2", Ptr);
+		//グループに追加
+		Group->IntoGroup(Ptr);
+
+		Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
+		//セルマップの区画を表示する場合は以下の設定
+		//Ptr->SetDrawActive(true);
+		//さらにセルのインデックスとコストを表示する場合は以下の設定
+		//Ptr->SetCellStringActive(false);
+		SetSharedGameObject(L"StageCellMap3", Ptr);
+		//グループに追加
+		Group->IntoGroup(Ptr);
+
+	}
+
+
 
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
 		vector< vector<Vector3> > Vec = {
+			{
+				Vector3(1.0f, 0.5f, 40.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(9.5f, 0.25f, 20.0f)
+			},
+			{
+				Vector3(1.0f, 0.5f, 40.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-9.5f, 0.25f, 20.0f)
+			},
 
 			{
-				Vector3(5.0f, 0.5f, 5.0f),
+				Vector3(20.0f, 0.5f, 1.0f),
 				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 10.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(14.0f, 0.25f, 10.0f)
+				Vector3(0.0f, 0.25f, 0.5f)
 			},
 
 			{
-				Vector3(2.0f, 1.0f, 2.0f),
-				Vector3(0, 0, 0),
-				Vector3(10.0f, 0.5f, 10.0f)
+				Vector3(20.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(0.0f, 0.25f, 39.5f)
 			},
+
+			///////
+
+
 			{
-				Vector3(4.0f, 1.0f, 4.0f),
-				Vector3(0, 0, 0),
-				Vector3(-10.0f, 0.5f, 10.0f)
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-8.0f, 0.25f, 6.5f)
 			},
+
 			{
-				Vector3(10.0f, 0.5f, 10.0f),
-				Vector3(-0.5f, 0.0f, -0.5f),
-				Vector3(-10.0f, 0.25f, 10.0f)
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-4.5f, 0.25f, 7.0f)
+			},
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(0.0f, 0.25f, 7.5f)
+			},
+
+			{
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(4.5f, 0.25f, 7.0f)
+			},
+
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(8.0f, 0.25f, 6.5f)
+			},
+
+
+			///////
+
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-8.0f, 0.25f,18.5f)
+			},
+
+			{
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-4.5f, 0.25f, 19.0f)
+			},
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(0.0f, 0.25f, 19.5f)
+			},
+
+			{
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(4.5f, 0.25f, 19.0f)
+			},
+
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(8.0f, 0.25f, 18.5f)
+			},
+
+			///////
+
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-8.0f, 0.25f, 30.5f)
+			},
+
+			{
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-4.5f, 0.25f, 31.0f)
+			},
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(0.0f, 0.25f, 31.5f)
+			},
+
+			{
+				Vector3(1.0f, 0.5f, 2.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(4.5f, 0.25f, 31.0f)
+			},
+
+
+			{
+				Vector3(2.0f, 0.5f, 1.0f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(8.0f, 0.25f, 30.5f)
 			},
 		};
+
+
 		//オブジェクトの作成
 		for (auto v : Vec) {
 			AddGameObject<FixedBox>(v[0], v[1], v[2]);
+		}
+		//セルマップ内にFixedBoxの情報をセット
+		auto Group = GetSharedObjectGroup(L"CellMap");
+		for (auto& gv : Group->GetGroupVector()) {
+			auto MapPtr = dynamic_pointer_cast<StageCellMap>(gv.lock());
+			if (MapPtr) {
+				auto& CellVec = MapPtr->GetCellVec();
+				auto& GameObjeVec = GetGameObjectVec();
+				vector<AABB> m_ObjectsAABBVec;
+				for (auto& v : GameObjeVec) {
+					auto FixedBoxPtr = dynamic_pointer_cast<FixedBox>(v);
+					if (FixedBoxPtr) {
+						auto ColPtr = FixedBoxPtr->GetComponent<CollisionObb>();
+						m_ObjectsAABBVec.push_back(ColPtr->GetWrappingAABB());
+					}
+				}
+				for (auto& v : CellVec) {
+					for (auto& v2 : v) {
+						for (auto& vObj : m_ObjectsAABBVec) {
+							if (HitTest::AABB_AABB_NOT_EQUAL(v2.m_PieceRange, vObj)) {
+								v2.m_Cost = -1;
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -113,10 +274,58 @@ namespace basecross {
 			AddGameObject<AttackBall>();
 		}
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>();
+		auto PlayerPtr = AddGameObject<Player>(Vector3(0.0f, 0.125f, 2.0f));
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
 	}
+
+	//敵の作成
+	void GameStage::CreateEnemy() {
+		auto MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap1");
+		vector< vector<Vector3> > Vec1 = {
+			{
+				Vector3(0.25f, 0.25f, 0.25f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(-2.5f, 0.125f, 9.0f)
+			},
+		};
+		//オブジェクトの作成
+		for (auto v : Vec1) {
+			AddGameObject<Enemy>(MapPtr,v[0], v[1], v[2]);
+		}
+
+		MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap2");
+		vector< vector<Vector3> > Vec2 = {
+			{
+				Vector3(0.25f, 0.25f, 0.25f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(4.5f, 0.125f, 21.0f)
+			},
+		};
+		//オブジェクトの作成
+		for (auto v : Vec2) {
+			AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
+		}
+
+
+		MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap3");
+		vector< vector<Vector3> > Vec3 = {
+			{
+				Vector3(0.25f, 0.25f, 0.25f),
+				Vector3(0.0f, 0.0f, 0.0f),
+				Vector3(8.5f, 0.125f, 33.0f)
+			},
+		};
+		//オブジェクトの作成
+		for (auto v : Vec3) {
+			AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
+		}
+
+
+
+
+	}
+
 
 	void GameStage::OnCreate() {
 		try {
@@ -126,10 +335,14 @@ namespace basecross {
 			CreateViewLight();
 			//プレートの作成
 			CreatePlate();
+			//セルマップの作成
+			CreateStageCellMap();
 			//固定のボックスの作成
 			CreateFixedBox();
 			//プレーヤーの作成
 			CreatePlayer();
+			//敵の作成
+			CreateEnemy();
 		}
 		catch (...) {
 			throw;

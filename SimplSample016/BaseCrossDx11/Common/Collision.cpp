@@ -242,7 +242,13 @@ namespace basecross {
 				}
 				else {
 					//èÊÇ¡ÇƒÇ»Ç¢Ç∆Ç´ÇÕîΩî≠
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
+					Vector3 DestVelo(0, 0, 0);
+					auto DestRigid = DestColl->GetGameObject()->GetComponent<Rigidbody>(false);
+					if (DestRigid) {
+						DestVelo = DestRigid->GetVelocity();
+					}
+					auto TotalVelo = PtrRigid->GetVelocity() - DestVelo;
+					auto Ref = Vector3EX::Reflect(TotalVelo, ContactBase);
 					//îΩî≠åWêî
 					Ref *= PtrRigid->GetReflection();
 					PtrRigid->SetVelocity(Ref);
@@ -856,6 +862,15 @@ namespace basecross {
 
 		SPHERE Src = HitTest::SphereEnclosingSphere(SrcSphere, SrcBeforSphere);
 		return Src;
+	}
+
+	bool CollisionSphere::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+		return false;
+	}
+
+	AABB CollisionSphere::GetWrappingAABB()const {
+		SPHERE SrcSphere = GetSphere();
+		return SrcSphere.GetWrappedAABB();
 	}
 
 
@@ -1488,7 +1503,14 @@ namespace basecross {
 		return Src;
 	}
 
+	bool CollisionCapsule::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+		return false;
+	}
 
+	AABB CollisionCapsule::GetWrappingAABB()const {
+		CAPSULE SrcCapsule = GetCapsule();
+		return SrcCapsule.GetWrappedAABB();
+	}
 
 	void CollisionCapsule::OnDraw() {
 		GenericDraw Draw;
@@ -1985,7 +2007,14 @@ namespace basecross {
 		return Src;
 	}
 
+	bool CollisionObb::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+		return false;
+	}
 
+	AABB CollisionObb::GetWrappingAABB()const {
+		OBB SrcObb = GetObb();
+		return SrcObb.GetWrappedAABB();
+	}
 
 	void CollisionObb::OnDraw() {
 		GenericDraw Draw;
@@ -2158,6 +2187,26 @@ namespace basecross {
 		return src;
 	}
 
+	bool CollisionTriangles::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+		//CollisionTrianglesÇÕèÌÇ…ÉqÉbÉgÇµÇ»Ç¢
+		return false;
+	}
+
+	AABB CollisionTriangles::GetWrappingAABB()const {
+		Vector3 min_v(0, 0, 0);
+		Vector3 max_v(0, 0, 0);
+		vector<TRIANGLE> trivec;
+		GetTriangles(trivec);
+		if (!trivec.empty()) {
+			for (auto& v : trivec) {
+				HitTest::ChkSetMinMax(v.m_A, min_v, max_v);
+				HitTest::ChkSetMinMax(v.m_B, min_v, max_v);
+				HitTest::ChkSetMinMax(v.m_C, min_v, max_v);
+			}
+		}
+		return AABB(min_v, max_v);
+	}
+
 
 	void CollisionTriangles::OnDraw() {
 		GenericDraw Draw;
@@ -2243,6 +2292,15 @@ namespace basecross {
 
 		SPHERE Src = HitTest::SphereEnclosingSphere(SrcColRect.GetWrappedSPHERE(), SrcBeforeColRect.GetWrappedSPHERE());
 		return Src;
+	}
+
+	bool CollisionRect::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+		return false;
+	}
+
+	AABB CollisionRect::GetWrappingAABB()const {
+		COLRECT SrcColRect = GetColRect();
+		return SrcColRect.GetWrappedAABB();
 	}
 
 

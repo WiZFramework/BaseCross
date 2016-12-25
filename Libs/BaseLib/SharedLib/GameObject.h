@@ -1574,6 +1574,43 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	struct CellIndex;
+	//--------------------------------------------------------------------------------------
+	//	ステージのセルマップで使用するセル構造体
+	//--------------------------------------------------------------------------------------
+	struct CellPiece{
+		CellIndex m_Index;
+		CellIndex m_ParentIndex;
+		int m_Cost;
+		AABB m_PieceRange;
+		CellPiece(){}
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	ステージのセルマップ（派生クラスを作るかインスタンスを作成する）
+	//--------------------------------------------------------------------------------------
+	class StageCellMap : public GameObject {
+	public:
+		StageCellMap(const shared_ptr<Stage>& StagePtr,const Vector3& MiniPos,
+			float PieceSize, UINT PieceCountX, UINT PieceCountZ,int DefaultCost = 1);
+		virtual ~StageCellMap();
+		bool IsCellStringActive();
+		void SetCellStringActive(bool b);
+		bool FindCell(const Vector3& Pos,CellIndex& ret);
+		bool FindAABB(const CellIndex& Index,AABB& ret);
+		vector<vector<CellPiece>>& GetCellVec() const;
+		//初期化
+		virtual void OnCreate() override;
+		virtual void OnUpdate() override;
+		virtual void OnDraw() override;
+	private:
+		//Implイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
 
 
 

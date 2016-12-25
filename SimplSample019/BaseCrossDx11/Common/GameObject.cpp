@@ -1522,12 +1522,326 @@ namespace basecross {
 		}
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	struct StageCellMap::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct StageCellMap::Impl {
+		//セルのポインタの配列（2次元）
+		vector<vector<CellPiece>> m_CellVec;
+		const UINT m_MaxCellSize = 100;
+		//セルのXZ方向の数
+		UINT m_SizeX;
+		UINT m_SizeZ;
+		//セル1個のステージ上のサイズ
+		float m_PieceSize;
+		//デフォルトのコスト
+		int m_DefaultCost;
+		//ステージ上でこのセルマップを展開するAABB
+		AABB m_MapAABB;
+		//メッシュ
+		shared_ptr<MeshResource> m_LineMesh;
+		//メッシュ作成のための頂点の配列
+		vector<VertexPositionColor> m_Vertices;
+		//セル文字を描画するかどうか
+		bool m_IsCellStringActive;
+		Impl() :
+			m_IsCellStringActive(false)
+		{}
+		~Impl() {}
+
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	ステージのセルマップ（派生クラスを作るかインスタンスを作成する）
+	//--------------------------------------------------------------------------------------
+
+	StageCellMap::StageCellMap(const shared_ptr<Stage>& StagePtr, const Vector3& MiniPos,
+		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost):
+		GameObject(StagePtr),
+		pImpl(new Impl())
+	{
+		pImpl->m_PieceSize = PieceSize;
+		pImpl->m_DefaultCost = DefaultCost;
+		pImpl->m_SizeX = PieceCountX;
+		if (pImpl->m_SizeX <= 0) {
+			pImpl->m_SizeX = 1;
+		}
+		if (pImpl->m_SizeX >= pImpl->m_MaxCellSize) {
+			throw BaseException(
+				L"セルのX方向が最大値を超えました",
+				L"if (m_SizeX >= m_MaxCellSize)",
+				L"StageCellMap::StageCellMap()"
+			);
+		}
+		pImpl->m_SizeZ = PieceCountZ;
+		if (pImpl->m_SizeZ <= 0) {
+			pImpl->m_SizeZ = 1;
+		}
+		if (pImpl->m_SizeZ >= pImpl->m_MaxCellSize) {
+			throw BaseException(
+				L"セルのZ方向が最大値を超えました",
+				L"if (m_SizeZ >= m_MaxCellSize)",
+				L"StageCellMap::StageCellMap()"
+			);
+		}
+		pImpl->m_MapAABB.m_Min = MiniPos;
+		pImpl->m_MapAABB.m_Max.x = pImpl->m_MapAABB.m_Min.x + pImpl->m_PieceSize * (float)pImpl->m_SizeX;
+		pImpl->m_MapAABB.m_Max.y = pImpl->m_MapAABB.m_Min.y + pImpl->m_PieceSize;
+		pImpl->m_MapAABB.m_Max.z = pImpl->m_MapAABB.m_Min.z + pImpl->m_PieceSize * (float)pImpl->m_SizeZ;
+		Vector3 PieceVec(pImpl->m_PieceSize, pImpl->m_PieceSize, pImpl->m_PieceSize);
+		//配列の初期化
+		pImpl->m_CellVec.resize(pImpl->m_SizeX);
+		for (UINT x = 0; x < pImpl->m_SizeX; x++) {
+			pImpl->m_CellVec[x].resize(pImpl->m_SizeZ);
+			for (UINT z = 0; z < pImpl->m_SizeZ; z++) {
+				pImpl->m_CellVec[x][z].m_Index.x = x;
+				pImpl->m_CellVec[x][z].m_Index.z = z;
+				pImpl->m_CellVec[x][z].m_Cost = pImpl->m_DefaultCost;
+				AABB Piece;
+				Piece.m_Min.x = pImpl->m_MapAABB.m_Min.x + (float)x * pImpl->m_PieceSize;
+				Piece.m_Min.y = pImpl->m_MapAABB.m_Min.y;
+				Piece.m_Min.z = pImpl->m_MapAABB.m_Min.z + (float)z * pImpl->m_PieceSize;
+				Piece.m_Max = Piece.m_Min + PieceVec;
+				pImpl->m_CellVec[x][z].m_PieceRange = Piece;
+			}
+		}
+	}
 
 
 
+	StageCellMap::~StageCellMap() {}
+
+	bool StageCellMap::IsCellStringActive() {
+		return pImpl->m_IsCellStringActive;
+
+	}
+	void StageCellMap::SetCellStringActive(bool b) {
+		pImpl->m_IsCellStringActive = b;
+	}
+
+	vector<vector<CellPiece>>& StageCellMap::GetCellVec() const {
+		return pImpl->m_CellVec;
+	}
+	//初期化
+	void StageCellMap::OnCreate(){
+
+		Vector3 Min = pImpl->m_MapAABB.m_Min;
+		Vector3 Max = pImpl->m_MapAABB.m_Max;
+		Color4 Col(1.0f, 1.0f, 1.0f, 1.0f);
+
+		Vector3 LineFrom(Min);
+		Vector3 LineTo(Min);
+		LineTo.x = Max.x;
+
+		for (UINT z = 0; z <= pImpl->m_SizeZ; z++) {
+			pImpl->m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
+			pImpl->m_Vertices.push_back(VertexPositionColor(LineTo, Col));
+			LineFrom.z += pImpl->m_PieceSize;
+			LineTo.z += pImpl->m_PieceSize;
+		}
+
+		LineFrom = Min;
+		LineTo = Min;
+		LineTo.z = Max.z;
+		for (UINT x = 0; x <= pImpl->m_SizeX; x++) {
+			pImpl->m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
+			pImpl->m_Vertices.push_back(VertexPositionColor(LineTo, Col));
+			LineFrom.x += pImpl->m_PieceSize;
+			LineTo.x += pImpl->m_PieceSize;
+		}
+		//メッシュの作成（変更できない）
+		pImpl->m_LineMesh = MeshResource::CreateMeshResource(pImpl->m_Vertices, false);
+
+		//スプライト文字列の初期化
+		auto StringPtr = AddComponent<MultiStringSprite>();
+		Matrix4X4 World, View, Proj;
+
+		//ワールド行列の決定
+		Quaternion Qt;
+		Qt.Normalize();
+		World.AffineTransformation(
+			Vector3(1.0, 1.0, 1.0),			//スケーリング
+			Vector3(0, 0, 0),		//回転の中心（重心）
+			Qt,				//回転角度
+			Vector3(0, 0.01f, 0)				//位置
+		);
+
+		auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
+		View = PtrCamera->GetViewMatrix();
+		Proj = PtrCamera->GetProjMatrix();
+		auto viewport = GetStage()->GetView()->GetTargetViewport();
+		World *= View;
+		World *= Proj;
+
+		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
+			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
+				Vector3 Pos = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
+
+				Pos.y = pImpl->m_CellVec[x][z].m_PieceRange.m_Min.y;
+				Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
+				Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 20);
+
+				wstring str(L"");
+				str += Util::IntToWStr(x);
+				str += L",";
+				str += Util::IntToWStr(z);
+
+				if (Pos.z < viewport.MinDepth || Pos.z > viewport.MaxDepth) {
+					StringPtr->InsertTextBlock(rect, str,true);
+				}
+				else {
+					StringPtr->InsertTextBlock(rect, str, false);
+				}
+			}
+		}
+		SetDrawActive(false);
+	}
 
 
+	bool StageCellMap::FindCell(const Vector3& Pos, CellIndex& ret) {
+		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
+			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
+				if (pImpl->m_CellVec[x][z].m_PieceRange.PtInAABB(Pos)) {
+					ret = pImpl->m_CellVec[x][z].m_Index;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	bool StageCellMap::FindAABB(const CellIndex& Index, AABB& ret) {
+		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
+			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
+				if (pImpl->m_CellVec[x][z].m_Index == Index) {
+					ret = pImpl->m_CellVec[x][z].m_PieceRange;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
+
+	void  StageCellMap::OnUpdate() {
+		if (pImpl->m_IsCellStringActive) {
+			auto StringPtr = GetComponent<MultiStringSprite>();
+			Matrix4X4 World, View, Proj;
+			World.Identity();
+			auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
+			View = PtrCamera->GetViewMatrix();
+			Proj = PtrCamera->GetProjMatrix();
+			auto viewport = GetStage()->GetView()->GetTargetViewport();
+
+			World *= View;
+			World *= Proj;
+
+			size_t count = 0;
+			for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
+				for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
+					Vector3 Pos = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
+					Pos.y = pImpl->m_CellVec[x][z].m_PieceRange.m_Min.y;
+					Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
+
+					Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 50);
+
+					wstring str(L"");
+					str += Util::IntToWStr(x);
+					str += L",";
+					str += Util::IntToWStr(z);
+					str += L"\nCost: ";
+					str += Util::IntToWStr(pImpl->m_CellVec[x][z].m_Cost);
+
+					if (Pos.z < viewport.MinDepth || Pos.z > viewport.MaxDepth) {
+						StringPtr->UpdateTextBlock(count, rect, str, true);
+					}
+					else {
+						StringPtr->UpdateTextBlock(count, rect, str, false);
+					}
+					count++;
+				}
+			}
+		}
+	}
+
+
+	void StageCellMap::OnDraw() {
+		if (pImpl->m_IsCellStringActive) {
+			GameObject::OnDraw();
+		}
+
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+		auto RenderState = Dev->GetRenderState();
+
+		//行列の定義
+		Matrix4X4 World, View, Proj;
+		//ワールド行列の決定
+		Quaternion Qt;
+		Qt.Normalize();
+		World.AffineTransformation(
+			Vector3(1.0, 1.0, 1.0),			//スケーリング
+			Vector3(0, 0, 0),		//回転の中心（重心）
+			Qt,				//回転角度
+			Vector3(0, 0.01f, 0)				//位置
+		);
+		//転置する
+		World.Transpose();
+		//カメラを得る
+		auto CameraPtr = OnGetDrawCamera();
+		//ビューと射影行列を得る
+		View = CameraPtr->GetViewMatrix();
+		//転置する
+		View.Transpose();
+		//転置する
+		Proj = CameraPtr->GetProjMatrix();
+		Proj.Transpose();
+
+		//コンスタントバッファの準備
+		StaticConstantBuffer sb;
+		sb.World = World;
+		sb.View = View;
+		sb.Projection = Proj;
+		//エミッシブ加算は行わない。
+		sb.Emissive = Color4(0, 0, 0, 0);
+		sb.Diffuse = Color4(1, 1, 1, 1);
+		//コンスタントバッファの更新
+		pD3D11DeviceContext->UpdateSubresource(CBStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+
+		//ストライドとオフセット
+		UINT stride = sizeof(VertexPositionColor);
+		UINT offset = 0;
+		//頂点バッファのセット
+		pD3D11DeviceContext->IASetVertexBuffers(0, 1, pImpl->m_LineMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+
+		//描画方法（ライン）
+		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+		//コンスタントバッファの設定
+		ID3D11Buffer* pConstantBuffer = CBStatic::GetPtr()->GetBuffer();
+		ID3D11Buffer* pNullConstantBuffer = nullptr;
+		//頂点シェーダに渡す
+		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+		//ピクセルシェーダに渡す
+		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+		//シェーダの設定
+		pD3D11DeviceContext->VSSetShader(VSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+		pD3D11DeviceContext->PSSetShader(PSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+		//インプットレイアウトの設定
+		pD3D11DeviceContext->IASetInputLayout(VSPCStatic::GetPtr()->GetInputLayout());
+		//ブレンドステート
+		pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+		//デプスステンシルステート
+		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+		//ラスタライザステート
+		pD3D11DeviceContext->RSSetState(RenderState->GetCullNone());
+
+		//描画
+		pD3D11DeviceContext->Draw(pImpl->m_Vertices.size(), 0);
+		//後始末
+		Dev->InitializeStates();
+
+	}
 
 
 }
