@@ -1089,6 +1089,34 @@ namespace basecross {
 			//最初の場所が行けない場所だった
 			return false;
 		}
+		bool DirectHit = false;
+		for (UINT x = 0; x < CellVec.size(); x++) {
+			for (UINT z = 0; z < CellVec[x].size(); z++) {
+				if (CellVec[x][z].m_Cost == -1) {
+					//障害物があった
+					if (HitTest::SEGMENT_AABB(Pos, TargetPosition, CellVec[x][z].m_PieceRange)) {
+						//障害物とレイがヒットしている
+						DirectHit = true;
+						break;
+					}
+				}
+			}
+			if (DirectHit) {
+				break;
+			}
+		}
+		if (!DirectHit) {
+			//どの障害物ともヒットしてない
+			//直接ターゲットに行ける
+			//まず自分自身
+			RetCellIndexVec.push_back(pImpl->m_BaseIndex);
+			if (pImpl->m_BaseIndex != pImpl->m_TargetIndex) {
+				//続いてターゲット
+				RetCellIndexVec.push_back(pImpl->m_TargetIndex);
+			}
+			//成功
+			return true;
+		}
 		pImpl->m_OpenVec.push_back(Node);
 		if (pImpl->SearchCellBase(pImpl->m_BaseIndex, pImpl->m_TargetIndex)) {
 			//経路が見つかった
