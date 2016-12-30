@@ -2614,6 +2614,12 @@ namespace basecross{
 			}
 			return nullptr;
 		}
+		void HandleInputExcute(const shared_ptr<T>& Obj) {
+			auto ComPtr = HandleInput();
+			if (ComPtr) {
+				ComPtr->Excute(Obj);
+			}
+		}
 	};
 
 	template<typename T>

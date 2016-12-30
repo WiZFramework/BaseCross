@@ -432,10 +432,6 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-
-
-
-
 	}
 	void WhiteCube::OnUpdate() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -571,9 +567,11 @@ namespace basecross{
 		Group->IntoGroup(GetThis<SeekObject>());
 		//•ª—£s“®‚ğ‚Â‚¯‚é
 		AddComponent<SeparationSteering>(Group);
-		//Obb‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
-		auto PtrColl = AddComponent<CollisionObb>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
+		//Sphere‚ÌÕ“Ë”»’è‚ğ‚Â‚¯‚é
+		auto PtrColl = AddComponent<CollisionSphere>();
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrColl->SetCalcScaling(CalcScaling::YScale);
+		PtrColl->SetDrawActive(true);
 
 		//d—Í‚ğ‚Â‚¯‚é
 		auto PtrGravity = AddComponent<Gravity>();

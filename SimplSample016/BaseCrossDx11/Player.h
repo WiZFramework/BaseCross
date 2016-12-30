@@ -9,8 +9,7 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
-	//	class AttackBall : public GameObject;
-	//	用途: 飛んでいくボール
+	///	飛んでいくボール
 	//--------------------------------------------------------------------------------------
 	class AttackBall : public GameObject {
 	public:
@@ -38,7 +37,6 @@ namespace basecross{
 	class BehaviorChangeCommand : public ObjCommand<Player> {
 		virtual void Excute(const shared_ptr<Player>& Obj)override;
 	};
-
 	//--------------------------------------------------------------------------------------
 	///	ステージ変更コマンド(Xボタン)
 	//--------------------------------------------------------------------------------------
@@ -47,26 +45,19 @@ namespace basecross{
 	};
 
 
+
+
 	class PlayerBehavior;
 	//--------------------------------------------------------------------------------------
-	//	class Player : public GameObject;
-	//	用途: プレイヤー
+	///	プレイヤー
 	//--------------------------------------------------------------------------------------
 	class Player : public GameObject {
-		//スタート位置
-		Vector3 m_StartPos;
 		//行動関数クラス
 		shared_ptr<PlayerBehavior> m_PlayerBehavior;
 		//階層化ステートマシーン
 		shared_ptr< LayeredStateMachine<Player> >  m_StateMachine;
-		//コマンド関連
-		void InputCheck() {
-			//コントローラボタンチェック
-			auto pCom = m_Handler.HandleInput();
-			if (pCom) {
-				pCom->Excute(GetThis<Player>());
-			}
-		}
+		//入力ハンドラー
+		InputHandler<Player> m_Handler;
 		//アクションコマンド（Aボタン）
 		ActionCommand m_Action;
 		//行動切り替えコマンド（Bボタン）
@@ -74,8 +65,7 @@ namespace basecross{
 		//ステージ変更コマンド(Xボタン)
 		ToMenuCommand m_ToMenuCommand;
 
-		//入力ハンドラー
-		InputHandler<Player> m_Handler;
+		Vector3 m_StartPos;
 		//最高速度
 		float m_MaxSpeed;
 		//減速率
@@ -88,9 +78,10 @@ namespace basecross{
 		/*!
 		@brief	コンストラクタ
 		@param[in]	StagePtr	ステージ
+		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Player(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos);
+		Player(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -158,14 +149,14 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
-	///	デフォルトプレイヤー行動
+	/// ジャンププレイヤー行動
 	//--------------------------------------------------------------------------------------
-	class DefaultPlayerBehavior : public PlayerBehavior {
+	class JumpPlayerBehavior : public PlayerBehavior {
 	protected:
-		DefaultPlayerBehavior() {}
+		JumpPlayerBehavior() {}
 	public:
 		//行動のインスタンス取得
-		DECLARE_SINGLETON_INSTANCE(DefaultPlayerBehavior)
+		DECLARE_SINGLETON_INSTANCE(JumpPlayerBehavior)
 		virtual shared_ptr<PlayerBehavior> ChangeNextBehavior(const shared_ptr<Player>& Obj) override;
 		virtual void StartAction(const shared_ptr<Player>& Obj) override;
 		virtual void ExcuteAction(const shared_ptr<Player>& Obj) override;
@@ -213,6 +204,7 @@ namespace basecross{
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
 		virtual void Exit(const shared_ptr<Player>& Obj)override {}
 	};
+
 
 
 

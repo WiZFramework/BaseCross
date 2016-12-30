@@ -1,0 +1,306 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０２．移動する立方体</h3>
+　ここでは、左右に移動する立方体の紹介です。<br />
+このサンプルは<b>FullTutorial002</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　リビルドして実行すると以下の画面が出てきます。1つの立方体が左右に移動するのがわかると思います。
+<p>&nbsp;</p>
+<img src="img/0102a.png" width="80%"/>
+<p>図0102a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>解説</h4>
+　このサンプルでは、<b>ゲームステージ</b>に<b>ゲームオブジェクト</b>を配置しています。<br />
+　ここで配置しているオブジェクトは<b>プレート</b>と呼ばれる<b>ゲーム盤</b>と<b>立方体</b>です。<br />
+　オブジェクトを配置する前に、<b>リソース</b>を登録します。<b>リソース</b>というのは、テクスチャやオーディオファイル、メッシュなどの<b>メモリに負担かけそうな</b>データです。<br />
+　<b>BaseCross</b>では、実際に配置させるゲームオブジェクトと<b>リソース</b>を分けることで、オブジェクト間での<b>リソースの共有</b>ができるようになってます。<br />
+　その記述は、<b>シーン</b>にあります。以下がシーン内の<b>Scene::CreateResourses()関数</b>です。
+<div class="box1">
+<pre>
+void Scene::CreateResourses() {
+    wstring DataDir;
+    App::GetApp()->GetDataDirectory(DataDir);
+    wstring strTexture = DataDir + L"sky.jpg";
+    App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+    strTexture = DataDir + L"trace.png";
+    App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+}
+</pre>
+</div>
+　この項からは<b>namespace basecross</b>の記述は省略します。何も断らない限り<b>namespace basecross</b>内にコードがあると思ってください。<br />
+　この関数<b>Scene::CreateResourses()</b>では、2つの画像ファイルを<b>テクスチャ</b>として<b>リソース化</b>しています。<br />
+　まず、
+<div class="box1">
+<pre>
+    wstring DataDir;
+    App::GetApp()->GetDataDirectory(DataDir);
+</pre>
+</div>
+　でデータディレクトリを取得します。<b>App::～</b>という記述は<b>Appクラスのstatic関数呼び出し</b>です。<b>Appクラス</b>というのは、このアプリケーションに一つしか存在しません。（シーンもそうですが）。<br />
+　シングルトンというパターンにデザインされていて、<b>App::GetApp()</b>でその唯一のポインタを取得できます。<br />
+　このポインタは<b>unique_ptr</b>になっているので<b>コピーすることができません</b>。<br />
+　なので、<b>App::GetApp()->GetDataDirectory()</b>のようにAppクラスのメンバ関数を呼び出す場合は続けて記述します。<br />
+　<b>App::GetApp()->GetDataDirectory()</b>のような感じです。<br />
+　<b>GetDataDirectory()関数</b>は引数に<b>wstringの参照</b>を取ります。データのディレクトリを取得するわけですが、ソリューションディレクトリの直下にある<b>mediaディレクトリ</b>がデータディレクトリです。<br />
+　この<b>mediaディレクトリ</b>は、実行ファイルと同じディレクトリ直下にあればその中を参照します。開発中は<b>デバッグモード</b>と<b>リリースモード</b>をしょっちゅう切り替えると思うのでソリューションの直下でも参照できるようになってます。<br />
+　<b>mediaディレクトリ</b>の<b>Shadersディレクトリ</b>にはコンパイルされたシェーダが入ります。（拡張子は.cso）<br />
+　<b>Scene::CreateResourses()関数</b>では、このデータディレクトリを取得して、その中の<b>sky.jpg</b>および<b>trace.png</b>を<b>テクスチャリソース</b>として登録します。
+<div class="box1">
+<pre>
+    wstring strTexture = DataDir + L"sky.jpg";
+    App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+</pre>
+</div>
+　リソースは、このように<b>キーワード</b>を指定して登録します。上記の登録後は、意識的に登録から削除しない限り<b>L"SKY_TX"</b>というキーワードで参照できるようになります。<br />
+　<b>リソースの登録</b>は<b>シーンから行わなければいけない</b>わけではありません。ステージで行うこともできます。<br />
+　<b>App::GetApp()</b>で<b>Appクラスのインスタンス</b>を取得できる場所であれば、実行中はどこでも登録できます。<br />
+<br />
+<h4>ゲームステージ</h4>
+　オブジェクトを配置しているのは<b>GameStage.h/cpp</b>になります。<br />
+<br />
+<h4>プレートの作成</h4>
+　まず<b>プレート</b>です。<b>プレート</b>は以下のコードで実装しています。<b>GameStage.cpp</b>に記述があります。<br />
+<div class="box1">
+<pre>
+//プレートの作成
+void GameStage::CreatePlate() {
+    //ステージへのゲームオブジェクトの追加
+    auto Ptr = AddGameObject&lt;GameObject>();
+    auto PtrTrans = Ptr->GetComponent&lt;Transform>();
+    Quaternion Qt;
+    Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+    PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
+
+    //描画コンポーネントの追加
+    auto DrawComp = Ptr->AddComponent&lt;PNTStaticDraw>();
+    //描画コンポーネントに形状（メッシュ）を設定
+    DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
+    //自分に影が映りこむようにする
+    DrawComp->SetOwnShadowActive(true);
+    //描画コンポーネントテクスチャの設定
+    DrawComp->SetTextureResource(L"SKY_TX");
+}
+</pre>
+</div>
+　ステージに配置されるオブジェクトは<b>GameObjectクラス</b>か、もしくは<b>GameObjectの派生クラス</b>をあらかじめ作成してそれを配置します。<br />
+　通常は派生クラスを作成します。プレートについては<b>派生クラスを作成しなくても作れる</b>ということのサンプルです。<br />
+　ここではまず
+<div class="box1">
+<pre>
+    auto Ptr = AddGameObject&lt;GameObject>();
+</pre>
+</div>
+　という記述で、<b>GameObjectクラスのインスタンス</b>を作成し、ステージに登録します。<br />
+　<b>AddGameObjec関数</b>は<b>可変長のテンプレート関数</b>で、<b>GameStageクラスの親クラス</b>である<b>Stageクラス</b>のメンバ関数です。
+<div class="box1">
+<pre>
+    AddGameObject&lt;作成する型>(可変長引数);
+</pre>
+</div>
+　という書式になります。<br/>
+　この記述により、指定の型のオブジェクトが作成され、そのオブジェクトの<b>OnCreate仮想関数</b>を呼び出し、インスタンスのポインタ<b>（shared_ptr）</b>が返されます。<br />
+　続く
+<div class="box1">
+<pre>
+    auto PtrTrans = Ptr->GetComponent&lt;Transform>();
+</pre>
+</div>
+　は、AddGameObjectの戻り値（shared_ptr）を使用して<b>Transformコンポーネント</b>を取得します。<br />
+　<b>BaseCross</b>は<b>コンポーネント方式</b>を使用しています。<b>コンポーネント</b>というのは、そのオブジェクトが使用する機能をそれぞれのクラスごとに変えることができるものです。<br />
+　コンポーネントには大きく分けて<b>Update系</b>と<b>Draw系</b>があります。<b>Update系</b>にはそのオブジェクトの動きや衝突判定などがあります。<b>Draw系</b>は描画方法です。主にシェーダに関連します。<br />
+　通常コンポーネントは<b>AddComponent関数</b>を使って、使用するコンポーネントを<b>追加</b>します。すでに追加されているコンポーネントは<b>GetComponent関数</b>で取得します。<br />
+　しかし、ここの<b>Transformコンポーネント</b>だけは特殊で<b>すべてのゲームオブジェクト</b>が保持しています。ですので追加しなくても<b>GetComponent関数</b>で取得することができます。<br />
+　<b>AddComponent関数</b>および<b>GetComponent関数</b>はどちらも<b>テンプレート関数</b>で以下のような書式です。
+<div class="box1">
+<pre>
+    AddComponent&lt;作成する型>(可変長引数);
+    GetComponent&lt;見つける型>(見つからなかったときに例外が発生するかどうか);
+</pre>
+</div>
+　です。<b>GetComponent関数</b>の<b>例外が発生するかどうか</b>はbool値で、<b>trueかfalse</b>かを指定します。ただこの引数はデフォルト化されているので何も記述しなければ、<b>true（例外が発生する）</b>になります。<br />
+　さて<b>プレートのTransform</b>を取得したら、
+<div class="box1">
+<pre>
+    Quaternion Qt;
+    Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+    PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
+</pre>
+</div>
+　のように、<b>スケーリング、回転、平行移動（位置）</b>を指定します。回転は<b>クオータニオン</b>を使用していますが、上記のように回転ベクトルから作成できます。<br />
+　続いて、<b>Draw系コンポーネント</b>である、<b>PNTStaticDrawコンポーネント</b>を追加します。このコンポーネントはTransformのようにあらかじめ追加されてませんので<b>AddComponent関数</b>を使って追加します。追加したら以下のような設定をします。
+<div class="box1">
+<pre>
+    //描画コンポーネントの追加
+    auto DrawComp = Ptr->AddComponent&lt;PNTStaticDraw>();
+    //描画コンポーネントに形状（メッシュ）を設定
+    DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
+    //自分に影が映りこむようにする
+    DrawComp->SetOwnShadowActive(true);
+    //描画コンポーネントテクスチャの設定
+    DrawComp->SetTextureResource(L"SKY_TX");
+</pre>
+</div>
+　ここでは、形状（メッシュ）に<b>L"DEFAULT_SQUARE"</b>を使ってます。この<b>DEFAULT_なんたら</b>というキーワードは、あらかじめ登録されているリソースです。リソースは<b>テクスチャリソース</b>の登録はすでに説明しましたが、<b>形状（メッシュ）</b>の登録はまだ説明してません。しかし、ここではあらかじめ登録されている形状を使用します。登録されている形状は以下の通りです。
+<div class="box1">
+<pre>
+L"DEFAULT_SQUARE"           ３Ｄ上の平面
+L"DEFAULT_CUBE"             立方体
+L"DEFAULT_SPHERE"           球体
+L"DEFAULT_CAPSULE"          カプセル
+L"DEFAULT_CYLINDER"         シリンダー（土管型）
+L"DEFAULT_CONE"             コーン（円錐）
+L"DEFAULT_TORUS"            トーラス（ドーナッツ）
+L"DEFAULT_TETRAHEDRON"      正四面体
+L"DEFAULT_OCTAHEDRON"       正八面体
+L"DEFAULT_DODECAHEDRON"     正十二面体
+L"DEFAULT_ICOSAHEDRON"      正二十四面体
+</pre>
+</div>
+　これらの形状は、別にモデルを作成する必要がないオブジェクトの形状として使用できます。また、メモリ上は１個しかありませんのでメモリ上の圧迫は非常に少なくて済みます（描画上のコストはもちろんかかりますが）。<br />
+　プレートは<b>L"DEFAULT_SQUARE"（つまり３Ｄ上の平面）</b>を使います。<br />
+　続いて、<b>自分に影が映りこむようにする</b>設定を行います。<b>SetOwnShadowActive()関数</b>です。影は<b>シャドウマップ方式</b>を使用しています。影は<b>影を出すほう</b>と<b>影を受けるほう</b>を設定します。ここでプレートに設定しているのは<b>影を受ける</b>設定です。<br />
+　<b>影を出すほう</b>の設定は、<b>立方体の作成</b>のところで説明します。<br />
+　最後に<b>描画コンポーネントテクスチャの設定</b>を行います。ここではシーンで登録したテクスチャを<b>SetTextureResource()関数</b>で設定します。<br />
+　ここまでで、プレートの作成は終わりです。実際にステージ上に配置するためにはこの<b>GameStage::CreatePlate()関数</b>を、<b> GameStage::OnCreate()関数</b>で呼び出す必要があります。<br />
+<br />
+<h4>立方体の作成</h4>
+　立方体はプレートとは違って、<b>新しいクラスを作成して</b>実装します。プレートのように<b>作成したら最後まで変わらない</b>オブジェクトであれば<b>GameObjectクラスのインスタンス</b>として作成できますが、通常は動的に変化します。その場合は<b>GameObjectの派生クラス</b>を作成します。<b>立方体クラス</b>は<b>Character.h/cpp</b>に記述があります。<br />
+<br/>
+　まず、<b>Character.h</b>です。ここでは<b>立方体クラス</b>である<b>Boxクラス</b>を宣言しています。以下がそのコードです。
+<div class="box1">
+<pre>
+class Box : public GameObject {
+    Vector3 m_StartPos;
+    float m_TotalTime;
+public:
+    //構築と破棄
+    Box(<span class="red">const shared_ptr&lt;Stage>& StagePtr</span>, const Vector3& StartPos);
+    virtual ~Box();
+    //初期化
+    virtual void OnCreate() override;
+    //更新
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　<b>GameObjectの派生クラス</b>を作成するには<b>１つだけ制約</b>があります。それは<b>コンストラクタの第１引数は<span class="red">const shared_ptr&lt;Stage>& StagePtr</span></b>にしなければいけない、ということです。<br />
+　<b>GameObjectの派生クラス</b>は<b>GameObject</b>同様、<b>AddGameObjec()関数</b>により、そのステージに配置されるわけですが、その中で、第１引数である<b>ステージ</b>は、該当するステージが自分自身のポインタを渡します。そのようなメカニズムにより、<b>GameObjectの派生クラス</b>は<b>コンストラクタやOnCreate関数</b>で、所属ステージにアクセスすることができるようになります。<br />
+　<b>GameObjectの派生クラス</b>として新しいクラスを作成することで、<b>OnCreate()仮想関数</b>や<b>OnUpdate()仮想関数</b>を記述することが可能になります。<br />
+　続いて、<b>Character.cpp</b>です、ここでは宣言された関数の実体を記述します。
+<div class="box1">
+<pre>
+    Box::Box(const shared_ptr&lt;Stage>& StagePtr, const Vector3& StartPos) :
+        GameObject(StagePtr),
+        m_StartPos(StartPos),
+        m_TotalTime(0)
+    {
+    }
+    Box::~Box() {}
+
+    //初期化
+    void Box::OnCreate() {
+        auto PtrTrans = GetComponent&lt;Transform>();
+        PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
+        Quaternion Qt;
+        Qt.Identity();
+        PtrTrans->SetQuaternion(Qt);
+        PtrTrans->SetPosition(m_StartPos);
+
+        //影をつける
+        auto ShadowPtr = AddComponent&lt;Shadowmap>();
+        ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+        //描画コンポーネント
+        auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+        PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+        PtrDraw->SetTextureResource(L"TRACE_TX");
+        //透過処理
+        SetAlphaActive(true);
+    }
+
+    //更新
+    void Box::OnUpdate() {
+        //前回のターンからの経過時間を求める
+        float ElapsedTime = App::GetApp()->GetElapsedTime();
+        m_TotalTime += ElapsedTime;
+        if (m_TotalTime >= XM_2PI) {
+            m_TotalTime = 0;
+        }
+        auto Pos = GetComponent&lt;Transform>()->GetPosition();
+        Pos.x = sin(m_TotalTime);
+        GetComponent&lt;Transform>()->SetPosition(Pos);
+    }
+</pre>
+</div>
+　<b>Character.cpp</b>には上記のように<b>４つの関数</b>の実体があります。<br />
+　まずコンストラクタですが、メンバイニシャライザで、各メンバ変数の初期化を行っています。<br />
+　デストラクタは空関数となっています。<br />
+　<b>OnCreate()仮想関数</b>では、プレートの構築時と同じように、コンポーネントの追加やそのパラメータ設定を行っています。<br />
+　ここで注意したいのは<b>影の表示</b>です。プレートでは<b>影の反映</b>を設定しましたが、ここでは<b>影を出す</b>設定をします。
+<div class="box1">
+<pre>
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+</pre>
+</div>
+　のように、影を付けるためには<b>Shadowmapコンポーネント</b>を追加します。また、影を描画するための<b>形状（メッシュ）</b>も指定します。ここでは描画するのに使用している<b>L"DEFAULT_CUBE"（同じもの）</b>を指定します。<br />
+　なぜ、影の形状を設定するのか疑問に思うかもしれません。このサンプルの場合は、描画も影も同じで問題ないのですが、例えば<b>３Ｄ上にあるのに２Ｄの表現</b>のようなキャラクターを実装する場合があります。この場合、影は<b>丸影</b>を使ったりもします。このように、本体と影を別に設定することができることで、いろんなカスタマイズが可能になります。<br />
+　Boxクラスには<b>Box::OnUpdate()関数</b>が実装されています。この関数は１ターンに一度呼び出される関数で、このオブジェクトの<b>変化</b>を記述します。このサンプルでは、オブジェクトは<b>左右に行ったり来たり</b>するのでその処理を記述します。<br />
+　まず
+<div class="box1">
+<pre>
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+</pre>
+</div>
+　で、ターン間の時間を取得します。通常は60分の1秒です。その<b>前回のターンからの経過時間</b>を使って、<b>サインカーブ</b>をX方向にあてはめます。すると、なめらかな行き来が表現できます。<br />
+<br />
+　このようにして宣言定義した<b>Boxクラス</b>を配置するには、ステージで行います。<b>GameStage.cpp</b>の、<b>GameStage::CreateBox()関数</b>を参照してください。
+<div class="box1">
+<pre>
+    //ボックスの作成
+    void GameStage::CreateBox() {
+        AddGameObject&lt;Box>(Vector3(0.0f, 0.5f, 0.0f));
+    }
+</pre>
+</div>
+　このように<b>AddGameObject()関数</b>を使って配置しています。パラメータは<b>最初の位置</b>ですので<b>Vector3(0.0f, 0.5f, 0.0f)</b>のように位置ベクトルを渡します。<br />
+　そして最後に<b>GameStage::OnCreate()関数</b>内で、<b>CreateBox()関数</b>を呼び出せば実装できます。<br/>
+<br />
+　このサンプルでは<b>ゲームオブジェクト</b>について述べました。次項はもう少し複雑になります。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="01_03.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

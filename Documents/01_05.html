@@ -1,0 +1,210 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０５．さまざまなオブジェクト</h3>
+このサンプルは<b>FullTutorial005</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0105a.png" width="80%"/>
+<p>図0105a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>解説</h4>
+　ここにはいろんなタイプのオブジェクトが配置されています。<br />
+　また、オーディオも追加されています。
+<h4>オーディオ</h4>
+　オーディオのうちバックミュージックは「Scene.h/cpp」に記述があります。以下宣言部（抜粋）ですが
+<div class="box1">
+<pre>
+    class Scene : public SceneBase{
+        shared_ptr&lt;MultiAudioObject> m_AudioObjectPtr;
+    public:
+        //中略
+    };
+</pre>
+</div>
+　このように「m_AudioObjectPtr」を宣言します。<br />
+　そして、「Scene::OnCreate()関数」で以下のように記述します。
+<div class="box1">
+<pre>
+void Scene::OnCreate(){
+    try {
+        <span class="red"?wstring strMusic = App::GetApp()->m_wstrRelativeDataPath + L"nanika .wav";
+        App::GetApp()->RegisterWav(L"Nanika", strMusic);
+
+        //オーディオの初期化
+        m_AudioObjectPtr = ObjectFactory::Create&lt;MultiAudioObject>();
+        m_AudioObjectPtr->AddAudioResource(L"Nanika");
+        m_AudioObjectPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);</span>
+
+        //最初のアクティブステージの設定
+        ResetActiveStage&lt;GameStage>();
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　これで、ゲーム中ミュージックが繰り返し再生されます。<br />
+　また、プレイヤーがジャンプしたタイミングでも音が鳴ります。<br />
+<br />
+<h4>プレーヤー</h4>
+　続いてプレイヤーですが、前項との変更点は、サウンドの再生とエフェクトの再生です。<br />
+　サウンドは、準備として、「ゲームステージ」などでサウンドをリソース登録します。
+<div class="box1">
+<pre>
+void GameStage::CreateResourses() {
+    //中略
+
+    wstring CursorWav = App::GetApp()->m_wstrRelativeDataPath + L"cursor.wav";
+    App::GetApp()->RegisterWav(L"Cursor", CursorWav);
+}
+</pre>
+</div>
+　このようにしておいて、プレイヤーの構築時に以下のように記述します。
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+    //中略
+
+    //サウンドを登録.
+    <span class="red">auto pMultiSoundEffect = AddComponent&lt;MultiSoundEffect>();
+    pMultiSoundEffect->AddAudioResource(L"Cursor");</span>
+
+    //中略
+
+}
+</pre>
+</div>
+　最後に、ジャンプのタイミングで
+<div class="box1">
+<pre>
+void JumpPlayerBehavior::StartAction(const shared_ptr&lt;Player>& Obj) {
+
+    //中略
+
+    <span class="red">auto pMultiSoundEffect = Obj->GetComponent&lt;MultiSoundEffect>();
+    pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);</span>
+}
+</pre>
+</div>
+　のように記述します。<br />
+　エフェクトは、「何かに衝突した瞬間に」なります。エフェクトは「ゲームオブジェクト」なので、まず「エフェクトクラス」を記述します。「Character.h/cpp」への記述です。まず宣言は、
+<div class="box1">
+<pre>
+class MultiSpark : public MultiParticle {
+public:
+    //構築と破棄
+    MultiSpark(shared_ptr&lt;Stage>& StagePtr);
+    virtual ~MultiSpark();
+    //初期化
+    virtual void OnCreate() override;
+    void InsertSpark(const Vector3& Pos);
+};
+</pre>
+</div>
+　のようになります。実体は、「MultiSpark::InsertSpark()関数」ですが、以下のように記述します。
+<div class="box1">
+<pre>
+void MultiSpark::InsertSpark(const Vector3& Pos) {
+    auto ParticlePtr = InsertParticle(4);
+    ParticlePtr->SetEmitterPos(Pos);
+    ParticlePtr->SetTextureResource(L"SPARK_TX");
+    ParticlePtr->SetMaxTime(0.5f);
+    vector&lt;ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+    for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+        rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+        rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+        rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+        //各パーティクルの移動速度を指定
+        rParticleSprite.m_Velocity = Vector3(
+            rParticleSprite.m_LocalPos.x * 5.0f,
+            rParticleSprite.m_LocalPos.y * 5.0f,
+            rParticleSprite.m_LocalPos.z * 5.0f
+        );
+        //色の指定
+        rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+}
+</pre>
+</div>
+　このようにしておいて、ステージでの構築時に、
+<div class="box1">
+<pre>
+void GameStage::CreateSpark() {
+    auto MultiSparkPtr = AddGameObject&lt;MultiSpark>();
+    //共有オブジェクトにスパークを登録
+    SetSharedGameObject(L"MultiSpark", MultiSparkPtr);
+}
+</pre>
+</div>
+　とするとプレイヤーからアクセスできるようになるので、「プレイヤーの何かに衝突したタイミング」で、
+<div class="box1">
+<pre>
+void Player::OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) {
+    //最初に衝突するオブジェクトがあったとき
+    //スパークの放出
+    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
+    if (PtrSpark) {
+        PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+    }
+    //中略
+}
+</pre>
+</div>
+　と記述すればスパークエフェクトが出ます。<br />
+<br />
+<h4>SeekObjectクラス</h4>
+　SeekObjectは前項とほぼ同じですが、「球体の衝突判定」にすることと「ファイアのエフェクトを出す」が修正点です。エフェクトの送出はプレイヤーを参考にしてください。<br />
+　「球体の衝突判定」は、「SeekObject::OnCreate()関数」で以下のように記述します。
+<div class="box1">
+<pre>
+void SeekObject::OnCreate() {
+
+    //中略
+
+    //Sphereの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+    PtrColl->SetCalcScaling(CalcScaling::YScale);
+    PtrColl->SetDrawActive(true);
+
+    //中略
+}
+</pre>
+</div>
+　ここで、「PtrColl->SetCalcScaling(CalcScaling::YScale);」となっているのは球体の直径を「Yスケール基準で」という設定です。このようにすると「SeekObject」が「でこぼこ床」に衝突するようになります。<br />
+<br />
+<h4>そのほかのオブジェクト</h4>
+　このサンプルには、たくさんのタイプのオブジェクトが実装されています。「Character.h/cpp」に記述されていますが、個別には説明しませんのでコードを参考にしてください。
+
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

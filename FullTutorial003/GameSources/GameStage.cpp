@@ -232,30 +232,39 @@ namespace basecross {
 			},
 		};
 
-
+		//ボックスのグループを作成
+		auto BoxGroup = CreateSharedObjectGroup(L"FixedBoxes");
 		//オブジェクトの作成
 		for (auto v : Vec) {
-			AddGameObject<FixedBox>(v[0], v[1], v[2]);
+			auto BoxPtr = AddGameObject<FixedBox>(v[0], v[1], v[2]);
+			//ボックスのグループに追加
+			BoxGroup->IntoGroup(BoxPtr);
 		}
 		//セルマップ内にFixedBoxの情報をセット
 		auto Group = GetSharedObjectGroup(L"CellMap");
+		//セルマップグループを取得
 		for (auto& gv : Group->GetGroupVector()) {
 			auto MapPtr = dynamic_pointer_cast<StageCellMap>(gv.lock());
 			if (MapPtr) {
+				//セルマップからセルの配列を取得
 				auto& CellVec = MapPtr->GetCellVec();
-				auto& GameObjeVec = GetGameObjectVec();
-				vector<AABB> m_ObjectsAABBVec;
-				for (auto& v : GameObjeVec) {
-					auto FixedBoxPtr = dynamic_pointer_cast<FixedBox>(v);
+				//ボックスグループからボックスの配列を取得
+				auto& BoxVec = BoxGroup->GetGroupVector();
+				vector<AABB> ObjectsAABBVec;
+				for (auto& v : BoxVec) {
+					auto FixedBoxPtr = dynamic_pointer_cast<FixedBox>(v.lock());
 					if (FixedBoxPtr) {
 						auto ColPtr = FixedBoxPtr->GetComponent<CollisionObb>();
-						m_ObjectsAABBVec.push_back(ColPtr->GetWrappingAABB());
+						//ボックスの衝突判定かラッピングするAABBを取得して保存
+						ObjectsAABBVec.push_back(ColPtr->GetWrappingAABB());
 					}
 				}
+				//セル配列からセルをスキャン
 				for (auto& v : CellVec) {
 					for (auto& v2 : v) {
-						for (auto& vObj : m_ObjectsAABBVec) {
+						for (auto& vObj : ObjectsAABBVec) {
 							if (HitTest::AABB_AABB_NOT_EQUAL(v2.m_PieceRange, vObj)) {
+								//ボックスのABBとNOT_EQUALで衝突判定
 								v2.m_Cost = -1;
 								break;
 							}

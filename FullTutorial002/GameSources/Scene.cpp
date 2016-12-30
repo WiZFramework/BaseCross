@@ -12,17 +12,34 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
+	void Scene::CreateResourses() {
+		wstring DataDir;
+		App::GetApp()->GetDataDirectory(DataDir);
+		wstring strTexture = DataDir + L"sky.jpg";
+		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+		strTexture = DataDir + L"trace.png";
+		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+	}
 
-	void Scene::OnCreate(){
+	void Scene::OnCreate() {
 		try {
-			//最初のアクティブステージの設定
-			ResetActiveStage<GameStage>();
+			//リソース作成
+			CreateResourses();
+			//自分自身にイベントを送る
+			//これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
+			PostEvent(0.0f, GetThis<ObjectInterface>(), GetThis<Scene>(), L"ToGameStage");
 		}
 		catch (...) {
 			throw;
 		}
 	}
 
+	void Scene::OnEvent(const shared_ptr<Event>& event) {
+		if (event->m_MsgStr == L"ToGameStage") {
+			//最初のアクティブステージの設定
+			ResetActiveStage<GameStage>();
+		}
+	}
 
 
 }

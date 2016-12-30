@@ -324,15 +324,13 @@ namespace basecross {
 	//スパークの作成
 	void GameStage::CreateSpark() {
 		auto MultiSparkPtr = AddGameObject<MultiSpark>();
-		//シェア配列にスパークを追加
+		//共有オブジェクトにスパークを登録
 		SetSharedGameObject(L"MultiSpark", MultiSparkPtr);
-		//エフェクトはZバッファを使用する
-		GetParticleManager()->SetZBufferUse(true);
 	}
 	//炎の作成
 	void GameStage::CreateFire() {
 		auto MultiFirePtr = AddGameObject<MultiFire>();
-		//シェア配列に炎を追加
+		//共有オブジェクトに炎を登録
 		SetSharedGameObject(L"MultiFire", MultiFirePtr);
 	}
 

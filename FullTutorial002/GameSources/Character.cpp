@@ -9,8 +9,7 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
-	//	class Box : public GameObject;
-	//	用途: ボックス
+	///	ボックス
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	Box::Box(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
@@ -42,6 +41,7 @@ namespace basecross{
 		SetAlphaActive(true);
 	}
 
+	//更新
 	void Box::OnUpdate() {
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();

@@ -153,7 +153,7 @@ namespace basecross {
 	void GameStage::CreateSphere() {
 		//配列の初期化
 		vector<Vector3> Vec = {
-			{ 20.0f, 0, 25.0f },
+			{ 20.0f, 0, 15.0f },
 			{ 20.0f, 0, 0.0f },
 		};
 		//配置オブジェクトの作成

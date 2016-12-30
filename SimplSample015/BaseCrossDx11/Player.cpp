@@ -91,7 +91,7 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
-	///	行動切り替えコマンド
+	///	行動切り替えコマンド(Bボタン)
 	//--------------------------------------------------------------------------------------
 	void BehaviorChangeCommand::Excute(const shared_ptr<Player>& Obj) {
 		//行動切り替え
@@ -140,6 +140,7 @@ namespace basecross{
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
 		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrCol->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -168,8 +169,8 @@ namespace basecross{
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 		}
-		//行動クラスの構築(デフォルト行動)
-		m_PlayerBehavior = DefaultPlayerBehavior::Instance();
+		//行動クラスの構築(ジャンプ行動)
+		m_PlayerBehavior = JumpPlayerBehavior::Instance();
 		//ステートマシンの構築
 		m_StateMachine = make_shared< LayeredStateMachine<Player> >(GetThis<Player>());
 		//最初のステートをPlayerDefaultに設定
@@ -178,42 +179,33 @@ namespace basecross{
 
 	//更新
 	void Player::OnUpdate() {
-		//コントローラチェック
-		InputCheck();
+		//コントローラチェックして入力があればコマンド呼び出し
+		m_Handler.HandleInputExcute(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
-		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
-			GetStateMachine()->Reset(PlayerDefault::Instance());
-		}
 		//最初に衝突するオブジェクトがあったとき
 		//スパークの放出
 		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
 		if (PtrSpark) {
 			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
-	}
-
-	void Player::OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {
-		//1ターン前は衝突していたオブジェクトがあったとき
-		//ファイアの放出
-		auto PtriFire = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
-		if (PtriFire) {
-			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
 		}
 	}
 
-
-
 	//ターンの最終更新時
 	void Player::OnLastUpdate() {
+
+
 		//文字列表示
 		//行動
 		wstring BEHAVIOR;
 
-		if (m_PlayerBehavior == DefaultPlayerBehavior::Instance()) {
+		if (m_PlayerBehavior == JumpPlayerBehavior::Instance()) {
 			BEHAVIOR = L"DEFAULT行動: Aボタンでジャンプ。Bボタンで行動切り替え\n";
 		}
 		else {
@@ -224,8 +216,10 @@ namespace basecross{
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
+		FPS += L"\nElapsedTime: ";
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		FPS += Util::FloatToWStr(ElapsedTime);
 		FPS += L"\n";
-
 
 		auto Pos = GetComponent<Transform>()->GetPosition();
 		wstring PositionStr(L"Position:\t");
@@ -245,7 +239,6 @@ namespace basecross{
 		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
 		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
 		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
-
 
 		wstring GravityStr(L"GravityVelocity:\t");
 		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
@@ -350,25 +343,30 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
-	///	デフォルトプレイヤー行動
+	/// ジャンププレイヤー行動
 	//--------------------------------------------------------------------------------------
 	//インスタンス取得
-	IMPLEMENT_SINGLETON_INSTANCE(DefaultPlayerBehavior)
+	IMPLEMENT_SINGLETON_INSTANCE(JumpPlayerBehavior)
 
-	shared_ptr<PlayerBehavior> DefaultPlayerBehavior::ChangeNextBehavior(const shared_ptr<Player>& Obj) {
+	shared_ptr<PlayerBehavior> JumpPlayerBehavior::ChangeNextBehavior(const shared_ptr<Player>& Obj) {
 		//攻撃行動を返す
 		return AttackPlayerBehavior::Instance();
 	}
 
 
-	void DefaultPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
+	void JumpPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
+		auto PtrTrans = Obj->GetComponent<Transform>();
+		auto TransVelo = PtrTrans->GetPosition() - PtrTrans->GetBeforePosition();
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		TransVelo /= ElapsedTime;
 		//重力
 		auto PtrGravity = Obj->GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
+		JumpVec += TransVelo;
 		PtrGravity->StartJump(JumpVec);
 	}
-	void DefaultPlayerBehavior::ExcuteAction(const shared_ptr<Player>& Obj) {
+	void JumpPlayerBehavior::ExcuteAction(const shared_ptr<Player>& Obj) {
 		//重力
 		auto PtrGravity = Obj->GetComponent<Gravity>();
 		if (PtrGravity->GetGravityVelocity().Length() <= 0) {
@@ -384,8 +382,8 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(AttackPlayerBehavior)
 
 	shared_ptr<PlayerBehavior> AttackPlayerBehavior::ChangeNextBehavior(const shared_ptr<Player>& Obj) {
-		//通常行動を返す
-		return DefaultPlayerBehavior::Instance();
+		//ジャンプ行動を返す
+		return JumpPlayerBehavior::Instance();
 	}
 
 	void AttackPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
@@ -397,16 +395,11 @@ namespace basecross{
 			if (shptr) {
 				auto AttackPtr = dynamic_pointer_cast<AttackBall>(shptr);
 				if (AttackPtr && !AttackPtr->IsUpdateActive()) {
-
 					//回転の計算
 					auto RotY = PtrTrans->GetRotation().y;
 					auto Angle = Vector3(sin(RotY), 0, cos(RotY));
 					Angle.Normalize();
-
 					auto Span = Angle * 0.5f;
-
-
-
 					AttackPtr->Weakup(PtrTrans->GetPosition() + Span, Angle * 10.0f);
 					return;
 				}

@@ -1,0 +1,351 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０４．衝突判定とプレイヤー</h3>
+このサンプルは<b>FullTutorial004</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0104a.png" width="80%"/>
+<p>図0104a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>解説</h4>
+　プレイヤーの動きは前項と同じです。
+<h4>プレイヤーの実装について</h4>
+　プレイヤーは<b>Player.h/cpp</b>に記述があります。<br />
+　プレイヤーも前項の敵キャラ同様、<b>ステート</b>が実装されています。実装されているステートは<b>PlayerDefault</b>と<b>PlayerAction</b>です。前項と違う点は、<b>ステートマシン</b>が<b>階層化ステートマシン</b>が実装されているところです。<br />
+　<b>階層化ステートマシン</b>は<b>ステートマシン</b>に対して、その名の通り<b>階層化</b>が実装されています。ここでいう<b>階層化</b>は<b>クラスの階層化</b>ではなく<b>ステートを積み上げられる</b>という意味です。<br />
+　例えば<b>A</b>というステートにいて何らかのイベントに対して<b>B</b>というステートに変わったとします。その時<b>B</b>に<b>ステートをチェンジ</b>するのが、前項で敵キャラに実装した<b>ステートマシン</b>です。<br/>
+　しかし、<b>B</b>のステートが終了した際、<b>A</b>というステートに戻るのか、もしくは、別の<b>C</b>というステートに移行するのかは、<b>B</b>のステートが終了した状態を調べるなどして選択しなければなりません。<br />
+　しかし<b>階層化ステートマシン</b>は<b>B</b>のステートに移行する際<b>Push</b>という命令で移行できます。そして<b>B</b>が終了した際<b>Pop</b>という命令で終了します。そうすると、<b>A</b>から<b>B</b>に移行（Push）した場合は<b>A</b>に戻り（Pop）、<b>C</b>から<b>B</b>に移行
+（Push）した場合は、<b>C</b>に戻る（Pop）、という風に記述することが可能になります。<br />
+　階層はデフォルトで10個積み上げることができます（増やすこともできます）。<br />
+　では、前項のように<b>完全にチェンジする場合</b>はどうするかというと<b>Reset</b>という命令で<b>ステート</b>を移行させます。するとそれまで積み上げられてきたステートはすべて破棄されて、新しいステートに移行することができます。<br />
+　今項でのプレイヤーのサンプルでは<b>階層化処理</b>についてそんなに複雑なことを行ってませんが、敵キャラやアイテムの演出などを表現する場合、この<b>階層化ステートマシン</b>は威力を発揮すると思います。<br />
+　例えば<b>スコア</b>の数字が変化するのに演出をかける場合、<b>１、通常の数字表示</b>、<b>２、数字が光る</b>、<b>３、数字回転の演出</b>そして<b>４、数字が変わる</b>と変化した場合、これを階層化ステートを使うと、この逆順にステートが戻っていくので<b>３、数字回転の演出</b>、<b>２、数字が光る</b>そして<b>１、通常の数字表示</b>と戻すことができます。そういった演出が効果的かどうかは別にして、このような複雑なアニメーション切り替えを、比較的簡単に実装することができます。<br />
+<br/>
+　プレイヤーはこのほかに<b>行動</b>を<b>プレイヤーのメンバ関数からは分離</b>して記述してあります。このテクニックは<b>デザインパターン</b>の<b>Strategy</b>としても知られています。<br />
+　親クラスに、<b>PlayerBehaviorクラス</b>を持つ<b>DefaultPlayerBehaviorクラス</b>と<b>AttackPlayerBehaviorクラス</b>を定義します。前者は<b>Aボタンでジャンプする</b>行動で、後者は<b>Aボタンでボールを発射する</b>という行動です。<br />
+　プレイヤーのメンバ変数には親クラスのポインタを保持していて、ステートが切り替わる都度、そのポインタを<b>DefaultPlayerBehaviorクラス</b>のポインタ、もしくは<b>AttackPlayerBehaviorクラス</b>のポインタに変更します。<br />
+　それぞれは<b>シングルトン</b>になっているので、<b>newやdelete</b>の負荷はかかりません（その代りメンバ変数は持てませんが）。<br />
+　<b>PlayerBehaviorクラス</b>には<b>純粋仮想関数、StartAction()とExcuteAction()</b>があり、派生クラスはこの関数を実装しなければなりません。<br />
+　このように<b>行動</b>を<b>オブジェクトから分離</b>することで、そのオブジェクトの<b>行動</b>を簡単に増やすことができます。<br />
+　たとえば<b>爆弾を投げる</b>、<b>透明になる</b>、<b>無敵状態になる</b>などの<b>行動</b>（通常はそれに対応するステーがあり、ステート経由で呼ばれる）は、<b>PlayerBehaviorクラス</b>の派生クラスとして作成すれば、このサンプルでは、すぐさま<b>Aボタン</b>に結び付けることができます。<br />
+　プレイヤーに限らず、AIの動作にしても、機能面ばかりではなく<b>演出</b>がゲームの良しあしを図ることも多いです。そういう意味でも、<b>階層化ステート</b>や<b>行動の分離と階層化</b>はそういう複雑な動きを演出するのに便利かと思われます。<br />
+　それでは、コード解説に入ります。<br />
+<br />
+<h4>アタックボール</h4>
+　プレイヤーは<b>行動の切り替え</b>によって<b>Aボタン</b>の役割が変わります。通常は<b>ジャンプ</b>ですが、<b>Bボタン</b>により<b>行動</b>がかわり、<b>ボールを発射する</b>になります。<br />
+　<b>アタックボール</b>は<b>AttackBallクラス</b>で<b>Player.h/cpp</b>に記述があります。<br />
+　通常、こういった<b>飛び道具</b>は<b>複数のボール（アイテム）を管理するクラス</b>として作成し、内部で複数の更新や描画処理を行うのですが、チュートリアル用のサンプルということもあり、<b>AttackBallクラス</b>のインスタンスを複数（10個）実装することで表現します。<br />
+　まず宣言ですが、以下の形です。
+<div class="box1">
+<pre>
+class AttackBall : public GameObject {
+public:
+    //構築と破棄
+    AttackBall(const shared_ptr&lt;Stage>& StagePtr);
+    virtual ~AttackBall();
+    void Weakup(const Vector3& Position, const Vector3& Velocity);
+    //初期化
+    virtual void OnCreate() override;
+    //操作
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　ここでは<b>コンストラクタ、デストラクタ</b>そしていくつかの仮想関数と<b>Weakup()関数</b>が宣言されてます。このクラスは通常は<b>無効</b>状態です。しかしプレイヤーが発射コマンドを送出するとき<b>Weakup()関数</b>が呼ばれて<b>有効</b>になります。<br />
+　以下は、<b>AttackBall::OnCreate()関数（抜粋）</b>です。一般的な初期化をしたあと、以下のように<b>無効状態</b>にします。
+<div class="box1">
+<pre>
+void AttackBall::OnCreate() {
+
+    //中略
+
+    <span class="red">//最初は無効にしておく
+    SetDrawActive(false);
+    SetUpdateActive(false);</span>
+
+}
+</pre>
+</div>
+　<b>SetDrawActive(false);</b>は、描画を無効にします。<b>SetUpdateActive(false);</b>は更新処理を無効にします。このようにすると、<b>OnUpdate()やOnDraw()</b>は呼ばれません。（OnDraw()は通常は描画コンポーネントに任せますが、多重定義すれば独自の描画ができます）。<br />
+　そして以下は<b>AttackBall::Weakup()関数</b>です。プレイヤーが発射ボタンを押したときに呼ばれます。
+<div class="box1">
+<pre>
+void AttackBall::Weakup(const Vector3& Position, const Vector3& Velocity) {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
+    PtrTransform->SetRotation(0, 0, 0);
+    <span class="red">PtrTransform->ResetPosition(Position);</span>
+    auto PtrRedid = GetComponent&lt;Rigidbody>();
+    PtrRedid->SetVelocity(Velocity);
+    <span class="red">SetDrawActive(true);
+    SetUpdateActive(true);</span>
+}
+</pre>
+</div>
+　ここでは、<b>発射位置</b>と<b>速度</b>が渡されます。<b>AttackBall</b>は<b>重力コンポーネント</b>は持ってませんので、発射されるとそのまま落ちることなくどこまでも飛んでいきます。衝突判定はあるので何かにぶつかると、方向が変化（つまり速度の向きが変化）します。<br/>
+　ここで、赤くなっている
+<div class="box1">
+<pre>
+    <span class="red">PtrTransform->ResetPosition(Position);</span>
+</pre>
+</div>
+　について説明します。この関数（ResetPosition()）は、Transformの関数ですが、<b>位置をリセット</b>します。<br />
+　Transformコンポーネントは常に<b>1ターン前の位置</b>を保持しています（スケールや回転も持っています）。これは何に使うかというと、衝突判定で使用します。衝突判定は、<b>前の位置</b>から<b>現在の位置</b>までの移動を計算し、その途中で何かに衝突したら<b>衝突した</b>という形になっています。<br />
+　<b>SetPosition()関数</b>は、いわばその現在位置をセットする関数なので、たとえば<b>AttackBall</b>クラスだと、<b>前の位置</b>は、<b>1つ前に有効だった時の位置</b>が設定されていて、<b>そこから現在の位置に移動した</b>と解釈されてしまいます。<br />
+　<b>ResetPosition()</b>は<b>前の位置と現在位置</b>両方とも指定した値にセットするので<b>全く動いいてない</b>状態になります。<br />
+　この手法は<b>敵に当たったらスタート位置に戻る</b>などの時も使用する必要があります。<br />
+　<b>ResetPosition()</b>は、位置情報だけをリセットする方法ですが、スケーリングや回転もリセットする場合
+<div class="box1">
+<pre>
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
+    PtrTransform->SetRotation(0, 0, 0);
+    PtrTransform->SetPosition(Position);
+    <span class="red">PtrTransform->SetToBefore();</span>
+</pre>
+</div>
+　とします（この場合位置設定はSetPosition()でかまいません）。<br />
+　<b>SetToBefore()関数</b>はすべての情報を<b>1つ前の情報にコピー</b>します。この処理により<b>現在の情報</b>と<b>1つ前の情報</b>が同じになり、<b>全く動きがない</b>状態にできます。<br />
+　<b>AttackBall::Weakup()関数</b>ではこのあと
+<div class="box1">
+<pre>
+    <span class="red">SetDrawActive(true);
+    SetUpdateActive(true);</span>
+</pre>
+</div>
+　で描画と更新を有効にします。
+<br />
+　<b>AttackBallの更新処理</b>は<b>AttackBall::OnUpdate()関数</b>です。
+<div class="box1">
+<pre>
+void AttackBall::OnUpdate() {
+    Rect2D&lt;float> rect(-25.0f, -25.0f, 25.0f, 25.0f);
+    Point2D&lt;float> point;
+    auto PtrTransform = GetComponent&lt;Transform>();
+    point.x = PtrTransform->GetPosition().x;
+    point.y = PtrTransform->GetPosition().z;
+    if (!rect.PtInRect(point) || abs(PtrTransform->GetPosition().y) > 10.0f) {
+        PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
+        PtrTransform->SetRotation(0, 0, 0);
+        PtrTransform->SetPosition(0, 0, 0);
+        SetDrawActive(false);
+        SetUpdateActive(false);
+    }
+}
+</pre>
+</div>
+　この関数は<b>SetUpdateActive(true);</b>の状態でなければ呼ばれません。つまり、移動中の処理です。すでに<b>AttackBall::Weakup()関数</b>で、速度の設定は終わっているので、何かに衝突したとしても<b>移動している</b>状態です。<br />
+　なのでこのサンプルでは<b>ゲーム盤</b>の領域から外れたら、<b>更新と描画を無効に</b>します。（高さに関しては、上限を10.0fにしています）<br />
+　以上で<b>アタックボール</b>の説明は終わりです。<br />
+<br />
+<h4>プレイヤー</h4>
+　プレイヤーは、冒頭紹介したように<b>階層化ステートマシン</b>と<b>行動階層クラス</b>が実装されています。そのほかに、コントローラのボタンを<b>コマンド化</b>したクラスも実装されています。<br />
+　スペースの関係で、<b>実体部</b>のみ重要な部分のみ説明します。<br />
+　以下は、<b> Player::OnCreate()関数（抜粋）</b>です。
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+    //コマンドの登録
+    //Aボタンにアクションコマンドを登録
+    m_Handler.SetButtonA(&m_Action);
+    //Bボタンに行動切り替えコマンドを登録
+    m_Handler.SetButtonB(&m_BehaviorChange);
+
+    //中略
+
+    //行動クラスの構築(ジャンプ行動)
+    m_PlayerBehavior = JumpPlayerBehavior::Instance();
+    //ステートマシンの構築
+    m_StateMachine = make_shared&lt; LayeredStateMachine&lt;Player> >(GetThis&lt;Player>());
+    //最初のステートをPlayerDefaultに設定
+    m_StateMachine->Reset(PlayerDefault::Instance());
+}
+</pre>
+</div>
+　ここでは、<b>入力ハンドラー</b>、<b>コマンド</b>、<b>行動クラス</b>、<b>階層化ステートマシン</b>の初期化を行っています。<br />
+　他の実装では、<b>Transformコンポーネントや、物理計算、衝突判定などのUpdate系コンポーネントと描画コンポーネント</b>を設定しています。<br />
+<br />
+　<b>コマンド</b>は<b>デザインパターン</b>の<b>Command</b>を実装したものです。<br />
+　<b>コマンド</b>を実装するためにはヘッダーファイル（Player.h）に
+<div class="box1">
+<pre>
+class Player;
+//--------------------------------------------------------------------------------------
+/// アクションコマンド（Aボタン）
+//--------------------------------------------------------------------------------------
+class ActionCommand : public ObjCommand&lt;Player> {
+    virtual void Excute(const shared_ptr&lt;Player>& Obj)override;
+};
+//--------------------------------------------------------------------------------------
+/// 行動切り替えコマンド(Bボタン)
+//--------------------------------------------------------------------------------------
+class BehaviorChangeCommand : public ObjCommand&lt;Player> {
+    virtual void Excute(const shared_ptr&lt;Player>& Obj)override;
+};
+</pre>
+</div>
+　のように<b>ObjCommand&lt;Player>の派生クラス</b>として各ボタンに対応するクラスを作成します。<br />
+　また、プレイヤーのメンバとして、
+<div class="box1">
+<pre>
+    //入力ハンドラー
+    InputHandler&lt;Player> m_Handler;
+    //アクションコマンド（Aボタン）
+    ActionCommand m_Action;
+    //行動切り替えコマンド（Bボタン）
+    BehaviorChangeCommand m_BehaviorChange;
+</pre>
+</div>
+　と記述します。<b>m_Actionやm_BehaviorChange</b>はコマンドクラスのインスタンスで、<b>m_Handler</b>は<b>入力ハンドラー</b>です。<br/>
+　<b>入力ハンドラー</b>を使用するには<b>Player::OnCreate()関数</b>で
+<div class="box1">
+<pre>
+    //Aボタンにアクションコマンドを登録
+    m_Handler.SetButtonA(&m_Action);
+    //Bボタンに行動切り替えコマンドを登録
+    m_Handler.SetButtonB(&m_BehaviorChange);
+</pre>
+</div>
+　のように<b>各ボタン</b>を<b>コマンド</b>を結びつけます。
+　すると<b>Player::OnUpdate()関数</b>の以下の記述（赤い部分）
+<div class="box1">
+<pre>
+void Player::OnUpdate() {
+    //コントローラチェックして入力があればコマンド呼び出し
+    <span class="red">m_Handler.HandleInputExcute(GetThis&lt;Player>());</span>
+    //ステートマシン更新
+    m_StateMachine->Update();
+}
+</pre>
+</div>
+　によって、もしボタン入力があれば各コマンドクラスの<b>Excute()関数</b>が呼ばれます。<br />
+<br />
+　行動クラスは、以下のように宣言されています。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// プレイヤー行動親
+//--------------------------------------------------------------------------------------
+class PlayerBehavior {
+protected:
+    PlayerBehavior() {}
+public:
+    virtual ~PlayerBehavior() {}
+    virtual shared_ptr&lt;PlayerBehavior> 
+            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) = 0;
+    virtual Vector3 GetAngle(const shared_ptr&lt;Player>& Obj);
+    virtual void Move(const shared_ptr&lt;Player>& Obj);
+    virtual void StartAction(const shared_ptr&lt;Player>& Obj) = 0;
+    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) = 0;
+};
+
+//--------------------------------------------------------------------------------------
+/// ジャンププレイヤー行動
+//--------------------------------------------------------------------------------------
+class JumpPlayerBehavior : public PlayerBehavior {
+protected:
+    JumpPlayerBehavior() {}
+public:
+    //行動のインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(JumpPlayerBehavior)
+    virtual shared_ptr&lt;PlayerBehavior> 
+            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) override;
+    virtual void StartAction(const shared_ptr&lt;Player>& Obj) override;
+    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) override;
+};
+
+//--------------------------------------------------------------------------------------
+/// 攻撃プレイヤー行動
+//--------------------------------------------------------------------------------------
+class AttackPlayerBehavior : public PlayerBehavior {
+protected:
+    AttackPlayerBehavior() {}
+public:
+    //行動のインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(AttackPlayerBehavior)
+    virtual shared_ptr&lt;PlayerBehavior> 
+            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) override;
+    virtual void StartAction(const shared_ptr&lt;Player>& Obj) override;
+    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) override;
+};
+</pre>
+</div>
+　以上を見ればわかるように、行動クラスはライブラリの何かのクラスを継承したものではなりません。<br />
+　単純にプレイヤーから<b>行動関数</b>を切り離したクラス階層（前述したように<b>デザインパターン</b>の<b>Strategy</b>パターン）として作成しています。ですから階層の作り方などに制約があるわけではありません。<br />
+　これらの行動クラスをプレイヤーにむすびつけるには、Playerに、<b>PlayerBehaviorクラスのポインタ（m_PlayerBehavior）</b>がありますので、<b>Player::OnCreate()</b>において
+<div class="box1">
+<pre>
+    //行動クラスの構築(ジャンプ行動)
+    m_PlayerBehavior = JumpPlayerBehavior::Instance();
+</pre>
+</div>
+　こうしておくと、最初は<b>Aボタンでジャンプ</b>という形になります。<br />
+<br />
+　階層化ステートマシンは、同様<b>Player::OnCreate()</b>において
+<div class="box1">
+<pre>
+    //ステートマシンの構築
+    m_StateMachine = make_shared&lt; LayeredStateMachine&lt;Player> >(GetThis&lt;Player>());
+    //最初のステートをPlayerDefaultに設定
+    m_StateMachine->Reset(PlayerDefault::Instance());
+</pre>
+</div>
+　のように記述します。これで、最初のステートは<b>PlayerDefault</b>になります。<br/>
+<br />
+<h4>プレイヤー以外のオブジェクト</h4>
+　プレイヤー以外のオブジェクトは<b>Character.h/cpp</b>に記述があります。<br />
+　以下に簡単に紹介します。<br />
+<br/>
+<h4>SeekObjectクラス</h4>
+　ゲームを起動するとプレイヤーをひたすら追いかけてくるオブジェクトです。<br />
+　<b>SeekSteering</b>、<b>ArriveSteering</b>、<b>SeparationSteering</b>の3つの操舵系のコンポーネントが実装されています。<b>ステート</b>も実装されていますが、<b>階層化ステートマシン</b>ではありません。<br />
+　行動も<b>行動クラス</b>が実装されているわけではなく、メンバ関数<b>ArriveStartMoton()関数</b>などの<b>○○Motion()関数</b>という形で行動を制御しています。プレイヤーと比較すると違いが判ると思います。<br />
+　また<b>セルマップ</b>や<b>セル検索</b>を実装してないので、ひたすら（障害物があっても）追いかけます。ちょっと間抜けな敵キャラです。<br />
+<br />
+<h4>FixedBoxクラス</h4>
+　前項で紹介したクラスと同じですが<b>セルマップ</b>には対応をとってません。OBB衝突判定がついていますので、プレイヤーが乗ったり衝突したりするさまを確認できます。<br />
+<br />
+<h4>MoveBoxクラス</h4>
+　上下に移動するオブジェクトです。プレイヤーが乗ることができます。<br />
+　上下移動に<b>アクション系</b>の<b>Actionコンポーネント</b>を実装してあります。<b>操舵系</b>のコンポーネントに対して<b>アクション系</b>は<b>何秒でどこまで移動</b>のように、確実な動きを指定できます。<br />
+<br />
+<h4>SphereObjectクラス</h4>
+　右奥と右手前に配置されている、半球のオブジェクトです。球体の衝突判定がついています。<br />
+<br />
+<h4>UnevenGroundクラス</h4>
+　でこぼこの床を表現するクラスです。プレイヤーが乗ると、でこぼこ部分に衝突します。三角形の集合の<b>CollisionTriangles</b>という衝突判定がついています。このコンポーネントは、球体、カプセルに衝突します（OBBには衝突しません）。ですので、SeekObjectクラスは<b>OBB衝突判定</b>ですので、こちらには対応をとってません。<br />
+　次項では<b>SeekObjectクラス</b>に<b>球体衝突判定</b>を実装して<b>CollisionTriangles</b>に反応するクラスを紹介します。<br />
+<br/>
+　でこの項は終わります。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="01_05.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

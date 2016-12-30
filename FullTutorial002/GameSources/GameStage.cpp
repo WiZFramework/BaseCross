@@ -11,18 +11,6 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
-
-	//リソースの作成
-	void GameStage::CreateResourses() {
-		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"sky.jpg";
-		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"trace.png";
-		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-	}
-
-
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
 		auto PtrView = CreateView<SingleView>();
@@ -44,12 +32,6 @@ namespace basecross {
 		auto PtrTrans = Ptr->GetComponent<Transform>();
 		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
-		Matrix4X4 WorldMat;
-		WorldMat.DefTransformation(
-			Vector3(200.0f, 200.0f, 1.0f),
-			Qt,
-			Vector3(0.0f, 0.0f, 0.0f)
-		);
 		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -73,8 +55,6 @@ namespace basecross {
 
 	void GameStage::OnCreate() {
 		try {
-			//リソースの作成
-			CreateResourses();
 			//ビューとライトの作成
 			CreateViewLight();
 			//プレートの作成

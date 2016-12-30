@@ -195,6 +195,5 @@ namespace basecross{
 	};
 
 
-
 }
 //end basecross

@@ -11,8 +11,7 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
-	//	class FixedBox : public GameObject;
-	//	用途: 固定のボックス
+	///	固定のボックス
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
@@ -126,6 +125,8 @@ namespace basecross{
 	bool Enemy::SeekBehavior() {
 		auto PlayerPtr = GetStage()->GetSharedGameObject<Player>(L"Player");
 		auto PlayerPos = PlayerPtr->GetComponent<Transform>()->GetPosition();
+		auto MyPos = GetComponent<Transform>()->GetPosition();
+
 		auto MapPtr = m_CelMap.lock();
 		if (MapPtr) {
 			if (SearchPlayer()) {
@@ -139,6 +140,12 @@ namespace basecross{
 					PtrSeek->SetTargetPosition(PlayerPos);
 				}
 				else {
+					if (Vector3EX::Length(MyPos - PlayerPos) <= 3.0f){
+						auto PtrRigid = GetComponent<Rigidbody>();
+						auto Velo = PtrRigid->GetVelocity();
+						Velo *= 0.95f;
+						PtrRigid->SetVelocity(Velo);
+					}
 					AABB ret;
 					MapPtr->FindAABB(m_CellPath[m_NextCellIndex], ret);
 					auto Pos = ret.GetCenter();
@@ -245,7 +252,6 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(EnemyDefault)
 
 	void EnemyDefault::Enter(const shared_ptr<Enemy>& Obj) {
-		auto PtrRigid = Obj->GetComponent<Rigidbody>();
 	}
 
 	void EnemyDefault::Execute(const shared_ptr<Enemy>& Obj) {
