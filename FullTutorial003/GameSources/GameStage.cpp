@@ -88,14 +88,19 @@ namespace basecross {
 		//グループに追加
 		Group->IntoGroup(Ptr);
 
+		//以下3つ目のセルマップはグループを別にする
+		//動的にセルマップを変更する敵用
+		auto Group2 = CreateSharedObjectGroup(L"CellMap2");
+
 		Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
 		//セルマップの区画を表示する場合は以下の設定
-		//Ptr->SetDrawActive(true);
+		Ptr->SetDrawActive(true);
 		//さらにセルのインデックスとコストを表示する場合は以下の設定
-		//Ptr->SetCellStringActive(false);
+		Ptr->SetCellStringActive(true);
 		SetSharedGameObject(L"StageCellMap3", Ptr);
 		//グループに追加
-		Group->IntoGroup(Ptr);
+		Group2->IntoGroup(Ptr);
+
 
 	}
 
@@ -240,8 +245,18 @@ namespace basecross {
 			//ボックスのグループに追加
 			BoxGroup->IntoGroup(BoxPtr);
 		}
+		//最初の2つのセルマップへのボックスのコスト設定
+		SetCellMapCost(L"CellMap");
+		//奥のセルマップへのボックスのコスト設定
+		SetCellMapCost(L"CellMap2");
+	}
+
+	//固定のボックスのコストをセルマップに反映
+	void GameStage::SetCellMapCost(const wstring& CellMapGroupName) {
 		//セルマップ内にFixedBoxの情報をセット
-		auto Group = GetSharedObjectGroup(L"CellMap");
+		auto Group = GetSharedObjectGroup(CellMapGroupName);
+		auto BoxGroup = GetSharedObjectGroup(L"FixedBoxes");
+
 		//セルマップグループを取得
 		for (auto& gv : Group->GetGroupVector()) {
 			auto MapPtr = dynamic_pointer_cast<StageCellMap>(gv.lock());
@@ -274,6 +289,7 @@ namespace basecross {
 			}
 		}
 	}
+
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
@@ -316,23 +332,21 @@ namespace basecross {
 			AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
 		}
 
+		//3つ目の敵
 
 		MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap3");
 		vector< vector<Vector3> > Vec3 = {
 			{
 				Vector3(0.25f, 0.25f, 0.25f),
 				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(8.5f, 0.125f, 33.0f)
+				Vector3(6.5f, 0.125f, 33.0f)
 			},
 		};
 		//オブジェクトの作成
 		for (auto v : Vec3) {
-			AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
+			//セルマップを変更する敵
+			AddGameObject<TestCellChangeEnemy>(MapPtr, v[0], v[1], v[2]);
 		}
-
-
-
-
 	}
 
 

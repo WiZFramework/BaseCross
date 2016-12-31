@@ -103,6 +103,7 @@ namespace basecross {
 		void AddText(size_t Index, const wstring& str, bool Clip = false);
 		void InsertTextBlock(const Rect2D<float>& Block, const wstring& str, bool Clip = false);
 		void UpdateTextBlock(size_t Index, const Rect2D<float>& Block, const wstring& str, bool Clip = false);
+		void ClearTextBlock();
 		ComPtr<IDWriteTextLayout>& GetTextLayout(size_t Index)const;
 		const DWRITE_TEXT_METRICS& GetDriteTextMetrics(size_t Index) const;
 

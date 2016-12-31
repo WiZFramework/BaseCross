@@ -713,6 +713,12 @@ namespace basecross {
 		pImpl->m_Items[Index] = Item;
 
 	}
+
+	void MultiStringSprite::ClearTextBlock() {
+		pImpl->m_Items.clear();
+	}
+
+
 	ComPtr<IDWriteTextLayout>& MultiStringSprite::GetTextLayout(size_t Index)const {
 		if (pImpl->m_Items.size() <= Index) {
 			throw BaseException(

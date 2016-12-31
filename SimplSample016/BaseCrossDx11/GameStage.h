@@ -48,6 +48,8 @@ namespace basecross {
 		//敵の作成
 		void CreateEnemy();
 	public:
+		//固定のボックスのコストをセルマップに反映
+		void SetCellMapCost(const wstring& CellMapGroupName);
 		//構築と破棄
 		GameStage() :Stage() {}
 		virtual ~GameStage() {}

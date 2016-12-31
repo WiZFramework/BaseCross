@@ -1596,8 +1596,13 @@ namespace basecross {
 		bool IsCellStringActive();
 		void SetCellStringActive(bool b);
 		bool FindCell(const Vector3& Pos,CellIndex& ret);
+		void FindNearCell(const Vector3& Pos, CellIndex& ret);
 		bool FindAABB(const CellIndex& Index,AABB& ret);
+		void FindNearAABB(const Vector3& Pos, AABB& ret);
+		void GetMapAABB(AABB& ret) const;
 		vector<vector<CellPiece>>& GetCellVec() const;
+		void RefleshCellMap(const Vector3& MiniPos,
+			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost = 1);
 		//èâä˙âª
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;

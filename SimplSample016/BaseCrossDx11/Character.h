@@ -127,6 +127,7 @@ namespace basecross{
 	//	敵
 	//--------------------------------------------------------------------------------------
 	class Enemy : public GameObject {
+	protected:
 		weak_ptr<StageCellMap> m_CelMap;
 		Vector3 m_Scale;
 		Vector3 m_StartRotation;
@@ -152,7 +153,7 @@ namespace basecross{
 		bool SearchPlayer();
 
 		//デフォルト行動
-		bool DefaultBehavior();
+		virtual bool DefaultBehavior();
 		//Seek行動
 		bool SeekBehavior();
 		//アクセサ
@@ -193,6 +194,25 @@ namespace basecross{
 		virtual void Execute(const shared_ptr<Enemy>& Obj)override;
 		virtual void Exit(const shared_ptr<Enemy>& Obj)override;
 	};
+
+	//--------------------------------------------------------------------------------------
+	//	セルマップを再設定する敵
+	//--------------------------------------------------------------------------------------
+	class TestCellChangeEnemy : public Enemy {
+	public:
+		//構築と破棄
+		TestCellChangeEnemy(const shared_ptr<Stage>& StagePtr,
+			const shared_ptr<StageCellMap>& CellMap,
+			const Vector3& Scale,
+			const Vector3& Rotation,
+			const Vector3& Position
+		);
+		virtual ~TestCellChangeEnemy();
+		//デフォルト行動
+		virtual bool DefaultBehavior() override;
+	};
+
+
 
 
 }

@@ -284,7 +284,48 @@ namespace basecross{
 		PtrSeek->SetUpdateActive(false);
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	強い敵
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	TestCellChangeEnemy::TestCellChangeEnemy(const shared_ptr<Stage>& StagePtr,
+		const shared_ptr<StageCellMap>& CellMap,
+		const Vector3& Scale,
+		const Vector3& Rotation,
+		const Vector3& Position
+	):
+		Enemy(StagePtr, CellMap, Scale, Rotation, Position)
+	{}
+	TestCellChangeEnemy::~TestCellChangeEnemy() {}
 
+	bool TestCellChangeEnemy::DefaultBehavior() {
+		auto PtrRigid = GetComponent<Rigidbody>();
+		auto Velo = PtrRigid->GetVelocity();
+		Velo *= 0.95f;
+		PtrRigid->SetVelocity(Velo);
+		auto MapPtr = m_CelMap.lock();
+		if (MapPtr) {
+			auto PlayerPtr = GetStage()->GetSharedGameObject<Player>(L"Player");
+			auto PlayerPos = PlayerPtr->GetComponent<Transform>()->GetPosition();
+			CellIndex PlayerCell;
+			if (MapPtr->FindCell(PlayerPos, PlayerCell)) {
+				//プレイヤーがセルマップ上に入った。
+				return false;
+			}
+			else {
+				//プレイヤーはマップ上にいない
+				//マップをプレイヤーの周りに再設定
+				Vector3  CellmapStart;
+				CellmapStart.x = float((int)(PlayerPos.x - 2.0f));
+				CellmapStart.z = float((int)(PlayerPos.z - 2.0f));
+				CellmapStart.y = 0.0f;
+				MapPtr->RefleshCellMap(CellmapStart, 1.0f, 4, 4);
+				auto GameStagePtr = dynamic_pointer_cast<GameStage>(GetStage());
+				GameStagePtr->SetCellMapCost(L"CellMap2");
+			}
+		}
+		return true;
+	}
 
 }
 //end basecross

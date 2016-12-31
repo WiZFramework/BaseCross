@@ -1550,63 +1550,145 @@ namespace basecross {
 			m_IsCellStringActive(false)
 		{}
 		~Impl() {}
-
+		void Init(const Vector3& MiniPos,
+			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost);
+		void Create(const shared_ptr<MultiStringSprite>& StringPtr, const shared_ptr<Stage>& StagePtr);
 	};
+	void StageCellMap::Impl::Init(const Vector3& MiniPos,
+		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost) {
+		m_PieceSize = PieceSize;
+		m_DefaultCost = DefaultCost;
+		m_SizeX = PieceCountX;
+		if (m_SizeX <= 0) {
+			m_SizeX = 1;
+		}
+		if (m_SizeX >= m_MaxCellSize) {
+			throw BaseException(
+				L"セルのX方向が最大値を超えました",
+				L"if (m_SizeX >= m_MaxCellSize)",
+				L"StageCellMap::Impl::Init()"
+			);
+		}
+		m_SizeZ = PieceCountZ;
+		if (m_SizeZ <= 0) {
+			m_SizeZ = 1;
+		}
+		if (m_SizeZ >= m_MaxCellSize) {
+			throw BaseException(
+				L"セルのZ方向が最大値を超えました",
+				L"if (m_SizeZ >= m_MaxCellSize)",
+				L"StageCellMap::Impl::Init()"
+			);
+		}
+		m_MapAABB.m_Min = MiniPos;
+		m_MapAABB.m_Max.x = m_MapAABB.m_Min.x + m_PieceSize * (float)m_SizeX;
+		m_MapAABB.m_Max.y = m_MapAABB.m_Min.y + m_PieceSize;
+		m_MapAABB.m_Max.z = m_MapAABB.m_Min.z + m_PieceSize * (float)m_SizeZ;
+		Vector3 PieceVec(m_PieceSize, m_PieceSize, m_PieceSize);
+		//配列の初期化
+		m_CellVec.resize(m_SizeX);
+		for (UINT x = 0; x < m_SizeX; x++) {
+			m_CellVec[x].resize(m_SizeZ);
+			for (UINT z = 0; z < m_SizeZ; z++) {
+				m_CellVec[x][z].m_Index.x = x;
+				m_CellVec[x][z].m_Index.z = z;
+				m_CellVec[x][z].m_Cost = m_DefaultCost;
+				AABB Piece;
+				Piece.m_Min.x = m_MapAABB.m_Min.x + (float)x * m_PieceSize;
+				Piece.m_Min.y = m_MapAABB.m_Min.y;
+				Piece.m_Min.z = m_MapAABB.m_Min.z + (float)z * m_PieceSize;
+				Piece.m_Max = Piece.m_Min + PieceVec;
+				m_CellVec[x][z].m_PieceRange = Piece;
+			}
+		}
+	}
+
+	void StageCellMap::Impl::Create(const shared_ptr<MultiStringSprite>& StringPtr, const shared_ptr<Stage>& StagePtr) {
+		Vector3 Min = m_MapAABB.m_Min;
+		Vector3 Max = m_MapAABB.m_Max;
+		Color4 Col(1.0f, 1.0f, 1.0f, 1.0f);
+
+		Vector3 LineFrom(Min);
+		Vector3 LineTo(Min);
+		LineTo.x = Max.x;
+
+		m_Vertices.clear();
+		for (UINT z = 0; z <= m_SizeZ; z++) {
+			m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
+			m_Vertices.push_back(VertexPositionColor(LineTo, Col));
+			LineFrom.z += m_PieceSize;
+			LineTo.z += m_PieceSize;
+		}
+
+		LineFrom = Min;
+		LineTo = Min;
+		LineTo.z = Max.z;
+		for (UINT x = 0; x <= m_SizeX; x++) {
+			m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
+			m_Vertices.push_back(VertexPositionColor(LineTo, Col));
+			LineFrom.x += m_PieceSize;
+			LineTo.x += m_PieceSize;
+		}
+		//メッシュの作成（変更できない）
+		m_LineMesh = MeshResource::CreateMeshResource(m_Vertices, false);
+
+		//スプライト文字列の初期化
+		Matrix4X4 World, View, Proj;
+
+		//ワールド行列の決定
+		Quaternion Qt;
+		Qt.Normalize();
+		World.AffineTransformation(
+			Vector3(1.0, 1.0, 1.0),			//スケーリング
+			Vector3(0, 0, 0),		//回転の中心（重心）
+			Qt,				//回転角度
+			Vector3(0, 0.01f, 0)				//位置
+		);
+
+		auto PtrCamera = StagePtr->GetView()->GetTargetCamera();
+		View = PtrCamera->GetViewMatrix();
+		Proj = PtrCamera->GetProjMatrix();
+		auto viewport = StagePtr->GetView()->GetTargetViewport();
+		World *= View;
+		World *= Proj;
+
+		StringPtr->ClearTextBlock();
+		for (UINT x = 0; x < m_CellVec.size(); x++) {
+			for (UINT z = 0; z < m_CellVec[x].size(); z++) {
+				Vector3 Pos = m_CellVec[x][z].m_PieceRange.GetCenter();
+
+				Pos.y = m_CellVec[x][z].m_PieceRange.m_Min.y;
+				Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
+				Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 20);
+
+				wstring str(L"");
+				str += Util::IntToWStr(x);
+				str += L",";
+				str += Util::IntToWStr(z);
+
+				if (Pos.z < viewport.MinDepth || Pos.z > viewport.MaxDepth) {
+					StringPtr->InsertTextBlock(rect, str, true);
+				}
+				else {
+					StringPtr->InsertTextBlock(rect, str, false);
+				}
+			}
+		}
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	ステージのセルマップ（派生クラスを作るかインスタンスを作成する）
 	//--------------------------------------------------------------------------------------
+
+
 
 	StageCellMap::StageCellMap(const shared_ptr<Stage>& StagePtr, const Vector3& MiniPos,
 		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost):
 		GameObject(StagePtr),
 		pImpl(new Impl())
 	{
-		pImpl->m_PieceSize = PieceSize;
-		pImpl->m_DefaultCost = DefaultCost;
-		pImpl->m_SizeX = PieceCountX;
-		if (pImpl->m_SizeX <= 0) {
-			pImpl->m_SizeX = 1;
-		}
-		if (pImpl->m_SizeX >= pImpl->m_MaxCellSize) {
-			throw BaseException(
-				L"セルのX方向が最大値を超えました",
-				L"if (m_SizeX >= m_MaxCellSize)",
-				L"StageCellMap::StageCellMap()"
-			);
-		}
-		pImpl->m_SizeZ = PieceCountZ;
-		if (pImpl->m_SizeZ <= 0) {
-			pImpl->m_SizeZ = 1;
-		}
-		if (pImpl->m_SizeZ >= pImpl->m_MaxCellSize) {
-			throw BaseException(
-				L"セルのZ方向が最大値を超えました",
-				L"if (m_SizeZ >= m_MaxCellSize)",
-				L"StageCellMap::StageCellMap()"
-			);
-		}
-		pImpl->m_MapAABB.m_Min = MiniPos;
-		pImpl->m_MapAABB.m_Max.x = pImpl->m_MapAABB.m_Min.x + pImpl->m_PieceSize * (float)pImpl->m_SizeX;
-		pImpl->m_MapAABB.m_Max.y = pImpl->m_MapAABB.m_Min.y + pImpl->m_PieceSize;
-		pImpl->m_MapAABB.m_Max.z = pImpl->m_MapAABB.m_Min.z + pImpl->m_PieceSize * (float)pImpl->m_SizeZ;
-		Vector3 PieceVec(pImpl->m_PieceSize, pImpl->m_PieceSize, pImpl->m_PieceSize);
-		//配列の初期化
-		pImpl->m_CellVec.resize(pImpl->m_SizeX);
-		for (UINT x = 0; x < pImpl->m_SizeX; x++) {
-			pImpl->m_CellVec[x].resize(pImpl->m_SizeZ);
-			for (UINT z = 0; z < pImpl->m_SizeZ; z++) {
-				pImpl->m_CellVec[x][z].m_Index.x = x;
-				pImpl->m_CellVec[x][z].m_Index.z = z;
-				pImpl->m_CellVec[x][z].m_Cost = pImpl->m_DefaultCost;
-				AABB Piece;
-				Piece.m_Min.x = pImpl->m_MapAABB.m_Min.x + (float)x * pImpl->m_PieceSize;
-				Piece.m_Min.y = pImpl->m_MapAABB.m_Min.y;
-				Piece.m_Min.z = pImpl->m_MapAABB.m_Min.z + (float)z * pImpl->m_PieceSize;
-				Piece.m_Max = Piece.m_Min + PieceVec;
-				pImpl->m_CellVec[x][z].m_PieceRange = Piece;
-			}
-		}
+		pImpl->Init(MiniPos, PieceSize, PieceCountX, PieceCountZ, DefaultCost);
 	}
 
 
@@ -1626,79 +1708,9 @@ namespace basecross {
 	}
 	//初期化
 	void StageCellMap::OnCreate(){
-
-		Vector3 Min = pImpl->m_MapAABB.m_Min;
-		Vector3 Max = pImpl->m_MapAABB.m_Max;
-		Color4 Col(1.0f, 1.0f, 1.0f, 1.0f);
-
-		Vector3 LineFrom(Min);
-		Vector3 LineTo(Min);
-		LineTo.x = Max.x;
-
-		for (UINT z = 0; z <= pImpl->m_SizeZ; z++) {
-			pImpl->m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
-			pImpl->m_Vertices.push_back(VertexPositionColor(LineTo, Col));
-			LineFrom.z += pImpl->m_PieceSize;
-			LineTo.z += pImpl->m_PieceSize;
-		}
-
-		LineFrom = Min;
-		LineTo = Min;
-		LineTo.z = Max.z;
-		for (UINT x = 0; x <= pImpl->m_SizeX; x++) {
-			pImpl->m_Vertices.push_back(VertexPositionColor(LineFrom, Col));
-			pImpl->m_Vertices.push_back(VertexPositionColor(LineTo, Col));
-			LineFrom.x += pImpl->m_PieceSize;
-			LineTo.x += pImpl->m_PieceSize;
-		}
-		//メッシュの作成（変更できない）
-		pImpl->m_LineMesh = MeshResource::CreateMeshResource(pImpl->m_Vertices, false);
-
-		//スプライト文字列の初期化
-		auto StringPtr = AddComponent<MultiStringSprite>();
-		Matrix4X4 World, View, Proj;
-
-		//ワールド行列の決定
-		Quaternion Qt;
-		Qt.Normalize();
-		World.AffineTransformation(
-			Vector3(1.0, 1.0, 1.0),			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
-			Qt,				//回転角度
-			Vector3(0, 0.01f, 0)				//位置
-		);
-
-		auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
-		View = PtrCamera->GetViewMatrix();
-		Proj = PtrCamera->GetProjMatrix();
-		auto viewport = GetStage()->GetView()->GetTargetViewport();
-		World *= View;
-		World *= Proj;
-
-		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
-			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
-				Vector3 Pos = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
-
-				Pos.y = pImpl->m_CellVec[x][z].m_PieceRange.m_Min.y;
-				Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
-				Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 20);
-
-				wstring str(L"");
-				str += Util::IntToWStr(x);
-				str += L",";
-				str += Util::IntToWStr(z);
-
-				if (Pos.z < viewport.MinDepth || Pos.z > viewport.MaxDepth) {
-					StringPtr->InsertTextBlock(rect, str,true);
-				}
-				else {
-					StringPtr->InsertTextBlock(rect, str, false);
-				}
-			}
-		}
+		pImpl->Create(AddComponent<MultiStringSprite>(), GetStage());
 		SetDrawActive(false);
 	}
-
 
 	bool StageCellMap::FindCell(const Vector3& Pos, CellIndex& ret) {
 		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
@@ -1711,6 +1723,34 @@ namespace basecross {
 		}
 		return false;
 	}
+
+	void StageCellMap::FindNearCell(const Vector3& Pos, CellIndex& ret) {
+		if (FindCell(Pos, ret)) {
+			return;
+		}
+		float len = 0;
+		bool isset = false;
+		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
+			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
+				if (!isset) {
+					auto cellcenter = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
+					len = Vector3EX::Length(Pos - cellcenter);
+					ret = pImpl->m_CellVec[x][z].m_Index;
+					isset = true;
+				}
+				else {
+					auto cellcenter = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
+					auto templen = Vector3EX::Length(Pos - cellcenter);
+					if (len > templen) {
+						len = templen;
+						ret = pImpl->m_CellVec[x][z].m_Index;
+					}
+				}
+			}
+		}
+	}
+
+
 	bool StageCellMap::FindAABB(const CellIndex& Index, AABB& ret) {
 		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
 			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
@@ -1722,6 +1762,24 @@ namespace basecross {
 		}
 		return false;
 	}
+
+	void StageCellMap::FindNearAABB(const Vector3& Pos, AABB& ret) {
+		CellIndex retcell;
+		FindNearCell(Pos, retcell);
+		ret = pImpl->m_CellVec[retcell.x][retcell.z].m_PieceRange;
+	}
+
+
+	void StageCellMap::GetMapAABB(AABB& ret) const {
+		ret =  pImpl->m_MapAABB;
+	}
+
+	void StageCellMap::RefleshCellMap(const Vector3& MiniPos,
+		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost) {
+		pImpl->Init(MiniPos,PieceSize,PieceCountX, PieceCountZ,DefaultCost);
+		pImpl->Create(GetComponent<MultiStringSprite>(), GetStage());
+	}
+
 
 
 	void  StageCellMap::OnUpdate() {
