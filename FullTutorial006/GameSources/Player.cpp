@@ -27,20 +27,14 @@ namespace basecross{
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(0, 0.25f, 0);
-//		Ptr->SetPosition(0, 0.125f, 0);
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-//		PtrRedid->SetReflection(0.6f);
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定
 		auto PtrColl = AddComponent<CollisionCapsule>();
-//		auto PtrColl = AddComponent<CollisionSphere>();
 		//親の影響を受ける
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-
-		PtrColl->SetDrawActive(true);
 
 		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
 		SpanMat.DefTransformation(

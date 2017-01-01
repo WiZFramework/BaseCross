@@ -8,6 +8,7 @@
 
 namespace basecross{
 
+
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
 	//	用途: 追いかける配置オブジェクト
@@ -16,7 +17,6 @@ namespace basecross{
 	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
-		m_BaseY(m_StartPos.y),
 		m_StateChangeSize(5.0f)
 	{
 	}
@@ -39,23 +39,19 @@ namespace basecross{
 		//Arriveは無効にしておく
 		PtrArrive->SetUpdateActive(false);
 
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
-
-
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"ObjectGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<SeekObject>());
 		//分離行動をつける
 		AddComponent<SeparationSteering>(Group);
-		//Obbの衝突判定をつける
+		//Sphereの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionSphere>();
-//		auto PtrColl = AddComponent<CollisionObb>();
-		//親の影響を受ける
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 		PtrColl->SetCalcScaling(CalcScaling::YScale);
-		PtrColl->SetDrawActive(true);
+
+		//重力をつける
+		auto PtrGravity = AddComponent<Gravity>();
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -67,9 +63,6 @@ namespace basecross{
 		//透明処理をする
 		SetAlphaActive(true);
 
-		//最初は元気な行動
-		m_SeekBehavior = FineSeekBehavior::Instance();
-		m_FineTiredTime = 0;
 		//ステートマシンの構築
 		m_StateMachine = make_shared< StateMachine<SeekObject> >(GetThis<SeekObject>());
 		//最初のステートをSeekFarStateに設定
@@ -78,12 +71,11 @@ namespace basecross{
 
 	//ユーティリティ関数群
 	Vector3 SeekObject::GetPlayerPosition() const {
-		//もしプレイヤーが初期化化されてない場合には、Vector3(0,m_BaseY,0)を返す
-		Vector3 PlayerPos(0, m_BaseY, 0);
+		//もしプレイヤーが初期化化されてない場合には、Vector3(0,0.125f,0)を返す
+		Vector3 PlayerPos(0, 0.125f, 0);
 		auto PtrPlayer = GetStage()->GetSharedGameObject<Player>(L"Player", false);
 		if (PtrPlayer) {
 			PlayerPos = PtrPlayer->GetComponent<Transform>()->GetPosition();
-			PlayerPos.y = m_BaseY;
 		}
 		return PlayerPos;
 	}
@@ -92,18 +84,64 @@ namespace basecross{
 		auto LenVec = GetPlayerPosition() - MyPos;
 		return LenVec.Length();
 	}
+
+	//モーションを実装する関数群
+	void  SeekObject::SeekStartMoton() {
+		auto PtrSeek = GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(true);
+		PtrSeek->SetTargetPosition(GetPlayerPosition());
+
+	}
+	bool  SeekObject::SeekUpdateMoton() {
+		auto PtrSeek = GetComponent<SeekSteering>();
+		PtrSeek->SetTargetPosition(GetPlayerPosition());
+		if (GetPlayerLength() <= m_StateChangeSize) {
+			return true;
+		}
+		return false;
+	}
+	void  SeekObject::SeekEndMoton() {
+		auto PtrSeek = GetComponent<SeekSteering>();
+		PtrSeek->SetUpdateActive(false);
+	}
+
+	void  SeekObject::ArriveStartMoton() {
+		auto PtrArrive = GetComponent<ArriveSteering>();
+		PtrArrive->SetUpdateActive(true);
+		PtrArrive->SetTargetPosition(GetPlayerPosition());
+	}
+	bool  SeekObject::ArriveUpdateMoton() {
+		auto PtrArrive = GetComponent<ArriveSteering>();
+		PtrArrive->SetTargetPosition(GetPlayerPosition());
+		if (GetPlayerLength() > m_StateChangeSize) {
+			//プレイヤーとの距離が一定以上ならtrue
+			return true;
+		}
+		return false;
+	}
+	void  SeekObject::ArriveEndMoton() {
+		auto PtrArrive = GetComponent<ArriveSteering>();
+		//Arriveコンポーネントを無効にする
+		PtrArrive->SetUpdateActive(false);
+	}
+
 	//操作
 	void SeekObject::OnUpdate() {
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+
+	}
+
 	void SeekObject::OnLastUpdate() {
+		auto PtrTrans = GetComponent<Transform>();
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
-		auto PtrTransform = GetComponent<Transform>();
 		Vector3 Velocity = PtrRigidbody->GetVelocity();
 		if (Velocity.Length() > 0.0f) {
 			Vector3 Temp = Velocity;
@@ -113,125 +151,12 @@ namespace basecross{
 			Qt.RotationRollPitchYaw(0, ToAngle, 0);
 			Qt.Normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			Quaternion NowQt = PtrTrans->GetQuaternion();
 			//現在と目標を補間（10分の1）
 			NowQt.Slerp(NowQt, Qt, 0.1f);
-			PtrTransform->SetQuaternion(NowQt);
+			PtrTrans->SetQuaternion(NowQt);
 		}
 	}
-
-	//--------------------------------------------------------------------------------------
-	//	Seekオブジェクトの元気な行動
-	//--------------------------------------------------------------------------------------
-	shared_ptr<FineSeekBehavior> FineSeekBehavior::Instance() {
-		static shared_ptr<FineSeekBehavior> instance(new FineSeekBehavior);
-		return instance;
-	}
-
-	void FineSeekBehavior::FarEnter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
-	}
-	void FineSeekBehavior::FarExecute(const shared_ptr<SeekObject>& Obj){
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-
-		//５秒経過したら疲れた行動になる
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Obj->m_FineTiredTime += ElapsedTime;
-		if (Obj->m_FineTiredTime >= 3.0f) {
-			Obj->m_FineTiredTime = 0;
-			Obj->m_SeekBehavior = TiredSeekBehavior::Instance();
-			PtrSeek->SetWeight(0.2f);
-			auto PtrDraw = Obj->GetComponent<PNTStaticDraw>();
-			PtrDraw->SetEmissive(Color4(0.5f, 0.0, 0.0, 1.0f));
-		}
-
-		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
-		if (Obj->GetPlayerLength() <= Obj->m_StateChangeSize) {
-			Obj->GetStateMachine()->ChangeState(NearState::Instance());
-		}
-	}
-	void FineSeekBehavior::FarExit(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
-	}
-	void FineSeekBehavior::NearEnter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
-	}
-	void FineSeekBehavior::NearExecute(const shared_ptr<SeekObject>& Obj){
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
-		if (Obj->GetPlayerLength() > Obj->m_StateChangeSize) {
-			Obj->GetStateMachine()->ChangeState(FarState::Instance());
-		}
-	}
-
-	void FineSeekBehavior::NearExit(const shared_ptr<SeekObject>& Obj){
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		//Arriveコンポーネントを無効にする
-		PtrArrive->SetUpdateActive(false);
-	}
-
-	//--------------------------------------------------------------------------------------
-	//	Seekオブジェクトの疲れた行動
-	//--------------------------------------------------------------------------------------
-	shared_ptr<TiredSeekBehavior> TiredSeekBehavior::Instance() {
-		static shared_ptr<TiredSeekBehavior> instance(new TiredSeekBehavior);
-		return instance;
-	}
-
-	void TiredSeekBehavior::FarEnter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
-	}
-	void TiredSeekBehavior::FarExecute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-
-		//５秒経過したら元気な行動になる
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Obj->m_FineTiredTime += ElapsedTime;
-		if (Obj->m_FineTiredTime >= 3.0f) {
-			Obj->m_FineTiredTime = 0;
-			Obj->m_SeekBehavior = FineSeekBehavior::Instance();
-			PtrSeek->SetWeight(1.0f);
-			auto PtrDraw = Obj->GetComponent<PNTStaticDraw>();
-			PtrDraw->SetEmissive(Color4(0.0f, 0.0, 0.0, 0.0f));
-		}
-
-
-		PtrSeek->SetTargetPosition(Obj->GetPlayerPosition());
-		if (Obj->GetPlayerLength() <= Obj->m_StateChangeSize) {
-			Obj->GetStateMachine()->ChangeState(NearState::Instance());
-		}
-	}
-	void TiredSeekBehavior::FarExit(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
-	}
-	void TiredSeekBehavior::NearEnter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
-	}
-	void TiredSeekBehavior::NearExecute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(Obj->GetPlayerPosition());
-		if (Obj->GetPlayerLength() > Obj->m_StateChangeSize) {
-			Obj->GetStateMachine()->ChangeState(FarState::Instance());
-		}
-	}
-
-	void TiredSeekBehavior::NearExit(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetComponent<ArriveSteering>();
-		//Arriveコンポーネントを無効にする
-		PtrArrive->SetUpdateActive(false);
-	}
-
-
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
@@ -241,13 +166,15 @@ namespace basecross{
 		return instance;
 	}
 	void FarState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->FarEnter(Obj);
+		Obj->SeekStartMoton();
 	}
 	void FarState::Execute(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->FarExecute(Obj);
+		if (Obj->SeekUpdateMoton()) {
+			Obj->GetStateMachine()->ChangeState(NearState::Instance());
+		}
 	}
 	void FarState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->FarExit(Obj);
+		Obj->SeekEndMoton();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -259,14 +186,17 @@ namespace basecross{
 		return instance;
 	}
 	void NearState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->NearEnter(Obj);
+		Obj->ArriveStartMoton();
 	}
 	void NearState::Execute(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->NearExecute(Obj);
+		if (Obj->ArriveUpdateMoton()) {
+			Obj->GetStateMachine()->ChangeState(FarState::Instance());
+		}
 	}
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->GetSeekBehavior()->NearExit(Obj);
+		Obj->ArriveEndMoton();
 	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	class StaticModel : public GameObject;
@@ -303,8 +233,6 @@ namespace basecross{
 
 		auto PtrColl = AddComponent<CollisionCapsule>();
 		PtrColl->SetFixed(true);
-		PtrColl->SetDrawActive(true);
-
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();

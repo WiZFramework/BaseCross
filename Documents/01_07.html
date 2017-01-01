@@ -1,0 +1,110 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０７．SpriteStudio5データの実装</h3>
+このサンプルは<b>FullTutorial007</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0107a.png" width="80%"/>
+<p>図0107a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>解説</h4>
+　このサンプルは<b>株式会社ウェブテクノロジ社様</b>の<b>SpriteStudio5</b>の再生をする方法です。<b>BaseCross</b>は<b>SpriteStudio5データ（XML形式）</b>にネイティブで対応しています。<br />
+　<b>SpriteStudio5データ</b>はもともと<b>２Ｄデータ</b>ですが、<b>BaseCross</b>では、それを<b>２Ｄ上に展開する</b>方法と<b>３Ｄ上に展開する</b>方法が選べます。<br />
+　サンプルでは<b>女の子</b>が<b>３Ｄ上の展開</b>であり、卵のキャラクターが<b>２Ｄ上の展開</b>です。<br />
+<br />
+　では、<b>女の子</b>から見ていきましょう。<b>Player.h/cpp</b>に記述があります。<br />
+　<b>SpriteStudio5データ</b>を実装クラスは<b>SS5ssae</b>を継承して作成します。この<b>SS5ssae</b>は<b>GameObject</b>の派生クラスです。以下は、宣言部（抜粋）です。
+<div class="box1">
+<pre>
+class Player : public SS5ssae {
+    //中略
+
+public:
+    //構築と破棄
+    Player(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir);
+    virtual ~Player() {}
+    //初期化
+    virtual void OnCreate() override;
+
+    //中略
+
+    virtual void OnUpdate() override;
+    virtual void OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) override;
+    virtual void OnLastUpdate() override;
+};
+</pre>
+</div>
+　コントローラで動作し、ステートも使用していますが、ここでは<b>SS5ssaeを継承する</b>という部分と、<b>コンストラクタに、データのディレクトリを渡す</b>という部分が重要なので、ほかの部分は略してあります。<br />
+　続いて、実体です。以下は<b>コンストラクタ</b>です。
+<div class="box1">
+<pre>
+Player::Player(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir) :
+    <span class="red">SS5ssae(StagePtr, BaseDir, L"character_template_3head.ssae", L"wait"),</span>
+    m_MaxSpeed(40.0f),  //最高速度
+    m_Decel(0.95f), //減速値
+    m_Mass(1.0f),   //質量
+    m_ZRailIndex(0),
+    m_ZRailBeforIndex(0)
+{
+    //中略
+
+}
+
+</pre>
+</div>
+　ポイントは親クラスのコンストラクタ呼び出しですが、赤い部分の記述のように<b>ディレクトリ名</b>と<b>ファイル名</b>を記述します。<br />
+　最後の引数は<b>最初のアニメーション名</b>です<b>SpriteStudio5データ</b>はアニメーションを<b>名前</b>で管理します。<br />
+　このようにして構築したら、あとは、タイミングによって<b>アニメーションを変更</b>します。<br />
+　このサンプルではいくつかアニメーションを変更するタイミングがあります。実際の変更は<b>Player::AnimeChangeMotion()</b>関数に記述されています。
+<div class="box1">
+<pre>
+void Player::AnimeChangeMotion(const wstring& key, bool looped) {
+    <span class="red">ChangeAnimation(key);
+    SetLooped(looped);</span>
+}
+</pre>
+</div>
+　赤い部分は<b>親クラスのメンバ関数</b>を呼び出しています。<b>ChangeAnimation()関数</b>はアニメーションを変更します。<b>SetLooped()関数</b>は<b>ループするかどうか</b>を設定します。<br />
+<br />
+<h4>２Ｄ上のSpriteStudio5</h4>
+　サンプルの下部で行ったり来たりしている卵型のオブジェクトは<b>２Ｄ上で配置</b>されています。これを実装するには、コンストラクタで
+<div class="box1">
+<pre>
+EggAnime::EggAnime(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir) :
+    SS5ssae(StagePtr, BaseDir, L"character_template_2head.ssae", L"attack1", <span class="red">true</span>),
+    m_Span(100.0f)
+{}
+</pre>
+</div>
+　のように、親クラスのコンストラクタ呼び出しの<b>初期アニメーション</b>の次のパラメータに<b>true</b>を渡します。<br />
+　このパラメータは<b>２Ｄかどうか</b>を設定するパラメータで、デフォルト引数になっています。デフォルト値は<b>false（つまり２Ｄにしない）</b>です。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_06.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

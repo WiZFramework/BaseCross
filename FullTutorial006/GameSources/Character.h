@@ -8,25 +8,13 @@
 
 namespace basecross{
 
-	class FineSeekBehavior;
-	class TiredSeekBehavior;
-	class SeekBehavior;
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	class SeekObject : public GameObject {
-		//行動クラスはfriend宣言を付ける
-		friend class FineSeekBehavior;
-		friend class TiredSeekBehavior;
-		//現在の行動オブジェクト
-		shared_ptr<SeekBehavior> m_SeekBehavior;
-		//行動を切りかえるためのタイマー
-		float m_FineTiredTime;
 		shared_ptr< StateMachine<SeekObject> >  m_StateMachine;	//ステートマシーン
-
 		Vector3 m_StartPos;
-		float m_BaseY;
 		float m_StateChangeSize;
 		//ユーティリティ関数群
 		//プレイヤーの位置を返す
@@ -40,66 +28,24 @@ namespace basecross{
 		//初期化
 		virtual void OnCreate() override;
 		//アクセサ
-		//行動
-		shared_ptr<SeekBehavior> GetSeekBehavior() const {
-			return m_SeekBehavior;
-		}
-		//ステートマシン
 		shared_ptr< StateMachine<SeekObject> > GetStateMachine() const {
 			return m_StateMachine;
 		}
+		//モーションを実装する関数群
+		void  SeekStartMoton();
+		bool  SeekUpdateMoton();
+		void  SeekEndMoton();
+
+		void  ArriveStartMoton();
+		bool  ArriveUpdateMoton();
+		void  ArriveEndMoton();
+
 		//操作
 		virtual void OnUpdate() override;
 		virtual void OnLastUpdate() override;
+		//衝突時
+		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 	};
-
-
-	//--------------------------------------------------------------------------------------
-	//	Seekオブジェクトの行動の親クラス
-	//--------------------------------------------------------------------------------------
-	class SeekBehavior {
-	protected:
-		SeekBehavior() {}
-		virtual ~SeekBehavior() {}
-	public:
-		virtual void FarEnter(const shared_ptr<SeekObject>& Obj) = 0;
-		virtual void FarExecute(const shared_ptr<SeekObject>& Obj) = 0;
-		virtual void FarExit(const shared_ptr<SeekObject>& Obj) = 0;
-		virtual void NearEnter(const shared_ptr<SeekObject>& Obj) = 0;
-		virtual void NearExecute(const shared_ptr<SeekObject>& Obj) = 0;
-		virtual void NearExit(const shared_ptr<SeekObject>& Obj) = 0;
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	Seekオブジェクトの元気な行動
-	//--------------------------------------------------------------------------------------
-	class FineSeekBehavior : public SeekBehavior {
-		FineSeekBehavior() {}
-	public:
-		static shared_ptr<FineSeekBehavior> Instance();
-		virtual void FarEnter(const shared_ptr<SeekObject>& Obj) override;
-		virtual void FarExecute(const shared_ptr<SeekObject>& Obj) override;
-		virtual void FarExit(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearEnter(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearExecute(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearExit(const shared_ptr<SeekObject>& Obj) override;
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	Seekオブジェクトの疲れた行動
-	//--------------------------------------------------------------------------------------
-	class TiredSeekBehavior : public SeekBehavior {
-		TiredSeekBehavior() {}
-	public:
-		static shared_ptr<TiredSeekBehavior> Instance();
-		virtual void FarEnter(const shared_ptr<SeekObject>& Obj) override;
-		virtual void FarExecute(const shared_ptr<SeekObject>& Obj) override;
-		virtual void FarExit(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearEnter(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearExecute(const shared_ptr<SeekObject>& Obj) override;
-		virtual void NearExit(const shared_ptr<SeekObject>& Obj) override;
-	};
-
 
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;

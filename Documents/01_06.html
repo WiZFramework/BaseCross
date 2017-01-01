@@ -1,0 +1,163 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2016年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０６．モデルの描画</h3>
+このサンプルは<b>FullTutorial006</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0106a.png" width="80%"/>
+<p>図0106a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>解説</h4>
+　この項でのデータは<b>モデルの描画</b>です。モデルは<b>FBXモデル</b>として作成し、あらかじめ<b>Fbx2BinVS2015</b>によって<b>.bmfファイル</b>として作成しておき、<b>mediaディレクトリ</b>に保存しておきます。<br />
+<br />
+<h4>プレイヤー</h4>
+　プレイヤーは<b>Player.h/cpp</b>に記述があります。<br />
+　前項までの球体のオブジェクトと実装方法は基本的に変わりません。
+　変わる部分は<b>描画コンポーネント</b>に<b>PNTBoneModelDraw</b>を使用するところと、衝突判定に<b>CollisionCapsule</b>を使っているところです。ただし衝突は<b>CollisionSphere</b>を使用したほうが処理は速いです。<br />
+　また今回は前項までのプレイヤーの動きから<b>ボールの発射</b>は抜いてあります。また<b>ステートマシン</b>も<b>単純なもの</b>を使用しています。<br />
+　以下は<b>Player::OnCreate()関数（抜粋）</b>です。
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+
+    //中略
+
+    //衝突判定
+    auto PtrColl = AddComponent&lt;CollisionCapsule>();
+    //親の影響を受ける
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, XM_PI, 0.0f),
+        Vector3(0.0f, -0.5f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"Chara_R_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
+    //描画するメッシュを設定
+    PtrDraw->SetMeshResource(L"Chara_R_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
+    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");
+
+    //中略
+
+}
+</pre>
+</div>
+　モデルのメッシュは<b>L"Chara_R_MESH"</b>という名前であらかじめ<b>リソース登録</b>されています。<b>GameStage.cpp</b>を参照ください。<br />
+　モデルを使う場合に注意したいのは<b>モデルの大きさや向き</b>です。<b>ローカル座標の中心</b>が、おなかの部分にある場合と足元にある場合もあるでしょう。これはモデルを作成するときに、モデル作成者と十分に話し合いを行い、また<b>Fbx2BinVS2015</b>によるデータ作成時にも調整が必要ですが、それでも実際のステージ上の大きさなどと違っている場合、
+<div class="box1">
+<pre>
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, XM_PI, 0.0f),
+        Vector3(0.0f, -0.5f, 0.0f)
+    );
+</pre>
+</div>
+　のように<b>モデルとトランスフォームの間の差分行列</b>を作成し、
+<div class="box1">
+<pre>
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+</pre>
+</div>
+　と差分行列を設定します。（影も同様です）<br />
+　このモデルはアニメーションがついています。アニメーションの設定は
+<div class="box1">
+<pre>
+    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
+    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");
+</pre>
+</div>
+　のように描画コンポーネントに設定します。<br />
+　それで、アニメーションを切り替えるタイミングで
+<div class="box1">
+<pre>
+    auto PtrDraw = GetComponent&lt;PNTBoneModelDraw>();
+    PtrDraw->ChangeCurrentAnimation(アニメーション名);
+</pre>
+</div>
+　と、描画コンポーネントで呼び出せばアニメーションが切り替わります。<br/>
+<br />
+<h4>スタティックモデル</h4>
+　このサンプルにはもう一つモデルが配置されています。<br />
+　アニメションしないモデルです。これもあらかじめ<b>Fbx2BinVS2015</b>で<b>スタティックモデル</b>としてデータ化しておきます。<br />
+　スタティックモデルのオブジェクトは<b>Chgaracter.h/cpp</b>にある<b>StaticModelクラス</b>です。以下は<b>StaticModel::OnCreate()関数（抜粋）</b>です。
+<div class="box1">
+<pre>
+void StaticModel::OnCreate() {
+
+    //中略
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, -0.25f, 0.0f)
+    );
+
+    auto PtrColl = AddComponent&lt;CollisionCapsule>();
+    PtrColl->SetFixed(true);
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"Chara_Rst_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
+    PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    //中略
+
+}
+</pre>
+</div>
+　ここでも<b>L"Chara_Rst_MESH"</b>はあらかじめリソース化しています。このモデルは<b>表示と衝突判定</b>だけするので、更新処理はありません。<br />
+<br/>
+　BaseCrossでは<b>ゲームオブジェクト</b>に対して<b>形状や描画方法</b>をコンポーネントによって設定することで別のタイプのオブジェクトを作成します。ですから<b>ゲームオブジェクト</b>は、初期時は<b>何もしない、何も表示しない</b>オブジェクトです。このような仕様によって自由度の高いオブジェクトの作成を実装しています。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="01_07.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
