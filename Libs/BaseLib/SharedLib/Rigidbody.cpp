@@ -1,7 +1,7 @@
 /*!
 @file Rigidbody.h
 @brief 物理計算コンポーネント実体
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

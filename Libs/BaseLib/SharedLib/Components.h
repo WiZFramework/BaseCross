@@ -1,7 +1,7 @@
 /*!
 @file Components.h
 @brief コンポーネント
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
 #include "stdafx.h"
@@ -340,7 +340,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void SetToBefore();
+		void SetToBefore();
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!

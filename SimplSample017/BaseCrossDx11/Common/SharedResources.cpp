@@ -468,13 +468,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct ViewBase::Impl {
 		weak_ptr<Stage> m_Stage;
+		bool m_UpdateActive;
 		explicit Impl(const shared_ptr<Stage>& StagePtr) :
-			m_Stage(StagePtr)
+			m_Stage(StagePtr),
+			m_UpdateActive(true)
 		{}
 		~Impl() {}
 	};
 	//--------------------------------------------------------------------------------------
-	///	ビューコンポーネント（親）
+	///	ビュー（親）
 	//--------------------------------------------------------------------------------------
 	ViewBase::ViewBase(const shared_ptr<Stage>& StagePtr) :
 		ObjectInterface(),
@@ -484,6 +486,12 @@ namespace basecross {
 	}
 
 	ViewBase::~ViewBase() {}
+
+	//アクセサ
+	bool ViewBase::IsUpdateActive() const { return pImpl->m_UpdateActive; }
+	bool ViewBase::GetUpdateActive() const { return pImpl->m_UpdateActive; }
+	void ViewBase::SetUpdateActive(bool b) { pImpl->m_UpdateActive = b; }
+
 
 	//--------------------------------------------------------------------------------------
 	///	struct SingleView::Impl;

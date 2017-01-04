@@ -1,8 +1,7 @@
-
 /*!
 @file XmlDoc.h
 @brief XMLŠÖ˜AƒNƒ‰ƒX
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
 

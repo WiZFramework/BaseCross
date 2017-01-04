@@ -1,0 +1,333 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>２．BaseCrossの構造と使い方</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>２０２．ステージの構造</h3>
+　ここでは<b>ステージ</b>の親クラスである<b>Stageクラス</b>の構造と動作について説明します。<br />
+<h4>Stageクラス</h4>
+　<b>Stageクラス</b>は以下のような親クラスを持ちます。
+<p>&nbsp;</p>
+<img src="img/0202a.png" width="60%"/>
+<p>図0202a</p>
+<p>&nbsp;</p>
+　<b>ObjectInterface</b>は<b>OnCreate()関数、 OnPreCreate()関数、OnEvent()関数</b>を持つ派生クラスを作成するためのインターフェイスです。このほかに<b>GetThis()テンプレート関数</b>により、<b>自分自身のshared_ptr</b>を返すことができます。<br />
+　<b>ShapeInterface</b>は<b>OnUpdate()関数、OnLastUpdate()関数、OnDraw()関数</b>を持つ派生クラスを作成するためのインターフェイスです。<br />
+　<b>Stageクラス</b>は、これら<b>両方親クラス（多重継承）</b>するクラスとなります。<br />
+　なぜ、<b>ObjectInterface</b>と<b>ShapeInterface</b>の２つのインターフェイスがあるかというと、オブジェクトによっては<b>OnUpdate()関数</b>などがいらないクラスもあるからです。例えば<b>GetThis()は実装したいけれど、OnUpdate()などはいらない</b>クラスを作成する場合は<b>ObjectInterfaceだけを継承すれば</b>いいということです。<b>ShapeInterface</b>だけを継承することも可能ですが、あまりメリットはありません（その場合は、親クラス無しで作成したほうがいいと思われます）。<br />
+<br />
+　<b>Stageクラス</b>は、<b>ゲームステージ</b>や<b>メニューステージ</b>の親クラスです。ゲームオブジェクトを複数セットすることができ、<b>更新や描画のタイミング</b>を<b>ゲームオブジェクトや、そのオブジェクトが持つコンポーネント</b>に伝え（仮想関数を呼び出す）ます。<br />
+<br/>
+<h4>更新処理</h4>
+　<b>Stageクラス</b>は、1ターンの間に様々な処理をこなします。以下は、<b>ステージのアップデート処理</b>を行う<b>Stage::UpdateStage()関数</b>です。
+<div class="box1">
+<pre>
+void Stage::UpdateStage() {
+    //追加・削除まちオブジェクトの追加と削除
+    SetWaitToObjectVec();
+    //Transformコンポーネントの値をバックアップにコピー
+    for (auto ptr : GetGameObjectVec()) {
+        if (ptr->IsUpdateActive()) {
+            auto ptr2 = ptr->GetComponent&lt;Transform>();
+            ptr2->SetToBefore();
+        }
+    }
+
+    //配置オブジェクトの更新1
+    for (auto ptr : GetGameObjectVec()) {
+        if (ptr->IsUpdateActive()) {
+            ptr->OnUpdate();
+        }
+    }
+    //自身の更新1
+    if (IsUpdateActive()) {
+        OnUpdate();
+    }
+    //配置オブジェクトのコンポーネント更新1
+    for (auto ptr : GetGameObjectVec()) {
+        if (ptr->IsUpdateActive()) {
+            ptr->ComponentUpdate();
+        }
+    }
+    //衝突判定の更新（ステージから呼ぶ）
+    UpdateCollision();
+    //自身のビューをアップデート
+    auto ViewPtr = GetView(false);
+    if (ViewPtr && ViewPtr->IsUpdateActive()) {
+        ViewPtr->OnUpdate();
+    }
+    //配置オブジェクトの最後の更新
+    for (auto ptr : GetGameObjectVec()) {
+        if (ptr->IsUpdateActive()) {
+            ptr->OnLastUpdate();
+        }
+    }
+    //衝突判定のメッセージ発行（ステージから呼ぶ）
+    UpdateMessageCollision();
+    //自身の最後の更新
+    if (IsUpdateActive()) {
+        OnLastUpdate();
+    }
+    //コリジョンのリセット
+    for (auto ptr : GetGameObjectVec()) {
+        ptr->CollisionReset();
+    }
+    //子供ステージの更新
+    for (auto PtrChileStage : GetChileStageVec()) {
+        PtrChileStage->UpdateStage();
+    }
+}
+</pre>
+</div>
+　このようにいくつもの処理を1ターンの間に行っています。それなりに理由があっての処理なのですが、ひょっとするとこれだけの処理を必要としないかもしれません。<br />
+　そんな場合は、<b>Stage::UpdateStage()関数</b>は仮想関数なので、派生クラスで多重定義することが可能です。<br />
+<br/>
+<h4>ゲームオブジェクトの追加と削除</h4>
+　ゲームオブジェクトは、通常は<b>GameObjectの派生クラス</b>としてクラスを定義し、そのクラスを<b>AddGameObject&lt;T>()テンプレート関数</b>によって追加します。<b>GamneObjectそのもの</b>を追加することもできますが、その場合<b>OnUpdate処理</b>などを定義することができませんので注意しましょう。<br />
+　この関数は
+<div class="box1">
+<pre>
+template&lt;typename T, typename... Ts>
+shared_ptr&lt;T> AddGameObject(Ts&&... params) {
+    try {
+        auto Ptr = ObjectFactory::Create&lt;T>(GetThis&lt;Stage>(), params...);
+        PushBackGameObject(Ptr);
+        return Ptr;
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　のようになっています。これは<b>ObjectFactory::Create()関数</b>により指定の型のゲームオブジェクトを作成し、
+<div class="box1">
+<pre>
+        PushBackGameObject(Ptr);
+</pre>
+</div>
+　で、<b>追加待ち配列</b>に追加されます。なぜ、直接ゲームオブジェクトの配列に追加しないかというと、例えばターン処理の間に、あるオブジェクトの更新処理で、別のオブジェクトが追加されると、ゲームオブジェクトの配列に変化が生じ、その後の更新処理がうまくいかないからです。<br />
+　これで追加されたオブジェクトは、毎ターンの最初の
+<div class="box1">
+<pre>
+    SetWaitToObjectVec();
+</pre>
+</div>
+　により処理されます。<br />
+　また、動的な削除にも対応しています。
+<div class="box1">
+<pre>
+    Stage::RemoveGameObject&lt;ゲームオブジェクト型>(ゲームオブジェクトポインタ)
+</pre>
+</div>
+　を使うことにより、指定した型の指定したオブジェクトを削除できます。実際の削除も<b>SetWaitToObjectVec()</b>で処理されます。<br />
+　しかし、削除するオブジェクトのポインタをほかで保持していた場合<b>削除</b>の動きは不定になってしまうので注意しましょう。<br />
+　そういった<b>削除エラー（ヌルポインタエラー）や、メモリリーク</b>を防ぐためには以下の処理を徹底することです。
+<div class="box1">
+<pre>
+１、基本的に別のゲームオブジェクトのshared_ptrを保持しない。
+２、保持せずに<b>SetSharedGameObject()関数、GetSharedGameObject()関数</b>で使うときに取得する。
+３、どうしても保持したければ<b>weak_ptr</b>で保持し、使用の都度<b>lock()</b>で有効かどうかチェックする。
+</pre>
+</div>
+　このような処理を徹底すれば、<b>動的な削除</b>によるエラーは回避できます。<br />
+　ただ<b>削除処理</b>は、内部配列の順番を<b>詰める</b>動きになります。<b>敵を倒したとき</b>とか<b>不定期に、あるいは、たまに起きる</b>場合は負荷も少ないですが、<b>毎ターン追加と削除が繰り返される</b>のような処理は望ましくありません。<br />
+　そういった場合は<b>削除</b>はせずに<b>SetUpdateActive()関数、SetDrawActive()関数</b>を使って<b>有効無効</b>の切り替えで処理したほうが効率は格段に良くなります。<br />
+　<b>AddGameObject()関数</b>の類似系として<b>AddGameObjectWithParam()関数</b>があります。<br />
+　<b>AddGameObject()関数</b>のように使用しますが、違いは<b>パラメータがコンストラクタ引数にならない</b>ということです。<br />
+　例えば、<b>TestObject</b>というクラスを、<b>GameObjectの派生クラス</b>として作成したとします。するとヘッダは以下のようになります。
+<div class="box1">
+<pre>
+class TestObject : public GameObject {
+public:
+    //構築と破棄
+    TestObject(const shared_ptr&lt;Stage>& StagePtr);
+    virtual ~TestObject(){}
+    //初期化
+    //OnCreate()関数は何もしない
+    virtual void OnCreate() override{}
+    //WithParamによる初期化（仮想関数でなくてよい）
+    void OnCreateWithParam(const Vector3& Pos);
+    //中略
+};
+</pre>
+</div>
+　このように<b>const shared_ptr&lt;Stage>& StagePtr</b>だけを引数に持つコンストラクタと、何らかのパラメータを持つ<b>OnCreateWithParam()関数</b>を作成します。<br />
+　そして実体は
+<div class="box1">
+<pre>
+//コンストラクタ
+TestObject::TestObject(const shared_ptr&lt;Stage>& StagePtr):
+GameObject(StagePtr)
+{}
+
+//WithParamによる初期化（仮想関数でなくてよい）
+void TestObject::OnCreateWithParam(const Vector3& Pos){
+    auto PtrTransform = AddComponent&lt;Transform>();
+    PtrTransform->SetPosition(Pos);
+    PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
+    PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+}
+</pre>
+</div>
+　のように書きます。<br />
+　そして、ステージに配置する際は、<b>GameStage::OnCreate()関数など（あるいはそこから呼ばれる関数）</b>で
+<div class="box1">
+<pre>
+AddGameObjectWithParam&lt;TestObject>(Vector3(0.0f, 0.5f, 5.0f));
+</pre>
+</div>
+　と書けば、パラメータが<b>TestObject::OnCreateWithParam()関数</b>に渡されます。<br />
+　この記述方法のメリットは<b>初期位置や初期設定をメンバ変数などに持たなくてもよい</b>ということです。<br />
+　コンストラクタの引数で渡した場合、コンストラクタ内では<b>コンポーネントの作成などはできない</b>ので、<b>OnCreate()関数</b>が呼ばれるまで、メンバ変数にその値を保持しなければなりません。<br />
+　そのメンバ変数は<b>コンストラクタとOnCreate()の間</b>に橋渡し的にしか使用されませんので、無駄と言えば無駄な変数です。<br />
+　ですので上記のような方法で初期化すれば、直接<b>OnCreateWithParam()関数</b>に渡され、その時点では、コンポーネントにアクセスできますので、<b>無駄なメンバ変数はいらない</b>ことになります。<br />
+　しかし<b>何かあったら初期位置に戻る</b>などの処理をする場合、<b>初期位置</b>をどこかに取っておく必要がありますので、普通にコンストラクタに引数を渡したほうが処理しやすくなります。<br />
+　どのような動きをするオブジェクトなのか、をよく考えて構築するといいでしょう。<br />
+<br />
+<h4>共有オブジェクト</h4>
+　AddBegeObject関数などで追加された<b>ゲームオブジェクト（GameObjectの派生クラス）</b>は、内部的には<b>shared_ptrの配列</b>に保存されます。<br />
+　その配列は<b>GetGameObjectVec()関数</b>で取得できますが、この配列はすべてのオブジェクトの配列なので、その中から特定のオブジェクトが必要な場合、すべてをスキャンするのは非効率的です。<br />
+　そのため、オブジェクト追加時などに<b>共有オブジェクト</b>として登録しておくと、便利です。<br />
+　<b>SetSharedGameObject()関数</b>と<b>GetSharedGameObject()テンプレート関数</b>は、共有オブジェクトを操作する関数です。<br />
+　まず<b>共有オブジェクトへの登録</b>ですが、プレイヤーを共有化したい場合、プレイヤーの追加時に以下のように記述します。
+<div class="box1">
+<pre>
+//プレーヤーの作成
+auto PlayerPtr = AddGameObject&lt;Player>();
+//シェア配列にプレイヤーを追加
+SetSharedGameObject(L"Player", PlayerPtr);
+</pre>
+</div>
+　この処理で<b>L"Player"</b>というキーワードでプレイヤーを取得できるようになります。以下のように取得します。
+<div class="box1">
+<pre>
+auto PtrPlayer = GetStage()->GetSharedGameObject&lt;Player>(L"Player", false);
+if (PtrPlayer) {
+    //見つかった場合の何かの処理
+}
+else{
+    //見つからなかった場合の何かの処理
+}
+</pre>
+</div>
+　この場合、プレイヤーが見つからない場合、<b>PtrPlayer</b>には<b>nullptr</b>が入ります。<b>見つかった場合</b>と<b>見つからなかった場合</b>と処理を分ける場合に有効です。<br />
+<div class="box1">
+<pre>
+auto PtrPlayer = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+auto PtrTrans = PtrPlayer->GetComponent&lt;Transform>();
+</pre>
+</div>
+　このように<b>GetSharedGameObject()</b>にパラメータ無し（もしくはtrue）で呼び出すと、<b>見つからなかった場合例外が発生</b>します。<b>必ず必要な場合</b>はこの処理を行います。例外が発生するというのは<b>ゲームプログラミングではバグ</b>と考えて差し支えないと思いますので、原因を調べます。<br />
+<br/>
+　プレイヤーのように<b>1つのオブジェクト</b>ならこの処理でいいのですが、例えば<b>10匹の敵キャラ</b>を参照したい場合があります。そんな場合は<b>共有オブジェクトグループ</b>を作成します。
+<div class="box1">
+<pre>
+    //Enemyのグループを作成する
+    CreateSharedObjectGroup(L"EnemyGroup");
+</pre>
+</div>
+　そのようにしておいて、例えばオブジェクト追加時に
+<div class="box1">
+<pre>
+    auto EnemyPtr = AddGameObject&lt;Enemy>();
+    auto Group = GetSharedObjectGroup(L"EnemyGroup");
+    Group->IntoGroup(EnemyPtr);
+</pre>
+</div>
+　のように<b>グループに追加</b>します。そして参照する場合は、プレイヤーから参照したとすると
+<div class="box1">
+<pre>
+    auto Group = GetStage()->GetSharedObjectGroup(L"EnemyGroup");
+    for (auto& v : Group->GetGroupVector()) {
+        auto shptr = v.lock();
+        if (shptr) {
+            auto EnemyPtr = dynamic_pointer_cast&lt;Enemy>(shptr);
+            //EnemyPtrを使った何かの処理
+        }
+    }
+</pre>
+</div>
+　のように処理します。<b>共有グループ</b>は<b>weak_ptr<GameObject>の配列</b>です。ですから、<b>lock()をかけて</b>有効かどうかをチェックし、有効だった場合<b>dynamic_pointer_cast</b>で<b>目的の型</b>のキャストします。それが成功したら、<b>Enemy</b>が特定できたことになります。<br />
+　このようなメカニズムなので<b>同じ共有グループ</b>に追加するのは<b>同じ型でなくてもよい</b>ことになります。例えば、ある広いステージで、特定のセルマップに配置されているオブジェクトを<b>型は関係なく</b>グループ化しておくことも可能です。<br />
+<br />
+<h4>描画処理</h4>
+　描画処理は以下のようになっています。
+<div class="box1">
+<pre>
+void Stage::RenderStage() {
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto MultiPtr = dynamic_pointer_cast&lt;MultiView>(GetView());
+    if (MultiPtr) {
+        for (size_t i = 0; i &lt; MultiPtr->GetViewSize(); i++) {
+            MultiPtr->SetTargetIndex(i);
+            if (IsShadowmapDraw()) {
+                Dev->ClearShadowmapViews();
+                Dev->StartShadowmapDraw();
+                DrawShadowmapStage();
+                Dev->EndShadowmapDraw();
+            }
+            //デフォルト描画の開始
+            Dev->StartDefultDraw();
+            RsSetViewport(MultiPtr->GetTargetViewport());
+            DrawStage();
+            //デフォルト描画の終了
+            Dev->EndDefultDraw();
+        }
+        //描画が終わったら更新処理用に先頭のカメラにターゲットを設定する
+        MultiPtr->SetTargetIndex(0);
+    }
+    else {
+        if (IsShadowmapDraw()) {
+            Dev->ClearShadowmapViews();
+            Dev->StartShadowmapDraw();
+            DrawShadowmapStage();
+            Dev->EndShadowmapDraw();
+        }
+        //デフォルト描画の開始
+        Dev->StartDefultDraw();
+        RsSetViewport(GetView()->GetTargetViewport());
+        DrawStage();
+        //デフォルト描画の終了
+        Dev->EndDefultDraw();
+    }
+    //子供ステージの描画
+    for (auto PtrChileStage : pImpl->m_ChildStageVec) {
+        PtrChileStage->RenderStage();
+    }
+}
+</pre>
+</div>
+　このように<b>ビュー</b>が<b>シングルかマルチか</b>によって処理を変えています。<b>RenderStage()関数</b>も仮想関数になっているので派生クラスで多重定義可能です。<br />
+　この関数は、内容的には<b>ビューの振り分けと、描画処理の呼び出し</b>を行っています。実際のオブジェクト単位の描画命令は<b>DrawShadowmapStage();</b>および<b>DrawStage();</b>で行っています。これらも仮想関数です。<br />
+　<b>DrawShadowmapStage()関数、DrawStage()関数</b>も仮想関数ですので、必要があれば多重定義してください。<br />
+<br />
+<h4>そのほかの処理</h4>
+　<b>Stageクラス</b>ではこのほかに<b>パーティクル描画処理</b>、<b>ビューの処理</b>などがあります。親子関係も作成できます。それらについてはライブラリコードもしくはサンプルを参照ください。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="02_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="02_03.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

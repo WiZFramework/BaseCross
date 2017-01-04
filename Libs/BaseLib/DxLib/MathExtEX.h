@@ -2,7 +2,7 @@
 @file MathExtEX.h
 @brief 行列、クオータニオン、カラーなどのnamespaceによる計算<br />
 XNAMATH のラッピング関数群
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

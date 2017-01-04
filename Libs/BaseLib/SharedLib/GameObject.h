@@ -1,7 +1,7 @@
 /*!
 @file GameObject.h
 @brief ゲームオブジェクト、ステージ
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
 #include "stdafx.h"
@@ -1625,6 +1625,7 @@ namespace basecross {
 	class Stage :public ObjectInterface, public ShapeInterface {
 		//プライベートサブ関数
 		void PushBackGameObject(const shared_ptr<GameObject>& Ptr);
+		void RemoveBackGameObject(const shared_ptr<GameObject>& Ptr);
 		shared_ptr<GameObject> GetSharedGameObjectEx(const wstring& Key, bool ExceptionActive) const;
 		void SetParentStage(const shared_ptr<Stage>& ParentStage);
 		void AddChileStageBase(const shared_ptr<Stage>& ChildStage);
@@ -1715,6 +1716,28 @@ namespace basecross {
 			}
 		}
 
+		template<typename T>
+		bool FindGameObject(const shared_ptr<GameObject>& Obj) {
+			auto shptr = dynamic_pointer_cast<T>(Obj);
+			if (shptr) {
+				for (auto ptr : GetGameObjectVec()) {
+					if (Obj == ptr) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+
+		template<typename T>
+		void RemoveGameObject(const shared_ptr<GameObject>& Obj) {
+			if (FindGameObject<T>(Obj)) {
+				RemoveBackGameObject(Obj);
+			}
+		}
+
+
 		//追加待ちになってるオブジェクトを追加する
 		void SetWaitToObjectVec();
 
@@ -1773,7 +1796,7 @@ namespace basecross {
 
 
 		void SetView(const shared_ptr<ViewBase>& v);
-		const shared_ptr<ViewBase>& GetView()const;
+		const shared_ptr<ViewBase>& GetView(bool ExceptionActive = true)const;
 
 		void SetLight(const shared_ptr<LightBase>& L);
 		const shared_ptr<LightBase>& GetLight()const;

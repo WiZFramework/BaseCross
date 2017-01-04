@@ -876,7 +876,8 @@ namespace basecross {
 		vector< shared_ptr<GameObject> > m_GameObjectVec;
 		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
 		vector< shared_ptr<GameObject> > m_WaitAddObjectVec;
-
+		//途中にオブジェクトが削除された場合、ターンの開始まで待つ配列
+		vector< shared_ptr<GameObject> > m_WaitRemoveObjectVec;
 		//Spriteかそうでないかを分離する配列
 		vector< shared_ptr<GameObject> > m_SpriteVec;
 		vector< shared_ptr<GameObject> > m_Object3DVec;
@@ -906,7 +907,18 @@ namespace basecross {
 			m_IsShadowmapDraw(true)
 		{}
 		~Impl() {}
+		void RemoveTargetGameObject(const shared_ptr<GameObject>& targetobj);
 	};
+	void Stage::Impl::RemoveTargetGameObject(const shared_ptr<GameObject>& targetobj) {
+		auto it = m_GameObjectVec.begin();
+		while (it != m_GameObjectVec.end()) {
+			if (*it == targetobj) {
+				m_GameObjectVec.erase(it);
+				return;
+			}
+			it++;
+		}
+	}
 
 
 	//--------------------------------------------------------------------------------------
@@ -929,6 +941,11 @@ namespace basecross {
 			//クリエイト前
 			pImpl->m_GameObjectVec.push_back(Ptr);
 		}
+	}
+
+	//削除オブジェクトの設定
+	void Stage::RemoveBackGameObject(const shared_ptr<GameObject>& Ptr) {
+		pImpl->m_WaitRemoveObjectVec.push_back(Ptr);
 	}
 
 	shared_ptr<GameObject> Stage::GetSharedGameObjectEx(const wstring& Key, bool ExceptionActive)const {
@@ -969,9 +986,15 @@ namespace basecross {
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
 
-	//追加待ちになってるオブジェクトを追加する
+	//追加や削除待ちになってるオブジェクトを追加・削除する
 	void Stage::SetWaitToObjectVec(){
-		if (pImpl->m_WaitAddObjectVec.size() > 0){
+		if (!pImpl->m_WaitRemoveObjectVec.empty()) {
+			for (auto Ptr : pImpl->m_WaitRemoveObjectVec) {
+				pImpl->RemoveTargetGameObject(Ptr);
+			}
+		}
+		pImpl->m_WaitRemoveObjectVec.clear();
+		if (!pImpl->m_WaitAddObjectVec.empty()){
 			for (auto Ptr : pImpl->m_WaitAddObjectVec){
 				pImpl->m_GameObjectVec.push_back(Ptr);
 			}
@@ -1097,13 +1120,15 @@ namespace basecross {
 		pImpl->m_ViewBase = v;
 	}
 
-	const shared_ptr<ViewBase>& Stage::GetView()const {
-		if (!pImpl->m_ViewBase) {
-			throw BaseException(
-				L"ステージにビューが設定されていません。",
-				L"if (!pImpl->m_ViewBase)",
-				L"Stage::GetView()"
-			);
+	const shared_ptr<ViewBase>& Stage::GetView(bool ExceptionActive)const {
+		if (ExceptionActive) {
+			if (!pImpl->m_ViewBase) {
+				throw BaseException(
+					L"ステージにビューが設定されていません。",
+					L"if (!pImpl->m_ViewBase)",
+					L"Stage::GetView()"
+				);
+			}
 		}
 		return pImpl->m_ViewBase;
 	}
@@ -1139,7 +1164,7 @@ namespace basecross {
 
 	//ステージ内の更新（シーンからよばれる）
 	void Stage::UpdateStage() {
-		//追加まちオブジェクトの追加
+		//追加・削除まちオブジェクトの追加と削除
 		SetWaitToObjectVec();
 		//Transformコンポーネントの値をバックアップにコピー
 		for (auto ptr : GetGameObjectVec()) {
@@ -1168,10 +1193,11 @@ namespace basecross {
 		//衝突判定の更新（ステージから呼ぶ）
 		UpdateCollision();
 		//自身のビューをアップデート
-		if (IsUpdateActive() && pImpl->m_ViewBase) {
-			pImpl->m_ViewBase->OnUpdate();
+		auto ViewPtr = GetView(false);
+		if (ViewPtr && ViewPtr->IsUpdateActive()) {
+			ViewPtr->OnUpdate();
 		}
-		//配置オブジェクトのコンポーネント更新3
+		//配置オブジェクトの最後の更新
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				ptr->OnLastUpdate();
@@ -1179,7 +1205,7 @@ namespace basecross {
 		}
 		//衝突判定のメッセージ発行（ステージから呼ぶ）
 		UpdateMessageCollision();
-		//自身の更新3
+		//自身の最後の更新
 		if (IsUpdateActive()) {
 			OnLastUpdate();
 		}

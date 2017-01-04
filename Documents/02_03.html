@@ -1,0 +1,212 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>２．BaseCrossの構造と使い方</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>２０３．ゲームオブジェクトの構造</h3>
+　ステージに配置されるオブジェクトは「GameObjectクラス」か、その派生クラスを作成して配置します。<br />
+　「GameObjectクラス」のインスタンスを配置した場合、「OnUpdate()関数」などを記述すrことはできません。ですのでほとんどの場合「派生クラスを作成」してそのインスタンスを配置する形になります。<br />
+　この項では「GameObjectクラス」はどういうクラスで、どういうことができるのかを述べます。<br />
+　また、その構成上重要な「コンポーネント」については次項以降に述べます。<br />
+<br />
+<h4>GameObjectクラス</h4>
+　「GameObjectクラス」は派生クラスから様々な機能を使用できるよう設計されています。<br />
+　「GameObjectクラス」は、配置しただけでは何もしません。「コンポーネント」を追加し、そのコンポーネントのパラメータなどを設定してはじめて「ステージ上に表示」あるいは「動く」ようになります。<br />
+　まず、コンポーネント以外の機能や設定について述べます。<br />
+<br />
+<h4>GameObjectの仮想関数</h4>
+　「GameObjectクラス」には以下の仮想関数があり、ステージあるいはほかのフレームワークから呼び出されます。以下に関数名と呼ばれるタイミング、そして多重定義する場合の注意をまとめました。<br />
+<br />
+<table>
+<tr>
+<th width="20%">仮想関数名</th>
+<th width="55%">呼ばれるタイミング</th>
+<th>使用上の注意</th>
+</tr>
+<tr>
+<td>OnPreCreate()</td>
+<td>コンストラクタの直後</td>
+<td>必ず親クラスのOnPreCreate()を呼ぶ</td>
+</tr>
+<tr>
+<td>OnCreate()</td>
+<td>OnPreCreate()の直後</td>
+<td>通常はここで必要な初期化処理を行う</td>
+</tr>
+<tr>
+<td>OnEvent()</td>
+<td>イベントが発生した時</td>
+<td></td>
+</tr>
+<tr>
+<td>OnUpdate()</td>
+<td>各ターンの、最初の更新処理</td>
+<td></td>
+</tr>
+<tr>
+<td>OnLastUpdate()</td>
+<td>各ターンの、コンポーネントの更新処理が終わった後</td>
+<td></td>
+</tr>
+<tr>
+<td>OnCollision()</td>
+<td>衝突判定実装時でかつ「Fix」でない場合に、何かに最初に衝突したとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnCollisionExcute()</td>
+<td>衝突判定実装時でかつ「Fix」でない場合に、何かに衝突し続けているとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnCollisionExit()</td>
+<td>衝突判定実装時でかつ「Fix」でない場合に、何かとの衝突状態が抜けたとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnPreDraw()</td>
+<td>描画処理の直前</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGetDrawCamera()</td>
+<td>描画用の独自カメラを必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGetDrawLight()</td>
+<td>描画用の独自ライトを必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGet2DDrawProjMatrix()</td>
+<td>２Ｄ描画用の独自射影行列を必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td class="nobottom">OnDraw()</td>
+<td class="nobottom">描画時</td>
+<td class="nobottom">通常は描画コンポーネントに描画を任せる</td>
+</tr>
+</table>
+　各仮想関数は、派生クラスで多重定義することで使用できますが、この表にはパラメータは乗ってませんが、「パラメータを必要とする」あるいは「戻り値が必要」な仮想関数もあるので注意しましょう。<br />
+<br/>
+<h4>GameObjectのアクセサ</h4>
+　「GameObject」では、多くのパラメータ設定は「コンポーネント」で行うので、直接の設定は少ないのですが、あります。以下に主に使うパラメータ設定と取得（アクセサ）を述べます。<br/>
+<br />
+<table>
+<tr>
+<th>関数名</th>
+<th>用途</th>
+</tr>
+<tr>
+<td>
+bool IsUpdateActive() const;、
+bool GetUpdateActive() const;
+</td>
+<td>
+更新処理が有効かどうかを得る
+</td>
+</tr>
+
+<tr>
+<td>
+void SetUpdateActive(bool b);
+</td>
+<td>
+更新処理が有効かどうかを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+bool IsDrawActive() const;、
+bool GetDrawActive() const;
+</td>
+<td>
+描画処理が有効かどうかを得る
+</td>
+</tr>
+<tr>
+<td>
+void SetDrawActive(bool b);
+</td>
+<td>
+描画処理が有効かどうかを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+bool IsAlphaActive() const;、
+bool GetAlphaActive() const;
+</td>
+<td>
+透明処理するかどうかを得る
+</td>
+</tr>
+
+<tr>
+<td>
+void SetAlphaActive(bool b);
+</td>
+<td>
+透明処理するかどうかを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+int GetDrawLayer() const;
+</td>
+<td>
+描画レイヤーを得る
+</td>
+</tr>
+
+<tr>
+<td>
+void  SetDrawLayer(int l);
+</td>
+<td>
+描画レイヤーを設定する
+</td>
+</tr>
+<tr>
+<td class="nobottom">
+shared_ptr<Stage> GetStage(bool ExceptionActive = true) const;
+</td>
+<td class="nobottom">
+ステージを得る
+</td>
+</tr>
+</table>
+　更新処理や描画処理は有効無効を設定できます。ステージの項でも説明しましたが、配置されているオブジェクトを「削除」でゲーム上から消す代わりに「更新と描画を無効にする」という方法で処理したほうが効率的な場合があります。（これはそのオブジェクトの追加と削除が頻繁に行われる場合です）。<br />
+　また、「描画レイヤー」の設定は、重なったオブジェクト同士の「透明処理」がうまくいかないときに使用します。通常は「透明でないもの」を先に描画し、透明なものをあとに描画します。そして透明なもの同士は、カメラから見て遠い順に描画します。しかし、位置関係によっては「透明処理」がうまくいかないこともあります。そんな場合は、「描画レイヤー」を設定します。<br />
+　「描画レイヤー」が低い値だと、先に描画されます。デフォルトは「0」です。ですから「-1」にすればほかの「0」のオブジェクトより先に描画されます。同じ描画レイヤー同士では「カメラから見て遠い順」ということになります。<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="02_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="02_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -1,7 +1,7 @@
 /*!
 @file TransHelper.h
 @brief 衝突判定、補間処理用ユーティリティ
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 
 #pragma once

@@ -1,7 +1,7 @@
 /*!
 @file XmlDoc.cpp
 @brief XMLŠÖ˜AƒNƒ‰ƒXŽÀ‘Ì
-@copyright Copyright (c) 2016 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
 

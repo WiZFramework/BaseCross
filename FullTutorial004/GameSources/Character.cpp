@@ -24,7 +24,7 @@ namespace basecross{
 
 	//‰Šú‰»
 	void SeekObject::OnCreate() {
-		auto PtrTransform = AddComponent<Transform>();
+		auto PtrTransform = GetComponent<Transform>();
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
