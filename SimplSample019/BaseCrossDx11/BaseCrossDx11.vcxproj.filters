@@ -84,6 +84,9 @@
     <ClInclude Include="Walls.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Common\DrawComponentsEx.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BaseCrossDx11.rc">
@@ -152,6 +155,9 @@
     </ClCompile>
     <ClCompile Include="Walls.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\DrawComponentsEx.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

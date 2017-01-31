@@ -50,7 +50,7 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 
 		auto Group = GetStage()->GetSharedObjectGroup(L"AttackBall");
@@ -140,7 +140,7 @@ namespace basecross{
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
 		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-		PtrCol->SetDrawActive(true);
+		//PtrCol->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -153,13 +153,13 @@ namespace basecross{
 		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 
-		//透明処理
+//透明処理
 		SetAlphaActive(true);
 		//0番目のビューのカメラを得る
 		//LookAtCameraである

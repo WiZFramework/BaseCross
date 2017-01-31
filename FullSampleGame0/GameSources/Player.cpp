@@ -57,7 +57,7 @@ namespace basecross{
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"PLAYER_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
@@ -123,16 +123,12 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+
 		for (auto &v : OtherVec) {
-			auto shenemy = dynamic_pointer_cast<EnemyInterface>(v);
-			auto shCylinder = dynamic_pointer_cast<FixedCylinder>(v);
-			auto shWindow = dynamic_pointer_cast<RoomWindow>(v);
-			auto shDoor = dynamic_pointer_cast<RoomDoor>(v);
-			auto sh = dynamic_pointer_cast<GameObject>(v);
-			if (shenemy) {
+			if (v->FindTag(L"Enemy")) {
 				auto PtrRedid = GetComponent<Rigidbody>();
 				auto Pos = GetComponent<Transform>()->GetPosition();
-				auto EnemyPos = sh->GetComponent<Transform>()->GetPosition();
+				auto EnemyPos = v->GetComponent<Transform>()->GetPosition();
 
 				auto Coll = GetComponent<CollisionSphere>();
 				auto Sp = Coll->GetSphere();
@@ -158,21 +154,23 @@ namespace basecross{
 				}
 				return;
 			}
-			if (shCylinder) {
+			if (v->FindTag(L"FixedCylinder")) {
+				auto shCylinder = dynamic_pointer_cast<FixedCylinder>(v);
 				auto NowStage = dynamic_pointer_cast<NowScienceRoom>(GetStage());
-				if (NowStage) {
+				if (shCylinder && NowStage) {
 					shCylinder->BalloonObOff();
 					return;
 				}
 			}
-			if (shWindow) {
+			if (v->FindTag(L"RoomWindow")) {
 				auto PastStage = dynamic_pointer_cast<PastScienceRoom>(GetStage());
-				if (PastStage) {
+				auto shWindow = dynamic_pointer_cast<RoomWindow>(v);
+				if (PastStage && shWindow) {
 					shWindow->WindowClear();
 					return;
 				}
 			}
-			if (shDoor) {
+			if (v->FindTag(L"RoomDoor")) {
 				auto& param = App::GetApp()->GetScene<Scene>()->GetGameParamaters();
 				if (param.m_IsHeadTaskClear) {
 					auto NowStage = dynamic_pointer_cast<NowScienceRoom>(GetStage());
@@ -184,7 +182,6 @@ namespace basecross{
 				}
 			}
 		}
-
 		if (GetStateMachine()->GetCurrentState() == JumpState::Instance()) {
 			GetStateMachine()->ChangeState(DefaultState::Instance());
 		}

@@ -26,8 +26,8 @@ namespace basecross {
 
 		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir,L"Chara_R.bmf");
 		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
-		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Chara_Rst.bmf");
-		App::GetApp()->RegisterResource(L"Chara_Rst_MESH", StaticModelMesh);
+		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
 	}
 
 
@@ -38,16 +38,12 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-
-
-
 		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
 		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
-		//シングルライトの作成
-		auto PtrSingleLight = CreateLight<SingleLight>();
-		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-1.0f, 1.0f, -1.0f);
-//		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
 	}
 
 
@@ -64,7 +60,8 @@ namespace basecross {
 
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
+		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
+		DrawComp->SetFogEnabled(true);
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
 		//自分に影が映りこむようにする

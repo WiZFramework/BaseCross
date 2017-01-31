@@ -50,6 +50,16 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
+		@param[in]	other	XMVECTORF32
+		*/
+		//--------------------------------------------------------------------------------------
+		Vector2(const XMVECTORF32& other) :XMFLOAT2() {
+			XMVECTOR temp = other;
+			XMStoreFloat2(this, temp);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
 		@param[in]	x	X値
 		@param[in]	y	Y値
 		*/
@@ -743,6 +753,16 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		Vector3(const XMVECTOR& other) :XMFLOAT3() {
+			XMVECTOR temp = other;
+			XMStoreFloat3(this, temp);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	other	XMVECTORF32
+		*/
+		//--------------------------------------------------------------------------------------
+		Vector3(const XMVECTORF32& other) :XMFLOAT3() {
 			XMVECTOR temp = other;
 			XMStoreFloat3(this, temp);
 		}
@@ -1526,6 +1546,17 @@ namespace basecross{
 			XMVECTOR temp = other;
 			XMStoreFloat4(this, temp);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	other	XMVECTORF32
+		*/
+		//--------------------------------------------------------------------------------------
+		Vector4(const XMVECTORF32& other) :XMFLOAT4() {
+			XMVECTOR temp = other;
+			XMStoreFloat4(this, temp);
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ（値セット）

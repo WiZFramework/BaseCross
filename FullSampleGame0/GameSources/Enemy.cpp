@@ -49,14 +49,14 @@ namespace basecross {
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
-
-//		PtrColl->SetDrawActive(true);
+		//タグをつける
+		AddTag(L"Enemy");
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"TRACE2_TX");
 		//透明処理をする
@@ -240,11 +240,15 @@ namespace basecross {
 		//横部分のみ反発
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
 
+		//タグをつける
+		AddTag(L"Enemy");
+
+
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"MOZO_SPHERE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"MOZO_SPHERE");
 		PtrDraw->SetTextureResource(L"MOZO_TX");
 
@@ -383,7 +387,8 @@ namespace basecross {
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 		//透明処理
@@ -424,11 +429,16 @@ namespace basecross {
 		auto PtrColl = AddComponent<CollisionObb>();
 		PtrColl->SetFixed(true);
 
+		//タグをつける
+		AddTag(L"FixedCylinder");
+
+
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CYLINDER");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"MOZO_SPHERE");
 
 		//パラメータの取得
@@ -451,7 +461,7 @@ namespace basecross {
 		else {
 			PtrBalloon->PopupOpen(PtrTransform->GetPosition());
 			m_BalloonActive = true;
-			auto PtrDraw = GetComponent<PNTStaticDraw>();
+			auto PtrDraw = GetComponent<BcPNTStaticDraw>();
 			PtrDraw->SetTextureResource(L"SKY_TX");
 			//バルーンタスククリア
 			App::GetApp()->GetScene<Scene>()->GetGameParamaters().m_BalloonOpenTask = true;

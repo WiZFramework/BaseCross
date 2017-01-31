@@ -16,6 +16,8 @@ namespace basecross {
 		bool m_DrawActive;		//Drawするかどうか
 		bool m_AlphaActive;		//透明かどうか
 		int m_DrawLayer;	//描画レイヤー
+		set<wstring> m_Tag;	//タグ
+		set<int> m_NumTag;	//数字タグ
 		bool m_SpriteDraw;	//スプライトとして描画するかどうか
 
 		weak_ptr<Stage> m_Stage;	//所属ステージ
@@ -167,6 +169,40 @@ namespace basecross {
 	//描画レイヤーの取得と設定
 	int GameObject::GetDrawLayer() const {return pImpl->m_DrawLayer;}
 	void  GameObject::SetDrawLayer(int l) {pImpl->m_DrawLayer = l;}
+	//タグの検証と設定
+	bool GameObject::FindTag(const wstring& tagstr) const {
+		if (pImpl->m_Tag.find(tagstr) == pImpl->m_Tag.end()) {
+			return false;
+		}
+		return true;
+	}
+	void  GameObject::AddTag(const wstring& tagstr) {
+		if (tagstr == L"") {
+			//空白なら例外
+			throw BaseException(
+				L"設定するタグが空です",
+				L"if (tagstr == L"")",
+				L"GameObject::AddTag()"
+			);
+		}
+		pImpl->m_Tag.insert(tagstr);
+	}
+	void  GameObject::RemoveTag(const wstring& tagstr) {
+		pImpl->m_Tag.erase(tagstr);
+	}
+	//数字タグの検証と設定
+	bool GameObject::FindNumTag(int numtag) const {
+		if (pImpl->m_NumTag.find(numtag) == pImpl->m_NumTag.end()) {
+			return false;
+		}
+		return true;
+	}
+	void  GameObject::AddNumTag(int numtag) {
+		pImpl->m_NumTag.insert(numtag);
+	}
+	void  GameObject::RemoveNumTag(int numtag) {
+		pImpl->m_NumTag.erase(numtag);
+	}
 
 	shared_ptr<Stage> GameObject::GetStage(bool ExceptionActive) const {
 		auto shptr = pImpl->m_Stage.lock();
@@ -1440,6 +1476,28 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	シーン親クラス
 	//--------------------------------------------------------------------------------------
+
+	void SceneBase::ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
+		vector<VertexPositionColor>& new_pc_vertices,
+		vector<VertexPositionTexture>& new_pt_vertices) {
+		new_pc_vertices.clear();
+		new_pt_vertices.clear();
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionColor new_pc_v;
+			VertexPositionTexture new_pt_v;
+			new_pc_v.position = vertices[i].position;
+			new_pc_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			new_pt_v.position = vertices[i].position;
+			new_pt_v.textureCoordinate = vertices[i].textureCoordinate;
+
+			new_pc_vertices.push_back(new_pc_v);
+			new_pt_vertices.push_back(new_pt_v);
+
+		}
+	}
+
+
 	SceneBase::SceneBase() :
 		SceneInterface(),
 		pImpl(new Impl())
@@ -1459,55 +1517,40 @@ namespace basecross {
 			App::GetApp()->RegisterResource(L"DEFAULT_ICOSAHEDRON", MeshResource::CreateIcosahedron(1.0f));
 
 			vector<VertexPositionNormalTexture> vertices;
-			vector<VertexPositionColor> new_vertices;
+			vector<VertexPositionColor> new_pc_vertices;
+			vector<VertexPositionTexture> new_pt_vertices;
 			vector<uint16_t> indices;
-			MeshUtill::CreateCube(1.0f, vertices, indices);
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionColor new_v;
-				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-				new_vertices.push_back(new_v);
-			}
-			App::GetApp()->RegisterResource(L"DEFAULT_PC_CUBE", MeshResource::CreateMeshResource(new_vertices, indices,false));
-			vertices.clear();
-			new_vertices.clear();
-			indices.clear();
-			MeshUtill::CreateSphere(1.0f,18, vertices, indices);
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionColor new_v;
-				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-				new_vertices.push_back(new_v);
-			}
-			App::GetApp()->RegisterResource(L"DEFAULT_PC_SPHERE", MeshResource::CreateMeshResource(new_vertices, indices, false));
 
+			MeshUtill::CreateSquare(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_SQUARE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_SQUARE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
 			vertices.clear();
-			new_vertices.clear();
 			indices.clear();
+
+			MeshUtill::CreateCube(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CUBE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_CUBE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateSphere(1.0f,18, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_SPHERE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_SPHERE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
 			Vector3 PointA(0, -1.0f / 2.0f, 0);
 			Vector3 PointB(0, 1.0f / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCapsule(1.0f, PointA, PointB,18, vertices, indices);
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionColor new_v;
-				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-				new_vertices.push_back(new_v);
-			}
-			App::GetApp()->RegisterResource(L"DEFAULT_PC_CAPSULE", MeshResource::CreateMeshResource(new_vertices, indices, false));
-
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CAPSULE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_CAPSULE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
 			vertices.clear();
-			new_vertices.clear();
 			indices.clear();
-			MeshUtill::CreateSquare(1.0f,vertices, indices);
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionColor new_v;
-				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-				new_vertices.push_back(new_v);
-			}
-			App::GetApp()->RegisterResource(L"DEFAULT_PC_SQUARE", MeshResource::CreateMeshResource(new_vertices, indices, false));
-
 			
 
 		}

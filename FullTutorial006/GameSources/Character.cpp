@@ -228,24 +228,23 @@ namespace basecross{
 		SpanMat.DefTransformation(
 			Vector3(1.0f, 1.0f, 1.0f),
 			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.25f, 0.0f)
+			Vector3(0.0f, -0.28f, 0.0f)
 		);
 
 		auto PtrColl = AddComponent<CollisionCapsule>();
 		PtrColl->SetFixed(true);
+	//	PtrColl->SetDrawActive(true);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"Chara_Rst_MESH");
+		ShadowPtr->SetMeshResource(L"MODEL_MESH");
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
-		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
-		PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
+		auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetMeshResource(L"MODEL_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
-		PtrDraw->SetLighting(ShaderLighting::Midium);
-		PtrDraw->SetEmissive(Color4(0.4, 0.4, 0.4, 0));
-		PtrDraw->SetDiffuse(Color4(0.6, 0.6, 0.6, 1));
 
 	}
 
@@ -284,7 +283,8 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -332,7 +332,9 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		//描画コンポーネントの追加
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -367,7 +369,8 @@ namespace basecross{
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
 
@@ -395,7 +398,8 @@ namespace basecross{
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
 
@@ -496,7 +500,8 @@ namespace basecross{
 		PtrTriangle->SetWireFrameMesh(L"UnevenGroundWireMesh");
 		PtrTriangle->SetDrawActive(true);
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"UnevenGroundMesh");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"WALL_TX");

@@ -57,7 +57,7 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 		//ìßñæèàóùÇÇ∑ÇÈ
@@ -228,7 +228,9 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
+
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -279,7 +281,8 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -314,7 +317,9 @@ namespace basecross{
 		//âeÇÇ¬ÇØÇÈ
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
 	}
@@ -414,7 +419,8 @@ namespace basecross{
 		PtrTriangle->SetWireFrameMesh(L"UnevenGroundWireMesh");
 		PtrTriangle->SetDrawActive(true);
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"UnevenGroundMesh");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"WALL_TX");

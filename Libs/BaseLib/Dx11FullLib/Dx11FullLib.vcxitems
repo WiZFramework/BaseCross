@@ -15,11 +15,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)DrawComponents.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DrawComponentsEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)FullCommon.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)StringComponents.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponents.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponentsEx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)StringComponents.cpp" />
   </ItemGroup>
 </Project>

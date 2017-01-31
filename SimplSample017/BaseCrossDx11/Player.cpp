@@ -26,7 +26,6 @@ namespace basecross{
 		auto Ptr = GetComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-//		Ptr->SetPosition(0, 0.125f, 0);
 		Ptr->SetPosition(0, 0.25f, 0);
 
 		//Rigidbodyをつける
@@ -37,7 +36,6 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 
 		//衝突判定をつける
-//		auto PtrCol = AddComponent<CollisionSphere>();
 		auto PtrCol = AddComponent<CollisionCapsule>();
 		//横部分のみ反発
 		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
@@ -57,7 +55,7 @@ namespace basecross{
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTBoneModelDraw>();
+		auto PtrDraw = AddComponent<BcPNTBoneModelDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"Chara_R_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
@@ -125,7 +123,7 @@ namespace basecross{
 		//この中でステートの更新が行われる(Execute()関数が呼ばれる)
 		m_StateMachine->Update();
 		//アニメーションを更新する
-		auto PtrDraw = GetComponent<PNTBoneModelDraw>();
+		auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 
 		if (PtrDraw->UpdateAnimation(ElapsedTime) &&
@@ -263,7 +261,7 @@ namespace basecross{
 		Vector3 JumpVec(0.0f, 4.0f, 0);
 		PtrGravity->StartJump(JumpVec, 0.01);
 		//アニメーションを変更する
-		auto PtrDraw = GetComponent<PNTBoneModelDraw>();
+		auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
 		PtrDraw->ChangeCurrentAnimation(L"Hit");
 	}
 	//Aボタンでジャンプしている間の処理

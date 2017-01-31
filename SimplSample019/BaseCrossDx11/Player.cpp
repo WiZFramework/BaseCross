@@ -40,20 +40,27 @@ namespace basecross{
 		//衝突判定
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetDrawActive(true);
+
+		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.DefTransformation(
+			Vector3(0.8, 0.8, 0.8),
+			Vector3(0.0f, XM_PI, 0.0f),
+			Vector3(0.0f, -0.5f, 0.0f)
+		);
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-
+		ShadowPtr->SetMeshResource(L"PLAYER_MESH");
+		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
 		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+		PtrDraw->SetMeshResource(L"PLAYER_MESH");
+		PtrDraw->SetMeshToTransformMatrix(SpanMat);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -62,8 +69,6 @@ namespace basecross{
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
 
-		//透明処理
-		SetAlphaActive(true);
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
 		if (PtrCamera) {
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
@@ -118,16 +123,12 @@ namespace basecross{
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+
 		for (auto &v : OtherVec) {
-			auto shenemy = dynamic_pointer_cast<EnemyInterface>(v);
-			auto shCylinder = dynamic_pointer_cast<FixedCylinder>(v);
-			auto shWindow = dynamic_pointer_cast<RoomWindow>(v);
-			auto shDoor = dynamic_pointer_cast<RoomDoor>(v);
-			auto sh = dynamic_pointer_cast<GameObject>(v);
-			if (shenemy) {
+			if (v->FindTag(L"Enemy")) {
 				auto PtrRedid = GetComponent<Rigidbody>();
 				auto Pos = GetComponent<Transform>()->GetPosition();
-				auto EnemyPos = sh->GetComponent<Transform>()->GetPosition();
+				auto EnemyPos = v->GetComponent<Transform>()->GetPosition();
 
 				auto Coll = GetComponent<CollisionSphere>();
 				auto Sp = Coll->GetSphere();
@@ -153,21 +154,23 @@ namespace basecross{
 				}
 				return;
 			}
-			if (shCylinder) {
+			if (v->FindTag(L"FixedCylinder")) {
+				auto shCylinder = dynamic_pointer_cast<FixedCylinder>(v);
 				auto NowStage = dynamic_pointer_cast<NowScienceRoom>(GetStage());
-				if (NowStage) {
+				if (shCylinder && NowStage) {
 					shCylinder->BalloonObOff();
 					return;
 				}
 			}
-			if (shWindow) {
+			if (v->FindTag(L"RoomWindow")) {
 				auto PastStage = dynamic_pointer_cast<PastScienceRoom>(GetStage());
-				if (PastStage) {
+				auto shWindow = dynamic_pointer_cast<RoomWindow>(v);
+				if (PastStage && shWindow) {
 					shWindow->WindowClear();
 					return;
 				}
 			}
-			if (shDoor) {
+			if (v->FindTag(L"RoomDoor")) {
 				auto& param = App::GetApp()->GetScene<Scene>()->GetGameParamaters();
 				if (param.m_IsHeadTaskClear) {
 					auto NowStage = dynamic_pointer_cast<NowScienceRoom>(GetStage());
@@ -179,7 +182,6 @@ namespace basecross{
 				}
 			}
 		}
-
 		if (GetStateMachine()->GetCurrentState() == JumpState::Instance()) {
 			GetStateMachine()->ChangeState(DefaultState::Instance());
 		}

@@ -152,7 +152,8 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -313,7 +314,7 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"TRACE2_TX");
 		//透明処理をする
@@ -360,7 +361,7 @@ namespace basecross{
 	//ステートのインスタンス取得
 	IMPLEMENT_SINGLETON_INSTANCE(EnemyDefault)
 
-		void EnemyDefault::Enter(const shared_ptr<Enemy>& Obj) {
+	void EnemyDefault::Enter(const shared_ptr<Enemy>& Obj) {
 	}
 
 	void EnemyDefault::Execute(const shared_ptr<Enemy>& Obj) {
@@ -377,7 +378,7 @@ namespace basecross{
 	//ステートのインスタンス取得
 	IMPLEMENT_SINGLETON_INSTANCE(EnemySeek)
 
-		void EnemySeek::Enter(const shared_ptr<Enemy>& Obj) {
+	void EnemySeek::Enter(const shared_ptr<Enemy>& Obj) {
 		auto PtrSeek = Obj->GetComponent<SeekSteering>();
 		PtrSeek->SetUpdateActive(true);
 	}

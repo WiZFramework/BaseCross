@@ -23,6 +23,14 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
 		strTexture = DataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+
+		strTexture = DataDir + L"gray.png";
+		App::GetApp()->RegisterTexture(L"GRAY_TX", strTexture);
+
+		strTexture = DataDir + L"gray2.png";
+		App::GetApp()->RegisterTexture(L"GRAY_TX2", strTexture);
+
+		
 	}
 
 
@@ -33,15 +41,12 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-
-
-
 		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
 		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
-		//シングルライトの作成
-		auto PtrSingleLight = CreateLight<SingleLight>();
-		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
 	}
 
 
@@ -58,12 +63,13 @@ namespace basecross {
 
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
+		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
+
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
+		DrawComp->SetFogEnabled(true);
 		//自分に影が映りこむようにする
 		DrawComp->SetOwnShadowActive(true);
-
 		//描画コンポーネントテクスチャの設定
 		DrawComp->SetTextureResource(L"SKY_TX");
 	}

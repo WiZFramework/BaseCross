@@ -42,7 +42,8 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
@@ -80,7 +81,11 @@ namespace basecross{
 		auto PtrObb = AddComponent<CollisionObb>();
 		PtrObb->SetFixed(true);
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		//タグをつける
+		AddTag(L"RoomDoor");
+
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetTextureResource(m_TexResName);
 	}
@@ -112,7 +117,11 @@ namespace basecross{
 		auto PtrObb = AddComponent<CollisionObb>();
 		PtrObb->SetFixed(true);
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		//タグをつける
+		AddTag(L"RoomWindow");
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 
 		//パラメータの取得
@@ -127,7 +136,7 @@ namespace basecross{
 	}
 
 	void RoomWindow::WindowClear() {
-		auto PtrDraw = GetComponent<PNTStaticDraw>();
+		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
 		PtrDraw->SetTextureResource(L"SKY_TX");
 		//パラメータの取得
 		auto& PtrParam = App::GetApp()->GetScene<Scene>()->GetGameParamaters();

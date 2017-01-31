@@ -95,7 +95,8 @@ namespace basecross{
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
+		PtrDraw->SetFogEnabled(true);
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"PLAYER_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);

@@ -679,8 +679,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct LightBase::Impl {
 		weak_ptr<Stage> m_Stage;
+		Color4 m_AmbientLightColor;
 		explicit Impl(const shared_ptr<Stage>& StagePtr) :
-			m_Stage(StagePtr)
+			m_Stage(StagePtr),
+			m_AmbientLightColor(0, 0, 0, 0)
 		{}
 		~Impl() {}
 	};
@@ -694,6 +696,163 @@ namespace basecross {
 	}
 
 	LightBase::~LightBase() {}
+
+	Color4 LightBase::GetAmbientLightColor()const {
+		return pImpl->m_AmbientLightColor;
+	}
+
+	void LightBase::SetAmbientLightColor(const Color4& value) {
+		pImpl->m_AmbientLightColor = value;
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	struct SingleLight::Impl;
+	//--------------------------------------------------------------------------------------
+	struct SingleLight::Impl {
+		Light m_Light;
+		Impl() 
+		{
+		}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	シングルライト
+	//--------------------------------------------------------------------------------------
+	SingleLight::SingleLight(const shared_ptr<Stage>& StagePtr) :
+		LightBase(StagePtr),
+		pImpl(new Impl())
+	{}
+
+	SingleLight::~SingleLight() {}
+
+	void SingleLight::SetLight(const Light& l) {
+		pImpl->m_Light = l;
+	}
+
+	const Light& SingleLight::GetLight()const {
+		return pImpl->m_Light;
+	}
+
+	Light& SingleLight::GetLight() {
+		return pImpl->m_Light;
+	}
+
+	const Light& SingleLight::GetTargetLight() const {
+		return pImpl->m_Light;
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	struct MultiLight::Impl;
+	//--------------------------------------------------------------------------------------
+	struct MultiLight::Impl {
+		vector<Light> m_LightVec;
+		size_t m_MainIndex;
+		Impl():
+			m_MainIndex(0)
+		{
+			m_LightVec.resize(3);
+			for (auto& v : m_LightVec) {
+				v.m_Directional = Vector3(0, -1, 0);
+				v.m_DiffuseColor = Color4(1, 1, 1, 1);
+				v.m_SpecularColor = Color4(1, 1, 1, 1);
+			}
+		}
+		~Impl() {}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	マルチライト
+	//--------------------------------------------------------------------------------------
+
+	void MultiLight::ValidateLightIndex(size_t index)const
+	{
+		if (index >= 3)
+		{
+			throw BaseException(
+				L"ライトのインデックスが範囲外です。0から2の間で指定してください。",
+				L"if (index >= 3)",
+				L"MultiLight::ValidateLightIndex()"
+			);
+		}
+	}
+
+	MultiLight::MultiLight(const shared_ptr<Stage>& StagePtr) :
+		LightBase(StagePtr),
+		pImpl(new Impl())
+	{
+	}
+
+	MultiLight::~MultiLight() {}
+
+	void MultiLight::SetMainIndex(size_t index) {
+		ValidateLightIndex(index);
+		pImpl->m_MainIndex = index;
+	}
+
+	size_t  MultiLight::GetMainIndex()const {
+		return pImpl->m_MainIndex;
+	}
+
+	void  MultiLight::SetLight(size_t index, const Light& l) {
+		ValidateLightIndex(index);
+		pImpl->m_LightVec[index] = l;
+	}
+
+	const Light& MultiLight::GetLight(size_t index)const {
+		ValidateLightIndex(index);
+		return pImpl->m_LightVec[index];
+	}
+
+	Light&  MultiLight::GetLight(size_t index) {
+		ValidateLightIndex(index);
+		return pImpl->m_LightVec[index];
+	}
+
+	void MultiLight::SetDefaultLighting() {
+		static const Vector3 defaultDirections[3] =
+		{
+			{ -0.5265408f, -0.5735765f, -0.6275069f },
+			{ 0.7198464f,  0.3420201f,  0.6040227f },
+			{ 0.4545195f, -0.7660444f,  0.4545195f },
+		};
+
+		static const Color4 defaultDiffuse[3] =
+		{
+			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+			{ 0.9647059f, 0.7607844f, 0.4078432f,0.0f },
+			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+		};
+
+		static const Color4 defaultSpecular[3] =
+		{
+			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+			{ 0.0000000f, 0.0000000f, 0.0000000f,0.0f },
+			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+		};
+		static const Color4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
+		for (size_t i = 0; i < 3; i++) {
+			pImpl->m_LightVec[i].m_Directional = defaultDirections[i];
+			pImpl->m_LightVec[i].m_DiffuseColor = defaultDiffuse[i];
+			pImpl->m_LightVec[i].m_SpecularColor = defaultSpecular[i];
+		}
+		SetAmbientLightColor(defaultAmbient);
+		pImpl->m_MainIndex = 2;
+	}
+
+	const Light& MultiLight::GetTargetLight() const {
+		return pImpl->m_LightVec[pImpl->m_MainIndex];
+	}
+
+
+
+
+
+
 
 
 	//--------------------------------------------------------------------------------------

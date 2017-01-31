@@ -4,6 +4,7 @@
 @copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #include "stdafx.h"
+#include "DrawComponents.h"
 
 namespace basecross {
 
@@ -96,8 +97,10 @@ namespace basecross {
 		RasterizerState m_RasterizerState;
 		SamplerState m_SamplerState;
 		Matrix4X4 m_MeshToTransformMatrix;
+
 		Impl() :
-			m_MeshToTransformMatrix() {}
+			m_MeshToTransformMatrix()
+		{}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -235,6 +238,7 @@ namespace basecross {
 	}
 
 
+
 	const Matrix4X4& DrawComponent::GetMeshToTransformMatrix() const {
 		return pImpl->m_MeshToTransformMatrix;
 	}
@@ -354,19 +358,24 @@ namespace basecross {
 			Matrix4X4 World, LightView, LightProj;
 			//行列の定義
 			auto PtrTrans = GetGameObject()->GetComponent<Transform>();
+
+			//ライトの取得
+			auto StageLight = PtrGameObject->OnGetDrawLight();
+			//位置の取得
+			auto Pos = PtrTrans->GetPosition();
+			Vector3 PosSpan = StageLight.m_Directional;
+			PosSpan *= 0.1f;
+			Pos += PosSpan;
 			//ワールド行列の決定
 			World.AffineTransformation(
 				PtrTrans->GetScale(),			//スケーリング
 				PtrTrans->GetPivot(),		//回転の中心（重心）
 				PtrTrans->GetQuaternion(),				//回転角度
-				PtrTrans->GetPosition()				//位置
+				Pos				//位置
 			);
 			Matrix4X4 RealWorldMatrix = GetMeshToTransformMatrix() * World;
 			//ビュー行列の決定
 			auto StageView = PtrStage->GetView();
-			//ライトの取得
-			
-			auto StageLight = PtrGameObject->OnGetDrawLight();
 			Vector3 LightDir = -1.0 * StageLight.m_Directional;
 			Vector3 LightAt = StageView->GetTargetCamera()->GetAt();
 			Vector3 LightEye = LightAt + (LightDir * GetLightHeight());
@@ -410,7 +419,6 @@ namespace basecross {
 				pID3D11DeviceContext->IASetInputLayout(VSShadowmapBone::GetPtr()->GetInputLayout());
 				//ストライドとオフセット
 				UINT stride = PtrMeshResource->GetNumStride();
-//				UINT stride = sizeof(VertexPositionNormalTextureSkinning);
 				UINT offset = 0;
 				//頂点バッファをセット
 				pID3D11DeviceContext->IASetVertexBuffers(0, 1, PtrMeshResource->GetVertexBuffer().GetAddressOf(), &stride, &offset);
@@ -4420,198 +4428,6 @@ namespace basecross {
 		//後始末
 		Dev->InitializeStates();
 
-
-
-
-
-
-/*
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
-		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"PNTBoneModelDraw::OnDraw()"
-			);
-		}
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderStatePtr = Dev->GetRenderState();
-
-		auto GameObjectPtr = GetGameObject();
-		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
-		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
-		//ワールド行列の決定
-		World = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
-		//転置する
-		World.Transpose();
-		//カメラを得る
-		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
-		//ビューと射影行列を得る
-		ViewMat = CameraPtr->GetViewMatrix();
-		//転置する
-		ViewMat.Transpose();
-		//転置する
-		ProjMat = CameraPtr->GetProjMatrix();
-		ProjMat.Transpose();
-
-		//コンスタントバッファの設定
-		PNTBoneConstantBuffer cb1;
-		ZeroMemory(&cb1, sizeof(cb1));
-		//行列の設定(転置する)
-		//コンスタントバッファの設定
-		cb1.World = World;
-		cb1.View = ViewMat;
-		cb1.Projection = ProjMat;
-		auto StageLight = GameObjectPtr->OnGetDrawLight();
-		cb1.LightDir = StageLight.m_Directional;
-		cb1.LightDir.w = 1.0f;
-
-		//ボーンの設定
-		size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
-		UINT cb_count = 0;
-		for (size_t b = 0; b < BoneSz; b++) {
-			Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-			mat.Transpose();
-			cb1.Bones[cb_count] = ((XMMATRIX)mat).r[0];
-			cb1.Bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-			cb1.Bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-			cb_count += 3;
-		}
-
-		auto MeshPtr = GetMeshResource();
-		auto& MatVec = MeshPtr->GetMaterialExVec();
-
-		//シェーダの設定
-		pID3D11DeviceContext->VSSetShader(VSPNTBone::GetPtr()->GetShader(), nullptr, 0);
-		pID3D11DeviceContext->PSSetShader(PSPNTStatic::GetPtr()->GetShader(), nullptr, 0);
-		//インプットレイアウトの設定
-		pID3D11DeviceContext->IASetInputLayout(VSPNTBone::GetPtr()->GetInputLayout());
-
-		//ストライドとオフセット
-		UINT stride = sizeof(VertexPositionNormalTextureSkinning);
-		UINT offset = 0;
-		//頂点バッファの設定
-		pID3D11DeviceContext->IASetVertexBuffers(0, 1, MeshPtr->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pID3D11DeviceContext->IASetIndexBuffer(MeshPtr->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-
-		//描画方法（3角形）
-		pID3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		//デプスステンシル
-		switch (GetDepthStencilState()) {
-		case DepthStencilState::None:
-			pID3D11DeviceContext->OMSetDepthStencilState(RenderStatePtr->GetDepthNone(), 0);
-			break;
-		case DepthStencilState::Default:
-			pID3D11DeviceContext->OMSetDepthStencilState(RenderStatePtr->GetDepthDefault(), 0);
-			break;
-		case DepthStencilState::Read:
-			pID3D11DeviceContext->OMSetDepthStencilState(RenderStatePtr->GetDepthRead(), 0);
-			break;
-		}
-		//サンプラー
-		//nullに初期化
-		ID3D11SamplerState* pSampler = nullptr;
-		switch (GetSamplerState()) {
-		case SamplerState::SamplerNone:
-			break;
-		case SamplerState::PointWrap:
-			pSampler = RenderStatePtr->GetPointWrap();
-			break;
-		case SamplerState::PointClamp:
-			pSampler = RenderStatePtr->GetPointClamp();
-			break;
-		case SamplerState::LinearWrap:
-			pSampler = RenderStatePtr->GetLinearWrap();
-			break;
-		case SamplerState::LinearClamp:
-			pSampler = RenderStatePtr->GetLinearClamp();
-			break;
-		case SamplerState::AnisotropicWrap:
-			pSampler = RenderStatePtr->GetAnisotropicWrap();
-			break;
-		case SamplerState::AnisotropicClamp:
-			pSampler = RenderStatePtr->GetAnisotropicClamp();
-			break;
-		case SamplerState::ComparisonLinear:
-			pSampler = RenderStatePtr->GetComparisonLinear();
-			break;
-		}
-		//サンプラーを設定
-		pID3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
-
-		for (auto& m : MatVec) {
-			cb1.Emissive = m.m_Emissive;
-			cb1.Diffuse = m.m_Diffuse;
-			//コンスタントバッファの更新
-			ID3D11Buffer* pConstantBuffer = CBPNTBone::GetPtr()->GetBuffer();
-			pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb1, 0, 0);
-			pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//テクスチャを設定
-			pID3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-			if (GetRasterizerState() == RasterizerState::Wireframe) {
-				pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetOpaque(), nullptr, 0xffffffff);
-				pID3D11DeviceContext->RSSetState(RenderStatePtr->GetWireframe());
-				//描画
-				pID3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-			}
-			else {
-				//ブレンドステートとラスタライザを設定して描画
-				//もし、透明描画ならAlphaBlendExに設定し、そうでなければ、指定に従う。
-				if (GameObjectPtr->GetAlphaActive()) {
-					pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetAlphaBlendEx(), nullptr, 0xffffffff);
-					//ラスタライザステート
-					pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullFront());
-					//描画
-					pID3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-					//ラスタライザステート
-					pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullBack());
-					//描画
-					pID3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				}
-				else {
-					switch (GetBlendState()) {
-					case BlendState::Opaque:
-						pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetOpaque(), nullptr, 0xffffffff);
-						break;
-					case BlendState::AlphaBlend:
-						pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetAlphaBlendEx(), nullptr, 0xffffffff);
-						break;
-					case BlendState::Additive:
-						pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetAdditive(), nullptr, 0xffffffff);
-						break;
-					case BlendState::NonPremultiplied:
-						pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetNonPremultiplied(), nullptr, 0xffffffff);
-						break;
-					}
-					switch (GetRasterizerState()) {
-					case RasterizerState::CullBack:
-						pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullBack());
-						break;
-					case RasterizerState::CullFront:
-						pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullFront());
-						break;
-					case RasterizerState::CullNone:
-						pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullNone());
-						break;
-					}
-					//描画
-					pID3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				}
-			}
-		}
-		Dev->InitializeStates();
-*/
-
 	}
 	void PNTBoneModelDraw::OnDraw() {
 		if (GetOwnShadowActive()) {
@@ -4639,3 +4455,4 @@ namespace basecross {
 
 }
 //end basecross
+

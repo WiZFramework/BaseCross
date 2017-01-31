@@ -147,7 +147,8 @@ namespace basecross {
 
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
+		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
+		DrawComp->SetFogEnabled(true);
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
 		//自分に影が映りこむようにする
@@ -174,10 +175,10 @@ namespace basecross {
 			PtCamera->SetToTargetLerp(0.1f);
 			PtCamera->SetTargetToAt(Vector3(0, 0.125f, 0));
 		}
-		//シングルライトの作成
-		auto PtrSingleLight = CreateLight<SingleLight>();
-		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
 	}
 
 	//くぐる壁の作成
@@ -348,7 +349,8 @@ namespace basecross {
 
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
+		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
+		DrawComp->SetFogEnabled(true);
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
 		//自分に影が映りこむようにする
@@ -374,10 +376,10 @@ namespace basecross {
 			PtCamera->SetToTargetLerp(0.1f);
 			PtCamera->SetTargetToAt(Vector3(0, 0.125f, 0));
 		}
-		//シングルライトの作成
-		auto PtrSingleLight = CreateLight<SingleLight>();
-		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
 	}
 
 	//くぐる壁の作成

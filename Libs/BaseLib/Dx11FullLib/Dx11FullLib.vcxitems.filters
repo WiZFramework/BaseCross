@@ -18,12 +18,18 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)StringComponents.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)DrawComponentsEx.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponents.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)StringComponents.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponentsEx.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

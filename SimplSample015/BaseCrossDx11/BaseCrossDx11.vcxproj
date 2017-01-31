@@ -110,6 +110,7 @@
     <ClInclude Include="Common\Common.h" />
     <ClInclude Include="Common\Components.h" />
     <ClInclude Include="Common\DrawComponents.h" />
+    <ClInclude Include="Common\DrawComponentsEx.h" />
     <ClInclude Include="Common\GameObject.h" />
     <ClInclude Include="Common\Gravity.h" />
     <ClInclude Include="Common\Rigidbody.h" />
@@ -138,6 +139,7 @@
     <ClCompile Include="Common\Collision.cpp" />
     <ClCompile Include="Common\Components.cpp" />
     <ClCompile Include="Common\DrawComponents.cpp" />
+    <ClCompile Include="Common\DrawComponentsEx.cpp" />
     <ClCompile Include="Common\GameObject.cpp" />
     <ClCompile Include="Common\Gravity.cpp" />
     <ClCompile Include="Common\Rigidbody.cpp" />

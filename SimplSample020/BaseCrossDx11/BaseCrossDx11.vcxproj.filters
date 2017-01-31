@@ -78,6 +78,9 @@
     <ClInclude Include="Common\SpriteStudio5.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="Common\DrawComponentsEx.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BaseCrossDx11.rc">
@@ -139,6 +142,9 @@
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="Common\SpriteStudio5.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\DrawComponentsEx.cpp">
       <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>

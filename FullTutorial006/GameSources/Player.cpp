@@ -51,7 +51,7 @@ namespace basecross{
 		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTBoneModelDraw>();
+		auto PtrDraw = AddComponent<BcPNTBoneModelDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"Chara_R_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
@@ -59,10 +59,6 @@ namespace basecross{
 		PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
 		PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
 		PtrDraw->ChangeCurrentAnimation(L"Default");
-
-		PtrDraw->SetLighting(ShaderLighting::Real);
-		PtrDraw->SetEmissive(Color4(0.6, 0.6, 0.6, 0));
-		PtrDraw->SetDiffuse(Color4(0.4, 0.4, 0.4, 1));
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -123,7 +119,7 @@ namespace basecross{
 		//この中でステートの更新が行われる(Execute()関数が呼ばれる)
 		m_StateMachine->Update();
 		//アニメーションを更新する
-		auto PtrDraw = GetComponent<PNTBoneModelDraw>();
+		auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 
 		if (PtrDraw->UpdateAnimation(ElapsedTime) &&
@@ -262,7 +258,7 @@ namespace basecross{
 		PtrGravity->StartJump(JumpVec);
 
 		//アニメーションを変更する
-		auto PtrDraw = GetComponent<PNTBoneModelDraw>();
+		auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
 		PtrDraw->ChangeCurrentAnimation(L"Hit");
 
 	}
