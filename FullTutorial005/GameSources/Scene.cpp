@@ -15,7 +15,13 @@ namespace basecross{
 
 	void Scene::OnCreate(){
 		try {
-			wstring strMusic = App::GetApp()->m_wstrRelativeDataPath + L"nanika .wav";
+			wstring DataDir;
+			//サンプルのためアセットディレクトリを取得
+			App::GetApp()->GetAssetsDirectory(DataDir);
+			//各ゲームは以下のようにデータディレクトリを取得すべき
+			//App::GetApp()->GetDataDirectory(DataDir);
+
+			wstring strMusic = DataDir + L"nanika .wav";
 			App::GetApp()->RegisterWav(L"Nanika", strMusic);
 
 			//オーディオの初期化

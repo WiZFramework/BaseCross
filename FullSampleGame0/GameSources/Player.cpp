@@ -39,8 +39,8 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定
 		auto PtrColl = AddComponent<CollisionSphere>();
-		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		//反発
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
 		PtrColl->SetDrawActive(true);
 
 		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
@@ -120,6 +120,10 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの更新が行われる(Execute()関数が呼ばれる)
 		m_StateMachine->Update();
+		//コリジョン調整
+		AdjustCollisitin();
+		//文字列の表示
+		DrawStrings();
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -186,8 +190,8 @@ namespace basecross{
 			GetStateMachine()->ChangeState(DefaultState::Instance());
 		}
 	}
-	//ターンの最終更新時
-	void Player::OnLastUpdate() {
+	//コリジョン調整
+	void Player::AdjustCollisitin() {
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Coll = GetComponent<CollisionSphere>();
@@ -243,7 +247,10 @@ namespace basecross{
 
 		}
 
+	}
 
+	//文字列の表示
+	void Player::DrawStrings() {
 		//文字列表示
 		wstring STAGE_NAME(L"現在の理科室");
 		auto PastStagePtr = dynamic_pointer_cast<PastScienceRoom>(GetStage());
@@ -270,8 +277,11 @@ namespace basecross{
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
-		
+
 	}
+
+
+
 
 	//モーションを実装する関数群
 	//移動して向きを移動方向にする

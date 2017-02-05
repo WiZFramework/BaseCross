@@ -28,6 +28,11 @@ namespace basecross{
 		Vector3 m_StartPos;
 		//スタート速度
 		Vector3 m_StartVelocity;
+		//コリジョン調整
+		void AdjustCollisitin();
+
+		//文字列の表示
+		void DrawStrings();
 	public:
 		//構築と破棄
 		Player(const shared_ptr<Stage>& StagePtr,
@@ -53,8 +58,6 @@ namespace basecross{
 		virtual void OnUpdate() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
-		//ターンの最終更新時
-		virtual void OnLastUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

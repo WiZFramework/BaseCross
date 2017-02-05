@@ -15,7 +15,13 @@ VSOutputTxShadow main(VSInputNmTxWeights vin)
 
 	normal = Skin(vin, normal, 4);
 
-	CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, normal, Activeflags.x);
+	CommonVSOutput cout;
+	if (Activeflags.x > 0) {
+		cout = ComputeCommonVSOutputWithLighting(vin.Position, normal, Activeflags.x);
+	}
+	else {
+		cout = ComputeCommonVSOutput(vin.Position);
+	}
 	SetCommonVSOutputParams;
 
 	vout.TexCoord = vin.TexCoord;

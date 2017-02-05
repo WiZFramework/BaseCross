@@ -16,7 +16,10 @@ namespace basecross {
 	//リソースの作成
 	void GameStage::CreateResourses() {
 		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
 		wstring strTexture = DataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = DataDir + L"sky.jpg";
@@ -30,7 +33,7 @@ namespace basecross {
 		strTexture = DataDir + L"number.png";
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 
-		wstring CursorWav = App::GetApp()->m_wstrRelativeDataPath + L"cursor.wav";
+		wstring CursorWav = DataDir + L"cursor.wav";
 		App::GetApp()->RegisterWav(L"Cursor", CursorWav);
 
 	}

@@ -63,6 +63,8 @@ namespace basecross{
 		float m_Decel;
 		//質量
 		float m_Mass;
+		//文字列表示
+		void DrawStrings();
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -121,7 +123,7 @@ namespace basecross{
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 		//ターンの最終更新時
-		virtual void OnLastUpdate() override;
+//		virtual void OnLastUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

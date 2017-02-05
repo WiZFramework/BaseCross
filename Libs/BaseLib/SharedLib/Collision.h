@@ -18,9 +18,9 @@ namespace basecross {
 	///	 衝突した時の動作定義
 	//--------------------------------------------------------------------------------------
 	enum class IsHitAction {
-		AutoOnObjectRepel,	///<反発
-		Slide,	//滑る
-		AutoOnParent,	//親子関係を実装反発
+		Slide,			//スライド
+		Repel,			//反発
+		AutoOnParentRepel,	//親子関係を実装反発
 		AutoOnParentSlide,	//親子関係を実装スライド
 	};
 

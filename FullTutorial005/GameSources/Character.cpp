@@ -552,8 +552,6 @@ namespace basecross{
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-		PtrRegid->SetReflection(0.5f);
 		//Seek操舵
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive操舵
@@ -654,6 +652,8 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+		//進行方向を向くようにする
+		RotToHead();
 	}
 
 	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -664,8 +664,8 @@ namespace basecross{
 		}
 
 	}
-
-	void SeekObject::OnLastUpdate() {
+	//進行方向を向くようにする
+	void SeekObject::RotToHead() {
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
@@ -685,7 +685,9 @@ namespace basecross{
 			NowQt.Slerp(NowQt, Qt, 0.1f);
 			PtrTrans->SetQuaternion(NowQt);
 		}
+
 	}
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動

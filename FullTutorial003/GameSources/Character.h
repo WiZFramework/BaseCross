@@ -46,6 +46,8 @@ namespace basecross{
 		//ターゲットのセルインデックス
 		int m_TargetCellIndex;
 		shared_ptr<StateMachine<Enemy>> m_StateMachine;
+		//進行方向を向くようにする
+		void RotToHead();
 	public:
 		//構築と破棄
 		Enemy(const shared_ptr<Stage>& StagePtr,
@@ -69,8 +71,7 @@ namespace basecross{
 		//初期化
 		virtual void OnCreate() override;
 		//操作
-		virtual void OnUpdate() override;
-		virtual void OnLastUpdate() override;
+		virtual void OnPreUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

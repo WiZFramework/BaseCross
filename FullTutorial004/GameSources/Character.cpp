@@ -31,7 +31,7 @@ namespace basecross{
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
 		//反発係数は0.5（半分）
-		PtrRegid->SetReflection(0.5f);
+	//	PtrRegid->SetReflection(0.5f);
 		//Seek操舵
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive操舵
@@ -47,7 +47,6 @@ namespace basecross{
 		AddComponent<SeparationSteering>(Group);
 		//Obbの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionObb>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
@@ -85,6 +84,30 @@ namespace basecross{
 		auto LenVec = GetPlayerPosition() - MyPos;
 		return LenVec.Length();
 	}
+
+	//進行方向を向くようにする
+	void SeekObject::RotToHead() {
+		auto PtrRigidbody = GetComponent<Rigidbody>();
+		//回転の更新
+		//Velocityの値で、回転を変更する
+		//これで進行方向を向くようになる
+		auto PtrTransform = GetComponent<Transform>();
+		Vector3 Velocity = PtrRigidbody->GetVelocity();
+		if (Velocity.Length() > 0.0f) {
+			Vector3 Temp = Velocity;
+			Temp.Normalize();
+			float ToAngle = atan2(Temp.x, Temp.z);
+			Quaternion Qt;
+			Qt.RotationRollPitchYaw(0, ToAngle, 0);
+			Qt.Normalize();
+			//現在の回転を取得
+			Quaternion NowQt = PtrTransform->GetQuaternion();
+			//現在と目標を補間（10分の1）
+			NowQt.Slerp(NowQt, Qt, 0.1f);
+			PtrTransform->SetQuaternion(NowQt);
+		}
+	}
+
 
 	//モーションを実装する関数群
 	void  SeekObject::SeekStartMoton() {
@@ -131,28 +154,10 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+		//進行方向を向くようにする
+		RotToHead();
 	}
-	void SeekObject::OnLastUpdate() {
-		auto PtrRigidbody = GetComponent<Rigidbody>();
-		//回転の更新
-		//Velocityの値で、回転を変更する
-		//これで進行方向を向くようになる
-		auto PtrTransform = GetComponent<Transform>();
-		Vector3 Velocity = PtrRigidbody->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
-			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
-			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
-			//現在と目標を補間（10分の1）
-			NowQt.Slerp(NowQt, Qt, 0.1f);
-			PtrTransform->SetQuaternion(NowQt);
-		}
-	}
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動

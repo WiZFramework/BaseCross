@@ -11,7 +11,14 @@ VSOutputTx main(VSInputNmTx vin)
 
     VSOutputTx vout;
 
-	CommonVSOutput cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, Activeflags.x);
+	CommonVSOutput cout;
+
+	if (Activeflags.x > 0) {
+		cout = ComputeCommonVSOutputWithLighting(vin.Position, vin.Normal, Activeflags.x);
+	}
+	else {
+		cout = ComputeCommonVSOutput(vin.Position);
+	}
 
     SetCommonVSOutputParams;
 
@@ -19,3 +26,4 @@ VSOutputTx main(VSInputNmTx vin)
 
     return vout;
 }
+

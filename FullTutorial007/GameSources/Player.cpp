@@ -123,6 +123,15 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+
+		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+		wstring FPS(L"FPS: ");
+		FPS += Util::UintToWStr(fps);
+		wstring str = FPS;
+		//文字列をつける
+		auto PtrString = GetComponent<StringSprite>();
+		PtrString->SetText(str);
+
 	}
 
 	//衝突時
@@ -140,15 +149,6 @@ namespace basecross{
 	}
 
 
-	void Player::OnLastUpdate() {
-		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
-		wstring FPS(L"FPS: ");
-		FPS += Util::UintToWStr(fps);
-		wstring str = FPS;
-		//文字列をつける
-		auto PtrString = GetComponent<StringSprite>();
-		PtrString->SetText(str);
-	}
 
 
 	//モーションを実装する関数群

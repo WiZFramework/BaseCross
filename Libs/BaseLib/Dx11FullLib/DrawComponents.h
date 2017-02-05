@@ -462,7 +462,7 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	シャドウマップコンポーネント（前処理用）
+	///	シャドウマップコンポーネント（前処理用）
 	//--------------------------------------------------------------------------------------
 	class Shadowmap : public DrawComponent {
 	public:
@@ -636,10 +636,13 @@ namespace basecross {
 		@param[in]	ToCaneraLength	カメラまでの距離
 		@param[in]	WorldMatrix	ワールド行列
 		@param[in]	TextureRes	テクスチャ
+		@param[in]	TextureRes	テクスチャ
+		@param[in]	Diffuse   Diffuseカラー
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes);
+		void AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, 
+			const shared_ptr<TextureResource>& TextureRes,const Color4& Diffuse = Color4(1,1,1,1));
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理

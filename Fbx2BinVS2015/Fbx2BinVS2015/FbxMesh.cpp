@@ -199,6 +199,10 @@ namespace basecross {
 						//Vの値が、1.0から引いた値になる
 						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
 					);
+
+				int tangentCount = pImpl->m_FbxMesh->GetElementTangentCount();
+				int binormalCount = pImpl->m_FbxMesh->GetElementBinormalCount();
+
 			}
 		}
 		//インデックス

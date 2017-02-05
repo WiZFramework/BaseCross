@@ -791,7 +791,7 @@ namespace basecross {
 			Qt,
 			WorldPos
 		);
-		DrawCom->AddParticle(ToCaneraLength, matrix, TextureRes);
+		DrawCom->AddParticle(ToCaneraLength, matrix, TextureRes, rParticleSprite.m_Color);
 	}
 
 	void ParticleManager::OnDraw() {
@@ -1211,6 +1211,27 @@ namespace basecross {
 			}
 		}
 
+		//配置オブジェクトの更新前処理
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->OnPreUpdate();
+			}
+		}
+		//自身の更新前処理
+		if (IsUpdateActive()) {
+			OnPreUpdate();
+		}
+
+		//配置オブジェクトのコンポーネント更新
+		for (auto ptr : GetGameObjectVec()) {
+			if (ptr->IsUpdateActive()) {
+				ptr->ComponentUpdate();
+			}
+		}
+		//衝突判定の更新（ステージから呼ぶ）
+		UpdateCollision();
+		//衝突判定のメッセージ発行（ステージから呼ぶ）
+		UpdateMessageCollision();
 		//配置オブジェクトの更新1
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1221,31 +1242,12 @@ namespace basecross {
 		if (IsUpdateActive()) {
 			OnUpdate();
 		}
-		//配置オブジェクトのコンポーネント更新1
-		for (auto ptr : GetGameObjectVec()) {
-			if (ptr->IsUpdateActive()) {
-				ptr->ComponentUpdate();
-			}
-		}
-		//衝突判定の更新（ステージから呼ぶ）
-		UpdateCollision();
 		//自身のビューをアップデート
 		auto ViewPtr = GetView(false);
 		if (ViewPtr && ViewPtr->IsUpdateActive()) {
 			ViewPtr->OnUpdate();
 		}
-		//配置オブジェクトの最後の更新
-		for (auto ptr : GetGameObjectVec()) {
-			if (ptr->IsUpdateActive()) {
-				ptr->OnLastUpdate();
-			}
-		}
-		//衝突判定のメッセージ発行（ステージから呼ぶ）
-		UpdateMessageCollision();
-		//自身の最後の更新
-		if (IsUpdateActive()) {
-			OnLastUpdate();
-		}
+
 		//コリジョンのリセット
 		for (auto ptr : GetGameObjectVec()) {
 			ptr->CollisionReset();
@@ -1255,6 +1257,7 @@ namespace basecross {
 			PtrChileStage->UpdateStage();
 		}
 	}
+
 
 	//衝突判定の更新（ステージから呼ぶ）
 	//衝突判定をカスタマイズするためには
@@ -1851,7 +1854,7 @@ namespace basecross {
 
 
 
-	void  StageCellMap::OnUpdate() {
+	void  StageCellMap::OnPreUpdate() {
 		if (pImpl->m_IsCellStringActive) {
 			auto StringPtr = GetComponent<MultiStringSprite>();
 			Matrix4X4 World, View, Proj;

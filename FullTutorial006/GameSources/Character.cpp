@@ -130,13 +130,16 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+		//進行方向を向くようにする
+		RotToHead();
 	}
 
 	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
 
 	}
 
-	void SeekObject::OnLastUpdate() {
+	//進行方向を向くようにする
+	void SeekObject::RotToHead(){
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新

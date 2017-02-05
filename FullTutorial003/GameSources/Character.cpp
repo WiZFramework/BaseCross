@@ -182,8 +182,6 @@ namespace basecross{
 		auto PtrGravity = AddComponent<Gravity>();
 		//Rigidbodyをつける
 		auto PtrRigid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-		PtrRigid->SetReflection(0.5f);
 		auto PtrSeek = AddComponent<SeekSteering>();
 		PtrSeek->SetUpdateActive(false);
 		//パス検索
@@ -199,7 +197,7 @@ namespace basecross{
 
 		//SPの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionSphere>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -217,14 +215,16 @@ namespace basecross{
 	}
 
 	//更新
-	void Enemy::OnUpdate() {
+	void Enemy::OnPreUpdate() {
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+		//進行方向を向くようにする
+		RotToHead();
 	}
 
-	//回転を進行方向に向かせる
-	void Enemy::OnLastUpdate() {
+	//進行方向を向くようにする
+	void Enemy::RotToHead() {
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
 		//Velocityの値で、回転を変更する
@@ -245,6 +245,8 @@ namespace basecross{
 			PtrTransform->SetQuaternion(NowQt);
 		}
 	}
+
+
 
 
 	//--------------------------------------------------------------------------------------

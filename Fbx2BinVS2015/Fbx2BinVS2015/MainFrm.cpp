@@ -167,9 +167,12 @@ void CMainFrame::OnOpenFbxFile()
 		m_MeshPosZ = FbxOpenDialog.m_PosZ;
 		m_IsReadStatic = FbxOpenDialog.m_IsReadStatic;
 
+		wstring ModDIr;
+		App::GetApp()->GetModuleDirectory(ModDIr);
+
 		if (PathRelativePathTo(
 			RelativePath,
-			App::GetApp()->m_wstrDir.c_str(),
+			ModDIr.c_str(),
 			FILE_ATTRIBUTE_DIRECTORY,
 			m_MeshDir.c_str(),
 			FILE_ATTRIBUTE_DIRECTORY

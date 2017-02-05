@@ -648,10 +648,18 @@ namespace basecross {
 		InputDevice m_InputDevice;					///< 入力機器
 		unique_ptr<AudioManager> m_AudioManager;	///< オーディオマネージャ
 
+		wstring		m_wstrModulePath;		///< モジュール名フルパス
+		wstring		m_wstrDir;				///< モジュールがあるディレクトリ
+		wstring		m_wstrDataPath;			///< 絶対パスのメディアディレクトリ
+		wstring		m_wstrShadersPath;		///< 絶対パスのシェーダディレクトリ
+		wstring		m_wstrRelativeDataPath;	///< 相対パスのメディアディレクトリ
+		wstring		m_wstrRelativeShadersPath;	///< 相対パスのシェーダディレクトリ
 
 		bool m_ScriptsDirActive;				///<スクリプトディレクトリが有効かどうか
 		wstring		m_wstrScriptsPath;			///< 絶対パスのスクリプトディレクトリ
 		wstring		m_wstrRelativeScriptsPath;	///< 相対パスのスクリプトディレクトリ
+
+		wstring		m_wstrRelativeAssetsPath;	///< 相対パスのアセットディレクトリ
 
 		App(HINSTANCE hInstance, HWND hWnd, bool FullScreen, UINT Width, UINT Height);
 		virtual ~App() {}
@@ -1081,6 +1089,17 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief モジュールディレクトリの取得
+		@param[out]	Dir 取得する文字列
+		@return	なし（Dirに相対パスが入る）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetModuleDirectory(wstring& Dir) {
+			Dir = m_wstrDir;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief データディレクトリの取得
 		@param[out]	Dir 取得する文字列
 		@return	なし（Dirに相対パスが入る）
@@ -1091,6 +1110,16 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief データディレクトリの取得（文字列の参照を取得）
+		@return	データディレクトリの相対パス
+		*/
+		//--------------------------------------------------------------------------------------
+		const wstring& GetDataDirWString()const {
+			return m_wstrRelativeDataPath;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief シェーダディレクトリの取得
 		@param[out]	Dir 取得する文字列
 		@return	なし（Dirに相対パスが入る）
@@ -1098,6 +1127,15 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void GetShadersDirectory(wstring& Dir) {
 			Dir = m_wstrRelativeShadersPath;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief シェーダディレクトリの取得（文字列の参照を取得）
+		@return	シェーダディレクトリの相対パス
+		*/
+		//--------------------------------------------------------------------------------------
+		const wstring& GetShadersWString()const {
+			return m_wstrRelativeShadersPath;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1142,6 +1180,17 @@ namespace basecross {
 			}
 			Dir = m_wstrScriptsPath;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief アセットディレクトリの取得
+		@param[out]	Dir 取得する文字列
+		@return	なし（Dirに相対パスが入る）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetAssetsDirectory(wstring& Dir) {
+			Dir = m_wstrRelativeAssetsPath;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief ウインドウメッセージ
@@ -1152,16 +1201,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void OnMessage(UINT message, WPARAM wParam, LPARAM lParam);
-		//--------------------------------------------------------------------------------------
-		//	公開変数
-		//--------------------------------------------------------------------------------------
-		wstring		m_wstrModulePath;		///< モジュール名フルパス
-		wstring		m_wstrDir;				///< モジュールがあるディレクトリ
-		wstring		m_wstrDataPath;			///< 絶対パスのメディアディレクトリ
-		wstring		m_wstrShadersPath;		///< 絶対パスのシェーダディレクトリ
-		wstring		m_wstrRelativeDataPath;	///< 相対パスのメディアディレクトリ
-		wstring		m_wstrRelativeShadersPath;	///< 相対パスのシェーダディレクトリ
-
 		map<wstring, wstring> m_ConfigMap;		///< 汎用マップ（各アプリケションで使用できる）
 	private:
 		//コピー禁止

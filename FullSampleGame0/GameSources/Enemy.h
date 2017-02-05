@@ -45,10 +45,10 @@ namespace basecross {
 			return m_BehaviorMachine;
 		}
 		//‘€ì
-		virtual void OnUpdate() override;
+		virtual void OnPreUpdate() override;
 		//Õ“Ë
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
-		virtual void OnLastUpdate() override;
+		virtual void OnUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -112,9 +112,8 @@ namespace basecross {
 			return m_BehaviorMachine;
 		}
 		//‘€ì
+		virtual void OnPreUpdate() override;
 		virtual void OnUpdate() override;
-		//Õ“Ë
-		virtual void OnLastUpdate() override;
 		//“Æ©‚Ìƒ‰ƒCƒg
 		virtual const Light& OnGetDrawLight()const override;
 	};

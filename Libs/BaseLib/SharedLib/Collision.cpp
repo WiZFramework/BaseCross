@@ -37,7 +37,7 @@ namespace basecross {
 			m_PostEventActive(false),
 			m_PostDispatchTime(0),
 			m_EventString(L"CollisionEvent"),
-			m_IsHitAction(IsHitAction::AutoOnObjectRepel)
+			m_IsHitAction(IsHitAction::AutoOnParentSlide)
 		{
 		}
 		~Impl() {}
@@ -212,25 +212,29 @@ namespace basecross {
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigid) {
 			switch (GetIsHitAction()) {
-			case IsHitAction::AutoOnObjectRepel:
+			case IsHitAction::Repel:
 			{
-				if (horizontal) {
-					Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
-					PtrRigid->SetVelocity(Slide);
+				//乗ってないときは反発
+				Vector3 DestVelo(0, 0, 0);
+				auto DestRigid = DestColl->GetGameObject()->GetComponent<Rigidbody>(false);
+				float MassAllocate = 1.0f;
+				if (DestRigid) {
+					DestVelo = DestRigid->GetVelocity();
+					MassAllocate = DestRigid->GetMass() / (DestRigid->GetMass() + PtrRigid->GetMass());
 				}
-				else {
-					auto Ref = Vector3EX::Reflect(PtrRigid->GetVelocity(), ContactBase);
-					//反発係数
-					Ref *= PtrRigid->GetReflection();
-					PtrRigid->SetVelocity(Ref);
-				}
+				auto TotalVelo = PtrRigid->GetVelocity() - DestVelo;
+				TotalVelo *= MassAllocate;
+				auto Ref = Vector3EX::Reflect(TotalVelo, ContactBase);
+				//反発係数
+				Ref *= PtrRigid->GetReflection();
+				PtrRigid->SetVelocity(Ref);
 			}
 			break;
 			case IsHitAction::Slide:
 				Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
 				PtrRigid->SetVelocity(Slide);
 				break;
-			case IsHitAction::AutoOnParent:
+			case IsHitAction::AutoOnParentRepel:
 			{
 				if (horizontal) {
 					//乗っているときはスライドさせる
@@ -245,10 +249,13 @@ namespace basecross {
 					//乗ってないときは反発
 					Vector3 DestVelo(0, 0, 0);
 					auto DestRigid = DestColl->GetGameObject()->GetComponent<Rigidbody>(false);
+					float MassAllocate = 1.0f;
 					if (DestRigid) {
 						DestVelo = DestRigid->GetVelocity();
+						MassAllocate = DestRigid->GetMass() / (DestRigid->GetMass() + PtrRigid->GetMass());
 					}
 					auto TotalVelo = PtrRigid->GetVelocity() - DestVelo;
+					TotalVelo *= MassAllocate;
 					auto Ref = Vector3EX::Reflect(TotalVelo, ContactBase);
 					//反発係数
 					Ref *= PtrRigid->GetReflection();
@@ -268,7 +275,7 @@ namespace basecross {
 					PtrTransform->SetPosition(Pos);
 				}
 				else {
-					//乗ってないときはスライド
+					//乗ってないときもスライド
 					Slide = Vector3EX::Slide(PtrRigid->GetVelocity(), ContactBase);
 					PtrRigid->SetVelocity(Slide);
 				}

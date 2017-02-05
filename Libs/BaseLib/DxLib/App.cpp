@@ -570,6 +570,23 @@ namespace basecross {
 				m_wstrRelativeScriptsPath = L"scripts\\";
 			}
 
+			//Assetsディレクトリを探す
+			m_wstrRelativeAssetsPath = m_wstrDir;
+			m_wstrRelativeAssetsPath += L"..\\..\\Assets";
+			//相対ディレクトリを探す
+			RetCode = GetFileAttributes(m_wstrRelativeAssetsPath.c_str());
+			if (RetCode == 0xFFFFFFFF) {
+				//失敗した
+				//アセットディレクトリをメディアディレクトリにする
+				m_wstrRelativeAssetsPath = m_wstrRelativeDataPath;
+			}
+			else {
+				//成功した
+				m_wstrRelativeAssetsPath += L"\\";
+			}
+
+
+
 			////デバイスリソースの構築
 			m_DeviceResources = shared_ptr<DeviceResources>(new DeviceResources(hWnd, FullScreen, Width, Height));
 			//オーディオマネージャの取得

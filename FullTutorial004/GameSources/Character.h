@@ -22,6 +22,8 @@ namespace basecross{
 		Vector3 GetPlayerPosition() const;
 		//プレイヤーまでの距離を返す
 		float GetPlayerLength() const;
+		//進行方向を向くようにする
+		void RotToHead();
 	public:
 		//構築と破棄
 		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
@@ -40,10 +42,8 @@ namespace basecross{
 		void  ArriveStartMoton();
 		bool  ArriveUpdateMoton();
 		void  ArriveEndMoton();
-
 		//操作
 		virtual void OnUpdate() override;
-		virtual void OnLastUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

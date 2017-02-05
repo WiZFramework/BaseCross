@@ -16,7 +16,10 @@ namespace basecross {
 	//リソースの作成
 	void GameStage::CreateResourses() {
 		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
 		wstring strTexture = DataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = DataDir + L"sky.jpg";
@@ -261,10 +264,10 @@ namespace basecross {
 			CreateSphere();
 			//でこぼこ床の作成
 			CreateUnevenGround();
-			//追いかけるオブジェクトの作成
-			CreateSeekObject();
 			//プレーヤーの作成
 			CreatePlayer();
+			//追いかけるオブジェクトの作成
+			CreateSeekObject();
 		}
 		catch (...) {
 			throw;

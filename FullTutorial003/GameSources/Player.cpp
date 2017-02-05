@@ -44,7 +44,7 @@ namespace basecross{
 
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -184,6 +184,8 @@ namespace basecross{
 		m_Handler.HandleInputExcute(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
+		//文字列表示
+		DrawStrings();
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -192,9 +194,8 @@ namespace basecross{
 		}
 	}
 
-	//ターンの最終更新時
-	void Player::OnLastUpdate() {
-
+	//文字列表示
+	void Player::DrawStrings(){
 
 		//文字列表示
 		//行動
@@ -256,7 +257,6 @@ namespace basecross{
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 	}
-
 
 	//--------------------------------------------------------------------------------------
 	///	プレイヤー行動親
@@ -350,15 +350,10 @@ namespace basecross{
 
 
 	void JumpPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
-		auto PtrTrans = Obj->GetComponent<Transform>();
-		auto TransVelo = PtrTrans->GetPosition() - PtrTrans->GetBeforePosition();
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		TransVelo /= ElapsedTime;
 		//重力
 		auto PtrGravity = Obj->GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		JumpVec += TransVelo;
 		PtrGravity->StartJump(JumpVec);
 	}
 	void JumpPlayerBehavior::ExcuteAction(const shared_ptr<Player>& Obj) {

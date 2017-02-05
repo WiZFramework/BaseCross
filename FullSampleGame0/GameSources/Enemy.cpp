@@ -48,7 +48,7 @@ namespace basecross {
 		//SPの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
 		//タグをつける
 		AddTag(L"Enemy");
 
@@ -84,7 +84,7 @@ namespace basecross {
 	}
 
 	//操作
-	void HeadEnemy::OnUpdate() {
+	void HeadEnemy::OnPreUpdate() {
 		m_BehaviorMachine->Update();
 	}
 
@@ -115,7 +115,7 @@ namespace basecross {
 	}
 
 
-	void HeadEnemy::OnLastUpdate() {
+	void HeadEnemy::OnUpdate() {
 		m_BehaviorMachine->Update2();
 	}
 
@@ -238,7 +238,7 @@ namespace basecross {
 		//SPの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
 
 		//タグをつける
 		AddTag(L"Enemy");
@@ -269,11 +269,11 @@ namespace basecross {
 
 
 	//操作
-	void MozoEnemy::OnUpdate() {
+	void MozoEnemy::OnPreUpdate() {
 		m_BehaviorMachine->Update();
 	}
 
-	void MozoEnemy::OnLastUpdate() {
+	void MozoEnemy::OnUpdate() {
 		m_BehaviorMachine->Update2();
 	}
 

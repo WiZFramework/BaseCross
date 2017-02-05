@@ -1654,7 +1654,7 @@ namespace basecross {
 			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost = 1);
 		//初期化
 		virtual void OnCreate() override;
-		virtual void OnUpdate() override;
+		virtual void OnPreUpdate() override;
 		virtual void OnDraw() override;
 	private:
 		//Implイディオム

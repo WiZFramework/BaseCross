@@ -17,12 +17,16 @@
     <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCCommon.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCLighting.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCParameters.hlsli" />
+    <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCParametersIns.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCShadow.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\BcINCStructs.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\INCShadowmap.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)Shaders\INCStructs.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcPSPNTnTPL.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcPSPNTPL.hlsl">
       <ShaderType>Pixel</ShaderType>
       <FileType>Document</FileType>
@@ -64,6 +68,9 @@
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcVSPNTBoneVLShadow.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcVSPNTnTStaticPL.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcVSPNTStaticPL.hlsl">

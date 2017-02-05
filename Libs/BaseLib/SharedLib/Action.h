@@ -1127,7 +1127,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		shared_ptr<T> GeScale(size_t TargetIndex) const {
+		shared_ptr<T> GetScale(size_t TargetIndex) const {
 			auto Ptr = GetScaleComponent(TargetIndex);
 			auto Ptr2 = dynamic_pointer_cast<T>(Ptr);
 			if (!Ptr2) {
@@ -1210,7 +1210,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		shared_ptr<T> GeRotate(size_t TargetIndex)const {
+		shared_ptr<T> GetRotate(size_t TargetIndex)const {
 			auto Ptr = GetRotateComponent(TargetIndex);
 			auto Ptr2 = dynamic_pointer_cast<T>(Ptr);
 			if (!Ptr2) {

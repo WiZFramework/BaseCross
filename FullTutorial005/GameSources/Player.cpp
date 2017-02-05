@@ -44,7 +44,7 @@ namespace basecross{
 
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -185,6 +185,9 @@ namespace basecross{
 		m_Handler.HandleInputExcute(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
+
+		//文字列の表示
+		DrawStrings();
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -199,9 +202,8 @@ namespace basecross{
 		}
 	}
 
-	//ターンの最終更新時
-	void Player::OnLastUpdate() {
-
+	//文字列の表示
+	void Player::DrawStrings() {
 
 		//文字列表示
 		//行動
@@ -357,15 +359,10 @@ namespace basecross{
 
 
 	void JumpPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
-		auto PtrTrans = Obj->GetComponent<Transform>();
-		auto TransVelo = PtrTrans->GetPosition() - PtrTrans->GetBeforePosition();
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		TransVelo /= ElapsedTime;
 		//重力
 		auto PtrGravity = Obj->GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		JumpVec += TransVelo;
 		PtrGravity->StartJump(JumpVec);
 		auto pMultiSoundEffect = Obj->GetComponent<MultiSoundEffect>();
 		pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);

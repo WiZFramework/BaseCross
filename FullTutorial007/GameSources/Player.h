@@ -79,7 +79,6 @@ namespace basecross{
 		virtual void OnUpdate() override;
 		//è’ìÀéû
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
-		virtual void OnLastUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------

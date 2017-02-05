@@ -32,7 +32,9 @@ namespace basecross{
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定
-		auto PtrColl = AddComponent<CollisionCapsule>();
+		auto PtrColl = AddComponent<CollisionSphere>();
+//		auto PtrColl = AddComponent<CollisionCapsule>();
+		PtrColl->SetDrawActive(true);
 		//親の影響を受ける
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 
@@ -126,7 +128,8 @@ namespace basecross{
 			PtrDraw->GetCurrentAnimation() == L"Hit") {
 			PtrDraw->ChangeCurrentAnimation(L"Default");
 		}
-
+		//文字列の表示
+		DrawStrings();
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -134,8 +137,9 @@ namespace basecross{
 			GetStateMachine()->ChangeState(DefaultState::Instance());
 		}
 	}
-	//ターンの最終更新時
-	void Player::OnLastUpdate() {
+
+	//文字列の表示
+	void Player::DrawStrings(){
 
 		//文字列表示
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();

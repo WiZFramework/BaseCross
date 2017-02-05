@@ -13,16 +13,22 @@ float4 main(PSInputPixelLightingTxShadow pin) : SV_Target0
 	if (Activeflags.y > 0) {
 		color = Texture.Sample(Sampler, pin.TexCoord) * pin.Diffuse;
 	}
+	if (Activeflags.x > 0) {
+		float3 eyeVector = normalize(EyePosition - pin.PositionWS.xyz);
+		float3 worldNormal = normalize(pin.NormalWS);
 
-	float3 eyeVector = normalize(EyePosition - pin.PositionWS.xyz);
-	float3 worldNormal = normalize(pin.NormalWS);
+		ColorPair lightResult = ComputeLights(eyeVector, worldNormal, Activeflags.x);
 
-	ColorPair lightResult = ComputeLights(eyeVector, worldNormal, Activeflags.x);
+		color.rgb *= lightResult.Diffuse;
 
-	color.rgb *= lightResult.Diffuse;
+		AddSpecular(color, lightResult.Specular);
+		ApplyFog(color, pin.PositionWS.w);
+	}
+	else {
+		ApplyFog(color, pin.PositionWS.w);
+	}
 
-	AddSpecular(color, lightResult.Specular);
-	ApplyFog(color, pin.PositionWS.w);
+
 
 	//‰e‚Ì”Z‚³
 	const float3 ambient = float3(0.7f, 0.7f, 0.7f);

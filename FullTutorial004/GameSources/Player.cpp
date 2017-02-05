@@ -44,7 +44,8 @@ namespace basecross{
 
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnObjectRepel);
+		//常に反発
+		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -118,95 +119,17 @@ namespace basecross{
 		m_PlayerBehavior = m_PlayerBehavior->ChangeNextBehavior(GetThis<Player>());
 	}
 
-	//初期化
-	void Player::OnCreate() {
-		//コマンドの登録
-		//Aボタンにアクションコマンドを登録
-		m_Handler.SetButtonA(&m_Action);
-		//Bボタンに行動切り替えコマンドを登録
-		m_Handler.SetButtonB(&m_BehaviorChange);
-
-
-		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
-
-		//Rigidbodyをつける
-		auto PtrRedid = AddComponent<Rigidbody>();
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
-		//衝突判定をつける
-		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-		//PtrCol->SetDrawActive(true);
-
-		//文字列をつける
-		auto PtrString = AddComponent<StringSprite>();
-		PtrString->SetText(L"");
-		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
-
-
-		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
-
-//透明処理
-		SetAlphaActive(true);
-		//0番目のビューのカメラを得る
-		//LookAtCameraである
-		
-		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
-		if (PtrCamera) {
-			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
-			PtrCamera->SetTargetObject(GetThis<GameObject>());
-		}
-		//行動クラスの構築(ジャンプ行動)
-		m_PlayerBehavior = JumpPlayerBehavior::Instance();
-		//ステートマシンの構築
-		m_StateMachine = make_shared< LayeredStateMachine<Player> >(GetThis<Player>());
-		//最初のステートをPlayerDefaultに設定
-		m_StateMachine->Reset(PlayerDefault::Instance());
-	}
-
-	//更新
-	void Player::OnUpdate() {
-		//コントローラチェックして入力があればコマンド呼び出し
-		m_Handler.HandleInputExcute(GetThis<Player>());
-		//ステートマシン更新
-		m_StateMachine->Update();
-	}
-
-	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
-		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
-			GetStateMachine()->Reset(PlayerDefault::Instance());
-		}
-	}
-
-	//ターンの最終更新時
-	void Player::OnLastUpdate() {
-
-
+	//文字列の表示
+	void Player::DrawStrings() {
 		//文字列表示
 		//行動
 		wstring BEHAVIOR;
-
 		if (m_PlayerBehavior == JumpPlayerBehavior::Instance()) {
 			BEHAVIOR = L"DEFAULT行動: Aボタンでジャンプ。Bボタンで行動切り替え\n";
 		}
 		else {
 			BEHAVIOR = L"ATTACK行動: Aボタンでアタック。Bボタンで行動切り替え\n";
 		}
-
-
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
@@ -250,12 +173,86 @@ namespace basecross{
 		else {
 			HitObjectStr += L"NULL\n";
 		}
-		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr ;
+		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 	}
 
+
+	//初期化
+	void Player::OnCreate() {
+		//コマンドの登録
+		//Aボタンにアクションコマンドを登録
+		m_Handler.SetButtonA(&m_Action);
+		//Bボタンに行動切り替えコマンドを登録
+		m_Handler.SetButtonB(&m_BehaviorChange);
+
+
+		//初期位置などの設定
+		auto Ptr = AddComponent<Transform>();
+		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
+		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+		Ptr->SetPosition(0, 0.125f, 0);
+
+		//Rigidbodyをつける
+		auto PtrRedid = AddComponent<Rigidbody>();
+		//重力をつける
+		auto PtrGravity = AddComponent<Gravity>();
+		//衝突判定をつける
+		auto PtrCol = AddComponent<CollisionSphere>();
+
+		//PtrCol->SetDrawActive(true);
+
+		//文字列をつける
+		auto PtrString = AddComponent<StringSprite>();
+		PtrString->SetText(L"");
+		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
+
+
+		//影をつける（シャドウマップを描画する）
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+		//描画コンポーネントの設定
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		//描画するメッシュを設定
+		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		//描画するテクスチャを設定
+		PtrDraw->SetTextureResource(L"TRACE_TX");
+		//透明処理
+		SetAlphaActive(true);
+		//0番目のビューのカメラを得る
+		//LookAtCameraである
+		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
+		if (PtrCamera) {
+			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
+			PtrCamera->SetTargetObject(GetThis<GameObject>());
+		}
+		//行動クラスの構築(ジャンプ行動)
+		m_PlayerBehavior = JumpPlayerBehavior::Instance();
+		//ステートマシンの構築
+		m_StateMachine = make_shared< LayeredStateMachine<Player> >(GetThis<Player>());
+		//最初のステートをPlayerDefaultに設定
+		m_StateMachine->Reset(PlayerDefault::Instance());
+	}
+
+	//更新
+	void Player::OnUpdate() {
+		//コントローラチェックして入力があればコマンド呼び出し
+		m_Handler.HandleInputExcute(GetThis<Player>());
+		//ステートマシン更新
+		m_StateMachine->Update();
+		//文字列の表示
+		DrawStrings();
+	}
+
+	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (GetStateMachine()->GetTopState() == PlayerAction::Instance()) {
+			GetStateMachine()->Reset(PlayerDefault::Instance());
+		}
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	プレイヤー行動親
@@ -349,15 +346,10 @@ namespace basecross{
 
 
 	void JumpPlayerBehavior::StartAction(const shared_ptr<Player>& Obj) {
-		auto PtrTrans = Obj->GetComponent<Transform>();
-		auto TransVelo = PtrTrans->GetPosition() - PtrTrans->GetBeforePosition();
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		TransVelo /= ElapsedTime;
 		//重力
 		auto PtrGravity = Obj->GetComponent<Gravity>();
 		//ジャンプスタート
 		Vector3 JumpVec(0.0f, 4.0f, 0);
-		JumpVec += TransVelo;
 		PtrGravity->StartJump(JumpVec);
 	}
 	void JumpPlayerBehavior::ExcuteAction(const shared_ptr<Player>& Obj) {

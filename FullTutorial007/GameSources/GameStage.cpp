@@ -145,7 +145,10 @@ namespace basecross {
 	//リソースの作成
 	void GameStage::CreateResourses() {
 		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
 		wstring strTexture = DataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
 	}
@@ -260,15 +263,28 @@ namespace basecross {
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
+		wstring DataDir;
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
+
+
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>(App::GetApp()->m_wstrRelativeDataPath + L"character_template_sample1\\");
+		auto PlayerPtr = AddGameObject<Player>(DataDir + L"character_template_sample1\\");
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
 	}
 
 	//Eggの作成
 	void GameStage::CreateEgg() {
-		AddGameObject<EggAnime>(App::GetApp()->m_wstrRelativeDataPath + L"character_template_sample1\\");
+		wstring DataDir;
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
+
+		AddGameObject<EggAnime>(DataDir + L"character_template_sample1\\");
 	}
 
 	void GameStage::OnCreate() {
