@@ -829,6 +829,23 @@ namespace basecross {
 		}
 	}
 
+	void MeshUtill::SetNormalTangent(vector<VertexPositionNormalTangentTexture>& vertices) {
+		for (size_t i = 0; i < vertices.size(); i++) {
+			Vector3 Norm = vertices[i].normal;
+			Norm.Normalize();
+
+			if (Vector3EX::AngleBetweenNormals(Norm, Vector3(0, 1, 0)) <= 0.1f || 
+				Vector3EX::AngleBetweenNormals(Norm, Vector3(0, -1, 0)) <= 0.1f) {
+				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 0, 1));
+			}
+			else {
+				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 1, 0));
+			}
+			vertices[i].tangent.w = 0.0f;
+		}
+	}
+
+
 
 }
 //end basecross

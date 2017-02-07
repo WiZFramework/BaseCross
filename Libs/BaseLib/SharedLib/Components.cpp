@@ -607,7 +607,7 @@ namespace basecross {
 	};
 
 	void MultiSoundEffect::Impl::Start(const SoundItem* pItem, const XAUDIO2_BUFFER& Buffer, float Volume) {
-		if (!pItem->m_pSourceVoice) {
+		if (!pItem->m_SourceVoice) {
 			throw BaseException(
 				L"サウンドボイスが不定です",
 				L"if (!pItem->m_pSourceVoice)",
@@ -615,13 +615,13 @@ namespace basecross {
 			);
 		}
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->Stop(),
+			pItem->m_SourceVoice->Stop(),
 			L"サウンドエフェクト用サウンドボイスの停止に失敗しました",
 			L"pItem->m_pSourceVoice->Stop()",
 			L"MultiSoundEffect::Impl::Start()"
 		);
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->FlushSourceBuffers(),
+			pItem->m_SourceVoice->FlushSourceBuffers(),
 			L"サウンドエフェクト用サウンドボイスのバッファのフラッシュに失敗しました",
 			L"pItem->m_pSourceVoice->FlushSourceBuffers()",
 			L"MultiSoundEffect::Impl::Start()"
@@ -634,21 +634,21 @@ namespace basecross {
 			);
 		}
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->SetVolume(Volume),
+			pItem->m_SourceVoice->SetVolume(Volume),
 			L"サウンドエフェクト用サウンドのボリューム設定に失敗しました",
 			L"pItem->m_pSourceVoice->SetVolume()",
 			L"MultiSoundEffect::Impl::Start()"
 		);
 
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->SubmitSourceBuffer(&Buffer),
+			pItem->m_SourceVoice->SubmitSourceBuffer(&Buffer),
 			L"サウンドエフェクト用サウンドのソースバッファ設定に失敗しました",
 			L"pItem->m_pSourceVoice->SubmitSourceBuffer(&buffer)",
 			L"MultiSoundEffect::Impl::Start()"
 		);
 
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->Start(),
+			pItem->m_SourceVoice->Start(),
 			L"サウンドエフェクト用サウンドのスタートに失敗しました",
 			L"pItem->m_pSourceVoice->Start()",
 			L"MultiSoundEffect::Impl::Start()"
@@ -656,7 +656,7 @@ namespace basecross {
 	}
 
 	void MultiSoundEffect::Impl::Stop(const SoundItem* pItem) {
-		if (!pItem->m_pSourceVoice) {
+		if (!pItem->m_SourceVoice) {
 			throw BaseException(
 				L"サウンドボイスが不定です",
 				L"if (!pItem->m_pSourceVoice)",
@@ -664,19 +664,18 @@ namespace basecross {
 			);
 		}
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->Stop(),
+			pItem->m_SourceVoice->Stop(),
 			L"サウンドエフェクト用サウンドボイスの停止に失敗しました",
 			L"pItem->m_pSourceVoice->Stop()",
 			L"MultiSoundEffect::Impl::Stop()"
 		);
 		ThrowIfFailed(
-			pItem->m_pSourceVoice->FlushSourceBuffers(),
+			pItem->m_SourceVoice->FlushSourceBuffers(),
 			L"サウンドエフェクト用サウンドボイスのバッファのフラッシュに失敗しました",
 			L"pItem->m_pSourceVoice->FlushSourceBuffers()",
 			L"MultiSoundEffect::Impl::Stop()"
 		);
 	}
-
 
 
 	//--------------------------------------------------------------------------------------
@@ -719,7 +718,7 @@ namespace basecross {
 			Item.m_AudioResource = SoundRes;
 			auto Engine = App::GetApp()->GetAudioManager()->GetSoundEffectEngine();
 			ThrowIfFailed(
-				Engine->CreateSourceVoice(&Item.m_pSourceVoice, SoundRes->GetOutputWaveFormatEx()),
+				Engine->CreateSourceVoice(&Item.m_SourceVoice, SoundRes->GetOutputWaveFormatEx()),
 				L"サウンドエフェクト用サウンドボイスの作成に失敗しました",
 				L"Engine->CreateSourceVoice(&pImpl->m_pSourceVoice, SountRes->GetOutputWaveFormatEx())",
 				L"MultiSoundEffect::AddAudioResource()"

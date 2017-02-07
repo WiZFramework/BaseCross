@@ -11,8 +11,6 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
-
-
 	//リソースの作成
 	void GameStage::CreateResourses() {
 		wstring DataDir;
@@ -20,18 +18,54 @@ namespace basecross {
 		App::GetApp()->GetAssetsDirectory(DataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
 		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"trace.png";
+
+		//プレート用
+		wstring strTexture = DataDir + L"gray.png";
+		App::GetApp()->RegisterTexture(L"GRAY_TX", strTexture);
+		strTexture = DataDir + L"normal3.png";
+		App::GetApp()->RegisterTexture(L"NORMAL3_TX", strTexture);
+		//プレイヤー用
+		strTexture = DataDir + L"Brown.png";
+		App::GetApp()->RegisterTexture(L"BROWN_TX", strTexture);
+		strTexture = DataDir + L"normal1.png";
+		App::GetApp()->RegisterTexture(L"NORMAL1_TX", strTexture);
+		//Seekオブジェクト用
+		strTexture = DataDir + L"Green.png";
+		App::GetApp()->RegisterTexture(L"GREEN_TX", strTexture);
+		strTexture = DataDir + L"normal2.png";
+		App::GetApp()->RegisterTexture(L"NORMAL2_TX", strTexture);
+		//Fixed用
+		strTexture = DataDir + L"Blue.png";
+		App::GetApp()->RegisterTexture(L"BLUE_TX", strTexture);
+		//L"NORMAL2_TX"
+		strTexture = DataDir + L"Wall2.png";
+		App::GetApp()->RegisterTexture(L"WALL2_TX", strTexture);
+		strTexture = DataDir + L"Wall2_normal.png";
+		App::GetApp()->RegisterTexture(L"WALL2_NORMAL_TX", strTexture);
+		strTexture = DataDir + L"wall.jpg";
+		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		strTexture = DataDir + L"wall_normal.png";
+		App::GetApp()->RegisterTexture(L"WALL_NORMAL_TX", strTexture);
+		//L"BROWN_TX"
+		strTexture = DataDir + L"Floor_normal.png";
+		App::GetApp()->RegisterTexture(L"FLOOR_NORMAL_TX", strTexture);
+		//MoveBox用
+		strTexture = DataDir + L"Red.png";
+		App::GetApp()->RegisterTexture(L"RED_TX", strTexture);
+		//FLOOR_NORMAL_TX
+		//UnevenGround用
+		strTexture = DataDir + L"Brown2.png";
+		App::GetApp()->RegisterTexture(L"BROWN2_TX", strTexture);
+		//WALL2_NORMAL_TX
+
+		//その他
+		strTexture = DataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = DataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"wall.jpg";
-		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		strTexture = DataDir + L"Floor.png";
+		App::GetApp()->RegisterTexture(L"FLOOR_TX", strTexture);
 
-		strTexture = DataDir + L"gray.png";
-		App::GetApp()->RegisterTexture(L"GRAY_TX", strTexture);
-
-		strTexture = DataDir + L"gray2.png";
-		App::GetApp()->RegisterTexture(L"GRAY_TX2", strTexture);
 
 		
 	}
@@ -52,9 +86,36 @@ namespace basecross {
 		PtrMultiLight->SetDefaultLighting();
 	}
 
+	//プレートのメッシュ作成
+	void GameStage::CreatePlateMesh() {
+		//プレート用のメッシュを作成
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateSquare(1.0f, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionNormalTangentTexture new_pntnt_v;
+			new_pntnt_v.position = vertices[i].position;
+			new_pntnt_v.normal = vertices[i].normal;
+			if (vertices[i].textureCoordinate.x == 1.0f) {
+				new_pntnt_v.textureCoordinate.x = 20.0f;
+			}
+			if (vertices[i].textureCoordinate.y == 1.0f) {
+				new_pntnt_v.textureCoordinate.y = 20.0f;
+			}
+			Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+			new_pntnt_v.tangent = n;
+			new_pntnt_v.tangent.w = 0.0f;
+			new_pntnt_vertices.push_back(new_pntnt_v);
+		}
+		MeshUtill::SetNormalTangent(new_pntnt_vertices);
+		App::GetApp()->RegisterResource(L"MY_PNTnT_SQUARE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+	}
 
 	//プレートの作成
 	void GameStage::CreatePlate() {
+		//メッシュ作成
+		CreatePlateMesh();
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
@@ -63,18 +124,23 @@ namespace basecross {
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
-
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
-		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
-
-		//描画コンポーネントに形状（メッシュ）を設定
-		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
+		//描画コンポーネント
+		auto DrawComp = Ptr->AddComponent<BcPNTnTStaticDraw>();
+		DrawComp->SetMeshResource(L"MY_PNTnT_SQUARE");
+		DrawComp->SetTextureResource(L"GRAY_TX");
+		DrawComp->SetNormalMapTextureResource(L"NORMAL3_TX");
+		//ラップモード
+		DrawComp->SetSamplerState(SamplerState::LinearWrap);
+		//スペキュラーなし
+		DrawComp->DisableSpecular();
+		//フォグはきつめに
 		DrawComp->SetFogEnabled(true);
+		DrawComp->SetFogColor(Color4(0.3f, 0.3f,0.3f, 1.0f));
+		DrawComp->SetFogStart(-10.0f);
+		DrawComp->SetFogEnd(-30.0f);
 		//自分に影が映りこむようにする
 		DrawComp->SetOwnShadowActive(true);
-		//描画コンポーネントテクスチャの設定
-		DrawComp->SetTextureResource(L"SKY_TX");
 	}
 
 	//追いかけるオブジェクトの作成
@@ -95,43 +161,55 @@ namespace basecross {
 	}
 
 
+	struct FixedNormalBoxParam {
+		wstring TexKey;
+		wstring NormalTexKey;
+		Vector3 Scale;
+		Vector3 Rot;
+		Vector3 Pos;
+		FixedNormalBoxParam(const wstring& tk, const wstring& ntk, const Vector3& s, const Vector3& r, const Vector3& p) :
+			TexKey(tk), NormalTexKey(ntk), Scale(s), Rot(r), Pos(p) {}
+	};
 
-	//固定のボックスの作成
-	void GameStage::CreateFixedBox() {
+	//固定の法線マップ処理ボックスの作成
+	void GameStage::CreateFixedNormalBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
-			{
+		vector<FixedNormalBoxParam> Vec = {
+			FixedNormalBoxParam(
+				L"BLUE_TX",
+				L"NORMAL2_TX",
 				Vector3(5.0f, 0.5f, 5.0f),
 				Vector3(0.0f, 0.0f, 0.0f),
 				Vector3(10.0f, 0.25f, 10.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(14.0f, 0.25f, 10.0f)
-			},
-
-			{
+			),
+			FixedNormalBoxParam(
+				L"WALL2_TX",
+				L"WALL2_NORMAL_TX",
 				Vector3(2.0f, 1.0f, 2.0f),
 				Vector3(0, 0, 0),
 				Vector3(10.0f, 0.5f, 10.0f)
-			},
-			{
+			),
+			FixedNormalBoxParam(
+				L"WALL_TX",
+				L"WALL_NORMAL_TX",
 				Vector3(4.0f, 1.0f, 4.0f),
 				Vector3(0, 0, 0),
 				Vector3(-10.0f, 0.5f, 10.0f)
-			},
-			{
+			),
+			FixedNormalBoxParam(
+				L"BROWN_TX",
+				L"FLOOR_NORMAL_TX",
 				Vector3(10.0f, 0.5f, 10.0f),
 				Vector3(-0.5f, 0.0f, -0.5f),
 				Vector3(-10.0f, 0.25f, 10.0f)
-			},
+			)
 		};
 		//オブジェクトの作成
-		for (auto v : Vec) {
-			AddGameObject<FixedBox>(v[0], v[1], v[2]);
+		for (auto& v : Vec) {
+			AddGameObject<FixedNormalBox>(v.TexKey,v.NormalTexKey,v.Scale,v.Rot,v.Pos);
 		}
 	}
+
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
@@ -256,8 +334,8 @@ namespace basecross {
 			CreateViewLight();
 			//プレートの作成
 			CreatePlate();
-			//固定のボックスの作成
-			CreateFixedBox();
+			//固定の法線マップ処理ボックスの作成
+			CreateFixedNormalBox();
 			//上下移動しているボックスの作成
 			CreateMoveBox();
 			//球体作成

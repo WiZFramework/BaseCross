@@ -1157,7 +1157,7 @@ namespace basecross {
 
 	}
 
-	void FbxMeshObject::OnUpdate() {
+	void FbxMeshObject::OnPreUpdate() {
 		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
 		if (PtrBoneDraw && m_IsAnimeRun) {
 			if (PtrBoneDraw->IsTargetAnimeEnd()) {
@@ -1169,7 +1169,7 @@ namespace basecross {
 		}
 	}
 
-	void FbxMeshObject::OnLastUpdate() {
+	void FbxMeshObject::OnUpdate() {
 		//•¶Žš—ñ•\Ž¦
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");

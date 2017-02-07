@@ -33,6 +33,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <stack>
 #include <functional>
 #include <algorithm>
 #include <iostream>

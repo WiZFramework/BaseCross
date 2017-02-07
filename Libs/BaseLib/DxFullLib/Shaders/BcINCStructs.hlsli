@@ -185,6 +185,21 @@ struct VSOutputPixelLightingTxTangent
     float4 PositionPS : SV_Position;
 };
 
+struct VSOutputPixelLightingTxTangentShadow
+{
+	float2 TexCoord   : TEXCOORD0;
+	float4 PositionWS : TEXCOORD1;
+	float3 NormalWS   : TEXCOORD2;
+	float3 TangentWS  : TEXCOORD3;
+	float4 Diffuse    : COLOR0;
+	float3 norm      : NORMAL0;
+	float3 lightRay  : NORMAL1;
+	float3 lightView : NORMAL2;
+	float4 lightSpacePos : POSITION1;
+	float4 PositionPS : SV_Position;
+};
+
+
 struct VSOutputTx2
 {
     float4 Diffuse    : COLOR0;
@@ -289,6 +304,21 @@ struct PSInputPixelLightingTxTangent
     float3 TangentWS  : TEXCOORD3;
     float4 Diffuse    : COLOR0;
 };
+
+struct PSInputPixelLightingTxTangentShadow
+{
+	float2 TexCoord   : TEXCOORD0;
+	float4 PositionWS : TEXCOORD1;
+	float3 NormalWS   : TEXCOORD2;
+	float3 TangentWS  : TEXCOORD3;
+	float4 Diffuse    : COLOR0;
+	float3 norm      : NORMAL0;
+	float3 lightRay  : NORMAL1;
+	float3 lightView : NORMAL2;
+	float4 lightSpacePos : POSITION1;
+};
+
+
 
 struct PSInputTx2
 {

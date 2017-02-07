@@ -16,12 +16,14 @@ namespace basecross {
 		void CreateResourses();
 		//ビューの作成
 		void CreateViewLight();
+		//プレートのメッシュ作成
+		void CreatePlateMesh();
 		//プレートの作成
 		void CreatePlate();
 		//追いかけるオブジェクトの作成
 		void CreateSeekObject();
-		//固定のボックスの作成
-		void CreateFixedBox();
+		//固定の法線マップ処理ボックスの作成
+		void CreateFixedNormalBox();
 		//上下移動しているボックスの作成
 		void CreateMoveBox();
 		//ヒットする球体の作成

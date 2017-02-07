@@ -570,50 +570,6 @@ namespace basecross {
 
 /*
 		// Direct2D リソースを初期化します。
-		D2D1_FACTORY_OPTIONS options;
-		ZeroMemory(&options, sizeof(D2D1_FACTORY_OPTIONS));
-
-#if defined(_DEBUG)
-		// プロジェクトがデバッグ ビルドに含まれている場合は、Direct2D デバッグを SDK レイヤーを介して有効にします。
-		options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-#endif
-		// Direct2D ファクトリを初期化します。
-		ThrowIfFailed(
-			D2D1CreateFactory(
-				D2D1_FACTORY_TYPE_SINGLE_THREADED,
-				__uuidof(ID2D1Factory2),
-				&options,
-				&m_d2dFactory
-			),
-			L"Factory作成に失敗しました。",
-			L"D2D1CreateFactory()",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
-
-
-		// DirectWrite ファクトリを初期化します。
-		ThrowIfFailed(
-			DWriteCreateFactory(
-				DWRITE_FACTORY_TYPE_SHARED,
-				__uuidof(IDWriteFactory2),
-				&m_dwriteFactory
-			),
-			L"DirectWrite ファクトリ作成に失敗しました。",
-			L"DWriteCreateFactory()",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
-
-		ThrowIfFailed(
-			CoCreateInstance(
-				CLSID_WICImagingFactory2,
-				nullptr,
-				CLSCTX_INPROC_SERVER,
-				IID_PPV_ARGS(&m_wicFactory)
-			),
-			L"(WIC) ファクトリ作成に失敗しました。",
-			L"CoCreateInstance()",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
 
 */
 
@@ -793,31 +749,6 @@ namespace basecross {
 
 		/*
 
-		ComPtr<IDXGIDevice3> dxgiDevice;
-
-		ThrowIfFailed(
-			m_Device.As(&dxgiDevice),
-			L"dxgiDeviceのバージョンアップに失敗しました。",
-			L"m_d3dDevice.As(&dxgiDevice)",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
-
-		ThrowIfFailed(
-			m_d2dFactory->CreateDevice(dxgiDevice.Get(), &m_d2dDevice),
-			L"dxgiDeviceのバージョンアップに失敗しました。",
-			L"m_d2dFactory->CreateDevice()",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
-
-		ThrowIfFailed(
-			m_d2dDevice->CreateDeviceContext(
-				D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-				&m_d2dContext
-			),
-			L"2dデバイスコンテキスト作成に失敗しました。",
-			L"m_d2dDevice->CreateDeviceContext()",
-			L"DeviceResources::Impl::CreateDeviceResources()"
-		);
 
 		*/
 

@@ -34,7 +34,7 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 
 		wstring CursorWav = DataDir + L"cursor.wav";
-		App::GetApp()->RegisterWav(L"Cursor", CursorWav);
+		App::GetApp()->RegisterWav(L"cursor", CursorWav);
 
 	}
 

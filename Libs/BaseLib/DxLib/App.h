@@ -1134,7 +1134,7 @@ namespace basecross {
 		@return	シェーダディレクトリの相対パス
 		*/
 		//--------------------------------------------------------------------------------------
-		const wstring& GetShadersWString()const {
+		const wstring& GetShadersPath()const {
 			return m_wstrRelativeShadersPath;
 		}
 		//--------------------------------------------------------------------------------------

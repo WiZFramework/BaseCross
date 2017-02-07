@@ -13,7 +13,11 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	void Scene::OnCreate() {
 		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
+
 		//四角形の作成
 		wstring strTexture = DataDir + L"wall.jpg";
 		m_WallSprite = ObjectFactory::Create<WallSprite>(strTexture, false, Vector2(0, 0));

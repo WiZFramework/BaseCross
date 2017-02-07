@@ -23,12 +23,12 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	/// PT頂点シェーダ
 	//--------------------------------------------------------------------------------------
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPTStatic, App::GetApp()->GetShadersWString() + L"BcVSPTStatic.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPTStatic, App::GetApp()->GetShadersPath() + L"BcVSPTStatic.cso")
 
 	//--------------------------------------------------------------------------------------
 	/// PTピクセルシェーダ
 	//--------------------------------------------------------------------------------------
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPTStatic, App::GetApp()->GetShadersWString() + L"BcPSPTStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPTStatic, App::GetApp()->GetShadersPath() + L"BcPSPTStatic.cso")
 
 
 
@@ -36,27 +36,27 @@ namespace basecross {
 	/// PNT頂点シェーダ(頂点ライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVL, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticVL.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVL, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticVL.cso")
 	//影無しBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVL, App::GetApp()->GetShadersWString() + L"BcVSPNTBoneVL.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVL, App::GetApp()->GetShadersPath() + L"BcVSPNTBoneVL.cso")
 	//影付き
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticVLShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticVLShadow.cso")
 	//影付きBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTBoneVLShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTBoneVLShadow.cso")
 
 
 		
 
 	//バイアス付き影無し
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLBn, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticVLBn.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLBn, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticVLBn.cso")
 	//バイアス付き影無しBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLBn, App::GetApp()->GetShadersWString() + L"BcVSPNTBoneVLBn.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLBn, App::GetApp()->GetShadersPath() + L"BcVSPNTBoneVLBn.cso")
 
 	//バイアス付き影付き
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLBnShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticVLBnShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticVLBnShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticVLBnShadow.cso")
 
 	//バイアス付き影付きBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLBnShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTBoneVLBnShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBoneVLBnShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTBoneVLBnShadow.cso")
 
 
 		
@@ -64,32 +64,32 @@ namespace basecross {
 	/// PNTピクセルシェーダ(頂点ライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTVL, App::GetApp()->GetShadersWString() + L"BcPSPNTVL.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTVL, App::GetApp()->GetShadersPath() + L"BcPSPNTVL.cso")
 	//影付き
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTVLShadow, App::GetApp()->GetShadersWString() + L"BcPSPNTVLShadow.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTVLShadow, App::GetApp()->GetShadersPath() + L"BcPSPNTVLShadow.cso")
 
 
 	//--------------------------------------------------------------------------------------
 	/// PNT頂点シェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPL, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticPL.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPL, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticPL.cso")
 	//影無しBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePL, App::GetApp()->GetShadersWString() + L"BcVSPNTBonePL.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePL, App::GetApp()->GetShadersPath() + L"BcVSPNTBonePL.cso")
 	//影付き
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticPLShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticPLShadow.cso")
 	//影付きBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTBonePLShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTBonePLShadow.cso")
 		
 	//バイス付き影無し
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLBn, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticPLBn.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLBn, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticPLBn.cso")
 	//バイス付き影無しBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLBn, App::GetApp()->GetShadersWString() + L"BcVSPNTBonePLBn.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLBn, App::GetApp()->GetShadersPath() + L"BcVSPNTBonePLBn.cso")
 
 	//バイス付き影付き
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLBnShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTStaticPLBnShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTStaticPLBnShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTStaticPLBnShadow.cso")
 	//バイス付き影付きBone
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLBnShadow, App::GetApp()->GetShadersWString() + L"BcVSPNTBonePLBnShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTBonePLBnShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTBonePLBnShadow.cso")
 
 
 		
@@ -98,22 +98,28 @@ namespace basecross {
 	/// PNTピクセルシェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTPL, App::GetApp()->GetShadersWString() + L"BcPSPNTPL.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTPL, App::GetApp()->GetShadersPath() + L"BcPSPNTPL.cso")
 	//影付き
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTPLShadow, App::GetApp()->GetShadersWString() + L"BcPSPNTPLShadow.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTPLShadow, App::GetApp()->GetShadersPath() + L"BcPSPNTPLShadow.cso")
 
 
 	//--------------------------------------------------------------------------------------
 	/// PNTnT頂点シェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTnTStaticPL, App::GetApp()->GetShadersWString() + L"BcVSPNTnTStaticPL.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTnTStaticPL, App::GetApp()->GetShadersPath() + L"BcVSPNTnTStaticPL.cso")
+
+	//影つき
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNTnTStaticPLShadow, App::GetApp()->GetShadersPath() + L"BcVSPNTnTStaticPLShadow.cso")
+
 
 	//--------------------------------------------------------------------------------------
 	/// PNTnTピクセルシェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPL, App::GetApp()->GetShadersWString() + L"BcPSPNTnTPL.cso");
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPL, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPL.cso");
+	//影つき
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPLShadow, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPLShadow.cso");
 
 
 
@@ -1955,52 +1961,56 @@ namespace basecross {
 		//ピクセルライティング
 		if (IsOwnShadowActive()) {
 			//影付き
-			if (IsBiasedNormals()) {
-				//バイアス付き
-				pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-				//インプットレイアウトの設定
-				pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBnShadow::GetPtr()->GetInputLayout());
-			}
-			else {
-				//バイアス無し
-				pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
-				//インプットレイアウトの設定
-				pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLShadow::GetPtr()->GetInputLayout());
-			}
-			pD3D11DeviceContext->PSSetShader(BcPSPNTPLShadow::GetPtr()->GetShader(), nullptr, 0);
+			//バイアス無し
+			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPLShadow::GetPtr()->GetInputLayout());
+			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPLShadow::GetPtr()->GetShader(), nullptr, 0);
 		}
 		else {
 			//影無し
-			if (IsBiasedNormals()) {
-				//バイアス付き
-				pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBn::GetPtr()->GetShader(), nullptr, 0);
-				//インプットレイアウトの設定
-				pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBn::GetPtr()->GetInputLayout());
-			}
-			else {
-				//バイアス無し
-				pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPL::GetPtr()->GetShader(), nullptr, 0);
-				//インプットレイアウトの設定
-				pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPL::GetPtr()->GetInputLayout());
-			}
+			//バイアス無し
+			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPL::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPL::GetPtr()->GetInputLayout());
 			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
 		}
 
 		//テクスチャとサンプラー
-		if (shTex) {
-			pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
-			//サンプラーは設定に任せる
-			SetDeviceSamplerState();
+		//影付き無しでセットする位置が違う
+		if (IsOwnShadowActive()) {
+			if (shTex) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
+				//サンプラーは設定に任せる
+				SetDeviceSamplerState();
+			}
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
+			//法線マップ
+			//２番目に入れる
+			pD3D11DeviceContext->PSSetShaderResources(2, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
 		}
 		else {
-			//シェーダーリソースもクリア
-			pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-			//サンプラーもクリア
-			pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			if (shTex) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
+				//サンプラーは設定に任せる
+				SetDeviceSamplerState();
+			}
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
+			//法線マップ
+			//２番目に入れる
+			pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
 		}
-		//法線マップ
-		pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-/*
+
 
 		//影とサンプラー
 		if (IsOwnShadowActive()) {
@@ -2010,9 +2020,10 @@ namespace basecross {
 			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
 			//シャドウマップサンプラー
 			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+			//常に1番目
 			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
 		}
-*/
+
 
 		//ストライドとオフセット
 		UINT stride = MeshRes->GetNumStride();

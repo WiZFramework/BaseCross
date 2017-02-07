@@ -13,8 +13,8 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBSprite)
 		//PCSprite
-		IMPLEMENT_DX11_VERTEX_SHADER(VSPCSprite, App::GetApp()->m_wstrRelativeShadersPath  +L"VSPCSprite.cso")
-		IMPLEMENT_DX11_PIXEL_SHADER(PSPCSprite, App::GetApp()->m_wstrRelativeShadersPath  +L"PSPCSprite.cso")
+		IMPLEMENT_DX11_VERTEX_SHADER(VSPCSprite, App::GetApp()->GetShadersPath() +L"VSPCSprite.cso")
+		IMPLEMENT_DX11_PIXEL_SHADER(PSPCSprite, App::GetApp()->GetShadersPath() +L"PSPCSprite.cso")
 
 }
 //end basecross

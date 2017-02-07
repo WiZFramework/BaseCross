@@ -10,81 +10,81 @@ namespace basecross {
 
 	//Shadowmap
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBShadow)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSShadowmap, App::GetApp()->GetShadersWString() + L"VSShadowmap.cso")
-	IMPLEMENT_DX11_VERTEX_SHADER(VSShadowmapBone, App::GetApp()->GetShadersWString() + L"VSShadowmapBone.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSShadowmap, App::GetApp()->GetShadersPath() + L"VSShadowmap.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSShadowmapBone, App::GetApp()->GetShadersPath() + L"VSShadowmapBone.cso")
 
 	//スプライト用
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBSprite)
 
 	//PCSprite
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCSprite, App::GetApp()->GetShadersWString() + L"VSPCSprite.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPCSprite, App::GetApp()->GetShadersWString() + L"PSPCSprite.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCSprite, App::GetApp()->GetShadersPath() + L"VSPCSprite.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPCSprite, App::GetApp()->GetShadersPath() + L"PSPCSprite.cso")
 
 	//PTSprite
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPTSprite, App::GetApp()->GetShadersWString() + L"VSPTSprite.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPTSprite, App::GetApp()->GetShadersWString() + L"PSPTSprite.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPTSprite, App::GetApp()->GetShadersPath() + L"VSPTSprite.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPTSprite, App::GetApp()->GetShadersPath() + L"PSPTSprite.cso")
 
 	//PCTSprite
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTSprite, App::GetApp()->GetShadersWString() + L"VSPCTSprite.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPCTSprite, App::GetApp()->GetShadersWString() + L"PSPCTSprite.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTSprite, App::GetApp()->GetShadersPath() + L"VSPCTSprite.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPCTSprite, App::GetApp()->GetShadersPath() + L"PSPCTSprite.cso")
 
 
 	//PCStatic
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBStatic)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCStatic, App::GetApp()->GetShadersWString() + L"VSPCStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPCStatic, App::GetApp()->GetShadersWString() + L"PSPCStatic.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCStatic, App::GetApp()->GetShadersPath() + L"VSPCStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPCStatic, App::GetApp()->GetShadersPath() + L"PSPCStatic.cso")
 	//PTStatic
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStatic, App::GetApp()->GetShadersWString() + L"VSPTStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPTStatic, App::GetApp()->GetShadersWString() + L"PSPTStatic.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStatic, App::GetApp()->GetShadersPath() + L"VSPTStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPTStatic, App::GetApp()->GetShadersPath() + L"PSPTStatic.cso")
 
 	//PCTStatic
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTInstance, App::GetApp()->GetShadersWString() + L"VSPCTInstance.cso")
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTStatic, App::GetApp()->GetShadersWString() + L"VSPCTStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPCTStatic, App::GetApp()->GetShadersWString() + L"PSPCTStatic.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTInstance, App::GetApp()->GetShadersPath() + L"VSPCTInstance.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTStatic, App::GetApp()->GetShadersPath() + L"VSPCTStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPCTStatic, App::GetApp()->GetShadersPath() + L"PSPCTStatic.cso")
 
 
 
 	//PNStatic
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBStaticLighting)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNStatic, App::GetApp()->GetShadersWString() + L"VSPNStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNStatic, App::GetApp()->GetShadersWString() + L"PSPNStatic.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNStatic, App::GetApp()->GetShadersPath() + L"VSPNStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNStatic, App::GetApp()->GetShadersPath() + L"PSPNStatic.cso")
 	//PNTStatic
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStatic, App::GetApp()->GetShadersWString() + L"VSPNTStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStatic, App::GetApp()->GetShadersWString() + L"PSPNTStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticNoTex, App::GetApp()->GetShadersWString() + L"PSPNTStaticNoTex.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStatic, App::GetApp()->GetShadersPath() + L"VSPNTStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStatic, App::GetApp()->GetShadersPath() + L"PSPNTStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticNoTex, App::GetApp()->GetShadersPath() + L"PSPNTStaticNoTex.cso")
 
 	//PNTStaticMidium
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticMidium, App::GetApp()->GetShadersWString() + L"VSPNTStaticMidium.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticMidium, App::GetApp()->GetShadersWString() + L"PSPNTStaticMidium.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticMidiumNoTex, App::GetApp()->GetShadersWString() + L"PSPNTStaticMidiumNoTex.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticMidium, App::GetApp()->GetShadersPath() + L"VSPNTStaticMidium.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticMidium, App::GetApp()->GetShadersPath() + L"PSPNTStaticMidium.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticMidiumNoTex, App::GetApp()->GetShadersPath() + L"PSPNTStaticMidiumNoTex.cso")
 
 
 	//PNTStaticReal
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBStaticRealLighting)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticReal, App::GetApp()->GetShadersWString() + L"VSPNTStaticReal.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticReal, App::GetApp()->GetShadersWString() + L"PSPNTStaticReal.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticRealNoTex, App::GetApp()->GetShadersWString() + L"PSPNTStaticRealNoTex.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticReal, App::GetApp()->GetShadersPath() + L"VSPNTStaticReal.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticReal, App::GetApp()->GetShadersPath() + L"PSPNTStaticReal.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticRealNoTex, App::GetApp()->GetShadersPath() + L"PSPNTStaticRealNoTex.cso")
 
 
 
 	//PNTStaticShadow
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStaticShadow)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticShadow, App::GetApp()->GetShadersWString() + L"VSPNTStaticShadow.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticShadow, App::GetApp()->GetShadersWString() + L"PSPNTStaticShadow.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticShadow2, App::GetApp()->GetShadersWString() + L"PSPNTStaticShadow2.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"VSPNTStaticShadow.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"PSPNTStaticShadow.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticShadow2, App::GetApp()->GetShadersPath() + L"PSPNTStaticShadow2.cso")
 
 	//PNTBone
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTBone)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBone, App::GetApp()->GetShadersWString() + L"VSPNTBone.cso")
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneMidium, App::GetApp()->GetShadersWString() + L"VSPNTBoneMidium.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBone, App::GetApp()->GetShadersPath() + L"VSPNTBone.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneMidium, App::GetApp()->GetShadersPath() + L"VSPNTBoneMidium.cso")
 
 	//PNTBoneReal
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTBoneRealLighting)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneReal, App::GetApp()->GetShadersWString() + L"VSPNTBoneReal.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneReal, App::GetApp()->GetShadersPath() + L"VSPNTBoneReal.cso")
 
 
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTBoneShadow)
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneShadow, App::GetApp()->GetShadersWString() + L"VSPNTBoneShadow.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneShadow, App::GetApp()->GetShadersPath() + L"VSPNTBoneShadow.cso")
 
 
 	//--------------------------------------------------------------------------------------

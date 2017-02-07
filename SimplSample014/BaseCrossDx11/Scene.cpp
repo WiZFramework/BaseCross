@@ -19,7 +19,11 @@ namespace basecross {
 
 	void Scene::OnCreate() {
 		wstring DataDir;
-		App::GetApp()->GetDataDirectory(DataDir);
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
+
 		wstring strTexture = DataDir + L"sky.jpg";
 		//立方体グループの作成
 		m_CubeObjectGroup = ObjectFactory::Create<CubeObjectGroup>(strTexture);

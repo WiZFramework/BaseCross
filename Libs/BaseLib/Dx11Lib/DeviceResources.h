@@ -731,7 +731,13 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct SoundItem {
 		weak_ptr<AudioResource> m_AudioResource;
-		IXAudio2SourceVoice* m_pSourceVoice;
+//		ComPtr<IXAudio2SourceVoice> m_SourceVoice;
+		IXAudio2SourceVoice* m_SourceVoice;
+		SoundItem() :
+			m_SourceVoice(nullptr)
+		{}
+		~SoundItem() {
+		}
 	};
 
 	//--------------------------------------------------------------------------------------

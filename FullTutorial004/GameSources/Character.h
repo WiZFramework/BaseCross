@@ -98,6 +98,32 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
+	//	class FixedNormalBox : public GameObject;
+	//	用途: 固定の法線マップ処理ボックス
+	//--------------------------------------------------------------------------------------
+	class FixedNormalBox : public GameObject {
+		Vector3 m_Scale;
+		Vector3 m_Rotation;
+		Vector3 m_Position;
+		wstring m_TexKey;
+		wstring m_NormalTexKey;
+	public:
+		//構築と破棄
+		FixedNormalBox(const shared_ptr<Stage>& StagePtr,
+			const wstring& TexKey,
+			const wstring& NormalTexKey,
+			const Vector3& Scale,
+			const Vector3& Rotation,
+			const Vector3& Position
+		);
+		virtual ~FixedNormalBox();
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	//	class MoveBox : public GameObject;
 	//	用途: 上下移動するボックス
 	//--------------------------------------------------------------------------------------

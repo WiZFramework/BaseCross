@@ -19,7 +19,9 @@ namespace basecross {
 		IXAudio2MasteringVoice* m_musicMasteringVoice;
 		IXAudio2MasteringVoice* m_soundEffectMasteringVoice;
 		Impl() :
-			m_audioAvailable{ false }
+			m_audioAvailable{ false },
+			m_musicMasteringVoice(nullptr),
+			m_soundEffectMasteringVoice(nullptr)
 		{}
 		~Impl() {}
 	};
@@ -33,7 +35,16 @@ namespace basecross {
 		pImpl(new Impl)
 	{
 	}
-	AudioManager::~AudioManager() {}
+	AudioManager::~AudioManager() {
+		if (pImpl->m_soundEffectEngine) {
+			pImpl->m_soundEffectEngine->StopEngine();
+			pImpl->m_soundEffectEngine = nullptr;
+		}
+		if (pImpl->m_musicEngine) {
+			pImpl->m_musicEngine->StopEngine();
+			pImpl->m_musicEngine = nullptr;
+		}
+	}
 
 	void AudioManager::CreateDeviceIndependentResources()
 	{

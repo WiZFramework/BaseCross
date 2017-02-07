@@ -1483,20 +1483,31 @@ namespace basecross {
 
 	void SceneBase::ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
 		vector<VertexPositionColor>& new_pc_vertices,
-		vector<VertexPositionTexture>& new_pt_vertices) {
+		vector<VertexPositionTexture>& new_pt_vertices, vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices) {
 		new_pc_vertices.clear();
 		new_pt_vertices.clear();
+		new_pntnt_vertices.clear();
 		for (size_t i = 0; i < vertices.size(); i++) {
 			VertexPositionColor new_pc_v;
 			VertexPositionTexture new_pt_v;
+			VertexPositionNormalTangentTexture new_pntnt_v;
+
 			new_pc_v.position = vertices[i].position;
 			new_pc_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 
 			new_pt_v.position = vertices[i].position;
 			new_pt_v.textureCoordinate = vertices[i].textureCoordinate;
 
+			new_pntnt_v.position = vertices[i].position;
+			new_pntnt_v.normal = vertices[i].normal;
+			new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+			Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+			new_pntnt_v.tangent = n;
+			new_pntnt_v.tangent.w = 0.0f;
+
 			new_pc_vertices.push_back(new_pc_v);
 			new_pt_vertices.push_back(new_pt_v);
+			new_pntnt_vertices.push_back(new_pntnt_v);
 
 		}
 	}
@@ -1523,26 +1534,34 @@ namespace basecross {
 			vector<VertexPositionNormalTexture> vertices;
 			vector<VertexPositionColor> new_pc_vertices;
 			vector<VertexPositionTexture> new_pt_vertices;
+			vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
+
 			vector<uint16_t> indices;
 
 			MeshUtill::CreateSquare(1.0f, vertices, indices);
-			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			App::GetApp()->RegisterResource(L"DEFAULT_PC_SQUARE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
 			App::GetApp()->RegisterResource(L"DEFAULT_PT_SQUARE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_SQUARE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
 			vertices.clear();
 			indices.clear();
 
 			MeshUtill::CreateCube(1.0f, vertices, indices);
-			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			App::GetApp()->RegisterResource(L"DEFAULT_PC_CUBE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
 			App::GetApp()->RegisterResource(L"DEFAULT_PT_CUBE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_CUBE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
 			vertices.clear();
 			indices.clear();
 
 			MeshUtill::CreateSphere(1.0f,18, vertices, indices);
-			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			App::GetApp()->RegisterResource(L"DEFAULT_PC_SPHERE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
 			App::GetApp()->RegisterResource(L"DEFAULT_PT_SPHERE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_SPHERE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
 			vertices.clear();
 			indices.clear();
 
@@ -1550,12 +1569,78 @@ namespace basecross {
 			Vector3 PointB(0, 1.0f / 2.0f, 0);
 			//Capsule‚Ìì¬(ƒwƒ‹ƒp[ŠÖ”‚ð—˜—p)
 			MeshUtill::CreateCapsule(1.0f, PointA, PointB,18, vertices, indices);
-			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			App::GetApp()->RegisterResource(L"DEFAULT_PC_CAPSULE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
 			App::GetApp()->RegisterResource(L"DEFAULT_PT_CAPSULE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_CAPSULE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
 			vertices.clear();
 			indices.clear();
-			
+
+			MeshUtill::CreateCylinder(1.0f, 1.0f, 18, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CYLINDER", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_CYLINDER", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_CYLINDER", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateCone(1.0f, 1.0f, 18, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_CONE", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_CONE", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_CONE", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateTorus(1.0f, 0.3f, 18, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_TORUS", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_TORUS", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_TORUS", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateTetrahedron(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_TETRAHEDRON", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_TETRAHEDRON", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_TETRAHEDRON", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateOctahedron(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_OCTAHEDRON", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_OCTAHEDRON", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_OCTAHEDRON", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateDodecahedron(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_DODECAHEDRON", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_DODECAHEDRON", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_DODECAHEDRON", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+			MeshUtill::CreateIcosahedron(1.0f, vertices, indices);
+			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			App::GetApp()->RegisterResource(L"DEFAULT_PC_ICOSAHEDRON", MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PT_ICOSAHEDRON", MeshResource::CreateMeshResource(new_pt_vertices, indices, false));
+			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_ICOSAHEDRON", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+
+
 
 		}
 		catch (...) {

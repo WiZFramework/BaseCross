@@ -148,7 +148,7 @@ namespace basecross{
 
 		//サウンドを登録.
 		auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
-		pMultiSoundEffect->AddAudioResource(L"Cursor");
+		pMultiSoundEffect->AddAudioResource(L"cursor");
 
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -365,7 +365,7 @@ namespace basecross{
 		Vector3 JumpVec(0.0f, 4.0f, 0);
 		PtrGravity->StartJump(JumpVec);
 		auto pMultiSoundEffect = Obj->GetComponent<MultiSoundEffect>();
-		pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);
+		pMultiSoundEffect->Start(L"cursor", 0, 0.5f);
 	}
 	void JumpPlayerBehavior::ExcuteAction(const shared_ptr<Player>& Obj) {
 		//重力

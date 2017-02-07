@@ -38,7 +38,6 @@ namespace basecross{
 	}
 
 	Scene::~Scene() {
-		m_AudioObjectPtr->Stop(L"Nanika");
 	}
 
 

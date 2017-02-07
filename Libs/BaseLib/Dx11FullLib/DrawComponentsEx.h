@@ -139,12 +139,16 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//影無し
 	DECLARE_DX11_VERTEX_SHADER(BcVSPNTnTStaticPL, VertexPositionNormalTangentTexture)
+	//影つき
+	DECLARE_DX11_VERTEX_SHADER(BcVSPNTnTStaticPLShadow, VertexPositionNormalTangentTexture)
 
 	//--------------------------------------------------------------------------------------
 	/// PNTnTピクセルシェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
 	DECLARE_DX11_PIXEL_SHADER(BcPSPNTnTPL);
+	//影つき
+	DECLARE_DX11_PIXEL_SHADER(BcPSPNTnTPLShadow);
 
 
 

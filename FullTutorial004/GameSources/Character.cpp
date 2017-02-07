@@ -30,8 +30,6 @@ namespace basecross{
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-	//	PtrRegid->SetReflection(0.5f);
 		//Seek操舵
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive操舵
@@ -51,16 +49,15 @@ namespace basecross{
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
 
-
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetTextureResource(L"TRACE_TX");
-		//透明処理をする
-		SetAlphaActive(true);
+		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_CUBE");
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetTextureResource(L"GREEN_TX");
+		PtrDraw->SetNormalMapTextureResource(L"NORMAL2_TX");
 
 		//ステートマシンの構築
 		m_StateMachine = make_shared< StateMachine<SeekObject> >(GetThis<SeekObject>());
@@ -242,6 +239,59 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	//	class FixedNormalBox : public GameObject;
+	//	用途: 固定の法線マップ処理ボックス
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	FixedNormalBox::FixedNormalBox(const shared_ptr<Stage>& StagePtr,
+		const wstring& TexKey,
+		const wstring& NormalTexKey,
+		const Vector3& Scale,
+		const Vector3& Rotation,
+		const Vector3& Position
+	) :
+		GameObject(StagePtr),
+		m_TexKey(TexKey),
+		m_NormalTexKey(NormalTexKey),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position)
+	{
+	}
+	FixedNormalBox::~FixedNormalBox() {}
+
+	//初期化
+	void FixedNormalBox::OnCreate() {
+
+		auto PtrTransform = GetComponent<Transform>();
+
+		PtrTransform->SetScale(m_Scale);
+		PtrTransform->SetRotation(m_Rotation);
+		PtrTransform->SetPosition(m_Position);
+
+		//衝突判定
+		auto PtrObb = AddComponent<CollisionObb>();
+		PtrObb->SetFixed(true);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_CUBE");
+		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetFogEnabled(true);
+		//フォグはきつめに
+		PtrDraw->SetFogColor(Color4(0.3f, 0.3f, 0.3f, 1.0f));
+		PtrDraw->SetFogStart(-10.0f);
+		PtrDraw->SetFogEnd(-30.0f);
+		PtrDraw->SetTextureResource(m_TexKey);
+		PtrDraw->SetNormalMapTextureResource(m_NormalTexKey);
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	//	class MoveBox : public GameObject;
 	//	用途: 上下移動するボックス
 	//--------------------------------------------------------------------------------------
@@ -286,14 +336,18 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetOwnShadowActive(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
 
-		auto Group = GetStage()->GetSharedObjectGroup(L"MoveBox");
-		Group->IntoGroup(GetThis<GameObject>());
+		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_CUBE");
+		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetFogEnabled(true);
+		//フォグはきつめに
+		PtrDraw->SetFogColor(Color4(0.3f, 0.3f, 0.3f, 1.0f));
+		PtrDraw->SetFogStart(-10.0f);
+		PtrDraw->SetFogEnd(-30.0f);
+		PtrDraw->SetTextureResource(L"RED_TX");
+		PtrDraw->SetNormalMapTextureResource(L"FLOOR_NORMAL_TX");
+
 
 
 	}
@@ -340,14 +394,14 @@ namespace basecross{
 	UnevenGroundData::~UnevenGroundData() {}
 	//初期化
 	void UnevenGroundData::OnCreate() {
-		vector<VertexPositionNormalTexture> vertices =
+		vector<VertexPositionNormalTangentTexture> vertices =
 		{
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3( 0.0f, 0.5f, 0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 0.5f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 0.0f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3( 0.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 0.5f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3( 1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 1.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3( 1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector2( 1.0f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.0f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3( 0.0f, 0.5f, 0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector4(0.0f,0.0f,0.0f,1.0f),Vector2( 0.5f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.0f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3( 0.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.5f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3( 1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 1.0f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vector3( 1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = {
@@ -356,12 +410,13 @@ namespace basecross{
 			1, 4, 5 ,
 			3, 1, 5
 		};
+		MeshUtill::SetNormalTangent(vertices);
 		wstring CheckStr = L"UnevenGroundMesh";
 		//リソースが登録されているか確認し、登録されてなければ作成
 		//こうしておくとほかのステージでもメッシュを使える
 		if (!App::GetApp()->CheckResource<MeshResource>(CheckStr)) {
 			//頂点を使って表示用メッシュリソースの作成
-			auto mesh = MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, false);
+			auto mesh = MeshResource::CreateMeshResource<VertexPositionNormalTangentTexture>(vertices, indices, false);
 			//表示用メッシュをリソースに登録
 			App::GetApp()->RegisterResource(CheckStr, mesh);
 			//ワイアフレーム表示用のメッシュの作成
@@ -422,13 +477,15 @@ namespace basecross{
 		auto PtrTriangle = AddComponent<CollisionTriangles>();
 		PtrTriangle->SetMakedTriangles(DataPtr->GetTriangles());
 		PtrTriangle->SetWireFrameMesh(L"UnevenGroundWireMesh");
-		PtrTriangle->SetDrawActive(true);
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
+		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
 		PtrDraw->SetMeshResource(L"UnevenGroundMesh");
+		PtrDraw->SetTextureResource(L"BROWN2_TX");
+		PtrDraw->SetNormalMapTextureResource(L"WALL2_NORMAL_TX");
+		//スペキュラー弱め
+		PtrDraw->SetSpecularColor(Color4(0.3f, 0.3f, 0.3f, 0));
+		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetOwnShadowActive(true);
-		PtrDraw->SetTextureResource(L"WALL_TX");
 
 	}
 

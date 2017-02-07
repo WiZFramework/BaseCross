@@ -8,8 +8,8 @@
 
 namespace basecross {
 
-	IMPLEMENT_DX12SHADER(VSPCDirect, App::GetApp()->m_wstrRelativeShadersPath + L"VSPCDirect.cso")
-	IMPLEMENT_DX12SHADER(PSPCDirect, App::GetApp()->m_wstrRelativeShadersPath + L"PSPCDirect.cso")
+	IMPLEMENT_DX12SHADER(VSPCDirect, App::GetApp()->GetShadersPath() + L"VSPCDirect.cso")
+	IMPLEMENT_DX12SHADER(PSPCDirect, App::GetApp()->GetShadersPath() + L"PSPCDirect.cso")
 
 
 }

@@ -32,6 +32,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <stack>
 #include <set>
 #include <functional>
 #include <algorithm>

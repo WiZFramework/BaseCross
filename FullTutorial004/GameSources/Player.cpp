@@ -202,8 +202,6 @@ namespace basecross{
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
 
-		//PtrCol->SetDrawActive(true);
-
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
 		PtrString->SetText(L"");
@@ -215,14 +213,11 @@ namespace basecross{
 		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
-		//透明処理
-		SetAlphaActive(true);
+		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_SPHERE");
+		PtrDraw->SetTextureResource(L"BROWN_TX");
+		PtrDraw->SetNormalMapTextureResource(L"NORMAL1_TX");
+
 		//0番目のビューのカメラを得る
 		//LookAtCameraである
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera());
