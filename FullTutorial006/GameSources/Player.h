@@ -8,83 +8,117 @@
 
 namespace basecross{
 
-
-
 	//--------------------------------------------------------------------------------------
-	//	class Player : public GameObject;
-	//	用途: プレイヤー
+	///	飛んでいくボール
 	//--------------------------------------------------------------------------------------
-	class Player : public GameObject {
-		shared_ptr< StateMachine<Player> >  m_StateMachine;	//ステートマシーン
-															//移動の向きを得る
-		Vector3 GetAngle();
-		//最高速度
-		float m_MaxSpeed;
-		//減速率
-		float m_Decel;
-		//質量
-		float m_Mass;
-		//文字列の表示
-		void DrawStrings();
+	class AttackBall : public GameObject {
 	public:
 		//構築と破棄
-		Player(const shared_ptr<Stage>& StagePtr);
-		virtual ~Player() {}
+		AttackBall(const shared_ptr<Stage>& StagePtr);
+		virtual ~AttackBall();
+		void Weakup(const Vector3& Position, const Vector3& Velocity);
 		//初期化
 		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+	};
+
+
+	//Aボタンで動作するアクション
+	enum class PlayerAction {
+		Jump,
+		Attack
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	プレイヤー
+	//--------------------------------------------------------------------------------------
+	class Player : public GameObject {
+		//文字列の表示
+		void DrawStrings();
+		//入力ハンドラー
+		InputHandler<Player> m_InputHandler;
+		//プレイヤーのAボタンによる行動
+		PlayerAction m_PlayerAction;
+		//ステートマシーン
+		unique_ptr<LayeredStateMachine<Player>>  m_StateMachine;
+	public:
+		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	StagePtr	ステージ
+		*/
+		//--------------------------------------------------------------------------------------
+		Player(const shared_ptr<Stage>& StagePtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~Player() {}
 		//アクセサ
-		shared_ptr< StateMachine<Player> > GetStateMachine() const {
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートマシンを得る
+		@return	ステートマシン
+		*/
+		//--------------------------------------------------------------------------------------
+		unique_ptr<LayeredStateMachine<Player>>& GetStateMachine() {
 			return m_StateMachine;
 		}
-		//モーションを実装する関数群
-		//移動して向きを移動方向にする
-		void MoveRotationMotion();
-		//Aボタンでジャンプするどうかを得る
-		bool IsJumpMotion();
-		//Aボタンでジャンプする瞬間の処理
-		void JumpMotion();
-		//Aボタンでジャンプしている間の処理
-		//ジャンプ終了したらtrueを返す
-		bool JumpMoveMotion();
+		//初期化
+		virtual void OnCreate() override;
 		//更新
 		virtual void OnUpdate() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
+		//Aボタン
+		void OnPushA();
+		//Bボタン
+		void OnPushB();
 	};
 
+
 	//--------------------------------------------------------------------------------------
-	//	class DefaultState : public ObjState<Player>;
-	//	用途: 通常移動
+	///	通常ステート
 	//--------------------------------------------------------------------------------------
-	class DefaultState : public ObjState<Player>
+	class PlayerDefaultState : public ObjState<Player>
 	{
-		DefaultState() {}
+		PlayerDefaultState() {}
 	public:
 		//ステートのインスタンス取得
-		static shared_ptr<DefaultState> Instance();
-		//ステートに入ったときに呼ばれる関数
+		DECLARE_SINGLETON_INSTANCE(PlayerDefaultState)
 		virtual void Enter(const shared_ptr<Player>& Obj)override;
-		//ステート実行中に毎ターン呼ばれる関数
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
-		//ステートにから抜けるときに呼ばれる関数
 		virtual void Exit(const shared_ptr<Player>& Obj)override;
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class JumpState : public ObjState<Player>;
-	//	用途: ジャンプ状態
+	///	ジャンプステート
 	//--------------------------------------------------------------------------------------
-	class JumpState : public ObjState<Player>
+	class PlayerJumpState : public ObjState<Player>
 	{
-		JumpState() {}
+		PlayerJumpState() {}
 	public:
 		//ステートのインスタンス取得
-		static shared_ptr<JumpState> Instance();
-		//ステートに入ったときに呼ばれる関数
+		DECLARE_SINGLETON_INSTANCE(PlayerJumpState)
 		virtual void Enter(const shared_ptr<Player>& Obj)override;
-		//ステート実行中に毎ターン呼ばれる関数
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
-		//ステートにから抜けるときに呼ばれる関数
+		virtual void Exit(const shared_ptr<Player>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	アタックステート
+	//--------------------------------------------------------------------------------------
+	class PlayerAttackState : public ObjState<Player>
+	{
+		PlayerAttackState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(PlayerAttackState)
+		virtual void Enter(const shared_ptr<Player>& Obj)override;
+		virtual void Execute(const shared_ptr<Player>& Obj)override;
 		virtual void Exit(const shared_ptr<Player>& Obj)override;
 	};
 

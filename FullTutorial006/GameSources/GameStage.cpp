@@ -12,29 +12,6 @@ namespace basecross {
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
 
-
-	//リソースの作成
-	void GameStage::CreateResourses() {
-		wstring DataDir;
-		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
-		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"trace.png";
-		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-		strTexture = DataDir + L"sky.jpg";
-		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"wall.jpg";
-		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
-
-		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir,L"Chara_R.bmf");
-		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
-		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
-		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
-	}
-
-
-
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
 		auto PtrView = CreateView<SingleView>();
@@ -55,7 +32,7 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
+		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
@@ -64,9 +41,9 @@ namespace basecross {
 		auto ColPtr = Ptr->AddComponent<CollisionRect>();
 		//描画コンポーネントの追加
 		auto DrawComp = Ptr->AddComponent<BcPNTStaticDraw>();
-		DrawComp->SetFogEnabled(true);
 		//描画コンポーネントに形状（メッシュ）を設定
 		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
+		DrawComp->SetFogEnabled(true);
 		//自分に影が映りこむようにする
 		DrawComp->SetOwnShadowActive(true);
 
@@ -80,15 +57,20 @@ namespace basecross {
 		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
 		//配列の初期化
 		vector<Vector3> Vec = {
-			{ 0, 2.0f, 10.0f },
+			{ 0, 0.125f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
 			{ 0, 0.125f, -10.0f },
 		};
+
 		//配置オブジェクトの作成
-		for (auto v : Vec) {
-			AddGameObject<SeekObject>(v);
+		//ナンバースクエアの作成
+		for (size_t count = 0; count < Vec.size(); count++) {
+			auto Ptr = AddGameObject<SeekObject>(Vec[count]);
+			//ナンバースクエアを作成して関連させる
+			AddGameObject<NumberSquare>(Ptr, count);
 		}
+
 	}
 
 
@@ -130,6 +112,20 @@ namespace basecross {
 		}
 	}
 
+	//プレイヤーの作成
+	void GameStage::CreatePlayer() {
+
+		CreateSharedObjectGroup(L"AttackBall");
+		//アタックボールは10個用意する
+		for (int i = 0; i < 10; i++) {
+			AddGameObject<AttackBall>();
+		}
+
+		//プレーヤーの作成
+		auto PlayerPtr = AddGameObject<Player>();
+		//シェア配列にプレイヤーを追加
+		SetSharedGameObject(L"Player", PlayerPtr);
+	}
 
 	//上下移動しているボックスの作成
 	void GameStage::CreateMoveBox() {
@@ -145,7 +141,8 @@ namespace basecross {
 	void GameStage::CreateSphere() {
 		//配列の初期化
 		vector<Vector3> Vec = {
-			{ 20.0f, 0, 20.0f },
+			{ 20.0f, 0, 25.0f },
+			{ 20.0f, 0, 0.0f },
 		};
 		//配置オブジェクトの作成
 		for (auto v : Vec) {
@@ -153,17 +150,69 @@ namespace basecross {
 		}
 	}
 
-	//ヒットするカプセルの作成
-	void GameStage::CreateCapsule() {
-		//配列の初期化
-		vector<Vector3> Vec = {
-			{ 20.0f, 0, 0.0f },
-		};
-		//配置オブジェクトの作成
-		for (auto v : Vec) {
-			AddGameObject<CapsuleObject>(v);
-		}
 
+	//半透明のスプライト作成
+	void GameStage::CreateTraceSprite() {
+		AddGameObject<TraceSprite>( true,
+			Vector2(200.0f, 200.0f), Vector2(-500.0f, -280.0f));
+	}
+
+
+	//壁模様のスプライト作成
+	void GameStage::CreateWallSprite() {
+		AddGameObject<WallSprite>(L"WALL_TX", false,
+			Vector2(200.0f, 200.0f), Vector2(500.0f, -280.0f));
+	}
+
+
+	//スクロールするスプライト作成
+	void GameStage::CreateScrollSprite() {
+		AddGameObject<ScrollSprite>(L"TRACE_TX",true,
+			Vector2(160.0f, 40.0f),Vector2(500.0f,-280.0f));
+	}
+
+	//左上で回転する立方体
+	void GameStage::CreateRollingCube() {
+		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
+		AddGameObject<RollingCube>(true,
+			Vector3(64.0f,64.0f,64.0f), 
+			Qt,
+			Vector3(-440,320,100.0f)
+			);
+
+	}
+
+	//左上で回転するWall立方体
+	void GameStage::CreateRollingWallCube() {
+		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
+		AddGameObject<RollingWallCube>(
+			L"WALL_TX",
+			false,
+			Vector3(64.0f, 64.0f, 64.0f),
+			Qt,
+			Vector3(-320, 320, 100.0f)
+			);
+
+	}
+	//白い立方体
+	void GameStage::CreateWhiteCube() {
+		Quaternion Qt(Vector3(0.0f, 1.0, 1.0), 0);
+		AddGameObject<WhiteCube>(
+			Vector3(1.0f, 1.0f, 1.0f),
+			Qt,
+			Vector3(0.0f,1.0f, 10.0f)
+			);
+
+	}
+	//形状が変わる球体
+	void GameStage::CreateTransSphere() {
+		AddGameObject<TransSphere>(
+			L"WALL_TX",
+			false,
+			Vector3(1.0f, 1.0f, 1.0f),
+			Quaternion(),
+			Vector3(10.0f, 2.0f, 10.0f)
+			);
 	}
 
 	//でこぼこ床の作成
@@ -239,207 +288,6 @@ namespace basecross {
 			},
 
 
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 5.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 7.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 9.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 11.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 13.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 13.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 15.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 15.0f)
-			},
-
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 5.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 7.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 9.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 11.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 13.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 13.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 15.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 15.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 5.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 7.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 9.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 11.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 13.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 13.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 15.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 15.0f)
-			},
-
-
-
 		};
 		//オブジェクトの作成
 		for (auto v : Vec) {
@@ -449,28 +297,25 @@ namespace basecross {
 	}
 
 
-	//固定のモデルの作成
-	void GameStage::CreateStaticModel() {
-		AddGameObject<StaticModel>(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(5.0f, 0.25f, 5.0f)
-			);
+	//スパークの作成
+	void GameStage::CreateSpark() {
+		auto MultiSparkPtr = AddGameObject<MultiSpark>();
+		//共有オブジェクトにスパークを登録
+		SetSharedGameObject(L"MultiSpark", MultiSparkPtr);
+	}
+	//炎の作成
+	void GameStage::CreateFire() {
+		auto MultiFirePtr = AddGameObject<MultiFire>();
+		//共有オブジェクトに炎を登録
+		SetSharedGameObject(L"MultiFire", MultiFirePtr);
+	}
 
-	}
-	//プレイヤーの作成
-	void GameStage::CreatePlayer() {
-		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>();
-		//シェア配列にプレイヤーを追加
-		SetSharedGameObject(L"Player", PlayerPtr);
-	}
+
+
 
 
 	void GameStage::OnCreate() {
 		try {
-			//リソースの作成
-			CreateResourses();
 			//ビューとライトの作成
 			CreateViewLight();
 			//プレートの作成
@@ -481,14 +326,28 @@ namespace basecross {
 			CreateMoveBox();
 			//球体作成
 			CreateSphere();
-			//カプセルの作成
-			CreateCapsule();
-			//固定のモデルの作成
-			CreateStaticModel();
 			//追いかけるオブジェクトの作成
 			CreateSeekObject();
+			//半透明のスプライト作成
+			CreateTraceSprite();
+			//壁模様のスプライト作成
+			CreateWallSprite();
+			//スクロールするスプライト作成
+			CreateScrollSprite();
+			//左上で回転する立方体
+			CreateRollingCube();
+			//左上で回転するWall立方体
+			CreateRollingWallCube();
+			//白い立方体
+			CreateWhiteCube();
+			//左上で形状が変わる球体
+			CreateTransSphere();
 			//でこぼこ床の作成
 			CreateUnevenGround();
+			//スパークの作成
+			CreateSpark();
+			//炎の作成
+			CreateFire();
 			//プレーヤーの作成
 			CreatePlayer();
 		}

@@ -8,6 +8,528 @@
 
 namespace basecross{
 
+	//--------------------------------------------------------------------------------------
+	//class MultiSpark : public MultiParticle;
+	//用途: 複数のスパーククラス
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	MultiSpark::MultiSpark(shared_ptr<Stage>& StagePtr) :
+		MultiParticle(StagePtr)
+	{}
+	MultiSpark::~MultiSpark() {}
+
+	//初期化
+	void MultiSpark::OnCreate() {
+	}
+
+
+	void MultiSpark::InsertSpark(const Vector3& Pos) {
+		auto ParticlePtr = InsertParticle(4);
+		ParticlePtr->SetEmitterPos(Pos);
+		ParticlePtr->SetTextureResource(L"SPARK_TX");
+		ParticlePtr->SetMaxTime(0.5f);
+		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+			//各パーティクルの移動速度を指定
+			rParticleSprite.m_Velocity = Vector3(
+				rParticleSprite.m_LocalPos.x * 5.0f,
+				rParticleSprite.m_LocalPos.y * 5.0f,
+				rParticleSprite.m_LocalPos.z * 5.0f
+			);
+			//色の指定
+			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
+	//--------------------------------------------------------------------------------------
+	//class MultiFire : public MultiParticle;
+	//用途: 複数の炎クラス
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	MultiFire::MultiFire(shared_ptr<Stage>& StagePtr) :
+		MultiParticle(StagePtr)
+	{}
+	MultiFire::~MultiFire() {}
+
+	//初期化
+	void MultiFire::OnCreate() {
+	}
+
+	void MultiFire::InsertFire(const Vector3& Pos) {
+		auto ParticlePtr = InsertParticle(4);
+		ParticlePtr->SetEmitterPos(Pos);
+		ParticlePtr->SetTextureResource(L"FIRE_TX");
+		ParticlePtr->SetMaxTime(0.5f);
+		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+			//各パーティクルの移動速度を指定
+			rParticleSprite.m_Velocity = Vector3(
+				rParticleSprite.m_LocalPos.x * 5.0f,
+				rParticleSprite.m_LocalPos.y * 5.0f,
+				rParticleSprite.m_LocalPos.z * 5.0f
+			);
+			//色の指定
+			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	半透明のスプライト
+	//--------------------------------------------------------------------------------------
+	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
+		const Vector2& StartScale, const Vector2& StartPos):
+		GameObject(StagePtr),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+	TraceSprite::~TraceSprite() {}
+	void TraceSprite::OnCreate() {
+		float HelfSize = 0.5f;
+		//頂点配列
+		m_BackupVertices = {
+			{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0.0f,0.0f,0.0f)) },
+			{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 0.0f)) },
+			{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 0.0f)) },
+			{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 0.0f)) },
+		};
+		//インデックス配列
+		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+		SetAlphaActive(m_Trace);
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+		PtrTransform->SetRotation(0, 0, 0);
+		PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y, 0.0f);
+		//頂点とインデックスを指定してスプライト作成
+		auto PtrDraw = AddComponent<PCSpriteDraw>(m_BackupVertices, indices);
+	}
+	void TraceSprite::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+		vector<VertexPositionColor> NewVertices;
+		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
+			Color4 col = m_BackupVertices[i].color;
+			col.w = sin(m_TotalTime);
+			auto v = VertexPositionColor(
+				m_BackupVertices[i].position,
+				col
+			);
+			NewVertices.push_back(v);
+		}
+		auto PtrDraw = GetComponent<PCSpriteDraw>();
+		PtrDraw->UpdateVertices(NewVertices);
+
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	壁模様のスプライト
+	//--------------------------------------------------------------------------------------
+	WallSprite::WallSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
+		const Vector2& StartScale, const Vector2& StartPos):
+		GameObject(StagePtr),
+		m_TextureKey(TextureKey),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartPos(StartPos)
+	{}
+
+	WallSprite::~WallSprite() {}
+	void WallSprite::OnCreate() {
+		float HelfSize = 0.5f;
+		//頂点配列(縦横5個ずつ表示)
+		vector<VertexPositionColorTexture> vertices = {
+			{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,1.0f,1.0f,1.0f), Vector2(0.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 1.0f, 1.0f), Vector2(5.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f), Vector2(0.0f, 5.0f)) },
+			{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 1.0f), Vector2(5.0f, 5.0f)) },
+		};
+		//インデックス配列
+		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+		SetAlphaActive(m_Trace);
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+		PtrTransform->SetRotation(0, 0, 0);
+		PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y, 0.0f);
+		//頂点とインデックスを指定してスプライト作成
+		auto PtrDraw = AddComponent<PCTSpriteDraw>(vertices, indices);
+		PtrDraw->SetWrapSampler(true);
+		PtrDraw->SetTextureResource(m_TextureKey);
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	スクロールするスプライト
+	//--------------------------------------------------------------------------------------
+	ScrollSprite::ScrollSprite(const shared_ptr<Stage>& StagePtr,
+		const wstring& TextureKey, bool Trace, 
+		const Vector2& StartScale, const Vector2& StartPos):
+		GameObject(StagePtr),
+		m_TextureKey(TextureKey),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	ScrollSprite::~ScrollSprite() {}
+	void ScrollSprite::OnCreate() {
+		float HelfSize = 0.5f;
+		//頂点配列
+		m_BackupVertices = {
+			{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
+			{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(4.0f, 0.0f)) },
+			{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 1.0f)) },
+			{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(4.0f, 1.0f)) },
+		};
+		//インデックス配列
+		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+		SetAlphaActive(m_Trace);
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale.x, m_StartScale.y,1.0f);
+		PtrTransform->SetRotation(0,0,0);
+		PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y,0.0f);
+		//頂点とインデックスを指定してスプライト作成
+		auto PtrDraw = AddComponent<PTSpriteDraw>(m_BackupVertices, indices);
+		PtrDraw->SetWrapSampler(true);
+		PtrDraw->SetTextureResource(m_TextureKey);
+	}
+	void ScrollSprite::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime > 1.0f) {
+			m_TotalTime = 0;
+		}
+		vector<VertexPositionTexture> NewVertices;
+		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
+			Vector2 UV = m_BackupVertices[i].textureCoordinate;
+			if (UV.x == 0.0f) {
+				UV.x = m_TotalTime;
+			}
+			else if (UV.x == 4.0f) {
+				UV.x += m_TotalTime;
+			}
+			auto v = VertexPositionTexture(
+				m_BackupVertices[i].position,
+				UV
+			);
+			NewVertices.push_back(v);
+		}
+		auto PtrDraw = GetComponent<PTSpriteDraw>();
+		PtrDraw->UpdateVertices(NewVertices);
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	左上で回転する立方体
+	//--------------------------------------------------------------------------------------
+	RollingCube::RollingCube(const shared_ptr<Stage>& StagePtr, bool Trace,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos):
+		GameObject(StagePtr),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	RollingCube::~RollingCube() {}
+
+	void RollingCube::OnCreate() {
+		SetAlphaActive(m_Trace);
+		Viewport viewport;
+		viewport.Width = static_cast<float>(App::GetApp()->GetGameWidth());
+		viewport.Height = static_cast<float>(App::GetApp()->GetGameHeight());
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0;
+		viewport.MaxDepth = 1.0f;
+		m_Camera = ObjectFactory::Create<Camera>();
+		m_Camera->SetViewPort(viewport);
+		//遠近法無し
+		m_Camera->SetPers(false);
+		m_Camera->CalculateMatrix();
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+		auto PtrDraw = AddComponent<PCDynamicDraw>();
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f,vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionColor new_v;
+			new_v.position = vertices[i].position;
+			switch (i % 3) {
+			case 0:
+				new_v.color = Color4(1.0f, 0, 0, 1.0f);
+				break;
+			case 1:
+				new_v.color = Color4(0.0f, 1.0, 0, 1.0f);
+				break;
+			case 2:
+				new_v.color = Color4(0.0f, 0, 1.0, 1.0f);
+				break;
+			default:
+				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				break;
+			}
+			m_BackupVertices.push_back(new_v);
+
+		}
+		PtrDraw->CreateMesh(m_BackupVertices, indices);
+
+	}
+	const shared_ptr<Camera>& RollingCube::OnGetDrawCamera() const {
+		return m_Camera;
+	}
+
+	void RollingCube::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
+			m_BackupVertices[i].color.w = sin(m_TotalTime);
+		}
+		auto PtrDraw = GetComponent<PCDynamicDraw>();
+		PtrDraw->UpdateVertices(m_BackupVertices);
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	左上で回転するWall立方体
+	//--------------------------------------------------------------------------------------
+	RollingWallCube::RollingWallCube(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos) :
+		GameObject(StagePtr),
+		m_TextureKey(TextureKey),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	RollingWallCube::~RollingWallCube() {}
+
+	void RollingWallCube::OnCreate() {
+		SetAlphaActive(m_Trace);
+		Viewport viewport;
+		viewport.Width = static_cast<float>(App::GetApp()->GetGameWidth());
+		viewport.Height = static_cast<float>(App::GetApp()->GetGameHeight());
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0;
+		viewport.MaxDepth = 1.0f;
+		m_Camera = ObjectFactory::Create<Camera>();
+		m_Camera->SetViewPort(viewport);
+		//遠近法無し
+		m_Camera->SetPers(false);
+		m_Camera->CalculateMatrix();
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+		auto PtrDraw = AddComponent<PTStaticDraw>();
+
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionTexture> new_vertices;
+
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionTexture new_v;
+			new_v.position = vertices[i].position;
+			new_v.textureCoordinate = vertices[i].textureCoordinate;
+			new_vertices.push_back(new_v);
+		}
+		m_MeshResource = MeshResource::CreateMeshResource(new_vertices, indices,false);
+
+		PtrDraw->SetMeshResource(m_MeshResource);
+		PtrDraw->SetTextureResource(m_TextureKey);
+
+	}
+	const shared_ptr<Camera>& RollingWallCube::OnGetDrawCamera() const {
+		return m_Camera;
+	}
+
+	void RollingWallCube::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	白い立方体
+	//--------------------------------------------------------------------------------------
+	WhiteCube::WhiteCube(const shared_ptr<Stage>& StagePtr,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos):
+		GameObject(StagePtr),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	void WhiteCube::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionNormal> new_vertices;
+
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionNormal new_v;
+			new_v.position = vertices[i].position;
+			new_v.normal = vertices[i].normal;
+			new_vertices.push_back(new_v);
+		}
+		m_MeshResource = MeshResource::CreateMeshResource(new_vertices, indices, false);
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetMeshResource(m_MeshResource);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+	}
+	void WhiteCube::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime;
+		if (m_TotalTime >= XM_PI) {
+			m_TotalTime = 0;
+		}
+
+	}
+
+
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	形状が変わる球体
+	//--------------------------------------------------------------------------------------
+	TransSphere::TransSphere(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
+		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos) :
+		GameObject(StagePtr),
+		m_TextureKey(TextureKey),
+		m_Trace(Trace),
+		m_StartScale(StartScale),
+		m_StartQt(StartQt),
+		m_StartPos(StartPos),
+		m_TotalTime(0)
+	{}
+
+	TransSphere::~TransSphere() {}
+
+	void TransSphere::OnCreate() {
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_StartScale);
+		PtrTransform->SetQuaternion(m_StartQt);
+		PtrTransform->SetPosition(m_StartPos);
+
+
+
+		auto PtrDraw = AddComponent<PCTDynamicDraw>();
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateSphere(1.0f,18, vertices, indices);
+		for (size_t i = 0; i < vertices.size(); i++) {
+			VertexPositionColorTexture new_v;
+			new_v.position = vertices[i].position;
+			new_v.textureCoordinate = vertices[i].textureCoordinate;
+			new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_BackupVertices.push_back(new_v);
+			m_RuntimeVertices.push_back(new_v);
+
+		}
+		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		PtrDraw->SetTextureResource(m_TextureKey);
+		SetAlphaActive(m_Trace);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(PtrDraw->GetMeshResource());
+
+
+	}
+
+	void TransSphere::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+
+		auto PtrTransform = GetComponent<Transform>();
+		auto Qt = PtrTransform->GetQuaternion();
+		Qt *= QtSpan;
+		PtrTransform->SetQuaternion(Qt);
+
+		m_TotalTime += ElapsedTime * 5.0f;
+		if (m_TotalTime >= XM_2PI) {
+			m_TotalTime = 0;
+		}
+		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
+			auto  Pos = m_BackupVertices[i].position;
+			auto Len = (sin(m_TotalTime) * 0.5f) + 1.0f;
+			Pos.x *= Len;
+			Pos.z *= Len;
+			m_RuntimeVertices[i].position = Pos;
+		}
+		auto PtrDraw = GetComponent<PCTDynamicDraw>();
+		PtrDraw->UpdateVertices(m_RuntimeVertices);
+	}
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	class SeekObject : public GameObject;
@@ -30,8 +552,6 @@ namespace basecross{
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-		PtrRegid->SetReflection(0.5f);
 		//Seek操舵
 		auto PtrSeek = AddComponent<SeekSteering>();
 		//Arrive操舵
@@ -49,15 +569,17 @@ namespace basecross{
 		auto PtrColl = AddComponent<CollisionSphere>();
 		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
 		PtrColl->SetCalcScaling(CalcScaling::YScale);
+		PtrColl->SetDrawActive(true);
 
 		//重力をつける
 		auto PtrGravity = AddComponent<Gravity>();
+
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 		//透明処理をする
@@ -135,11 +657,15 @@ namespace basecross{
 	}
 
 	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		//ファイアの放出
+		auto PtriFire = GetStage()->GetSharedGameObject<MultiFire>(L"MultiFire", false);
+		if (PtriFire) {
+			PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
+		}
 
 	}
-
 	//進行方向を向くようにする
-	void SeekObject::RotToHead(){
+	void SeekObject::RotToHead() {
 		auto PtrTrans = GetComponent<Transform>();
 		auto PtrRigidbody = GetComponent<Rigidbody>();
 		//回転の更新
@@ -159,7 +685,9 @@ namespace basecross{
 			NowQt.Slerp(NowQt, Qt, 0.1f);
 			PtrTrans->SetQuaternion(NowQt);
 		}
+
 	}
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
@@ -202,54 +730,102 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
-	//	class StaticModel : public GameObject;
-	//	用途: 固定のモデル
+	//	数字のスクエア
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	StaticModel::StaticModel(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
-	) :
+	NumberSquare::NumberSquare(const shared_ptr<Stage>& StagePtr,
+		const shared_ptr<SeekObject>& SeekObjectPtr, size_t Number) :
 		GameObject(StagePtr),
-		m_Scale(Scale),
-		m_Rotation(Rotation),
-		m_Position(Position)
-	{
-	}
-	StaticModel::~StaticModel() {}
+		m_SeekObject(SeekObjectPtr),
+		m_Number(Number)
+	{}
+	NumberSquare::~NumberSquare() {}
 
 	//初期化
-	void StaticModel::OnCreate() {
+	void NumberSquare::OnCreate() {
+
 		auto PtrTransform = GetComponent<Transform>();
+		if (!m_SeekObject.expired()) {
+			auto SeekPtr = m_SeekObject.lock();
+			auto SeekTransPtr = SeekPtr->GetComponent<Transform>();
+			auto Pos = SeekTransPtr->GetPosition();
+			Pos.y += 0.75f;
+			PtrTransform->SetPosition(Pos);
+			PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
+			PtrTransform->SetQuaternion(SeekTransPtr->GetQuaternion());
+			//変更できるスクエアリソースを作成
 
-		PtrTransform->SetScale(m_Scale);
-		PtrTransform->SetRotation(m_Rotation);
-		PtrTransform->SetPosition(m_Position);
+			//頂点配列
+			vector<VertexPositionNormalTexture> vertices;
+			//インデックスを作成するための配列
+			vector<uint16_t> indices;
+			//Squareの作成(ヘルパー関数を利用)
+			MeshUtill::CreateSquare(1.0f, vertices, indices);
+			//UV値の変更
+			float from = ((float)m_Number) / 10.0f;
+			float to = from + (1.0f / 10.0f);
+			//左上頂点
+			vertices[0].textureCoordinate = Vector2(from, 0);
+			//右上頂点
+			vertices[1].textureCoordinate = Vector2(to, 0);
+			//左下頂点
+			vertices[2].textureCoordinate = Vector2(from, 1.0f);
+			//右下頂点
+			vertices[3].textureCoordinate = Vector2(to, 1.0f);
+			//頂点の型を変えた新しい頂点を作成
+			vector<VertexPositionColorTexture> new_vertices;
+			for (auto& v : vertices) {
+				VertexPositionColorTexture nv;
+				nv.position = v.position;
+				nv.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				nv.textureCoordinate = v.textureCoordinate;
+				new_vertices.push_back(nv);
+			}
+			//新しい頂点を使ってメッシュリソースの作成
+			m_SquareMeshResource = MeshResource::CreateMeshResource<VertexPositionColorTexture>(new_vertices, indices, true);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.28f, 0.0f)
-		);
-
-		auto PtrColl = AddComponent<CollisionCapsule>();
-		PtrColl->SetFixed(true);
-	//	PtrColl->SetDrawActive(true);
-
-		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"MODEL_MESH");
-		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
-
-		auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"MODEL_MESH");
-		PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			auto DrawComp = AddComponent<PCTStaticDraw>();
+			DrawComp->SetMeshResource(m_SquareMeshResource);
+			DrawComp->SetTextureResource(L"NUMBER_TX");
+			SetAlphaActive(true);
+			SetDrawLayer(1);
+		}
 
 	}
+
+
+	//変化
+	void NumberSquare::OnUpdate() {
+
+		if (!m_SeekObject.expired()) {
+			auto SeekPtr = m_SeekObject.lock();
+			auto SeekTransPtr = SeekPtr->GetComponent<Transform>();
+
+			auto PtrTransform = GetComponent<Transform>();
+			auto Pos = SeekTransPtr->GetPosition();
+			Pos.y += 0.75f;
+			PtrTransform->SetPosition(Pos);
+			PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
+
+			auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
+
+			Quaternion Qt;
+			//向きをビルボードにする
+			Qt.Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
+
+			//向きをフェイシングにする場合は以下のようにする
+			// Qt.Facing(Pos - PtrCamera->GetEye());
+			//向きをフェイシングYにする場合は以下のようにする
+			// Qt.FacingY(Pos - PtrCamera->GetEye());
+			//向きをシークオブジェクトと同じにする場合は以下のようにする
+			// Qt = SeekTransPtr->GetQuaternion();
+
+			PtrTransform->SetQuaternion(Qt);
+
+		}
+
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -331,11 +907,13 @@ namespace basecross{
 		PtrAction->SetLooped(true);
 		//アクション開始
 		PtrAction->Run();
+
+
+
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		//描画コンポーネントの追加
 		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
@@ -376,36 +954,6 @@ namespace basecross{
 		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
-
-	}
-
-	//--------------------------------------------------------------------------------------
-	//	class CapsuleObject : public GameObject;
-	//	用途: 障害物カプセル
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	CapsuleObject::CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
-		GameObject(StagePtr),
-		m_StartPos(StartPos)
-	{}
-	CapsuleObject::~CapsuleObject() {}
-	//初期化
-	void CapsuleObject::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
-		PtrTransform->SetPosition(m_StartPos);
-		PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
-		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
-		//Capsuleの衝突判定をつける
-		auto CollPtr = AddComponent<CollisionCapsule>();
-		CollPtr->SetFixed(true);
-		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
-		PtrDraw->SetTextureResource(L"WALL_TX");
-
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -510,7 +1058,6 @@ namespace basecross{
 		PtrDraw->SetTextureResource(L"WALL_TX");
 
 	}
-
 
 
 

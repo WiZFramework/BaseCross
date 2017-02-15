@@ -433,7 +433,6 @@ namespace basecross {
 			////目指したい場所にアームの値と腕ベクトルでEyeを調整
 			Vector3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
 			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
-//			NewEye = NewAt + ArmVec * ArmLen;
 		}
 		SetAt(NewAt);
 		SetEye(NewEye);

@@ -13,7 +13,7 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>１０５．さまざまなオブジェクト</h3>
+<h3>１０５．階層化ステートマシンとリアルな描画</h3>
 このサンプルは<b>FullTutorial005</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 　リビルドして実行すると以下の画面が出てきます。
@@ -21,178 +21,357 @@
 <img src="img/0105a.png" width="80%"/>
 <p>図0105a</p>
 <p>&nbsp;</p>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/bSKrDyjgfvY?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+
 <br/>
-<h4>解説</h4>
-　ここにはいろんなタイプのオブジェクトが配置されています。<br />
-　また、オーディオも追加されています。
-<h4>オーディオ</h4>
-　オーディオのうちバックミュージックは「Scene.h/cpp」に記述があります。以下宣言部（抜粋）ですが
-<div class="box1">
-<pre>
-    class Scene : public SceneBase{
-        shared_ptr&lt;MultiAudioObject> m_AudioObjectPtr;
-    public:
-        //中略
-    };
-</pre>
-</div>
-　このように「m_AudioObjectPtr」を宣言します。<br />
-　そして、「Scene::OnCreate()関数」で以下のように記述します。
-<div class="box1">
-<pre>
-void Scene::OnCreate(){
-    try {
-        <span class="red"?wstring strMusic = App::GetApp()->m_wstrRelativeDataPath + L"nanika .wav";
-        App::GetApp()->RegisterWav(L"Nanika", strMusic);
-
-        //オーディオの初期化
-        m_AudioObjectPtr = ObjectFactory::Create&lt;MultiAudioObject>();
-        m_AudioObjectPtr->AddAudioResource(L"Nanika");
-        m_AudioObjectPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);</span>
-
-        //最初のアクティブステージの設定
-        ResetActiveStage&lt;GameStage>();
-    }
-    catch (...) {
-        throw;
-    }
-}
-</pre>
-</div>
-　これで、ゲーム中ミュージックが繰り返し再生されます。<br />
-　また、プレイヤーがジャンプしたタイミングでも音が鳴ります。<br />
+<h4>プレイヤー概要</h4>
+　今項のサンプルのプレイヤーは、前項とは少し違います。<br />
+　Bボタンを押すことによって、Aボタンの役割が変わります。起動直後は<b>Aボタンでジャンプ</b>します。これは前項と変わりません。しかし<b>Bボタン</b>を1回押した後<b>Aボタン</b>を押すと、プレイヤーから、<b>ボール</b>が発射されます。このボールは重力の影響を受けることがなく、何かに当たると、その角度に合わせて反発します。そして、ゲーム領域から外に出ると消えます。<br />
+　今回のプレイヤーには<b>階層化ステートマシン</b>が実装されてます。前項で紹介した<b>ステートマシン</b>とは少し扱いが変わります。<b>ステート</b>は同じクラスを使います。<br />
 <br />
-<h4>プレーヤー</h4>
-　続いてプレイヤーですが、前項との変更点は、サウンドの再生とエフェクトの再生です。<br />
-　サウンドは、準備として、「ゲームステージ」などでサウンドをリソース登録します。
+<h4>階層化ステートマシン</h4>
+　<b>階層化ステートマシン</b>を実装するには、<b>Player.h</b>の宣言部に、以下のように記述します。
 <div class="box1">
 <pre>
-void GameStage::CreateResourses() {
+//--------------------------------------------------------------------------------------
+/// プレイヤー
+//--------------------------------------------------------------------------------------
+class Player : public GameObject {
     //中略
-
-    wstring CursorWav = App::GetApp()->m_wstrRelativeDataPath + L"cursor.wav";
-    App::GetApp()->RegisterWav(L"Cursor", CursorWav);
-}
-</pre>
-</div>
-　このようにしておいて、プレイヤーの構築時に以下のように記述します。
-<div class="box1">
-<pre>
-void Player::OnCreate() {
-    //中略
-
-    //サウンドを登録.
-    <span class="red">auto pMultiSoundEffect = AddComponent&lt;MultiSoundEffect>();
-    pMultiSoundEffect->AddAudioResource(L"Cursor");</span>
-
-    //中略
-
-}
-</pre>
-</div>
-　最後に、ジャンプのタイミングで
-<div class="box1">
-<pre>
-void JumpPlayerBehavior::StartAction(const shared_ptr&lt;Player>& Obj) {
-
-    //中略
-
-    <span class="red">auto pMultiSoundEffect = Obj->GetComponent&lt;MultiSoundEffect>();
-    pMultiSoundEffect->Start(L"Cursor", 0, 0.5f);</span>
-}
-</pre>
-</div>
-　のように記述します。<br />
-　エフェクトは、「何かに衝突した瞬間に」なります。エフェクトは「ゲームオブジェクト」なので、まず「エフェクトクラス」を記述します。「Character.h/cpp」への記述です。まず宣言は、
-<div class="box1">
-<pre>
-class MultiSpark : public MultiParticle {
+    //階層化ステートマシーン
+    unique_ptr&lt;LayeredStateMachine&lt;Player>>  m_StateMachine;
 public:
-    //構築と破棄
-    MultiSpark(shared_ptr&lt;Stage>& StagePtr);
-    virtual ~MultiSpark();
+    //中略
+    //アクセサ
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  ステートマシンを得る
+    @return ステートマシン
+    */
+    //--------------------------------------------------------------------------------------
+    unique_ptr&lt;LayeredStateMachine&lt;Player>>& GetStateMachine() {
+        return m_StateMachine;
+    }
     //初期化
     virtual void OnCreate() override;
-    void InsertSpark(const Vector3& Pos);
+    //中略
 };
 </pre>
 </div>
-　のようになります。実体は、「MultiSpark::InsertSpark()関数」ですが、以下のように記述します。
+　そして、<b>Player::OnCreate()</b>に以下のように記述します。
 <div class="box1">
 <pre>
-void MultiSpark::InsertSpark(const Vector3& Pos) {
-    auto ParticlePtr = InsertParticle(4);
-    ParticlePtr->SetEmitterPos(Pos);
-    ParticlePtr->SetTextureResource(L"SPARK_TX");
-    ParticlePtr->SetMaxTime(0.5f);
-    vector&lt;ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
-    for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
-        rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
-        rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
-        rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
-        //各パーティクルの移動速度を指定
-        rParticleSprite.m_Velocity = Vector3(
-            rParticleSprite.m_LocalPos.x * 5.0f,
-            rParticleSprite.m_LocalPos.y * 5.0f,
-            rParticleSprite.m_LocalPos.z * 5.0f
-        );
-        //色の指定
-        rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    //初期化
+    void Player::OnCreate() {
+        //中略
+
+        //ステートマシンの構築
+        m_StateMachine.reset(new LayeredStateMachine&lt;Player>(GetThis&lt;Player>()));
+        //最初のステートをPlayerDefaultにリセット
+        <span class="red">m_StateMachine->Reset(PlayerDefaultState::Instance());</span>
+    }
+</pre>
+</div>
+　前項せ紹介したステートマシンは<b>ChangeState()関数</b>を使って、ステートの設定を行いますが、<b>階層化ステートマシン</b>の場合は<b>Reset()関数</b>を使います。<br />
+　<b>階層化ステートマシン</b>のステート変更方法は<b>3種類</b>あります。以下がその方法です。
+<div class="box1">
+<pre>
+１、Reset():  スタックをすべてクリアし、Topにステートを設定する
+２、Push():   スタックに指定のステートを積む。Topが新しいステートになる
+３、Pop():    スタックのTopからステートをなくす。Topの一つ下が新しいTopになる
+</pre>
+</div>
+　ここに<b>スタック</b>という言葉が出てきました。そうです。<b>階層化ステートマシン</b>は<b>ステートをスタックに積んだり（Push）外したり（Pop）して</b>ステートを操作します。<br />
+　この仕組みで、どういうメリットがあるかというと、<b>1つ前のステートに簡単に戻れる</b>ということです。<br />
+　例えば<b>敵と戦う</b>というステートがあるとします。そしてあるキャラクターは<b>逃げる</b>というステート中にあり、あるキャラクターは<b>うろつく</b>というステートにあるとします。<br />
+　そして両キャラクターが<b>敵に遭遇</b>したとします。<br />
+　<b>逃げる</b>ステートのキャラクターは<b>敵と戦う</b>ステートに移り、そして戦いが終わると<b>逃げる</b>に戻ります。<br />
+　<b>うろつく</b>ステートのキャラクターは<b>敵と戦う</b>ステートに移り、そして戦いが終わると<b>うろつく</b>に戻ります。<br />
+　これを、通常のステートマシンで実装するとすると、<b>現在のステート</b>をどこかに保持しておき、<b>戦いが終わった</b>ときにその一つ前のステートを取り出してそこに<b>チェンジステート</b>する必要があります。しかし<b>階層化ステートマシン</b>の場合、<b>Pop</b>で元のステートに戻れるのです。<br />
+　また、<b>階層化ステートマシン</b>にはスタックをクリアしてステートを変更する<b>Reset()</b>という関数があります。これは、広い意味では<b>普通のステートマシン</b>の<b>チェンジステート</b>と同じ意味になります。<br />
+<br />
+<h4>階層化ステートマシンを使ったステート側の処理</h4>
+　さて、<b>階層化ステートマシン</b>を使った場合、各ステートの呼び出される関数にも若干の違いがあります。<br />
+　<b>Push()</b>の場合は、新しいステートの<b>Enter()</b>が呼ばれますが、その際、元のステートには<b>Exit()</b>ではなく<b>Sleep()（つまり、眠る）</b>が呼ばれます。<br />
+　そして、<b>Pop()</b>で元のステートに戻ったときは、それまでのステートの<b>Exit()</b>が呼ばれますが、その時、スタックに積んであったステートの<b>WakeUp()（つまり、起きる）</b>が呼ばれます。<br />
+　つまり、スタックに自分の上に何らかのステートが乗っているときは<b>眠っている状態</b>と解釈されます。<b>Sleep()やWakeUp()</b>はほかの関数と違い、<b>純粋仮想関数</b>ではありません。ですから記述しなくてもビルドは通りますが、<b>Pop()で戻ってきたはずなのにEnter()が呼ばれない</b>と悩む前に、<b>WakeUp()</b>にコードを実装しましょう。<br />
+　<b>Enter()とWakeUp()</b>そして<b>Exit()とSleep()</b>を分けているのは細かな制御ができるためです。両方、それぞれ同じ処理で良ければ同じコードを書いておくか、<b>同じ行動クラス</b>を呼ぶようにしましょう。<br />
+　ちなみに、このサンプルは<b>WakeUp()やSleep()</b>は記述しなくても問題ないので実装がありません。<br/>
+<br />
+　さて、では具体的にプレイヤーの記述はどのようになっているか紹介します。<br />
+　まず、コントローラのハンドラです。今回はBボタンも使いますので、ハンドラにBボタンを追加します。<br />
+　以下は<b>ProjectBehavior.h</b>にあるハンドラですが
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// コントローラのボタンのハンドラ
+//--------------------------------------------------------------------------------------
+template&lt;typename T>
+struct InputHandler {
+    void PushHandle(const shared_ptr&lt;T>& Obj) {
+        //コントローラの取得
+        auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+        if (CntlVec[0].bConnected) {
+            //Aボタン
+            if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+                Obj->OnPushA();
+            }
+            //Bボタン
+            else if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+                Obj->OnPushB();
+            }
+
+        }
+    }
+};
+</pre>
+</div>
+　このように、<b>AとBボタン</b>を受け付けるように記述されてます。<br />
+　<b>Bボタン</b>で<b>Aボタン</b>の動作を変えます。通常はジャンプですが、1回Bボタンを押すと<b>アタックボールを発射する</b>になります。<br />
+　そして、そのハンドラのイベントの受付ですが、プレイヤーのヘッダに
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// プレイヤー
+//--------------------------------------------------------------------------------------
+class Player : public GameObject {
+    //中略
+    //入力ハンドラー
+    InputHandler&lt;Player> m_InputHandler;
+    //中略
+public:
+    //中略
+    //Aボタン
+    void OnPushA();
+    //Bボタン
+    void OnPushB();
+};
+</pre>
+</div>
+　と記述されてます。<b>OnPushA()とOnPushB()</b>でハンドラを受け付けるわけです。それぞれの関数は<b>Player.cpp</b>に
+<div class="box1">
+<pre>
+//Aボタン
+void  Player::OnPushA() {
+    if (GetStateMachine()->GetTopState() == PlayerDefaultState::Instance()) {
+        switch (m_PlayerAction) {
+        case PlayerAction::Jump:
+            <span class="red">GetStateMachine()->Push(PlayerJumpState::Instance());</span>
+            break;
+        case PlayerAction::Attack:
+            <span class="red">GetStateMachine()->Push(PlayerAttackState::Instance());</span>
+            break;
+        }
+    }
+}
+
+//Bボタン
+void  Player::OnPushB() {
+    switch (m_PlayerAction) {
+    case PlayerAction::Jump:
+        m_PlayerAction = PlayerAction::Attack;
+        break;
+    case PlayerAction::Attack:
+        m_PlayerAction = PlayerAction::Jump;
+        break;
     }
 }
 </pre>
 </div>
-　このようにしておいて、ステージでの構築時に、
+　ここに出てくる<b>m_PlayerAction</b>は<b>enum class</b>の変数で<b>Player.h</b>に
 <div class="box1">
 <pre>
-void GameStage::CreateSpark() {
-    auto MultiSparkPtr = AddGameObject&lt;MultiSpark>();
-    //共有オブジェクトにスパークを登録
-    SetSharedGameObject(L"MultiSpark", MultiSparkPtr);
-}
+    //Aボタンで動作するアクション
+    enum class PlayerAction {
+        Jump,
+        Attack
+    };
 </pre>
 </div>
-　とするとプレイヤーからアクセスできるようになるので、「プレイヤーの何かに衝突したタイミング」で、
+　と宣言されてます。つまり、<b>BボタンでAボタンの行動が変化する</b>という処理を実装するために<b>enum class</b>を使ってます。<br/>
+　<b>階層化ステートマシン</b>の実装は<b>Aボタンのハンドラ</b>に記述があります（赤くなっている部分です）。<b>Push()関数</b>を呼び出しています。<br />
+　では、<b>Pop()関数</b>はどこから呼ばれているかというと、ジャンプ処理の場合は<b>ジャンプステートのPlayerJumpState::Execute()関数</b>にあります。
+
 <div class="box1">
 <pre>
-void Player::OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) {
-    //最初に衝突するオブジェクトがあったとき
-    //スパークの放出
-    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
-    if (PtrSpark) {
-        PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+void PlayerJumpState::Execute(const shared_ptr&lt;Player>& Obj) {
+    //ジャンプ中も方向変更可能
+    auto PtrDefault = Obj->GetBehavior&lt;PlayerBehavior>();
+    PtrDefault->MovePlayer();
+    auto PtrJump = Obj->GetBehavior&lt;JumpBehavior>();
+    if (PtrJump->Execute()) {
+        <span class="red">Obj->GetStateMachine()->Pop();</span>
     }
-    //中略
 }
 </pre>
 </div>
-　と記述すればスパークエフェクトが出ます。<br />
-<br />
-<h4>SeekObjectクラス</h4>
-　SeekObjectは前項とほぼ同じですが、「球体の衝突判定」にすることと「ファイアのエフェクトを出す」が修正点です。エフェクトの送出はプレイヤーを参考にしてください。<br />
-　「球体の衝突判定」は、「SeekObject::OnCreate()関数」で以下のように記述します。
+　赤くなっている部分が<b>Pop()関数</b>を呼び出しているところです。<br />
+　<b>アタックステート</b>の場合は、ボールを発射したらすぐに<b>デフォルトステート</b>に戻ります
 <div class="box1">
 <pre>
-void SeekObject::OnCreate() {
-
-    //中略
-
-    //Sphereの衝突判定をつける
-    auto PtrColl = AddComponent&lt;CollisionSphere>();
-    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-    PtrColl->SetCalcScaling(CalcScaling::YScale);
-    PtrColl->SetDrawActive(true);
-
-    //中略
+void PlayerAttackState::Execute(const shared_ptr&lt;Player>& Obj) {
+    //すぐにステートを戻す
+    <span class="red">Obj->GetStateMachine()->Pop();</span>
 }
 </pre>
 </div>
-　ここで、「PtrColl->SetCalcScaling(CalcScaling::YScale);」となっているのは球体の直径を「Yスケール基準で」という設定です。このようにすると「SeekObject」が「でこぼこ床」に衝突するようになります。<br />
+　このように、<b>階層化ステートマシン</b>を使うと<b>Pop()関数</b>により<b>元のステートに戻る</b>という処理が書けるので、複雑なステート処理が必要な場合は便利に使えるでしょう。<br />
 <br />
-<h4>そのほかのオブジェクト</h4>
-　このサンプルには、たくさんのタイプのオブジェクトが実装されています。「Character.h/cpp」に記述されていますが、個別には説明しませんのでコードを参考にしてください。
-
-
+<h4>リアルな描画</h4>
+　さて、このサンプルにはもう一つのテーマがあります。それは<b>リアルな描画</b>です。<br />
+　このサンプルでは<b>プリミティブ</b>しか配置されてません。しかし<b>法線マップ</b>を利用することで、よりリアルティがある表現が可能になります。<br />
+　<b>法線マップ</b>というのは、かいつまんで言えば<b>でこぼこを法線で表現する</b>という手法です。<br />
+　どのように表現するかというと<b>テクスチャ</b>で表現します。テクスチャは<b>画像</b>ですから<b>RGBA</b>の要素を持ってます。これを<b>Vector4の法線</b>と見立てて作成します。すると、以下のような画像が作成できます。
+<p>&nbsp;</p>
+<img src="img/normal3.png" width="30%"/>
+<p>法線マップ</p>
+<p>&nbsp;</p>
+　この画像は各値が<b>法線</b>になってますので、シェーダの描画時に光の向きに合わせて各ピクセル色を調整します。<br />
+　そうすると、サンプル実行画面の<b>プレート</b>のようになるわけです。<br />
+　また、<b>法線マップ</b>を<b>テクスチャの模様に合わせて</b>作成します。以下のような感じです。
+<p>&nbsp;</p>
+<img src="img/wall.jpg" width="30%"/>
+<img src="img/wall_normal.png" width="30%"/>
+<p>テクスチャと法線マップ</p>
+　そうすると、左側にあるボックスのように、テクスチャの模様が法線マップに合わせて、でこぼこしているように表現できます。<br />
+　<b>法線マップ</b>のテクスチャは<b>グラフィックソフト（プラグインが必要な場合あり）</b>や３Ｄソフトで作成することができます。
+　このように<b>テクスチャの法線マップの組み合わせ</b>でいろんな表現が可能になります。<br />
+　例えば上の<b>壁模様</b>の<b>法線マップ</b>を設定するには、通常のテクスチャのように、リソース登録時に
+<div class="box1">
+<pre>
+strTexture = DataDir + L"wall.jpg";
+App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+strTexture = DataDir + L"wall_normal.png";
+App::GetApp()->RegisterTexture(L"WALL_NORMAL_TX", strTexture);
+</pre>
+</div>
+　のように、<b>L"WALL_TX"</b>と<b>L"WALL_NORMAL_TX"</b>を登録しておきます。そして、
+<div class="box1">
+<pre>
+    auto PtrDraw = AddComponent&lt;BcPNTnTStaticDraw>();
+    PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_CUBE");
+    PtrDraw->SetTextureResource(L"WALL_TX");
+    PtrDraw->SetNormalMapTextureResource(L"WALL_NORMAL_TX");
+</pre>
+</div>
+　のように、<b>BcPNTnTStaticDraw描画コンポーネント</b>を設定します。このコンポーネントは<b>通常のPNT（ポジション・法線・テクスチャ）の頂点</b>に加え<b>タンジェント</b>という値が入っている<b>頂点フォーマット</b>を描画します。タンジェント付きのフォーマットは以下になります。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 位置と法線とタンジェントとテクスチャを持つ入力レイアウトの定義
+//--------------------------------------------------------------------------------------
+const D3D11_INPUT_ELEMENT_DESC VertexPositionNormalTangentTextureLayout[] =
+{
+    { "SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 
+        D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 
+        D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "TANGENT",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 
+        D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,       0, 
+        D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+};
+</pre>
+</div>
+　ここで描画コンポーネントに設定している<b>L"DEFAULT_PNTnT_CUBE"</b>というメッシュはライブラリであらかじめ用意された<b>タンジェント付きのボックス</b>です。<br />
+　<b>BcPNTnTStaticDraw描画コンポーネント</b>は<b>テクスチャの設定</b>と<b>法線マップの設定</b>を、リソースキーを設定して行います。するとサンプルのような描画になります。<br />
+<br />
+<h4>タンジェントとは</h4>
+　<b>タンジェント</b>は<b>接ベクトル</b>ともいわれます。メッシュは一般には<b>三角形の集合</b>として表現されます。<b>法線</b>はその面に対する<b>直行する線</b>です。それに対して<b>タンジェント</b>は<b>面に平行なベクトル</b>です。<br />
+　では、この<b>タンジェント</b>はどうやって求めるかですが、一般的には<b>法線とカメラのUp値の外積</b>で求められます。<b>カメラのUp値</b>というのは、カメラの傾きですが、多くの場合<b>Vector3(0.0f,1.0f,0.0f)</b>です。つまりカメラの<b>上</b>に向かうベクトルで、通常は<b>Y軸に平行</b>にしますね。しかしカメラが<b>真上から見る視点</b>になるとY軸と重なってしまうので<b>Vector3(0.0f,0.0f,1.0f)</b>のように<b>Z軸に平行</b>にします。<br />
+ <b>タンジェントの計算</b>はこの、<b>カメラのUpに使うベクトル</b>を利用します。<b>面の法線がY軸とある一定の角度差より大きい</b>であれば、<b>タンジェントは、法線とVector3(0.0f,1.0f,0.0f)の外積</b>で求められます。一方、<b>面の法線がY軸とある一定の角度差より小さい</b>のであれば<b>タンジェントは、法線とVector3(0.0f,0.0f,1.0f)の外積</b>で求められます。<br />
+　<b>BaseCross</b>では、この<b>タンジェントの設定をする</b>関数があります。<b>MeshUtill::SetNormalTangent()関数</b>ですが（スタティック関数）、<b>タンジェント付きのメッシュを自作する場合</b>には使用するといいでしょう。<br />
+<br />
+<h4>タンジェントつきのメッシュを自作する</h4>
+　このサンプルでは、あらかじめ登録された<b>タンジェント付きのメッシュ</b>を使ってますが、自作したい場合もあります。<br />
+　そんな場合は、例えば、タンジェント付きボックスを作成する場合、まず
+<div class="box1">
+<pre>
+//PNT頂点のCubeを作成
+vector&lt;VertexPositionNormalTexture> vertices;
+vector&lt;uint16_t> indices;
+MeshUtill::CreateCube(1.0f, vertices, indices);
+</pre>
+</div>
+　という形でCubeを作成します。これで、<b>verticesとindices</b>に、1辺が1.0のCubeのデータが作成されます。しかしこのCubeは<b>PNT頂点フォーマット（つまり、頂点、法線、テクスチャ）</b>なので、これに<b>タンジェント要素</b>を加えます。
+<div class="box1">
+<pre>
+//タンジェント付きの頂点の配列にコンバート
+vector&lt;VertexPositionNormalTangentTexture> new_pntnt_vertices;
+for (size_t i = 0; i &lt; vertices.size(); i++) {
+    //タンジェント付きの頂点の変数
+    VertexPositionNormalTangentTexture new_pntnt_v;
+    //PNT頂点からコピー
+    new_pntnt_v.position = vertices[i].position;
+    new_pntnt_v.normal = vertices[i].normal;
+    new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+    //とりあえずタンジェントは0初期化
+    new_pntnt_v.tangent = Vector4(0,0,0,0);
+    //頂点の配列に追加
+    new_pntnt_vertices.push_back(new_pntnt_v);
+}
+</pre>
+</div>
+　これで、フォーマットが変わりましたので、タンジェント要素に<b>接ベクトル</b>を設定します。
+<div class="box1">
+<pre>
+//タンジェント要素（接ベクトル）を法線から計算
+MeshUtill::SetNormalTangent(new_pntnt_vertices);
+</pre>
+</div>
+　こうすると<b>new_pntnt_vertices</b>は<b>法線マップ付きの描画</b>ができるようになるので、これでメッシュを作成します。
+<div class="box1">
+<pre>
+//メッシュ作成
+auto PtrNewMesh = 
+MeshResource::CreateMeshResource(new_pntnt_vertices, indices, <span class="red">false</span>);
+</pre>
+</div>
+　ここでは、<b>頂点の変更ができない</b>として<b>第3パラメータにfalse</b>を渡してますが、変更ができるようにする場合は<b>true</b>を渡します。<br />
+　最後にメッシュをリソース登録して、他からも再利用できるようにします。
+<div class="box1">
+<pre>
+//リソース登録
+App::GetApp()->RegisterResource(L"MY_CUBE", PtrNewMesh);
+</pre>
+</div>
+　これらをまとめて書くと以下になります。
+<div class="box1">
+<pre>
+vector&lt;VertexPositionNormalTexture> vertices;
+vector&lt;uint16_t> indices;
+//PNT頂点のCubeを作成
+MeshUtill::CreateCube(1.0f, vertices, indices);
+//タンジェント付きの頂点の配列にコンバート
+vector&lt;VertexPositionNormalTangentTexture> new_pntnt_vertices;
+for (size_t i = 0; i &lt; vertices.size(); i++) {
+    //タンジェント付きの頂点の変数
+    VertexPositionNormalTangentTexture new_pntnt_v;
+    //PNT頂点からコピー
+    new_pntnt_v.position = vertices[i].position;
+    new_pntnt_v.normal = vertices[i].normal;
+    new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+    //とりあえずタンジェントは0初期化
+    new_pntnt_v.tangent = Vector4(0,0,0,0);
+    //頂点の配列に追加
+    new_pntnt_vertices.push_back(new_pntnt_v);
+}
+//タンジェント要素（接ベクトル）を法線から計算
+MeshUtill::SetNormalTangent(new_pntnt_vertices);
+//メッシュ作成
+auto PtrNewMesh = 
+MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false);
+//リソース登録
+App::GetApp()->RegisterResource(L"MY_CUBE", PtrNewMesh);
+</pre>
+</div>
+　このようにして作成したメッシュは<b>BcPNTnTStaticDraw描画コンポーネント</b>で描画できるようになります。このコンポーネントはフォグの設定やスペキュラーの調整も可能ですので、いろいろ試してみるといいでしょう。<br />
+<br />
+　今項は、<b>階層化コンポーネント</b>と<b>法線マップ付き描画</b>の2つの例を実装してみました。<br />
+　次項では、様々なオブジェクトの配置と描画を実装します。
 </div>
 <!-- /コンテンツ　-->
 <hr>

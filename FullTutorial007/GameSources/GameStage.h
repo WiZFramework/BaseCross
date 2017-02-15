@@ -9,28 +9,6 @@
 namespace basecross {
 
 	//--------------------------------------------------------------------------------------
-	// 個別カメラ
-	//--------------------------------------------------------------------------------------
-	class MyCamera : public Camera {
-		weak_ptr<GameObject> m_TargetObject;	//目標となるオブジェクト
-		float m_ToTargetLerp;	//目標を追いかける際の補間値
-	public:
-		//構築と破棄
-		explicit MyCamera();
-		virtual ~MyCamera();
-		//アクセサ
-		shared_ptr<GameObject> GetTargetObject() const;
-		void SetTargetObject(const shared_ptr<GameObject>& Obj);
-
-		float GetToTargetLerp() const;
-		void SetToTargetLerp(float f);
-
-		//操作
-		virtual void OnUpdate() override;
-	};
-
-
-	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
@@ -40,12 +18,22 @@ namespace basecross {
 		void CreateViewLight();
 		//プレートの作成
 		void CreatePlate();
+		//追いかけるオブジェクトの作成
+		void CreateSeekObject();
 		//固定のボックスの作成
 		void CreateFixedBox();
+		//上下移動しているボックスの作成
+		void CreateMoveBox();
+		//固定のモデルの作成
+		void CreateStaticModel();
+		//ヒットする球体の作成
+		void CreateSphere();
+		//ヒットするカプセルの作成
+		void CreateCapsule();
+		//でこぼこ床の作成
+		void CreateUnevenGround();
 		//プレイヤーの作成
 		void CreatePlayer();
-		//Eggの作成
-		void CreateEgg();
 	public:
 		//構築と破棄
 		GameStage() :Stage() {}

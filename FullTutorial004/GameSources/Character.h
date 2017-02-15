@@ -8,198 +8,272 @@
 
 namespace basecross{
 
+
 	//--------------------------------------------------------------------------------------
-	//	class SeekObject : public GameObject;
-	//	用途: 追いかける配置オブジェクト
+	///	敵１
 	//--------------------------------------------------------------------------------------
-	class SeekObject : public GameObject {
-		shared_ptr< StateMachine<SeekObject> >  m_StateMachine;	//ステートマシーン
+	class Enemy1 : public GameObject {
 		Vector3 m_StartPos;
-		float m_BaseY;
-		float m_StateChangeSize;
-		//ユーティリティ関数群
-		//プレイヤーの位置を返す
-		Vector3 GetPlayerPosition() const;
-		//プレイヤーまでの距離を返す
-		float GetPlayerLength() const;
-		//進行方向を向くようにする
-		void RotToHead();
+		//ステートマシーン
+		unique_ptr<StateMachine<Enemy1>>  m_StateMachine;
+		//NearとFarを切り替える値
+		const float m_NearFarChange;
 	public:
 		//構築と破棄
-		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
-		virtual ~SeekObject();
-		//初期化
-		virtual void OnCreate() override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	StagePtr	ステージ
+		*/
+		//--------------------------------------------------------------------------------------
+		Enemy1(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~Enemy1() {}
 		//アクセサ
-		shared_ptr< StateMachine<SeekObject> > GetStateMachine() const {
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートマシンを得る
+		@return	ステートマシン
+		*/
+		//--------------------------------------------------------------------------------------
+		unique_ptr< StateMachine<Enemy1>>& GetStateMachine() {
 			return m_StateMachine;
 		}
-		//モーションを実装する関数群
-		void  SeekStartMoton();
-		bool  SeekUpdateMoton();
-		void  SeekEndMoton();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	NearとFarの境値を得る
+		@return	NearとFarの境値
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetNearFarChange()const {
+			return m_NearFarChange;
+		}
+		//初期化
+		virtual void OnCreate() override;
+		//更新
+		virtual void OnUpdate() override;
+	};
 
-		void  ArriveStartMoton();
-		bool  ArriveUpdateMoton();
-		void  ArriveEndMoton();
-		//操作
+
+	//--------------------------------------------------------------------------------------
+	///	Enemy1のFarステート
+	//--------------------------------------------------------------------------------------
+	class Enemy1FarState : public ObjState<Enemy1>
+	{
+		Enemy1FarState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy1FarState)
+		virtual void Enter(const shared_ptr<Enemy1>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy1>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy1>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Enemy1のNearステート
+	//--------------------------------------------------------------------------------------
+	class Enemy1NearState : public ObjState<Enemy1>
+	{
+		Enemy1NearState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy1NearState)
+		virtual void Enter(const shared_ptr<Enemy1>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy1>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy1>& Obj)override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	敵2
+	//--------------------------------------------------------------------------------------
+	class Enemy2 : public GameObject {
+		Vector3 m_StartPos;
+		//ステートマシーン
+		unique_ptr<StateMachine<Enemy2>>  m_StateMachine;
+		//longとmediumを切り替える値
+		const float m_LongMediumChange;
+		//mediumとshortを切り替える値
+		const float m_MediumShortChange;
+
+	public:
+		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	StagePtr	ステージ
+		*/
+		//--------------------------------------------------------------------------------------
+		Enemy2(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~Enemy2() {}
+		//アクセサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートマシンを得る
+		@return	ステートマシン
+		*/
+		//--------------------------------------------------------------------------------------
+		unique_ptr< StateMachine<Enemy2>>& GetStateMachine() {
+			return m_StateMachine;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	LongとMediumの境値を得る
+		@return	LongとMediumの境値
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetLongMediumChange() const {
+			return m_LongMediumChange;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	MediumとShortの境値を得る
+		@return	MediumとShortの境値
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetMediumShortChange() const {
+			return m_MediumShortChange;
+
+		}
+
+		//初期化
+		virtual void OnCreate() override;
+		//更新
+		virtual void OnUpdate() override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	Enemy2のlongステート
+	//--------------------------------------------------------------------------------------
+	class Enemy2longState : public ObjState<Enemy2>
+	{
+		Enemy2longState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy2longState)
+		virtual void Enter(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy2>& Obj)override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	Enemy2のMediumステート
+	//--------------------------------------------------------------------------------------
+	class Enemy2MediumState : public ObjState<Enemy2>
+	{
+		Enemy2MediumState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy2MediumState)
+		virtual void Enter(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy2>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Enemy2のShortステート
+	//--------------------------------------------------------------------------------------
+	class Enemy2ShortState : public ObjState<Enemy2>
+	{
+		Enemy2ShortState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy2ShortState)
+		virtual void Enter(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy2>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy2>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	敵３
+	//--------------------------------------------------------------------------------------
+	class Enemy3 : public GameObject {
+		Vector3 m_StartPos;
+		//ステートマシーン
+		unique_ptr<StateMachine<Enemy3>>  m_StateMachine;
+		//defaultとnearを切り替える値
+		const float m_DefaultNearChange;
+
+	public:
+		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	StagePtr	ステージ
+		*/
+		//--------------------------------------------------------------------------------------
+		Enemy3(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~Enemy3() {}
+		//アクセサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ステートマシンを得る
+		@return	ステートマシン
+		*/
+		//--------------------------------------------------------------------------------------
+		unique_ptr< StateMachine<Enemy3>>& GetStateMachine() {
+			return m_StateMachine;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	DefaultとNearの境値を得る
+		@return	DefaultとNearの境値
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetDefaultNearChange() const {
+			return m_DefaultNearChange;
+
+		}
+
+		//初期化
+		virtual void OnCreate() override;
+		//更新
 		virtual void OnUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class FarState : public ObjState<SeekObject>;
-	//	用途: プレイヤーから遠いときの移動
+	///	Enemy3のDefaultステート
 	//--------------------------------------------------------------------------------------
-	class FarState : public ObjState<SeekObject>
+	class Enemy3DefaultState : public ObjState<Enemy3>
 	{
-		FarState() {}
+		Enemy3DefaultState() {}
 	public:
-		static shared_ptr<FarState> Instance();
-		virtual void Enter(const shared_ptr<SeekObject>& Obj)override;
-		virtual void Execute(const shared_ptr<SeekObject>& Obj)override;
-		virtual void Exit(const shared_ptr<SeekObject>& Obj)override;
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy3DefaultState)
+		virtual void Enter(const shared_ptr<Enemy3>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy3>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy3>& Obj)override;
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class NearState : public ObjState<SeekObject>;
-	//	用途: プレイヤーから近いときの移動
+	///	Enemy3のNearステート
 	//--------------------------------------------------------------------------------------
-	class NearState : public ObjState<SeekObject>
+	class Enemy3NearState : public ObjState<Enemy3>
 	{
-		NearState() {}
+		Enemy3NearState() {}
 	public:
-		static shared_ptr<NearState> Instance();
-		virtual void Enter(const shared_ptr<SeekObject>& Obj)override;
-		virtual void Execute(const shared_ptr<SeekObject>& Obj)override;
-		virtual void Exit(const shared_ptr<SeekObject>& Obj)override;
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(Enemy3NearState)
+		virtual void Enter(const shared_ptr<Enemy3>& Obj)override;
+		virtual void Execute(const shared_ptr<Enemy3>& Obj)override;
+		virtual void Exit(const shared_ptr<Enemy3>& Obj)override;
 	};
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	class FixedBox : public GameObject;
-	//	用途: 固定のボックス
-	//--------------------------------------------------------------------------------------
-	class FixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
-	public:
-		//構築と破棄
-		FixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
-		);
-		virtual ~FixedBox();
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	class FixedNormalBox : public GameObject;
-	//	用途: 固定の法線マップ処理ボックス
-	//--------------------------------------------------------------------------------------
-	class FixedNormalBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
-		wstring m_TexKey;
-		wstring m_NormalTexKey;
-	public:
-		//構築と破棄
-		FixedNormalBox(const shared_ptr<Stage>& StagePtr,
-			const wstring& TexKey,
-			const wstring& NormalTexKey,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
-		);
-		virtual ~FixedNormalBox();
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	//	class MoveBox : public GameObject;
-	//	用途: 上下移動するボックス
-	//--------------------------------------------------------------------------------------
-	class MoveBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
-	public:
-		//構築と破棄
-		MoveBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
-		);
-		virtual ~MoveBox();
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	class SphereObject : public GameObject;
-	//	用途: 障害物球
-	//--------------------------------------------------------------------------------------
-	class SphereObject : public GameObject {
-		Vector3 m_StartPos;
-	public:
-		//構築と破棄
-		SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
-		virtual ~SphereObject();
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	class UnevenGroundData : public GameObject;
-	//	用途: でこぼこ床のデータ
-	//--------------------------------------------------------------------------------------
-	class UnevenGroundData : public GameObject {
-		vector<TRIANGLE> m_Triangles;
-	public:
-		//構築と破棄
-		UnevenGroundData(const shared_ptr<Stage>& StagePtr);
-		virtual ~UnevenGroundData();
-		//初期化
-		virtual void OnCreate() override;
-		//三角形の配列を返す
-		const vector<TRIANGLE>& GetTriangles() const {
-			return m_Triangles;
-		}
-	};
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	class UnevenGround : public GameObject;
-	//	用途: でこぼこ床
-	//--------------------------------------------------------------------------------------
-	class UnevenGround : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
-	public:
-		//構築と破棄
-		UnevenGround(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position);
-		virtual ~UnevenGround();
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-	};
-
-
 
 
 }

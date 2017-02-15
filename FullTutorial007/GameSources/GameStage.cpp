@@ -8,135 +8,6 @@
 
 namespace basecross {
 
-
-	//--------------------------------------------------------------------------------------
-	// 個別カメラ
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	MyCamera::MyCamera() :
-		Camera(),
-		m_ToTargetLerp(1.0f)
-	{
-	}
-	MyCamera::~MyCamera() {}
-	//アクセサ
-	shared_ptr<GameObject> MyCamera::GetTargetObject() const {
-		if (!m_TargetObject.expired()) {
-			return m_TargetObject.lock();
-		}
-		return nullptr;
-	}
-
-	void MyCamera::SetTargetObject(const shared_ptr<GameObject>& Obj) {
-		m_TargetObject = Obj;
-	}
-
-	float MyCamera::GetToTargetLerp() const {
-		return m_ToTargetLerp;
-	}
-	void MyCamera::SetToTargetLerp(float f) {
-		m_ToTargetLerp = f;
-	}
-
-	void MyCamera::OnUpdate() {
-		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		//前回のターンからの時間
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		if (CntlVec[0].bConnected) {
-			Vector3 NewAt(0, 0, 0);
-			auto TargetPtr = GetTargetObject();
-			if (TargetPtr) {
-				//目指したい場所
-				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetPosition();
-				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, m_ToTargetLerp, Lerp::Linear);
-			}
-			//ステップ1、注視点と位置の変更
-			Vector3 Span = GetAt() - GetEye();
-			Vector3 NewEye = NewAt - Span;
-			SetAt(NewAt);
-			SetEye(NewEye);
-			//ステップ２、ズームの変更
-			//カメラ位置と注視点の間のベクトルを算出
-			Span = GetAt() - GetEye();
-			//正規化
-			Span.Normalize();
-			//変化値の決定
-			Span = Span * ElapsedTime * 10.0f;
-
-			Vector3 NewArm = GetAt() - GetEye();
-			//Dパッド下
-			//カメラを引く
-			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
-				//カメラ位置を引く
-				NewEye = NewEye - Span;
-				NewArm = NewAt - NewEye;
-				if (NewArm.Length() > (GetFar() * 0.1f)) {
-					NewEye = NewEye + Span;
-					NewArm = NewAt - NewEye;
-				}
-			}
-			//Dパッド上
-			//カメラを寄る
-			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
-				//カメラ位置を寄る
-				NewEye = NewEye + Span;
-				NewArm = NewAt - NewEye;
-				if (NewArm.Length() < GetNear() * 2.0f) {
-					NewEye = NewEye - Span;
-					NewArm = NewAt - NewEye;
-				}
-			}
-			SetAt(NewAt);
-			SetEye(NewEye);
-			//ステップ3角度の変更
-			//現在のAtとEyeの角度を得る
-			Vector3 ArmInv = GetEye() - GetAt();
-			//右スティックX方向
-			FLOAT AngleY = 0;
-			//右スティックY方向
-			FLOAT AngleX = 0;
-			FLOAT AngleZ = 0;
-			if (CntlVec[0].fThumbRX != 0) {
-				//右スティック反応しないようにする
-			}
-			if (CntlVec[0].fThumbRY != 0) {
-				//右スティック反応しないようにする
-			}
-			if (ArmInv.z > 0) {
-				AngleX *= -1.0f;
-			}
-			if (ArmInv.x < 0) {
-				AngleZ *= -1.0f;
-			}
-			Quaternion QtSpan(AngleX, AngleY, AngleZ);
-			QtSpan.Normalize();
-			//回転先計算の行列を作成
-			Matrix4X4 Mat, Mat2;
-			Mat.STRTransformation(
-				Vector3(1.0f, 1.0f, 1.0f),
-				ArmInv,
-				QtSpan);
-			Mat2.TranslationFromVector(GetAt());
-			Mat *= Mat2;
-			NewEye = Mat.PosInMatrix();
-			if (NewEye.y < 0.5f) {
-				NewEye.y = 0.5f;
-			}
-			//カメラが一定以上、上から視線にならなように調整
-			ArmInv = NewEye - GetAt();
-			ArmInv.Normalize();
-			float y2 = ArmInv.y * ArmInv.y;
-			float x2 = ArmInv.x * ArmInv.x;
-			float z2 = ArmInv.z * ArmInv.z;
-			if (y2 <= (x2 + z2)) {
-				SetEye(NewEye);
-			}
-
-		}
-		Camera::OnUpdate();
-	}
-
-
 	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
@@ -149,22 +20,29 @@ namespace basecross {
 		App::GetApp()->GetAssetsDirectory(DataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
 		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"sky.jpg";
+		wstring strTexture = DataDir + L"trace.png";
+		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+		strTexture = DataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+		strTexture = DataDir + L"wall.jpg";
+		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+
+		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir,L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
 	}
+
+
 
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
 		auto PtrView = CreateView<SingleView>();
 		//ビューのカメラの設定
-		auto PttCamera = ObjectFactory::Create<MyCamera>();
-		//LookAtCameraにする場合は以下コメントを外す
-//		auto PttCamera = ObjectFactory::Create<LookAtCamera>();
-
-		PtrView->SetCamera(PttCamera);
-		PttCamera->SetEye(Vector3(0.0f, 2.0f, -8.0f));
-		PttCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
-
+		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
+		PtrView->SetCamera(PtrLookAtCamera);
+		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -177,7 +55,7 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
+		Quaternion Qt;
 		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
@@ -196,64 +74,55 @@ namespace basecross {
 		DrawComp->SetTextureResource(L"SKY_TX");
 	}
 
+	//追いかけるオブジェクトの作成
+	void GameStage::CreateSeekObject() {
+		//オブジェクトのグループを作成する
+		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
+		//配列の初期化
+		vector<Vector3> Vec = {
+			{ 0, 2.0f, 10.0f },
+			{ 10.0f, 0.125f, 0.0f },
+			{ -10.0f, 0.125f, 0.0f },
+			{ 0, 0.125f, -10.0f },
+		};
+		//配置オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<SeekObject>(v);
+		}
+	}
+
+
 
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
 		vector< vector<Vector3> > Vec = {
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
+				Vector3(5.0f, 0.5f, 5.0f),
 				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 0.0f)
+				Vector3(10.0f, 0.25f, 10.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
+				Vector3(5.0f, 0.5f, 5.0f),
 				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 0.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(5.0f, 0.25f, 2.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-5.0f, 0.25f, 2.0f)
+				Vector3(14.0f, 0.25f, 10.0f)
 			},
 
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 4.0f)
+				Vector3(2.0f, 1.0f, 2.0f),
+				Vector3(0, 0, 0),
+				Vector3(10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 4.0f)
+				Vector3(4.0f, 1.0f, 4.0f),
+				Vector3(0, 0, 0),
+				Vector3(-10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(5.0f, 0.25f, 6.0f)
+				Vector3(10.0f, 0.5f, 10.0f),
+				Vector3(-0.5f, 0.0f, -0.5f),
+				Vector3(-10.0f, 0.25f, 10.0f)
 			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-5.0f, 0.25f, 6.0f)
-			},
-
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 8.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 8.0f)
-			},
-
 		};
 		//オブジェクトの作成
 		for (auto v : Vec) {
@@ -261,31 +130,342 @@ namespace basecross {
 		}
 	}
 
+
+	//上下移動しているボックスの作成
+	void GameStage::CreateMoveBox() {
+		CreateSharedObjectGroup(L"MoveBox");
+		AddGameObject<MoveBox>(
+			Vector3(5.0f, 0.5f, 5.0f),
+			Vector3(0.0f, 0.0f, 0.0f),
+			Vector3(0.0f, -0.5f, 20.0f)
+			);
+	}
+
+	//ヒットする球体の作成
+	void GameStage::CreateSphere() {
+		//配列の初期化
+		vector<Vector3> Vec = {
+			{ 20.0f, 0, 20.0f },
+		};
+		//配置オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<SphereObject>(v);
+		}
+	}
+
+	//ヒットするカプセルの作成
+	void GameStage::CreateCapsule() {
+		//配列の初期化
+		vector<Vector3> Vec = {
+			{ 20.0f, 0, 0.0f },
+		};
+		//配置オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<CapsuleObject>(v);
+		}
+
+	}
+
+	//でこぼこ床の作成
+	void GameStage::CreateUnevenGround() {
+		//でこぼこ床のデータの作成
+		AddGameObject<UnevenGroundData>();
+		//配列の初期化
+		vector< vector<Vector3> > Vec = {
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-4.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-3.0f, 0.0f, 15.0f)
+			},
+
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(-2.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(-1.0f, 0.0f, 15.0f)
+			},
+
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(0.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(1.0f, 0.0f, 15.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 5.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 7.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 9.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 11.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 13.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, XM_PIDIV2, 0.0f),
+				Vector3(2.0f, 0.0f, 15.0f)
+			},
+			{
+				Vector3(1.0f, 1.0f, 1.0f),
+				Vector3(0.0f, -XM_PIDIV2, 0.0f),
+				Vector3(3.0f, 0.0f, 15.0f)
+			},
+
+
+
+		};
+		//オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<UnevenGround>(v[0], v[1], v[2]);
+		}
+
+	}
+
+
+	//固定のモデルの作成
+	void GameStage::CreateStaticModel() {
+		AddGameObject<StaticModel>(
+			Vector3(1.0f, 1.0f, 1.0f),
+			Vector3(0.0f, 0.0f, 0.0f),
+			Vector3(5.0f, 0.25f, 5.0f)
+			);
+
+	}
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
-		wstring DataDir;
-		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
-		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-
-
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>(DataDir + L"character_template_sample1\\");
+		auto PlayerPtr = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
 	}
 
-	//Eggの作成
-	void GameStage::CreateEgg() {
-		wstring DataDir;
-		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
-		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-
-		AddGameObject<EggAnime>(DataDir + L"character_template_sample1\\");
-	}
 
 	void GameStage::OnCreate() {
 		try {
@@ -297,10 +477,20 @@ namespace basecross {
 			CreatePlate();
 			//固定のボックスの作成
 			CreateFixedBox();
+			//上下移動しているボックスの作成
+			CreateMoveBox();
+			//球体作成
+			CreateSphere();
+			//カプセルの作成
+			CreateCapsule();
+			//固定のモデルの作成
+			CreateStaticModel();
+			//追いかけるオブジェクトの作成
+			CreateSeekObject();
+			//でこぼこ床の作成
+			CreateUnevenGround();
 			//プレーヤーの作成
 			CreatePlayer();
-			//Eggの作成
-			CreateEgg();
 		}
 		catch (...) {
 			throw;

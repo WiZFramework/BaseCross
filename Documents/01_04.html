@@ -13,326 +13,538 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>１０４．衝突判定とプレイヤー</h3>
+<h3>１０４．ステートと行動</h3>
 このサンプルは<b>FullTutorial004</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
-　リビルドして実行すると以下の画面が出てきます。
+<br />
+　リビルドして実行すると以下の画面が出てきます。球体が1つ表示され、コントローラで操作できます。少し経つと四方から<b>敵</b>が体当たりしてきます。逃げ回っても追いかけてきます。茶色い敵も近づいてきて、体当たりを仕掛けてきます。遠くのほうには赤い敵がいて、近づくとジャンプしながら追いかけてきます。こちらの敵はある一定の距離を離れると追いかけてきません。
 <p>&nbsp;</p>
 <img src="img/0104a.png" width="80%"/>
 <p>図0104a</p>
 <p>&nbsp;</p>
 <br/>
 <h4>解説</h4>
-　プレイヤーの動きは前項と同じです。
-<h4>プレイヤーの実装について</h4>
-　プレイヤーは<b>Player.h/cpp</b>に記述があります。<br />
-　プレイヤーも前項の敵キャラ同様、<b>ステート</b>が実装されています。実装されているステートは<b>PlayerDefault</b>と<b>PlayerAction</b>です。前項と違う点は、<b>ステートマシン</b>が<b>階層化ステートマシン</b>が実装されているところです。<br />
-　<b>階層化ステートマシン</b>は<b>ステートマシン</b>に対して、その名の通り<b>階層化</b>が実装されています。ここでいう<b>階層化</b>は<b>クラスの階層化</b>ではなく<b>ステートを積み上げられる</b>という意味です。<br />
-　例えば<b>A</b>というステートにいて何らかのイベントに対して<b>B</b>というステートに変わったとします。その時<b>B</b>に<b>ステートをチェンジ</b>するのが、前項で敵キャラに実装した<b>ステートマシン</b>です。<br/>
-　しかし、<b>B</b>のステートが終了した際、<b>A</b>というステートに戻るのか、もしくは、別の<b>C</b>というステートに移行するのかは、<b>B</b>のステートが終了した状態を調べるなどして選択しなければなりません。<br />
-　しかし<b>階層化ステートマシン</b>は<b>B</b>のステートに移行する際<b>Push</b>という命令で移行できます。そして<b>B</b>が終了した際<b>Pop</b>という命令で終了します。そうすると、<b>A</b>から<b>B</b>に移行（Push）した場合は<b>A</b>に戻り（Pop）、<b>C</b>から<b>B</b>に移行
-（Push）した場合は、<b>C</b>に戻る（Pop）、という風に記述することが可能になります。<br />
-　階層はデフォルトで10個積み上げることができます（増やすこともできます）。<br />
-　では、前項のように<b>完全にチェンジする場合</b>はどうするかというと<b>Reset</b>という命令で<b>ステート</b>を移行させます。するとそれまで積み上げられてきたステートはすべて破棄されて、新しいステートに移行することができます。<br />
-　今項でのプレイヤーのサンプルでは<b>階層化処理</b>についてそんなに複雑なことを行ってませんが、敵キャラやアイテムの演出などを表現する場合、この<b>階層化ステートマシン</b>は威力を発揮すると思います。<br />
-　例えば<b>スコア</b>の数字が変化するのに演出をかける場合、<b>１、通常の数字表示</b>、<b>２、数字が光る</b>、<b>３、数字回転の演出</b>そして<b>４、数字が変わる</b>と変化した場合、これを階層化ステートを使うと、この逆順にステートが戻っていくので<b>３、数字回転の演出</b>、<b>２、数字が光る</b>そして<b>１、通常の数字表示</b>と戻すことができます。そういった演出が効果的かどうかは別にして、このような複雑なアニメーション切り替えを、比較的簡単に実装することができます。<br />
-<br/>
-　プレイヤーはこのほかに<b>行動</b>を<b>プレイヤーのメンバ関数からは分離</b>して記述してあります。このテクニックは<b>デザインパターン</b>の<b>Strategy</b>としても知られています。<br />
-　親クラスに、<b>PlayerBehaviorクラス</b>を持つ<b>DefaultPlayerBehaviorクラス</b>と<b>AttackPlayerBehaviorクラス</b>を定義します。前者は<b>Aボタンでジャンプする</b>行動で、後者は<b>Aボタンでボールを発射する</b>という行動です。<br />
-　プレイヤーのメンバ変数には親クラスのポインタを保持していて、ステートが切り替わる都度、そのポインタを<b>DefaultPlayerBehaviorクラス</b>のポインタ、もしくは<b>AttackPlayerBehaviorクラス</b>のポインタに変更します。<br />
-　それぞれは<b>シングルトン</b>になっているので、<b>newやdelete</b>の負荷はかかりません（その代りメンバ変数は持てませんが）。<br />
-　<b>PlayerBehaviorクラス</b>には<b>純粋仮想関数、StartAction()とExcuteAction()</b>があり、派生クラスはこの関数を実装しなければなりません。<br />
-　このように<b>行動</b>を<b>オブジェクトから分離</b>することで、そのオブジェクトの<b>行動</b>を簡単に増やすことができます。<br />
-　たとえば<b>爆弾を投げる</b>、<b>透明になる</b>、<b>無敵状態になる</b>などの<b>行動</b>（通常はそれに対応するステーがあり、ステート経由で呼ばれる）は、<b>PlayerBehaviorクラス</b>の派生クラスとして作成すれば、このサンプルでは、すぐさま<b>Aボタン</b>に結び付けることができます。<br />
-　プレイヤーに限らず、AIの動作にしても、機能面ばかりではなく<b>演出</b>がゲームの良しあしを図ることも多いです。そういう意味でも、<b>階層化ステート</b>や<b>行動の分離と階層化</b>はそういう複雑な動きを演出するのに便利かと思われます。<br />
-　それでは、コード解説に入ります。<br />
-<br />
-<h4>アタックボール</h4>
-　プレイヤーは<b>行動の切り替え</b>によって<b>Aボタン</b>の役割が変わります。通常は<b>ジャンプ</b>ですが、<b>Bボタン</b>により<b>行動</b>がかわり、<b>ボールを発射する</b>になります。<br />
-　<b>アタックボール</b>は<b>AttackBallクラス</b>で<b>Player.h/cpp</b>に記述があります。<br />
-　通常、こういった<b>飛び道具</b>は<b>複数のボール（アイテム）を管理するクラス</b>として作成し、内部で複数の更新や描画処理を行うのですが、チュートリアル用のサンプルということもあり、<b>AttackBallクラス</b>のインスタンスを複数（10個）実装することで表現します。<br />
-　まず宣言ですが、以下の形です。
+　このサンプルは、そこそこ複雑な処理が実装されています。複雑な処理をどのように効率的に記述するかで、ソースの可読性も上がり、バグも少なくなります。<br />
+　<b>FullTutorial002、003</b>は、オブジェクトの<b>OnUpdate()関数</b>に位置や速度の変更を直接書いていました。<br />
+　そのような形で記述を続けると、以下のような現象に陥ってしまいます。
+
 <div class="box1">
 <pre>
-class AttackBall : public GameObject {
+１、行動の分岐を記述するのに、<span class="red">if文やswitch文</span>のオンパレードになってしまう。
+２、敵のAIなどを記述する際、同じような行動も敵のクラス単位で記述しなければならず、
+　それは往々にして<span class="red">似たような処理を何度も記述する</span>羽目になってしまう。
+</pre>
+</div>
+　この状態を避けるために、<b>BaseCross</b>ではいくつかの機能を実装できる仕様になっています。<br />
+<br />
+<h4>ステートとステートマシン</h4>
+　まず代表的な仕組みが<b>ステートとステートマシン</b>です。<b>ステート</b>は<b>状態</b>です。<br />
+　GameObjectは多くの場合<b>現在の状態</b>を持っています。例えば<b>プレイヤーを待っている状態</b>や<b>プレイヤーを追いかけている状態</b>あるいは<b>ジャンプしている状態</b>などです。これらの<b>状態</b>を<b>ステート</b>といいます。<br />
+　<b>ステート</b>は各オブジェクトに固有のものです。ですから<b>プレイヤーがジャンプしている状態</b>とか<b>敵１がプレイヤーを追いかけている状態</b>など、各GameObjectごとに記述します。<br />
+　そして、それらの<b>ステート</b>を管理するのが<b>ステートマシン</b>です。<br />
+　<b>ステートマシン</b>は<b>ステートの切り替え</b>の命令が来たら、<b>前のステートを終わらせ、新しいステートに移る</b>という処理を行います。その際、例えばAというステートからBというステートに移る場合、
+<div class="box1">
+<pre>
+１、AステートのExit()関数を呼ぶ
+２、BステートのEnter()関数を呼ぶ
+</pre>
+</div>
+　の2つの処理を行います。この呼び出しにより、ステートのあとしまつや、新しいステートの準備を行うことができます。そして、ステートがBに切り替わった後は、毎ターン（約60分の1秒）ごとに、
+<div class="box1">
+<pre>
+３、BステートのExicute()関数を呼ぶ
+</pre>
+</div>
+　という呼び出しを行います。<br />
+　ですから、ステートの記述者は、自分を保持しているゲームオブジェクトのパラメータを監視して、何かに衝突するなどで変更があったら、ステートの切り替え命令を<b>ステートマシン</b>に送ることができます。<br />
+<br />
+　さて、ここまでが<b>これまでのBaseCross</b>に実装されていた機能です。<b>2017年春のバージョンアップ</b>によって、さらに<b>行動クラス</b>というのを実装できるようになりました。<br />
+<br />
+<h4>行動（Behavior）クラス</h4>
+　<b>行動</b>は一般的（ゲームのアルゴリズムの書籍などでは）、<b>Behavior</b>とか<b>ふるまい</b>などと呼ばれています。敵キャラにおける<b>プレイヤーを発見した時の行動</b>や<b>攻撃を受けた時の行動</b>などもそうです。アイテムが<b>プレイヤーに触れた時の演出</b>も<b>行動</b>と言えます。オブジェクト化されたギミックであれば<b>何らかの仕掛けがクリアしたときの行動</b>もそうでしょう。<br />
+　それらの<b>行動</b>は、一般的には<b>ステート</b>と深く結びついていて、<b>あるステートが開始した時の行動</b>などといった感じで、オブジェクトのメンバ関数などに記述し、それをステートから呼び出す、といった手法をとるのが一般的です。<br />
+　<b>ステート</b>はその仕様上<b>シングルトン</b>でなければいけません。ですからステートにはメンバ変数は記述できないので、オブジェクト内やもしくは、ステートとは別の場所で記述します。<br />
+　しかし、往々にして<b>行動</b>のアルゴリズムは<b>似たような</b>記述になりがちです。ほとんど同じ行動を別々のオブジェクトに別々に記述するのは、無駄な記述と言えます。<br />
+　またこれらの処理をもっと細かく見た場合、<b>何らかの演出</b>は<b>回転する、光る、アニメーションする</b>などの細かく分けられます。また<b>パラメータの変化</b>も<b>ライフを変化させる、ポイントを変化させる</b>に分けることができます。<br />
+　そういう形にしておけば、例えば
+<div class="box1">
+<pre>
+１、ハートのアイテムは回転して、ライフを増やす
+２、コインのアイテムは光りながら回転して、ポイントを増やす
+３、魔法瓶にアイテムは、回転しながら煙が出て、魔力とライフをアップする
+４、敵の魔法瓶アイテムを横取りすると、光りながら煙が出て、魔力とポイントをアップする
+</pre>
+</div>
+　を処理する場合
+<table>
+<tr>
+<th>行動</th>
+<th>ハート</th>
+<th>コイン</th>
+<th>魔法瓶</th>
+<th>敵の魔法瓶</th>
+</tr>
+<tr>
+<th>回転</th>
+<td class="center">〇</td>
+<td class="center">〇</td>
+<td class="center">〇</td>
+<td class="center">　</td>
+</tr>
+<tr>
+<th>光る</th>
+<td class="center">　</td>
+<td class="center">〇</td>
+<td class="center">　</td>
+<td class="center">〇</td>
+</tr>
+<tr>
+<th>煙</th>
+<td class="center">　</td>
+<td class="center">　</td>
+<td class="center">〇</td>
+<td class="center">〇</td>
+</tr>
+<tr>
+<th>ライフ</th>
+<td class="center">〇</td>
+<td class="center">　</td>
+<td class="center">〇</td>
+<td class="center">　</td>
+</tr>
+<tr>
+<th>ポイント</th>
+<td class="center">　</td>
+<td class="center">〇</td>
+<td class="center">　</td>
+<td class="center">〇</td>
+</tr>
+<tr>
+<th class="nobottom">魔力</th>
+<td class="center nobottom">　</td>
+<td class="center nobottom">　</td>
+<td class="center nobottom">〇</td>
+<td class="center nobottom">〇</td>
+</tr>
+</table>
+　のような関係になります。つまり、各アイテムが実装すべき行動は<b>重なる部分</b>ができるわけです。<br />
+　そうした場合、各アイテムごとに<b>回転</b>や<b>煙</b>などの行動を別々に記述したのでは、無駄が出てきます。もちろん、<b>赤い煙とか黄色く光る</b>、のような<b>少し違う</b>行動もありますが、もしこのような場合、<b>別の行動</b>として定義するか、<b>カラー要素</b>をパラメータ化することでやりくりが可能です。<br />
+　ようは、<b>行動の再利用、あるいは行動の共有</b>を可能にする仕組みが<b>行動クラス</b>というわけです。<br />
+<br />
+<h4>ステートの実装</h4>
+　それでは、このサンプルではどのように<b>ステートと行動</b>を実装しているか見てみましょう。<b>Character.h/cpp</b>に記述があります。<br />
+　まずは、<b>敵1</b>を見てみます。クラスは<b>Enemy1</b>です。まず、<b>ステート</b>を準備します。<b>Enemy1</b>が持ってるステートは<b>Enemy1FarState</b>と<b>Enemy1NearState</b>です。前者は<b>プレイヤーからの距離が遠いとき</b>のステートであり、後者は<b>近いとき</b>のステートです。<br />
+　以下は後者のステート（Enemy1NearState）です
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// Enemy1のNearステート
+//--------------------------------------------------------------------------------------
+class Enemy1NearState : public ObjState&lt;Enemy1>
+{
+    Enemy1NearState() {}
 public:
-    //構築と破棄
-    AttackBall(const shared_ptr&lt;Stage>& StagePtr);
-    virtual ~AttackBall();
-    void Weakup(const Vector3& Position, const Vector3& Velocity);
-    //初期化
-    virtual void OnCreate() override;
-    //操作
-    virtual void OnUpdate() override;
+    //ステートのインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(Enemy1NearState)
+    virtual void Enter(const shared_ptr&lt;Enemy1>& Obj)override;
+    virtual void Execute(const shared_ptr&lt;Enemy1>& Obj)override;
+    virtual void Exit(const shared_ptr&lt;Enemy1>& Obj)override;
 };
 </pre>
 </div>
-　ここでは<b>コンストラクタ、デストラクタ</b>そしていくつかの仮想関数と<b>Weakup()関数</b>が宣言されてます。このクラスは通常は<b>無効</b>状態です。しかしプレイヤーが発射コマンドを送出するとき<b>Weakup()関数</b>が呼ばれて<b>有効</b>になります。<br />
-　以下は、<b>AttackBall::OnCreate()関数（抜粋）</b>です。一般的な初期化をしたあと、以下のように<b>無効状態</b>にします。
+　上記は<b>Enemy1NearState</b>の宣言です。
 <div class="box1">
 <pre>
-void AttackBall::OnCreate() {
+    DECLARE_SINGLETON_INSTANCE(Enemy1NearState)
+</pre>
+</div>
+　というのはマクロですが、この記述で
+<div class="box1">
+<pre>
+    static shared_ptr&lt;Enemy1NearState> Instance();
+</pre>
+</div>
+　と展開されます。ステートは<b>シングルトン</b>で作成するため、シングルトンのインスタンスのポインタをstaticで保持しておきます。そのため、この関数はそのポインタを取得する関数宣言です。これはマクロですから、展開後のコードを直接記述してもかまいません。<br />
+　ここには仮想関数として、<b>Enter()、Excute()、Exit()</b>の3つの関数があります。この関数は親クラスによって<b>純粋仮想関数</b>として宣言されているので、必ず実装しなければいけません。<br />
+　それぞれの役割とすれば、<b>Enter()関数</b>は<b>そのステートに入ったとき</b>に呼ばれます。<b>Excute()関数</b>は<b>そのステートが継続中</b>に呼ばれます。<b>Exit()関数</b>は<b>そのステートが終了するとき</b>に呼ばれます。<br />
+　では<b>どこから呼ばれるのか</b>というと、この後説明する<b>ステートマシン</b>から呼ばれます。<br />
+<br />
+　以下は<b>Enemy1NearStateの実体</b>です。<b>Character.cpp</b>に記述があります。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// Enemy1のNearステート
+//--------------------------------------------------------------------------------------
+IMPLEMENT_SINGLETON_INSTANCE(Enemy1NearState)
 
+void Enemy1NearState::Enter(const shared_ptr&lt;Enemy1>& Obj) {
+    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
+    PtrArrive->Enter(L"Player");
+}
+
+void Enemy1NearState::Execute(const shared_ptr&lt;Enemy1>& Obj) {
+    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
+    if (PtrArrive->Execute(L"Player",true,0.1f) >= Obj->GetNearFarChange()) {
+        Obj->GetStateMachine()->ChangeState(Enemy1FarState::Instance());
+    }
+}
+
+void Enemy1NearState::Exit(const shared_ptr&lt;Enemy1>& Obj) {
+    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
+    PtrArrive->Exit();
+}
+</pre>
+</div>
+　まずここにも
+<div class="box1">
+<pre>
+IMPLEMENT_SINGLETON_INSTANCE(Enemy1NearState)
+</pre>
+</div>
+　というマクロ呼び出しがあります。これは
+<div class="box1">
+<pre>
+shared_ptr&lt;Enemy1NearState> Enemy1NearState::Instance() { 
+    static shared_ptr&lt;Enemy1NearState> instance;
+    if(!instance) { 
+        instance = shared_ptr&lt;Enemy1NearState>(new Enemy1NearState); 
+    }
+    return instance;
+}
+</pre>
+</div>
+　という形に展開されます。このソースを見ればわかるように<b>Enemy1NearState</b>という型名がいくつも出てきます。<br />
+　これは間違いのもとでもあるので、マクロ化しています。こちらも、展開後のコードを記述しても問題ありません。<br />
+　さて、<b>Enemy1NearState::Instance()関数</b>は何をやっているのでしょうか。ステートはシングルトンなので、<b>自分自身のポインタ</b>を一つだけ保持しています。それが、
+<div class="box1">
+<pre>
+    static shared_ptr&lt;Enemy1NearState> instance;
+</pre>
+</div>
+　です。このポインタが初期化後であればこの関数はそのポインタを返し、初期化前であれば初期化して返します。<br />
+　このように<b>1回目の呼び出し</b>でインスタンスが作成され、以降は作成されることはありません。<br/>
+<br />
+　続く<b>Enemy1NearState::Enter()関数</b>、<b>Enemy1NearState::Execute()関数</b>、<b>Enemy1NearState::Exit()関数</b>は前述したように<b>このステートに入ったとき</b>、<b>このステートにいる間の毎ターン</b>、<b>このステートを抜けるとき</b>の実装を記述します。<br />
+<br />
+<h4>ステートマシン</h4>
+　ステートマシンは、各ゲームオブジェクトに1つだけ記述します。まず宣言です。以下は<b>Enemy1のステートマシン</b>です。宣言とアクセサを記述します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 敵１
+//--------------------------------------------------------------------------------------
+class Enemy1 : public GameObject {
+//中略
+    //ステートマシーン
+    <span class="red">unique_ptr&lt;StateMachine&lt;Enemy1>>  m_StateMachine;</span>
+//中略
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  ステートマシンを得る
+    @return ステートマシン
+    */
+    //--------------------------------------------------------------------------------------
+    unique_ptr&lt; StateMachine&lt;Enemy1>>& GetStateMachine() {
+        return m_StateMachine;
+    }
+//中略
+};
+</pre>
+</div>
+　今回のサンプルでは<b>unique_ptr</b>を使ってますが、<b>shared_ptr</b>でも問題はありません。<br />
+　続いて初期化ですが<b>OnCreate()関数</b>などで、以下のように記述します。以下は<b>unique_ptr</b>の場合の初期化方法です。
+<div class="box1">
+<pre>
+//初期化
+void Enemy1::OnCreate() {
     //中略
 
-    <span class="red">//最初は無効にしておく
-    SetDrawActive(false);
-    SetUpdateActive(false);</span>
-
+    //ステートマシンの構築
+    <span class="red">m_StateMachine.reset(new StateMachine&lt;Enemy1>(GetThis&lt;Enemy1>()));</span>
+    //最初のステートをEnemy1FarStateに設定
+    m_StateMachine->ChangeState(Enemy1FarState::Instance());
 }
 </pre>
 </div>
-　<b>SetDrawActive(false);</b>は、描画を無効にします。<b>SetUpdateActive(false);</b>は更新処理を無効にします。このようにすると、<b>OnUpdate()やOnDraw()</b>は呼ばれません。（OnDraw()は通常は描画コンポーネントに任せますが、多重定義すれば独自の描画ができます）。<br />
-　そして以下は<b>AttackBall::Weakup()関数</b>です。プレイヤーが発射ボタンを押したときに呼ばれます。
+　この記述で<b>ステートマシンが構築され、最初のステートにEnemy1FarStateが設定され</b>ます。<br />
+　そして、ゲームオブジェクトの<b>OnUpdate()関数</b>などで以下のように記述します。
 <div class="box1">
 <pre>
-void AttackBall::Weakup(const Vector3& Position, const Vector3& Velocity) {
-    auto PtrTransform = GetComponent&lt;Transform>();
-    PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
-    PtrTransform->SetRotation(0, 0, 0);
-    <span class="red">PtrTransform->ResetPosition(Position);</span>
-    auto PtrRedid = GetComponent&lt;Rigidbody>();
-    PtrRedid->SetVelocity(Velocity);
-    <span class="red">SetDrawActive(true);
-    SetUpdateActive(true);</span>
+void Enemy1::OnUpdate() {
+    //ステートマシンのUpdateを行う
+    //この中でステートの切り替えが行われる
+    <span class="red">m_StateMachine->Update();</span>
 }
 </pre>
 </div>
-　ここでは、<b>発射位置</b>と<b>速度</b>が渡されます。<b>AttackBall</b>は<b>重力コンポーネント</b>は持ってませんので、発射されるとそのまま落ちることなくどこまでも飛んでいきます。衝突判定はあるので何かにぶつかると、方向が変化（つまり速度の向きが変化）します。<br/>
-　ここで、赤くなっている
+　こうしておくと例えば、どこかのステートなどで
 <div class="box1">
 <pre>
-    <span class="red">PtrTransform->ResetPosition(Position);</span>
+    <span class="red">Obj->GetStateMachine()->ChangeState(Enemy1NearState::Instance());</span>
 </pre>
 </div>
-　について説明します。この関数（ResetPosition()）は、Transformの関数ですが、<b>位置をリセット</b>します。<br />
-　Transformコンポーネントは常に<b>1ターン前の位置</b>を保持しています（スケールや回転も持っています）。これは何に使うかというと、衝突判定で使用します。衝突判定は、<b>前の位置</b>から<b>現在の位置</b>までの移動を計算し、その途中で何かに衝突したら<b>衝突した</b>という形になっています。<br />
-　<b>SetPosition()関数</b>は、いわばその現在位置をセットする関数なので、たとえば<b>AttackBall</b>クラスだと、<b>前の位置</b>は、<b>1つ前に有効だった時の位置</b>が設定されていて、<b>そこから現在の位置に移動した</b>と解釈されてしまいます。<br />
-　<b>ResetPosition()</b>は<b>前の位置と現在位置</b>両方とも指定した値にセットするので<b>全く動いいてない</b>状態になります。<br />
-　この手法は<b>敵に当たったらスタート位置に戻る</b>などの時も使用する必要があります。<br />
-　<b>ResetPosition()</b>は、位置情報だけをリセットする方法ですが、スケーリングや回転もリセットする場合
+　のように記述すれば、ステートマシンにより、前述したように
 <div class="box1">
 <pre>
-    auto PtrTransform = GetComponent&lt;Transform>();
-    PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
-    PtrTransform->SetRotation(0, 0, 0);
-    PtrTransform->SetPosition(Position);
-    <span class="red">PtrTransform->SetToBefore();</span>
+１、Enemy1FarStateステートのExit()関数を呼ぶ
+２、Enemy1NearStateステートのEnter()関数を呼ぶ
 </pre>
 </div>
-　とします（この場合位置設定はSetPosition()でかまいません）。<br />
-　<b>SetToBefore()関数</b>はすべての情報を<b>1つ前の情報にコピー</b>します。この処理により<b>現在の情報</b>と<b>1つ前の情報</b>が同じになり、<b>全く動きがない</b>状態にできます。<br />
-　<b>AttackBall::Weakup()関数</b>ではこのあと
-<div class="box1">
-<pre>
-    <span class="red">SetDrawActive(true);
-    SetUpdateActive(true);</span>
-</pre>
-</div>
-　で描画と更新を有効にします。
+　のようにステートの切り替えが行われます。<br />
+<br/>
+　さて、このように、各ステートのそれぞれの関数からは、ゲームオブジェクトの何らかの<b>行動</b>を記述する、あるいはゲームオブジェクト内の書かれた<b>いくつかの行動を記述した関数</b>を呼び出すわけですが、この<b>行動を記述するメンバ関数</b>をクラス化したものが<b>行動クラス</b>です。<br />
+　つまり<b>行動をクラス化すれば、ゲームオブジェクトを超えて使える</b>ので、各ゲームオブジェクトは<b>個別に行動を記述するメンバ関数</b>を用意する必要がなくなるわけです。<br />
 <br />
-　<b>AttackBallの更新処理</b>は<b>AttackBall::OnUpdate()関数</b>です。
+<h4>行動のクラス化</h4>
+　具体的に<b>Enemy1NearState::Execute()関数</b>での記述を追いかけてみましょう。
 <div class="box1">
 <pre>
-void AttackBall::OnUpdate() {
-    Rect2D&lt;float> rect(-25.0f, -25.0f, 25.0f, 25.0f);
-    Point2D&lt;float> point;
-    auto PtrTransform = GetComponent&lt;Transform>();
-    point.x = PtrTransform->GetPosition().x;
-    point.y = PtrTransform->GetPosition().z;
-    if (!rect.PtInRect(point) || abs(PtrTransform->GetPosition().y) > 10.0f) {
-        PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
-        PtrTransform->SetRotation(0, 0, 0);
-        PtrTransform->SetPosition(0, 0, 0);
-        SetDrawActive(false);
-        SetUpdateActive(false);
+void Enemy1NearState::Execute(const shared_ptr&lt;Enemy1>& Obj) {
+    auto PtrArrive = <span class="red">Obj->GetBehavior&lt;ArriveBehavior>();</span>
+    if (<span class="red">PtrArrive->Execute(L"Player",true,0.1f)</span> >= Obj->GetNearFarChange()) {
+        Obj->GetStateMachine()->ChangeState(Enemy1FarState::Instance());
     }
 }
 </pre>
 </div>
-　この関数は<b>SetUpdateActive(true);</b>の状態でなければ呼ばれません。つまり、移動中の処理です。すでに<b>AttackBall::Weakup()関数</b>で、速度の設定は終わっているので、何かに衝突したとしても<b>移動している</b>状態です。<br />
-　なのでこのサンプルでは<b>ゲーム盤</b>の領域から外れたら、<b>更新と描画を無効に</b>します。（高さに関しては、上限を10.0fにしています）<br />
-　以上で<b>アタックボール</b>の説明は終わりです。<br />
-<br />
-<h4>プレイヤー</h4>
-　プレイヤーは、冒頭紹介したように<b>階層化ステートマシン</b>と<b>行動階層クラス</b>が実装されています。そのほかに、コントローラのボタンを<b>コマンド化</b>したクラスも実装されています。<br />
-　スペースの関係で、<b>実体部</b>のみ重要な部分のみ説明します。<br />
-　以下は、<b> Player::OnCreate()関数（抜粋）</b>です。
+　赤くなっているところが<b>行動クラスのインスタンスを取得している</b>箇所と<b>その行動のメンバ関数を呼び出すところ</b>です。
 <div class="box1">
 <pre>
-void Player::OnCreate() {
-    //コマンドの登録
-    //Aボタンにアクションコマンドを登録
-    m_Handler.SetButtonA(&m_Action);
-    //Bボタンに行動切り替えコマンドを登録
-    m_Handler.SetButtonB(&m_BehaviorChange);
-
-    //中略
-
-    //行動クラスの構築(ジャンプ行動)
-    m_PlayerBehavior = JumpPlayerBehavior::Instance();
-    //ステートマシンの構築
-    m_StateMachine = make_shared&lt; LayeredStateMachine&lt;Player> >(GetThis&lt;Player>());
-    //最初のステートをPlayerDefaultに設定
-    m_StateMachine->Reset(PlayerDefault::Instance());
+Obj->GetBehavior<行動クラス名>()
+</pre>
+</div>
+　により、ゲームオブジェクトにその行動クラスが存在しなければ、インスタンスを作成しゲームオブジェクトに設置し、そのポインタを返します。<br />
+　ですから、あらかじめ<b>AddBehavior()</b>などの関数で行動を追加しておく必要はありません（そういう関数は存在しません）。<b>使うときに取得すれば</b>いいのです。<br />
+<b>ArriveBehavior</b>の宣言と実体は、ライブラリ中の<b>SharedLibプロジェクト</b>に<b>Behavior.h/cpp</b>に実装されています。以下がその宣言です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// Arrive行動クラス
+//--------------------------------------------------------------------------------------
+class ArriveBehavior : public Behavior {
+public:
+    ArriveBehavior(const shared_ptr&lt;GameObject>& GameObjectPtr) :
+        Behavior(GameObjectPtr)
+    {}
+    virtual ~ArriveBehavior() {}
+    void Enter(const Vector3& TargetPos);
+    void Enter(const wstring& TargetKey);
+    float Execute(const Vector3& TargetPos, bool RotHead, float LerpFact);
+    <span class="red">float Execute(const wstring& TargetKey, bool RotHead, float LerpFact);</span>
+    void Exit();
+};
+</pre>
+</div>
+　この行動クラスはオブジェクトに追加されている<b>ArriveSteeringコンポーネント</b>を呼び出して、そのパラメータの設定を行います。ステートから呼び出されている関数を見てみましょう（赤くなっている関数です）。
+<div class="box1">
+<pre>
+float ArriveBehavior::Execute(const wstring& TargetKey, 
+    bool RotHead, float LerpFact) {
+    auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
+    auto TargetPos = TargetPtr->GetComponent&lt;Transform>()->GetPosition();
+    auto PtrArrive = GetGameObject()->GetComponent&lt;ArriveSteering>();
+    PtrArrive->SetTargetPosition(TargetPos);
+    if (RotHead) {
+        auto UtilPtr = GetGameObject()->GetBehavior&lt;UtilBehavior>();
+        UtilPtr->RotToHead(LerpFact);
+    }
+    auto Pos = GetGameObject()->GetComponent&lt;Transform>()->GetPosition();
+    return Vector3EX::Length(Pos - TargetPos);
 }
 </pre>
 </div>
-　ここでは、<b>入力ハンドラー</b>、<b>コマンド</b>、<b>行動クラス</b>、<b>階層化ステートマシン</b>の初期化を行っています。<br />
-　他の実装では、<b>Transformコンポーネントや、物理計算、衝突判定などのUpdate系コンポーネントと描画コンポーネント</b>を設定しています。<br />
+　ここには、関連するオブジェクトのコンポーネントを取り出し、そのコンポーネントを操作することで<b>行動を作成</b>しています。<br />
+　ですから、<b>ArriveBehaviorを実装するオブジェクト</b>は<b>ArriveSteeringコンポーネント</b>をあらかじめ追加しておかなければなりません。<br />
 <br />
-　<b>コマンド</b>は<b>デザインパターン</b>の<b>Command</b>を実装したものです。<br />
-　<b>コマンド</b>を実装するためにはヘッダーファイル（Player.h）に
+　さて、それでは、<b>行動を一般化するメリット</b>とはなんでしょう。<br />
+　それは多くの場合、<b>敵やアイテムやギミック</b>の<b>AI動作</b>を少ないコード行数で実装できる、という部分です。<br />
+　たとえば、<b>敵Aにはプレイヤーを追いかける行動がある</b>とします。また<b>敵Bにもプレイヤーを追いかける行動がある</b>とした場合、同じようなコードを、これまでは<b>敵A及び敵B</b>に記述する必要がありました。また、そうでない場合でも<b>Strategyデザインパターン</b>などを作成し、ゲーム側で共有する行動を作成する必要がありました。<br />
+　もちろん<b>Strategyパターン</b>もいいのですが、今回実装した<b>行動クラス</b>は<b>Strategyパターン</b>よりも自由度が高い設計になってます。<b>Strategyパターン</b>は、ある程度、親クラス側で仮想関数もしくはテンプレート内関数の関数名を固定する必要があります。これは<b>Strategyパターン</b>を呼び出す側が<b>関数名を決める</b>ことにより、<b>後からのクラス追加</b>がしやすい設計になっているからです。しかし<b>行動クラス</b>では<b>保持する関数の形式はどのようにでも書ける</b>というメリットがあります。<br />
+　たとえば、<b>ArriveBehavior行動クラス</b>は<b>Enter()関数</b>がありますが<b>JumpBehavior行動クラス</b>には<b>Enter()関数</b>はありません。代わりに<b>StartJump()関数</b>があります。<br />
+<br />
+<h4>行動クラスの作成</h4>
+　しかし、<b>似たような行動であるがオブジェクトを超えて同じではない</b>場合、もちろん、ライブラリではなく新規で<b>行動クラス</b>を作成することもできます。<br />
+　<b>GameSourcesプロジェクト</b>の<b>ProjectBehavior.h/cpp</b>を見てみてください。<br />
+　ここには、例えば<b>PlayerBehavior行動クラス</b>があります。この行動クラスは<b>ライブラリにあらかじめ用意された</b>クラスではありません。<br />
+<br />
+　新規に行動クラスを作成するには、<b>ProjectBehavior.h</b>などに
 <div class="box1">
 <pre>
-class Player;
-//--------------------------------------------------------------------------------------
-/// アクションコマンド（Aボタン）
-//--------------------------------------------------------------------------------------
-class ActionCommand : public ObjCommand&lt;Player> {
-    virtual void Excute(const shared_ptr&lt;Player>& Obj)override;
-};
-//--------------------------------------------------------------------------------------
-/// 行動切り替えコマンド(Bボタン)
-//--------------------------------------------------------------------------------------
-class BehaviorChangeCommand : public ObjCommand&lt;Player> {
-    virtual void Excute(const shared_ptr&lt;Player>& Obj)override;
+class TestBehavior : public Behavior {
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  GameObjectPtr   ゲームオブジェクト
+    */
+    //--------------------------------------------------------------------------------------
+    TestBehavior(const shared_ptr&lt;GameObject>& GameObjectPtr) :
+        Behavior(GameObjectPtr)
+    {}
+    //以下、ほかのメンバ関数を作成する
+    //例: TestFunction();
+    void TestFunction();
 };
 </pre>
 </div>
-　のように<b>ObjCommand&lt;Player>の派生クラス</b>として各ボタンに対応するクラスを作成します。<br />
-　また、プレイヤーのメンバとして、
+　このように<b>Behaviorの派生クラス</b>として宣言します。そして<b>コンストラクタの引数</b>を必ず<b>const shared_ptr&lt;GameObject>& GameObjectPtr</b>にする、ということです。ほかのタイプのコンストラクタは作成しません。<br />
+　こうしておいて、何らかのメンバ関数を作成しておきます。実体（ProjectBehavior.cppファイル）のほうは
 <div class="box1">
 <pre>
+void TestBehavior::TestFunction(){
+    auto Pos = GetGameObject()->GetComponent&lt;Transform>()->GetPosition();
+    
+}
+</pre>
+</div>
+　のように<b>GetGameObject()関数</b>によって、その行動が設置されているオブジェクトのポインタを取得することができます。それは当然、そのオブジェクトが保持するコンポーネント類にアクセスできることになります。<br />
+　また行動クラスは<b>ステート</b>とは違い<b>メンバ変数</b>を作成できます。行動クラスは<b>シングルトン</b>ではありません。
+<div class="box1">
+<pre>
+class TestBehavior : public Behavior {
+    //この行動のスピード
+    float m_Speed;
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  GameObjectPtr   ゲームオブジェクト
+    */
+    //--------------------------------------------------------------------------------------
+    TestBehavior(const shared_ptr&lt;GameObject>& GameObjectPtr) :
+        Behavior(GameObjectPtr),
+        m_Speed(10.0f)
+    {}
+    //以下略
+};
+</pre>
+</div>
+　<b>行動クラスのインスタンス</b>は、例えば上記<b>TestBehavior行動クラス</b>の場合、ステートなどから
+<div class="box1">
+<pre>
+    auto PtrTest = <span class="red">Obj->GetBehavior&lt;TestBehavior>();
+    PtrTest->TestFunction();</span>
+</pre>
+</div>
+　と呼び出せば<b>PtrTest</b>に<b>TestBehavior行動クラスのインスタンスのポインタ</b>が返り、そのポインタを介してメンバ関数を呼び出せます。<br />
+<br />
+<h4>行動とコンポーネント</h4>
+　このように書き進めていくと、<b>行動とコンポーネント</b>が混同してしまうかもしれません。どちらもゲームオブジェクトに設置されるオブジェクトですので。<b>コンポーネント</b>というのは<b>道具</b>です。<b>Transformコンポーネント</b>は<b>位置や回転を設定できる道具</b>ですし<b>Rigidbodyコンポーネント</b>は<b>速度を管理する道具</b>です。<br />
+　そして<b>行動</b>は<b>道具であるコンポーネントを実際に操作するオブジェクト</b>です。もちろん<b>衝突判定コンポーネント</b>のように設置しただけで<b>衝突</b>を実装できるものもありますが、多くのコンポーネントは<b>パラメータの設定や操作関数を呼び出す</b>ことで、その<b>コンポーネントを操作する</b>ことになります。<b>行動</b>はその<b>コンポーネントの操作</b>をクラス化したものと言えます。<br/>
+<br />
+<h4>プレイヤーの作成</h4>
+　プレイヤーも<b>行動がクラス化</b>されています。<br />
+　敵キャラなどのAI動作をするわけでもないのに<b>プレイヤーの行動をクラス化</b>するメリットというのはなんでしょう。<br />
+　例えば（これはAIキャラにも言えることですが）、ゲーム制作過程で<b>いま実装されているのとは、違う行動がほしい</b>ということはよくあります。<br />
+　そんな場合は、よくある方法としては<b>現在の実装をコメントして別に記述する</b>ことがよくありますが、<b>実装してみたけどやはり前のほうが良い</b>となった場合、この方法だと、<b>本当に前の状態まで戻す</b>ことができるのか、という部分でバグが起きやすくなります。<br />
+　こんな場合も<b>行動をクラス化</b>しておけば、新しい行動を<b>新しいクラスとして</b>記述し、呼び出す行動をそちらに差し替えます。そして<b>前のほうが良い</b>となったら、前の行動クラスに、戻せばいいのです。もちろん、新しい実装が、かならずしも、前の実装と呼び出し方が同じになるとは限りません。しかし<b>コメントにして新しく書く</b>よりも保守性は上がるはずです。<br />
+　もちろんメンバ関数で<b>行動の部分を分けて</b>記述しておけば似たような効果が得られるかもしれませんが、<b>クラスを別に</b>しておいたほうが<b>オブジェクト指向</b>なのも確かです。<br />
+<br />
+　プレイヤーは<b>Player.h/cpp</b>に記述があります。敵キャラと同じように、<b>ステートマシンとステート</b>を保持しています。<br />
+　<b>ステート</b>は<b>デフォルトステート</b>と<b>ジャンプステート</b>があります。Aボタンでジャンプします。<br />
+　まず<b>Aボタンを押す</b>というイベントを<b>ハンドラ化</b>します。直接コントローラを見に行ってもいいのですが、<b>ハンドラ</b>にすることで<b>Aボタンが押されたときに呼び出される関数</b>を記述することが可能になります。<br />
+　<b>ハンドラ化</b>はそんなに大変なコードではありません。<b>ProjectBehavior.h</b>に以下のように記述します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// コントローラのボタンのハンドラ
+//--------------------------------------------------------------------------------------
+template&lt;typename T>
+struct InputHandler {
+    void PushHandle(const shared_ptr&lt;T>& Obj) {
+        //コントローラの取得
+        auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+        if (CntlVec[0].bConnected) {
+            //Aボタン
+            if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+                Obj->OnPushA();
+            }
+        }
+    }
+};
+</pre>
+</div>
+　このように<b>テンプレート</b>として記述しておくと、プレイヤー以外でもコントローラのボタンを受け付けやすくなります。<br />
+　このように記述しておいて、プレイヤーの宣言部に以下のように記述します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// プレイヤー
+//--------------------------------------------------------------------------------------
+class Player : public GameObject {
+    //中略
     //入力ハンドラー
-    InputHandler&lt;Player> m_Handler;
-    //アクションコマンド（Aボタン）
-    ActionCommand m_Action;
-    //行動切り替えコマンド（Bボタン）
-    BehaviorChangeCommand m_BehaviorChange;
+    InputHandler&lt;Player> m_InputHandler;
+public:
+    //中略
+    //Aボタンハンドラ
+    void OnPushA();
+};
 </pre>
 </div>
-　と記述します。<b>m_Actionやm_BehaviorChange</b>はコマンドクラスのインスタンスで、<b>m_Handler</b>は<b>入力ハンドラー</b>です。<br/>
-　<b>入力ハンドラー</b>を使用するには<b>Player::OnCreate()関数</b>で
+　こうしておいて、<b>Player.cpp</b>に
 <div class="box1">
 <pre>
-    //Aボタンにアクションコマンドを登録
-    m_Handler.SetButtonA(&m_Action);
-    //Bボタンに行動切り替えコマンドを登録
-    m_Handler.SetButtonB(&m_BehaviorChange);
+//Aボタンハンドラ
+void  Player::OnPushA() {
+    //Aボタンが押されたときの何かの処理
+}
 </pre>
 </div>
-　のように<b>各ボタン</b>を<b>コマンド</b>を結びつけます。
-　すると<b>Player::OnUpdate()関数</b>の以下の記述（赤い部分）
+　と記述します。この関数は<b>Aボタンが押されたとき</b>に呼ばれるようにします。<br />
+　最後に、<b>Player::OnUpdate()</b>に以下のように記述します。
 <div class="box1">
 <pre>
+//更新
 void Player::OnUpdate() {
     //コントローラチェックして入力があればコマンド呼び出し
-    <span class="red">m_Handler.HandleInputExcute(GetThis&lt;Player>());</span>
+    m_InputHandler.PushHandle(GetThis&lt;Player>());
     //ステートマシン更新
     m_StateMachine->Update();
+    //中略
 }
 </pre>
 </div>
-　によって、もしボタン入力があれば各コマンドクラスの<b>Excute()関数</b>が呼ばれます。<br />
+　コントローラのチェック関数とステートマシンの更新の順番は注意を払う必要があります。<br />
+　今回は<b>Aボタンが押されたタイミング</b>でステートの変更が起こりますが、その後の<b>ステートマシンの更新</b>は<b>ジャンプステート</b>での更新が行われますので、安全です。しかし、複雑なボタン処理をする場合、<b>m_InputHandler.PushHandle()関数</b>の戻り値を設定するなど、細かな制御が必要になることもあります。<br />
 <br />
-　行動クラスは、以下のように宣言されています。
+　さて、サンプルではプレイヤーは<b>デフォルトステート</b>と<b>ジャンプステート</b>を持っています。いずれのステートでも、コントローラのスティックによって移動が可能ですが、その行動の記述は、<b>ProjectBehavior.h/cpp</b>の、<b>PlayerBehavior行動クラス</b>に記述されています。各ステートではそのメンバ関数を呼び出します。<br />
+　以下は、<b>デフォルトステート</b>の<b>PlayerDefaultState::Execute()関数</b>ですが
 <div class="box1">
 <pre>
-//--------------------------------------------------------------------------------------
-/// プレイヤー行動親
-//--------------------------------------------------------------------------------------
-class PlayerBehavior {
-protected:
-    PlayerBehavior() {}
-public:
-    virtual ~PlayerBehavior() {}
-    virtual shared_ptr&lt;PlayerBehavior> 
-            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) = 0;
-    virtual Vector3 GetAngle(const shared_ptr&lt;Player>& Obj);
-    virtual void Move(const shared_ptr&lt;Player>& Obj);
-    virtual void StartAction(const shared_ptr&lt;Player>& Obj) = 0;
-    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) = 0;
-};
-
-//--------------------------------------------------------------------------------------
-/// ジャンププレイヤー行動
-//--------------------------------------------------------------------------------------
-class JumpPlayerBehavior : public PlayerBehavior {
-protected:
-    JumpPlayerBehavior() {}
-public:
-    //行動のインスタンス取得
-    DECLARE_SINGLETON_INSTANCE(JumpPlayerBehavior)
-    virtual shared_ptr&lt;PlayerBehavior> 
-            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) override;
-    virtual void StartAction(const shared_ptr&lt;Player>& Obj) override;
-    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) override;
-};
-
-//--------------------------------------------------------------------------------------
-/// 攻撃プレイヤー行動
-//--------------------------------------------------------------------------------------
-class AttackPlayerBehavior : public PlayerBehavior {
-protected:
-    AttackPlayerBehavior() {}
-public:
-    //行動のインスタンス取得
-    DECLARE_SINGLETON_INSTANCE(AttackPlayerBehavior)
-    virtual shared_ptr&lt;PlayerBehavior> 
-            ChangeNextBehavior(const shared_ptr&lt;Player>& Obj) override;
-    virtual void StartAction(const shared_ptr&lt;Player>& Obj) override;
-    virtual void ExcuteAction(const shared_ptr&lt;Player>& Obj) override;
-};
+void PlayerDefaultState::Execute(const shared_ptr&lt;Player>& Obj) {
+    auto PtrDefault = Obj->GetBehavior&lt;PlayerBehavior>();
+    PtrDefault->MovePlayer();
+}
 </pre>
 </div>
-　以上を見ればわかるように、行動クラスはライブラリの何かのクラスを継承したものではなりません。<br />
-　単純にプレイヤーから<b>行動関数</b>を切り離したクラス階層（前述したように<b>デザインパターン</b>の<b>Strategy</b>パターン）として作成しています。ですから階層の作り方などに制約があるわけではありません。<br />
-　これらの行動クラスをプレイヤーにむすびつけるには、Playerに、<b>PlayerBehaviorクラスのポインタ（m_PlayerBehavior）</b>がありますので、<b>Player::OnCreate()</b>において
+　このように<b>PlayerBehavior行動クラス</b>の<b>MovePlayer()関数</b>を呼び出します。<br />
+<br />
+　<b>ジャンプステート</b>への切り替えは<b>Aボタン</b>によって行われ、前述した<b> Player::OnPushA()</b>に記述されています。
 <div class="box1">
 <pre>
-    //行動クラスの構築(ジャンプ行動)
-    m_PlayerBehavior = JumpPlayerBehavior::Instance();
+//Aボタンハンドラ
+void  Player::OnPushA() {
+    if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
+        //通常ステートならジャンプステートに移行
+        GetStateMachine()->ChangeState(PlayerJumpState::Instance());
+    }
+}
 </pre>
 </div>
-　こうしておくと、最初は<b>Aボタンでジャンプ</b>という形になります。<br />
-<br />
-　階層化ステートマシンは、同様<b>Player::OnCreate()</b>において
+　このようにステートが切り替えられると<b>PlayerJumpState::Enter()関数</b>が呼ばれますので、
 <div class="box1">
 <pre>
-    //ステートマシンの構築
-    m_StateMachine = make_shared&lt; LayeredStateMachine&lt;Player> >(GetThis&lt;Player>());
-    //最初のステートをPlayerDefaultに設定
-    m_StateMachine->Reset(PlayerDefault::Instance());
+void PlayerJumpState::Enter(const shared_ptr&lt;Player>& Obj) {
+    auto PtrJump = Obj->GetBehavior&lt;JumpBehavior>();
+    PtrJump->StartJump(Vector3(0, 4.0f, 0));
+}
 </pre>
 </div>
-　のように記述します。これで、最初のステートは<b>PlayerDefault</b>になります。<br/>
+　のように、ジャンプ行動を取得し、<b>StartJump()関数</b>を呼び出します。これでジャンプします。<br />
 <br />
-<h4>プレイヤー以外のオブジェクト</h4>
-　プレイヤー以外のオブジェクトは<b>Character.h/cpp</b>に記述があります。<br />
-　以下に簡単に紹介します。<br />
-<br/>
-<h4>SeekObjectクラス</h4>
-　ゲームを起動するとプレイヤーをひたすら追いかけてくるオブジェクトです。<br />
-　<b>SeekSteering</b>、<b>ArriveSteering</b>、<b>SeparationSteering</b>の3つの操舵系のコンポーネントが実装されています。<b>ステート</b>も実装されていますが、<b>階層化ステートマシン</b>ではありません。<br />
-　行動も<b>行動クラス</b>が実装されているわけではなく、メンバ関数<b>ArriveStartMoton()関数</b>などの<b>○○Motion()関数</b>という形で行動を制御しています。プレイヤーと比較すると違いが判ると思います。<br />
-　また<b>セルマップ</b>や<b>セル検索</b>を実装してないので、ひたすら（障害物があっても）追いかけます。ちょっと間抜けな敵キャラです。<br />
-<br />
-<h4>FixedBoxクラス</h4>
-　前項で紹介したクラスと同じですが<b>セルマップ</b>には対応をとってません。OBB衝突判定がついていますので、プレイヤーが乗ったり衝突したりするさまを確認できます。<br />
-<br />
-<h4>MoveBoxクラス</h4>
-　上下に移動するオブジェクトです。プレイヤーが乗ることができます。<br />
-　上下移動に<b>アクション系</b>の<b>Actionコンポーネント</b>を実装してあります。<b>操舵系</b>のコンポーネントに対して<b>アクション系</b>は<b>何秒でどこまで移動</b>のように、確実な動きを指定できます。<br />
-<br />
-<h4>SphereObjectクラス</h4>
-　右奥と右手前に配置されている、半球のオブジェクトです。球体の衝突判定がついています。<br />
-<br />
-<h4>UnevenGroundクラス</h4>
-　でこぼこの床を表現するクラスです。プレイヤーが乗ると、でこぼこ部分に衝突します。三角形の集合の<b>CollisionTriangles</b>という衝突判定がついています。このコンポーネントは、球体、カプセルに衝突します（OBBには衝突しません）。ですので、SeekObjectクラスは<b>OBB衝突判定</b>ですので、こちらには対応をとってません。<br />
-　次項では<b>SeekObjectクラス</b>に<b>球体衝突判定</b>を実装して<b>CollisionTriangles</b>に反応するクラスを紹介します。<br />
-<br/>
-　でこの項は終わります。
+　今後、<b>BaseCrossのサンプル</b>では<b>行動クラス</b>が多数出てきます。ここでその概要やメカニズムを紹介しました。
 </div>
 <!-- /コンテンツ　-->
 <hr>

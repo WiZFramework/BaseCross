@@ -1,0 +1,649 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１０９．セルマップと経路検索</h3>
+　ここから本格的にBaseCrossの紹介を行います。<br />
+このサンプルは<b>FullTutorial009</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルから<b>XBoxコントローラ</b>が必要です。<br />
+　リビルドして実行すると以下の画面が出てきます。<b>リリースモード</b>でのビルトをお勧めします。
+<p>&nbsp;</p>
+<img src="img/0109a.png" width="80%"/>
+<p>図0103a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>サンプルの動作</h4>
+　まず、コントローラの左スティックを動かしてみましょう。プレイヤー（手前の丸いオブジェクト）が移動します。右スティックでカメラを回転させることができます。カメラは上下にも移動します。また、オブジェクトを移動させると、カメラはついていきます。<br />
+　十字スティックの上下を操作すると、カメラがズームイン、ズームアウトします。<br />
+　また、Aボタンを押すとジャンプします。Bボタンを押すと<b>モード</b>が変わります。モードを変えてAボタンを押すと、白い攻撃球が発射されます。<br />
+　画面上に区画になっているのは<b>セルマップ</b>です。手前からセルマップは３つ配置されています。<br/>
+　セルマップは、手前のセルマップには<b>マップ情報</b>が表示されています。マップ情報は<b>セルのインデックス</b>と<b>各セルのコスト</b>です。コストは通常<b>1</b>が設定され、障害物があるセルは<b>-1</b>が設定されています。<br />
+　真ん中のセルマップは<b>区画</b>のみ表示されています。奥のセルマップは何も表示されません。セルマップ情報はいわばデバッグ用の表示で、ゲーム完成時には<b>何も表示しない（つまり奥セルマップの状態）</b>になります。このサンプルが<b>デバッグモード</b>で動作が遅いのはこの<b>セルマップの情報表示</b>が原因です。すべてのセルマップ情報表示をしない設定にすると、デバッグモードでも充分は速度が出ると思います。<br />
+　それぞれのセルマップには<b>敵</b>が配置され、それぞれが自分の属するセルマップを<b>テリトリー</b>としています。<br />
+　プレイヤーがセルマップの中に入ると、そこをテリトリーとする<b>敵</b>が追いかけてきます。テリトリーから抜けるとそれ以上追いかけては来ません。<br />
+<br/>
+<h4>解説</h4>
+　このサンプルには<b>BaseCross</b>の様々な機能が盛り込まれています。<br />
+　まず、<b>セルマップ</b>から解説しましょう。
+<h4>セルマップの作成</h4>
+　<b>セルマップ</b>は、あらかじめ定義された<b>ゲームオブジェクト</b>です。ステージにセルマップを配置するためには、<b>GameStage.cpp</b>にあるように、以下のように記述します。
+<div class="box1">
+<pre>
+//セルマップの作成
+void GameStage::CreateStageCellMap() {
+    auto Group = CreateSharedObjectGroup(L"CellMap");
+    float  PieceSize = 1.0f;
+    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
+    //セルマップの区画を表示する場合は以下の設定
+    Ptr->SetDrawActive(true);
+    //さらにセルのインデックスとコストを表示する場合は以下の設定
+    Ptr->SetCellStringActive(true);
+    SetSharedGameObject(L"StageCellMap1", Ptr);
+    //グループに追加
+    Group->IntoGroup(Ptr);
+
+    Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
+    //セルマップの区画を表示する場合は以下の設定
+    Ptr->SetDrawActive(true);
+    //さらにセルのインデックスとコストを表示する場合は以下の設定
+    //Ptr->SetCellStringActive(true);
+    SetSharedGameObject(L"StageCellMap2", Ptr);
+    //グループに追加
+    Group->IntoGroup(Ptr);
+
+    Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
+    //セルマップの区画を表示する場合は以下の設定
+    //Ptr->SetDrawActive(true);
+    //さらにセルのインデックスとコストを表示する場合は以下の設定
+    //Ptr->SetCellStringActive(false);
+    SetSharedGameObject(L"StageCellMap3", Ptr);
+    //グループに追加
+    Group->IntoGroup(Ptr);
+
+}
+</pre>
+</div>
+　赤くなっているところは、手前のセルマップを作成している個所です。<br />
+　作成する前に、
+<div class="box1">
+<pre>
+    auto Group = CreateSharedObjectGroup(L"CellMap");
+</pre>
+</div>
+　という形で、<b>グループ</b>を作成します。<b>グループ</b>というのは、ステージ上のゲームオブジェクトを、関連するもの同士をまとめる機能で、配置オブジェクト全体からある特定のオブジェクトを参照する（探し出す）より効率的にアクセスできます。各セルマップはこのグループ内に収めることで、特定しやすくなります。<br />
+　グループを作るには<b>キーワード</b>を指定するだけです。<br />
+　続いて
+<div class="box1">
+<pre>
+    float  PieceSize = 1.0f;
+    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
+</pre>
+</div>
+　の記述です。<br />
+　セルマップのクラスは<b>StageCellMap</b>です。このオブジェクトはコンストラクタでいくつかの情報を渡す必要があります。<br />
+　1つ目の引数は<b>最小位置</b>です。セルマップは<b>XZ平面上</b>の<b>2次元オブジェクト</b>ですが、内部的には3次元で管理しています。各セルは<b>AABB</b>という3次元区画を持ってます。<b>AABB</b>とは<b>XYZ軸に平行な直方体</b>です。セルマップでは、<b>縦横そして高さが同じ立方体</b>が、内部的なAABBとなります。そのため、それらの各セルの、<b>一番左手前にあるセルの最小位置</b>が引数になります。一番手前のセルマップは<b>Vector3(-10.0f, 0, 4.0f)の位置</b>から開始するので、そのようなパラメータを渡します。<br />
+　2番目の引数は各セルの<b>縦横（高さ）</b>の大きさです。ここでは<b>1.0f</b>で作成します。<br />
+　次の<b>20</b>は<b>X方向のセルの数</b>です。続く<b>7</b>は<b>Z方向のセルの数</b>です。<br />
+　このように、セルマップ全体の大きさ、は引数に入れないことに注意してください。1区画の大きさとセル数がわかれば、セル全体の大きさは計算できますのでそのような引数のほうが矛盾なくマップを作成できます。縦方向（Y方向）は、1つのセルの大きさです。つまり<b>Y方向のセルの数</b>は常に<b>1</b>になります。<br />
+　ここでは渡してませんが、<b>StageCellMap</b>のコンストラクタには5つ目のパラメータがあり<b>デフォルトのコスト</b>を渡します。この値はデフォルト引数になっており、値は<b>1</b>です。<br />
+　続く設定はセルマップの表示状態の設定です。
+<div class="box1">
+<pre>
+    //セルマップの区画を表示する場合は以下の設定
+    Ptr->SetDrawActive(true);
+    //さらにセルのインデックスとコストを表示する場合は以下の設定
+    Ptr->SetCellStringActive(true);
+</pre>
+</div>
+　表示状態は2段階で設定できます。<b>SetDrawActive()関数</b>で<b>表示するかしないか</b>の設定ができます。デフォルトは<b>表示しない</b>です。続く<b>SetCellStringActive()関数</b>で、セル情報文字列を設定するかどうかを決めます。<b>セル情報文字列</b>は<b>セルのインデックスとコスト</b>です。<br />
+　続く以下の行で、<b>共有オブジェクト</b>として設定し、また、先ほど作成した<b>グループ</b>に自分自身を追加します
+<div class="box1">
+<pre>
+    SetSharedGameObject(L"StageCellMap1", Ptr);
+    //グループに追加
+    Group->IntoGroup(Ptr);
+</pre>
+</div>
+　<b>SetSharedGameObject()関数</b>は、ほかのゲームオブジェクトなどからこのオブジェクトを<b>キーワード</b>で参照できるようにする設定です。<b>敵</b>は自分のテリトリーを特定する必要がありますので、このように設定にします。<br />
+　最後の行でグループに追加してます。<br />
+　これで1つのセルマップの追加は終わりです。同様の処理を<b>真ん中のセルマップ、奥のセルマップ</b>に対して行います。ただし、<b>SetSharedGameObject()関数</b>に渡すキーワードはセルマップごとに違いますので注意しましょう。<br />
+　また、もう一つ注意したいのは、<b>セルマップは敵を作成する前に作成しておく</b>ということです。敵のコンストラクタには、<b>テリトリーとするセルマップ</b>を渡す必要があります。<b>先に作成する</b>とはどういうことか、ですが、以下、<b>GameStage::OnCreate() 関数</b>ですが、
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        //リソースの作成
+        CreateResourses();
+        //ビューとライトの作成
+        CreateViewLight();
+        //プレートの作成
+        CreatePlate();
+        //セルマップの作成
+        <span class="red">CreateStageCellMap();
+        //固定のボックスの作成
+        CreateFixedBox();
+        //プレーヤーの作成
+        CreatePlayer();
+        //敵の作成
+        CreateEnemy();</span>
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　このように、敵は最後に作成しているのがわかります。<br />
+　またこのサンプルでは<b>リソースはGemaStage内で登録</b>しています（前のサンプルとは違います）。<br />
+<br />
+<h4>障害物の作成</h4>
+　セルマップ上に配置される<b>直方体の障害物</b>の作成です。このクラスは<b>FixedBoxクラス</b>で、<b>Character.h/cpp</b>に記述があります。以下は<b>Character.cpp</b>にある、初期化時のコードです。
+<div class="box1">
+<pre>
+void FixedBox::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetRotation(m_Rotation);
+    PtrTransform->SetPosition(m_Position);
+
+    //衝突判定
+    auto PtrObb = AddComponent&lt;CollisionObb>();
+    PtrObb->SetFixed(true);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetTextureResource(L"SKY_TX");
+}
+</pre>
+</div>
+　ここでは、<b>Transformコンポーネント</b>を取得して、コンストラクタで渡された、スケーリング、回転、位置を設定します。<br />
+　その後
+<div class="box1">
+<pre>
+    //衝突判定
+    auto PtrObb = AddComponent&lt;CollisionObb>();
+    PtrObb->SetFixed(true);
+</pre>
+</div>
+　という記述で<b>OBB衝突判定</b>コンポーネントを設定してます。<b>OBB</b>というのはAABBを回転できるようにしたものです。このサンプルでは障害物は回転してないですが、回転したオブジェクトの配置も可能です。<br />
+　<b>SetFixed(true);</b>は、衝突判定コンポーネントの設定ですが、<b>衝突しても影響受けない</b>という設定です。通常は<b>影響を受ける</b>です。衝突判定は、衝突後<b>滑る</b>とか<b>反発する</b>という設定が可能です。しかしここでの<b>FixedBoxクラス</b>は障害物ですので、プライヤーや敵が衝突したからと言って、それに反動して動かないようにしています。<br />
+　<b>FixedBoxクラス</b>の記述自体はそんなに複雑ではないですが、それを配置するためには<b>GameStage::CreateFixedBox()関数</b>で、一つ一つ配置しています。実際にゲーム作成を行う場合、このようなゲーム盤上の配置オブジェクトは、CSVファイルなどで位置や大きさなどを定義し、それを読み込みながら配置したほうが、カスタマイズしやすくなりますし、可読性も高くなります。<br />
+<br/>
+　さて、<b>GameStage::CreateFixedBox()関数</b>では、各ボックスを配置した後以下のような記述があります。
+<div class="box1">
+<pre>
+//固定のボックスの作成
+void GameStage::CreateFixedBox() {
+    //配列の初期化
+    vector&lt; vector&lt;Vector3> > Vec = {
+        {
+            Vector3(1.0f, 0.5f, 40.0f),
+            Vector3(0.0f, 0.0f, 0.0f),
+            Vector3(9.5f, 0.25f, 20.0f)
+        },
+
+        //中略
+
+    };
+
+    //ボックスのグループを作成
+    auto BoxGroup = CreateSharedObjectGroup(L"FixedBoxes");
+    //オブジェクトの作成
+    for (auto v : Vec) {
+        auto BoxPtr = AddGameObject&lt;FixedBox>(v[0], v[1], v[2]);
+        //ボックスのグループに追加
+        BoxGroup->IntoGroup(BoxPtr);
+    }
+    //セルマップ内にFixedBoxの情報をセット
+    auto Group = GetSharedObjectGroup(L"CellMap");
+    //セルマップグループを取得
+    for (auto& gv : Group->GetGroupVector()) {
+        auto MapPtr = dynamic_pointer_cast&lt;StageCellMap>(gv.lock());
+        if (MapPtr) {
+            //セルマップからセルの配列を取得
+            auto& CellVec = MapPtr->GetCellVec();
+            //ボックスグループからボックスの配列を取得
+            auto& BoxVec = BoxGroup->GetGroupVector();
+            vector&lt;AABB> ObjectsAABBVec;
+            for (auto& v : BoxVec) {
+                auto FixedBoxPtr = dynamic_pointer_cast&lt;FixedBox>(v.lock());
+                if (FixedBoxPtr) {
+                    auto ColPtr = FixedBoxPtr->GetComponent&lt;CollisionObb>();
+                    //ボックスの衝突判定かラッピングするAABBを取得して保存
+                    ObjectsAABBVec.push_back(ColPtr->GetWrappingAABB());
+                }
+            }
+            //セル配列からセルをスキャン
+            for (auto& v : CellVec) {
+                for (auto& v2 : v) {
+                    for (auto& vObj : ObjectsAABBVec) {
+                        if (HitTest::AABB_AABB_NOT_EQUAL(v2.m_PieceRange, vObj)) {
+                            //ボックスのABBとNOT_EQUALで衝突判定
+                            v2.m_Cost = -1;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</pre>
+</div>
+　このコードはセルマップからセルの配列を取り出し、それぞれのセルにボックスがかかってないか確認し、かかってたらセルのコストを<b>-1</b>に設定しています。<br />
+　こうしておくことで、この後説明する<b>敵キャラ</b>の経路検索でボックスを回り込みながらプレイヤーを追いかけるようになります。<br/>
+<br />
+<h4>敵キャラの作成</h4>
+　ゲームステージ上はプレイヤーが先に追加されますが、<b>敵キャラ</b>の説明を先に行います。<br />
+　敵キャラはボックス同様<b>Character.h/cpp</b>にあります。<br />
+　まず、敵キャラは<b>ステートとステートマシン</b>を実装しています。<b>BaseCross</b>にはいくつかのタイプの<b>ステート、あるいはBehavior（行動）、そしてステートマシン</b>があります。<br />
+　ステートやBehaviorは、階層化もできますが、今回は一番単純なステートを使用します。<br />
+　ここで、<b>ステート</b>とは何かをちょっとだけ説明します。<br />
+　動的に変化するオブジェクトは<b>状態</b>というのを持ってます。例えば<b>待っている状態</b>や<b>追いかけている状態</b>また<b>攻撃する状態</b>などです。<br />
+　これらを、例えば<b>OnUodate()関数</b>などの中で<b>if文やswitch文</b>により分岐すると、簡単なものならいいのですが複雑になればなるほど何が何だか分からなくなっていきます。また、バグも多くなります。<br />
+　そんな時<b>状態</b>を効率よく分岐させる機能jがあれば、コードも可読性が上がりますし、なにより<b>よくわからないバグ</b>を防ぐことができます。<br />
+　まず<b>状態</b>ですが、これを<b>ステート</b>と呼びます。オブジェクトは常に何らかの<b>ステート</b>の状態に属します。<br />
+　<b>ステート</b>の作成方法もいくつかあるのですが、今回の敵キャラに実装しているのは<b>階層化しないステート</b>です。<br />
+　<b>階層化しないステート</b>では、いくつかの関数がありその関数に従って、オブジェクトの動作を定義します。<br />
+　前置きはこのくらいで実際にコードを見てみましょう。<b>Character.h</b>には、敵キャラのステートの宣言があります。<br />
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// デフォルトステート
+//--------------------------------------------------------------------------------------
+class EnemyDefault : public ObjState&lt;Enemy>
+{
+    EnemyDefault() {}
+public:
+    //ステートのインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(EnemyDefault)
+    virtual void Enter(const shared_ptr&lt;Enemy>& Obj)override;
+    virtual void Execute(const shared_ptr&lt;Enemy>& Obj)override;
+    virtual void Exit(const shared_ptr&lt;Enemy>& Obj)override;
+};
+
+//--------------------------------------------------------------------------------------
+/// プレイヤーを追いかけるステート
+//--------------------------------------------------------------------------------------
+class EnemySeek : public ObjState&lt;Enemy>
+{
+    EnemySeek() {}
+public:
+    //ステートのインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(EnemySeek)
+    virtual void Enter(const shared_ptr&lt;Enemy>& Obj)override;
+    virtual void Execute(const shared_ptr&lt;Enemy>& Obj)override;
+    virtual void Exit(const shared_ptr&lt;Enemy>& Obj)override;
+};
+</pre>
+</div>
+　まず、<b>ObjStateテンプレートクラス</b>の派生クラスとして<b>ステート</b>を宣言します。今回は2つのステートを宣言しています。<br />
+　ステートは<b>Enter()、Execute()、Exit()</b>の各関数を実装します。それぞれ仮想関数になっていて、<b>Enter()</b>は、<b>そのステートに入ったときに1回だけ</b>呼ばれます。<br />
+　<b>Execute()</b>は、<b>アップデート時に毎ターン</b>呼ばれます。そして<b>Exit()</b>は、そのステートから抜けるときに呼ばれます。<br />
+　<b>ステート</b>は<b>シングルトン</b>になっています。なので、例えば敵キャラは3体ありますが、それぞれのインスタンスで使用する<b>ステートのインスタンス</b>は一つです。<br />
+　そのために複数の敵キャラが使いまわししますので、<b>ステーにはメンバ変数を記述してはいけません</b>。<br />
+　両ステートにある
+<div class="box1">
+<pre>
+    //ステートのインスタンス取得
+    DECLARE_SINGLETON_INSTANCE(EnemyDefault)
+</pre>
+</div>
+　は、マクロです。マクロで<b>コードを作成</b>しています。具体的には、上記のマクロは
+<div class="box1">
+<pre>
+    static shared_ptr&lt;EnemyDefault> Instance();
+</pre>
+</div>
+　に展開されます。これは<b>Instance()関数</b>という<b>static関数の宣言</b>を生成するマクロです。<br />
+　では、各ステートの実体を見てみましょう、以下がそのコードです。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+    //--------------------------------------------------------------------------------------
+    /// デフォルトステート
+    //--------------------------------------------------------------------------------------
+    //ステートのインスタンス取得
+    IMPLEMENT_SINGLETON_INSTANCE(EnemyDefault)
+
+    void EnemyDefault::Enter(const shared_ptr&lt;Enemy>& Obj) {
+    }
+
+    void EnemyDefault::Execute(const shared_ptr&lt;Enemy>& Obj) {
+        if (!Obj->DefaultBehavior()) {
+            Obj->GetStateMachine()->ChangeState(EnemySeek::Instance());
+        }
+    }
+    void EnemyDefault::Exit(const shared_ptr&lt;Enemy>& Obj) {
+    }
+
+    //--------------------------------------------------------------------------------------
+    /// プレイヤーを追いかけるステート
+    //--------------------------------------------------------------------------------------
+    //ステートのインスタンス取得
+    IMPLEMENT_SINGLETON_INSTANCE(EnemySeek)
+
+    void EnemySeek::Enter(const shared_ptr&lt;Enemy>& Obj) {
+        auto PtrSeek = Obj->GetComponent&lt;SeekSteering>();
+        PtrSeek->SetUpdateActive(true);
+    }
+
+    void EnemySeek::Execute(const shared_ptr&lt;Enemy>& Obj) {
+        if (!Obj->SeekBehavior()) {
+            Obj->GetStateMachine()->ChangeState(EnemyDefault::Instance());
+        }
+    }
+
+    void EnemySeek::Exit(const shared_ptr&lt;Enemy>& Obj) {
+        auto PtrSeek = Obj->GetComponent&lt;SeekSteering>();
+        PtrSeek->SetUpdateActive(false);
+    }
+</pre>
+</div>
+　関数はそろってますが、単純な記述ばかりです。まず、<b>デフォルトステート</b>ですが、これは敵の待機時のステートです。敵は、プレイヤーが自分のテリトリーに入るまではじっとしてます。このステートが<b>デフォルトステート</b>です。<br />
+　まず、宣言部にもあったように、インスタンス取得用のマクロがあります。
+<div class="box1">
+<pre>
+    //ステートのインスタンス取得
+    IMPLEMENT_SINGLETON_INSTANCE(EnemyDefault)
+</pre>
+</div>
+　がそうです。展開すると
+<div class="box1">
+<pre>
+shared_ptr&lt;<span class="red">EnemyDefault</span>> <span class="red">EnemyDefault</span>::Instance() {
+    static shared_ptr&lt;<span class="red">EnemyDefault</span>> instance;
+    if(!instance) { 
+        instance = shared_ptr&lt;<span class="red">EnemyDefault</span>>(new <span class="red">EnemyDefault</span>);
+    }
+    return instance;
+}
+</pre>
+</div>
+　となります。赤い部分に注目すると、これは<b>型名</b>なわけですが、これだけの短いコードに、実に<b>5か所</b>も<b>EnemyDefault</b>が出てきます。これを機械的に記述するのもおっくうですし、バグのもとにもなるので、マクロ化してあります。<br />
+　個人的にはできるだけマクロの使用は最小限には抑えたいのですが、この部分の場合は仕方がありません。<br />
+<br />
+ <b>EnemyDefault::Enter()関数</b>と<b>EnemyDefault::Exit()関数</b>は空関数です。<b>EnemyDefault::Execute()関数</b>には記述がありますが、オブジェクト（つまりEnemy型）のメンバ関数<b>DefaultBehavior()関数</b>を呼び出してその戻り値次第で、ステートを<b>EnemySeek</b>にチェンジしています。この<b>DefaultBehavior()関数</b>の内容は、後ほど説明します。<br />
+　続いて<b>EnemySeek</b>ステートですが、マクロは<b>EnemyDefault</b>と同様です。<br />
+　こちらは<b>EnemySeek::Enter()関数、EnemySeek::Exit()関数</b>に記述があります。といいましても、オブジェクトの<b>SeekSteeringコンポーネント</b>を取り出し、それの処理を<b>有効か無効か</b>に設定しています。ステートの<b>Enter()関数やExit()関数</b>はこのように、ステートの前処理、後処理を記述します。<br />
+　ステートの毎ターンごとの処理<b>EnemySeek::Execute()関数</b>は、オブジェクトの<b>SeekBehavior()関数</b>を呼び、その戻り値によってステートを<b>EnemyDefault</b>にチェンジするかどうかの処理をしています。<br />
+<br />
+　では、<b>Enemyクラス</b>のほうを見てみましょう。<br />
+　まず、<b>ステート</b>を分岐するための<b>マネージャ</b>的なクラスである<b>ステートマシン</b>をメンバ変数に持ちます。
+　以下は<b>Enemyクラス</b>の宣言部です。<b>Character.h</b>に記述されてます。
+<div class="box1">
+<pre>
+class Enemy : public GameObject {
+    weak_ptr&lt;StageCellMap> m_CelMap;
+    Vector3 m_Scale;
+    Vector3 m_StartRotation;
+    Vector3 m_StartPosition;
+    vector&lt;CellIndex> m_CellPath;
+    //現在の自分のセルインデックス
+    int m_CellIndex;
+    //めざす（次の）のセルインデックス
+    int m_NextCellIndex;
+    //ターゲットのセルインデックス
+    int m_TargetCellIndex;
+    <span class="red">shared_ptr&lt;StateMachine&lt;Enemy>> m_StateMachine;</span>
+public:
+    //構築と破棄
+    Enemy(const shared_ptr&lt;Stage>& StagePtr,
+        const shared_ptr&lt;StageCellMap>& CellMap,
+        const Vector3& Scale,
+        const Vector3& Rotation,
+        const Vector3& Position
+    );
+    virtual ~Enemy();
+    //プレイヤーの検索
+    bool SearchPlayer();
+
+    //デフォルト行動
+    bool DefaultBehavior();
+    //Seek行動
+    bool SeekBehavior();
+    //アクセサ
+    <span class="red">shared_ptr&lt; StateMachine&lt;Enemy> > GetStateMachine() const {
+        return m_StateMachine;
+    }</span>
+    //初期化
+    virtual void OnCreate() override;
+    //操作
+    virtual void OnUpdate() override;
+    virtual void OnLastUpdate() override;
+};
+</pre>
+</div>
+　赤い部分が<b>ステートマシン</b>です、このクラスで、必要に応じてステートの切り替えを行います。また、ステートマシンのアクセサ（取得）のメンバ関数を持ってます。<br />
+　<b>Enemy</b>クラスはコンストラクタで<b>セルマップ（のスマートポインタ）</b>を渡します。渡されたセルマップは
+<div class="box1">
+<pre>
+    weak_ptr&lt;StageCellMap> m_CelMap;
+</pre>
+</div>
+　に、<b>weak_ptr</b>として保持します。ここは<b>shared_ptr</b>で持っていてもおおむね問題ないかと思いますが、安全策（メモリリーク発生の温床になる）ので安全策で<b>weak_ptr</b>にしてます。<br />
+<br />
+　以下は、実体です。まず、<b>Enemy::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void Enemy::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetPosition(m_StartPosition);
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetRotation(m_StartRotation);
+    //重力をつける
+    auto PtrGravity = AddComponent&lt;Gravity>();
+    //Rigidbodyをつける
+    auto PtrRigid = AddComponent&lt;Rigidbody>();
+    //反発係数は0.5（半分）
+    PtrRigid->SetReflection(0.5f);
+    auto PtrSeek = AddComponent&lt;SeekSteering>();
+    PtrSeek->SetUpdateActive(false);
+    //パス検索
+    auto MapPtr = m_CelMap.lock();
+    if (!MapPtr) {
+        throw BaseException(
+            L"セルマップが不定です",
+            L"if (!MapPtr) ",
+            L" Enemy::OnCreate()"
+        );
+    }
+    auto PathPtr = AddComponent&lt;PathSearch>(MapPtr);
+
+    //SPの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParent);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+    auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+    PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    PtrDraw->SetTextureResource(L"TRACE2_TX");
+    //透明処理をする
+    SetAlphaActive(true);
+
+    m_StateMachine = make_shared&lt;StateMachine&lt;Enemy>>(GetThis&lt;Enemy>());
+    m_StateMachine->ChangeState(EnemyDefault::Instance());
+}
+</pre>
+</div>
+　ここではまず、<b>Transformコンポーネント</b>を取得し、<b>スケール、回転、位置</b>を設定します。<br />
+　続いて<b>重力（Gravity）コンポーネント</b>と<b>速度を使った物理計算（Rigidbody）コンポーネント</b>を追加します。<br />
+　そのうえで<b>SeekSteeringコンポーネント</b>も追加します。このコンポーネントは<b>何かを追いかける</b>コンポーネントです。このように<b>○○Steering</b>となっているコンポーネントは、<b>フォース</b>をもとに<b>加速</b>を計算し、それで<b>Rigidbodyの速度</b>を変更するコンポーネントです。これらの動きの特徴は<b>あくまで希望であって決定ではない</b>ということです。<br />
+　例えばある一定の動きをしている物体の動きを変えたければ、変えたい方向に<b>押したり</b>または、逆方向に<b>引いたり</b>しますね。しかし、実際に力を加えた方向にすぐに変わるかというとそうではないです。それはその物体の<b>質量</b>や<b>現在の速度</b>に依存します。軽くて遅い物体であれば簡単に方向を変えられますが、重くて速い物体の方向を変えるのは至難の業です。そういう、現実に皆さんが、普段から何気なく使っている物理特性をシミュレーとしたものです。<br />
+　<b>SeekSteeringコンポーネント</b>は<b>何かを追いかける</b>コンポーネントですが、<b>何か</b>の方向に<b>力を加える</b>だけで、何かのほうに<b>オブジェクト場所を移動する</b>わけではないのです。<br />
+　このような形なので、追いかけている途中に何かにぶつかったら、動きが変わったり、あるいは跳ね返ったりします。<br/>
+　<b>SeekSteeringコンポーネント</b>は初期状態では<b>無効</b>にしておきます。<br />
+　続いて<b>経路検索コンポーネント</b>を追加します。以下の記述です。
+<div class="box1">
+<pre>
+    //パス検索
+    auto MapPtr = m_CelMap.lock();
+    if (!MapPtr) {
+        throw BaseException(
+            L"セルマップが不定です",
+            L"if (!MapPtr) ",
+            L" Enemy::OnCreate()"
+        );
+    }
+    auto PathPtr = AddComponent&lt;PathSearch>(MapPtr);
+</pre>
+</div>
+　<b>PathSearchコンポーネント</b>が経路検索です。ここでは追加しておくだけです。<br />
+　その後、<b>CollisionSphere（球体衝突判定）</b>、そして描画用のコンポーネントを追加します。最後に
+<div class="box1">
+<pre>
+    m_StateMachine = make_shared&lt;StateMachine&lt;Enemy>>(GetThis&lt;Enemy>());
+    m_StateMachine->ChangeState(EnemyDefault::Instance());
+</pre>
+</div>
+　で<b>ステートマシン</b>を構築します。最初のステートは<b>EnemyDefault</b>としています。（Instanse関数の戻り値を渡します）。<br />
+　こうしておくと<b>OnUpdate()関数</b>は以下のようにシンプルなものになります。
+<div class="box1">
+<pre>
+    void Enemy::OnUpdate() {
+        //ステートマシンのUpdateを行う
+        //この中でステートの切り替えが行われる
+        m_StateMachine->Update();
+    }
+</pre>
+</div>
+　ステートマシンは、コメントのように、各ステートを動的に切り替えながら更新処理を行います。<br />
+<br/>
+　さて、では<b>EnemyDefault</b>から呼ばれる<b>Enemy::DefaultBehavior()関数</b>です。
+<div class="box1">
+<pre>
+bool Enemy::DefaultBehavior() {
+    auto PtrRigid = GetComponent&lt;Rigidbody>();
+    auto Velo = PtrRigid->GetVelocity();
+    Velo *= 0.95f;
+    PtrRigid->SetVelocity(Velo);
+    auto MapPtr = m_CelMap.lock();
+    if (MapPtr) {
+        auto PlayerPtr = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+        auto PlayerPos = PlayerPtr->GetComponent&lt;Transform>()->GetPosition();
+        CellIndex PlayerCell;
+        if (MapPtr->FindCell(PlayerPos, PlayerCell)) {
+            return false;
+        }
+    }
+    return true;
+}
+</pre>
+</div>
+　ここでは、まず<b>Rigidbodyコンポーネント</b>を取り出し、速度を<b>0.95倍</b>にしています。<br />
+　これはどういう処理かというと、<b>EnemySeekステート</b>から戻ってきたときに、速度の勢いがついているときのためで、<b>毎ターン0.95倍</b>することで、違和感なくストップするようになってます。<br />
+　続く処理はプレイヤーが自分のテリトリーに入っているかどうかです、入っていたら、falseを返します。セルマップの
+<div class="box1">
+<pre>
+MapPtr->FindCell(PlayerPos, PlayerCell)
+</pre>
+</div>
+　という呼び出しは、指定した3次元上の位置がセルマップの中に含まれていたら<b>PlayerCell</b>にそのセル情報を返しtrueが返ってきます。つまり<b>セルマップの中にいたらtrue</b>です。<br />
+　その場合、<b>Enemy::DefaultBehavior()</b>はfalseを返します。この戻り値は逆でも（trueを返す）でもいいかと思いますが、<b>ステート</b>内の処理で、<b>行動関数を呼び出してfalseなたステート変更</b>という記述にしたいためこうしています。<br />
+　続いて、<b>EnemySeek</b>から呼ばれる<b>Enemy::SeekBehavior()</b>は以下のようになってます（抜粋）。
+<div class="box1">
+<pre>
+bool Enemy::SeekBehavior() {
+    auto PlayerPtr = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    auto PlayerPos = PlayerPtr->GetComponent&lt;Transform>()->GetPosition();
+    auto MapPtr = m_CelMap.lock();
+    if (MapPtr) {
+        <span class="red">if (SearchPlayer())</span> {
+            auto PtrSeek = GetComponent&lt;SeekSteering>();
+            if (m_NextCellIndex == 0) {
+                //中略
+            }
+            else {
+                //中略
+            }
+            return true;
+        }
+        else {
+                //中略
+        }
+    }
+    return false;
+}
+</pre>
+</div>
+　ここで一番重要なのは、赤くなっているように<b>SearchPlayer()</b>呼び出しです。この関数は<b>Enemy</b>のメンバ関数でセル検索そのものを呼び出しています。<br />
+<div class="box1">
+<pre>
+bool Enemy::SearchPlayer() {
+    auto MapPtr = m_CelMap.lock();
+    if (MapPtr) {
+        auto PathPtr = GetComponent&lt;PathSearch>();
+        auto PlayerPtr = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+        auto PlayerPos = PlayerPtr->GetComponent&lt;Transform>()->GetPosition();
+        m_CellPath.clear();
+        //パス検索をかける
+        <span class="red">if (PathPtr->SearchCell(PlayerPos, m_CellPath))</span> {
+            //検索が成功した
+            m_CellIndex = 0;
+            m_TargetCellIndex = m_CellPath.size() - 1;
+            if (m_CellIndex == m_TargetCellIndex) {
+                //すでに同じセルにいる
+                m_NextCellIndex = m_CellIndex;
+            }
+            else {
+                //離れている
+                m_NextCellIndex = m_CellIndex + 1;
+
+            }
+            return true;
+        }
+        else {
+            //失敗した
+            m_CellIndex = -1;
+            m_NextCellIndex = -1;
+            m_TargetCellIndex = -1;
+        }
+    }
+    return false;
+}
+</pre>
+</div>
+　このように<b>PathSearchコンポーネント</b>の<b>SearchCell()関数</b>を呼び出します。この関数は、検索に成功すると、第2引数に経路のセルの配列を返します。それをメンバ変数に保存して、失敗したらfalseを返すような形です。<br />
+　呼び出し元の<b>Enemy::SeekBehavior()</b>は、プレイヤーがテリトリーから離れたらステートを変更するよう<b>false</b>を返します。<br />
+　このように<b>EnemySeekステート</b>では<b>毎ターン経路検索</b>を実行します。これを、例えば<b>プレイヤーが動かなければ再検索しない</b>などの最適化を行うことは可能です。<br />
+　ただ、<b>PathSearchコンポーネント</b>の<b>SearchCell()関数</b>は、<b>自分から目標にレイ（直線）を飛ばして障害物に当たらなかったら経路検索しないで直接経路に返す</b>という処理をします。つまり、<b>目標が見えれば直接向かう</b>というアルゴリズムになっていますので、ある程度は最適化されていると思います。<br />
+<br />
+<h4>プレイヤー</h4>
+　最後に<b>プレイヤー</b>ですが、この解説もかなりの分量になってしまったので、別のサンプルで解説します（プレイヤーの処理はほぼ同じ処理のものがサンプルには多いので）。<br />
+<br />
+　さて、この項では、コンポーネントの説明やセルマップの説明など、ちょっと欲張りすぎた感があります。別のサンプルでもコンポーネントはどんどん出てきますので、別の項も参照ください。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_08.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -13,7 +13,7 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>１０７．SpriteStudio5データの実装</h3>
+<h3>１０７．モデルの描画</h3>
 このサンプルは<b>FullTutorial007</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 　リビルドして実行すると以下の画面が出てきます。
@@ -23,76 +23,128 @@
 <p>&nbsp;</p>
 <br/>
 <h4>解説</h4>
-　このサンプルは<b>株式会社ウェブテクノロジ社様</b>の<b>SpriteStudio5</b>の再生をする方法です。<b>BaseCross</b>は<b>SpriteStudio5データ（XML形式）</b>にネイティブで対応しています。<br />
-　<b>SpriteStudio5データ</b>はもともと<b>２Ｄデータ</b>ですが、<b>BaseCross</b>では、それを<b>２Ｄ上に展開する</b>方法と<b>３Ｄ上に展開する</b>方法が選べます。<br />
-　サンプルでは<b>女の子</b>が<b>３Ｄ上の展開</b>であり、卵のキャラクターが<b>２Ｄ上の展開</b>です。<br />
+　この項でのデータは<b>モデルの描画</b>です。モデルは<b>FBXモデル</b>として作成し、あらかじめ<b>Fbx2BinVS2015</b>によって<b>.bmfファイル</b>として作成しておき、<b>mediaディレクトリ</b>に保存しておきます。<br />
 <br />
-　では、<b>女の子</b>から見ていきましょう。<b>Player.h/cpp</b>に記述があります。<br />
-　<b>SpriteStudio5データ</b>を実装クラスは<b>SS5ssae</b>を継承して作成します。この<b>SS5ssae</b>は<b>GameObject</b>の派生クラスです。以下は、宣言部（抜粋）です。
+<h4>プレイヤー</h4>
+　プレイヤーは<b>Player.h/cpp</b>に記述があります。<br />
+　前項までの球体のオブジェクトと実装方法は基本的に変わりません。
+　変わる部分は<b>描画コンポーネント</b>に<b>PNTBoneModelDraw</b>を使用するところと、衝突判定に<b>CollisionCapsule</b>を使っているところです。ただし衝突は<b>CollisionSphere</b>を使用したほうが処理は速いです。<br />
+　また今回は前項までのプレイヤーの動きから<b>ボールの発射</b>は抜いてあります。また<b>ステートマシン</b>も<b>単純なもの</b>を使用しています。<br />
+　以下は<b>Player::OnCreate()関数（抜粋）</b>です。
 <div class="box1">
 <pre>
-class Player : public SS5ssae {
-    //中略
-
-public:
-    //構築と破棄
-    Player(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir);
-    virtual ~Player() {}
-    //初期化
-    virtual void OnCreate() override;
+void Player::OnCreate() {
 
     //中略
 
-    virtual void OnUpdate() override;
-    virtual void OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) override;
-    virtual void OnLastUpdate() override;
-};
-</pre>
-</div>
-　コントローラで動作し、ステートも使用していますが、ここでは<b>SS5ssaeを継承する</b>という部分と、<b>コンストラクタに、データのディレクトリを渡す</b>という部分が重要なので、ほかの部分は略してあります。<br />
-　続いて、実体です。以下は<b>コンストラクタ</b>です。
-<div class="box1">
-<pre>
-Player::Player(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir) :
-    <span class="red">SS5ssae(StagePtr, BaseDir, L"character_template_3head.ssae", L"wait"),</span>
-    m_MaxSpeed(40.0f),  //最高速度
-    m_Decel(0.95f), //減速値
-    m_Mass(1.0f),   //質量
-    m_ZRailIndex(0),
-    m_ZRailBeforIndex(0)
-{
+    //衝突判定
+    auto PtrColl = AddComponent&lt;CollisionCapsule>();
+    //親の影響を受ける
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, XM_PI, 0.0f),
+        Vector3(0.0f, -0.5f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"Chara_R_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
+    //描画するメッシュを設定
+    PtrDraw->SetMeshResource(L"Chara_R_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
+    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");
+
     //中略
 
 }
-
 </pre>
 </div>
-　ポイントは親クラスのコンストラクタ呼び出しですが、赤い部分の記述のように<b>ディレクトリ名</b>と<b>ファイル名</b>を記述します。<br />
-　最後の引数は<b>最初のアニメーション名</b>です<b>SpriteStudio5データ</b>はアニメーションを<b>名前</b>で管理します。<br />
-　このようにして構築したら、あとは、タイミングによって<b>アニメーションを変更</b>します。<br />
-　このサンプルではいくつかアニメーションを変更するタイミングがあります。実際の変更は<b>Player::AnimeChangeMotion()</b>関数に記述されています。
+　モデルのメッシュは<b>L"Chara_R_MESH"</b>という名前であらかじめ<b>リソース登録</b>されています。<b>GameStage.cpp</b>を参照ください。<br />
+　モデルを使う場合に注意したいのは<b>モデルの大きさや向き</b>です。<b>ローカル座標の中心</b>が、おなかの部分にある場合と足元にある場合もあるでしょう。これはモデルを作成するときに、モデル作成者と十分に話し合いを行い、また<b>Fbx2BinVS2015</b>によるデータ作成時にも調整が必要ですが、それでも実際のステージ上の大きさなどと違っている場合、
 <div class="box1">
 <pre>
-void Player::AnimeChangeMotion(const wstring& key, bool looped) {
-    <span class="red">ChangeAnimation(key);
-    SetLooped(looped);</span>
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, XM_PI, 0.0f),
+        Vector3(0.0f, -0.5f, 0.0f)
+    );
+</pre>
+</div>
+　のように<b>モデルとトランスフォームの間の差分行列</b>を作成し、
+<div class="box1">
+<pre>
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+</pre>
+</div>
+　と差分行列を設定します。（影も同様です）<br />
+　このモデルはアニメーションがついています。アニメーションの設定は
+<div class="box1">
+<pre>
+    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
+    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");
+</pre>
+</div>
+　のように描画コンポーネントに設定します。<br />
+　それで、アニメーションを切り替えるタイミングで
+<div class="box1">
+<pre>
+    auto PtrDraw = GetComponent&lt;PNTBoneModelDraw>();
+    PtrDraw->ChangeCurrentAnimation(アニメーション名);
+</pre>
+</div>
+　と、描画コンポーネントで呼び出せばアニメーションが切り替わります。<br/>
+<br />
+<h4>スタティックモデル</h4>
+　このサンプルにはもう一つモデルが配置されています。<br />
+　アニメションしないモデルです。これもあらかじめ<b>Fbx2BinVS2015</b>で<b>スタティックモデル</b>としてデータ化しておきます。<br />
+　スタティックモデルのオブジェクトは<b>Chgaracter.h/cpp</b>にある<b>StaticModelクラス</b>です。以下は<b>StaticModel::OnCreate()関数（抜粋）</b>です。
+<div class="box1">
+<pre>
+void StaticModel::OnCreate() {
+
+    //中略
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, -0.25f, 0.0f)
+    );
+
+    auto PtrColl = AddComponent&lt;CollisionCapsule>();
+    PtrColl->SetFixed(true);
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"Chara_Rst_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
+    PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    //中略
+
 }
 </pre>
 </div>
-　赤い部分は<b>親クラスのメンバ関数</b>を呼び出しています。<b>ChangeAnimation()関数</b>はアニメーションを変更します。<b>SetLooped()関数</b>は<b>ループするかどうか</b>を設定します。<br />
-<br />
-<h4>２Ｄ上のSpriteStudio5</h4>
-　サンプルの下部で行ったり来たりしている卵型のオブジェクトは<b>２Ｄ上で配置</b>されています。これを実装するには、コンストラクタで
-<div class="box1">
-<pre>
-EggAnime::EggAnime(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir) :
-    SS5ssae(StagePtr, BaseDir, L"character_template_2head.ssae", L"attack1", <span class="red">true</span>),
-    m_Span(100.0f)
-{}
-</pre>
-</div>
-　のように、親クラスのコンストラクタ呼び出しの<b>初期アニメーション</b>の次のパラメータに<b>true</b>を渡します。<br />
-　このパラメータは<b>２Ｄかどうか</b>を設定するパラメータで、デフォルト引数になっています。デフォルト値は<b>false（つまり２Ｄにしない）</b>です。
+　ここでも<b>L"Chara_Rst_MESH"</b>はあらかじめリソース化しています。このモデルは<b>表示と衝突判定</b>だけするので、更新処理はありません。<br />
+<br/>
+　BaseCrossでは<b>ゲームオブジェクト</b>に対して<b>形状や描画方法</b>をコンポーネントによって設定することで別のタイプのオブジェクトを作成します。ですから<b>ゲームオブジェクト</b>は、初期時は<b>何もしない、何も表示しない</b>オブジェクトです。このような仕様によって自由度の高いオブジェクトの作成を実装しています。
 </div>
 <!-- /コンテンツ　-->
 <hr>
@@ -100,6 +152,7 @@ EggAnime::EggAnime(const shared_ptr&lt;Stage>& StagePtr, const wstring& BaseDir)
 <ul class="foot_navi">
 <li><a href="01_06.html">前へ</a></li>
 <li><a href="index.html">目次</a></li>
+<li><a href="01_08.html">次へ</a></li>
 </ul>
 <!-- /フッタ　-->
 

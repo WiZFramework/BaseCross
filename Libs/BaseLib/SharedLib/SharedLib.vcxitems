@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Action.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Behavior.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Collision.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Components.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)GameObject.h" />
@@ -25,6 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Action.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Behavior.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Collision.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Components.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)GameObject.cpp" />

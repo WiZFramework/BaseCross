@@ -34,7 +34,10 @@
 <pre>
 void Scene::CreateResourses() {
     wstring DataDir;
-    App::GetApp()->GetDataDirectory(DataDir);
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //各ゲームは以下のようにデータディレクトリを取得すべき
+    //App::GetApp()->GetDataDirectory(DataDir);
     wstring strTexture = DataDir + L"sky.jpg";
     App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
     strTexture = DataDir + L"trace.png";
@@ -48,16 +51,26 @@ void Scene::CreateResourses() {
 <div class="box1">
 <pre>
     wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+</pre>
+</div>
+　でデータディレクトリを取得します。これは、サンプルなのでテクスチャなどのリソースが重複するのを避けるために、サンプル共通の<b>Assets</b>というディレクトリにテクスチャが入っているのでこう記述していますが、各ゲームを作成する際は、コメントにもあるように
+<div class="box1">
+<pre>
+    wstring DataDir;
+    //各ゲームは以下のようにデータディレクトリを取得すべき
     App::GetApp()->GetDataDirectory(DataDir);
 </pre>
 </div>
-　でデータディレクトリを取得します。<b>App::～</b>という記述は<b>Appクラスのstatic関数呼び出し</b>です。<b>Appクラス</b>というのは、このアプリケーションに一つしか存在しません。（シーンもそうですが）。<br />
-　シングルトンというパターンにデザインされていて、<b>App::GetApp()</b>でその唯一のポインタを取得できます。<br />
+　と記述すべきです。こう記述すると<b>GetDataDirectory()関数</b>が<b>mediaディレクトリ</b>を返します。（mediaディレクトリについては後述します）<br />
+　<b>App::～</b>という記述は<b>Appクラスのstatic関数呼び出し</b>です。<b>Appクラス</b>というのは、このアプリケーションに１つしか存在しません。（シーンもそうですが）。<br />
+　<b>シングルトン</b>というパターンにデザインされていて、<b>App::GetApp()</b>でその唯一のポインタを取得できます。<br />
 　このポインタは<b>unique_ptr</b>になっているので<b>コピーすることができません</b>。<br />
-　なので、<b>App::GetApp()->GetDataDirectory()</b>のようにAppクラスのメンバ関数を呼び出す場合は続けて記述します。<br />
+　なので、<b>App::GetApp()->GetDataDirectory()</b>のように<b>Appクラスのスタティックメンバ関数</b>を呼び出す場合は続けて記述します。<br />
 　<b>App::GetApp()->GetDataDirectory()</b>のような感じです。<br />
 　<b>GetDataDirectory()関数</b>は引数に<b>wstringの参照</b>を取ります。データのディレクトリを取得するわけですが、ソリューションディレクトリの直下にある<b>mediaディレクトリ</b>がデータディレクトリです。<br />
-　この<b>mediaディレクトリ</b>は、実行ファイルと同じディレクトリ直下にあればその中を参照します。開発中は<b>デバッグモード</b>と<b>リリースモード</b>をしょっちゅう切り替えると思うのでソリューションの直下でも参照できるようになってます。<br />
+　この<b>mediaディレクトリ</b>は、<b>実行ファイルと同じディレクトリ直下</b>にあればその中を参照します。開発中は<b>デバッグモード</b>と<b>リリースモード</b>をしょっちゅう切り替えると思うのでソリューションの直下でも参照できるようになってます。<br />
 　<b>mediaディレクトリ</b>の<b>Shadersディレクトリ</b>にはコンパイルされたシェーダが入ります。（拡張子は.cso）<br />
 　<b>Scene::CreateResourses()関数</b>では、このデータディレクトリを取得して、その中の<b>sky.jpg</b>および<b>trace.png</b>を<b>テクスチャリソース</b>として登録します。
 <div class="box1">
@@ -74,7 +87,7 @@ void Scene::CreateResourses() {
 　オブジェクトを配置しているのは<b>GameStage.h/cpp</b>になります。<br />
 <br />
 <h4>プレートの作成</h4>
-　まず<b>プレート</b>です。<b>プレート</b>は以下のコードで実装しています。<b>GameStage.cpp</b>に記述があります。<br />
+　まず<b>プレート</b>です。<b>プレート</b>は、いわばゲームの土台で、以下のコードで実装しています。<b>GameStage.cpp</b>に記述があります。<br />
 <div class="box1">
 <pre>
 //プレートの作成
@@ -94,12 +107,13 @@ void GameStage::CreatePlate() {
     DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
     //自分に影が映りこむようにする
     DrawComp->SetOwnShadowActive(true);
+
     //描画コンポーネントテクスチャの設定
     DrawComp->SetTextureResource(L"SKY_TX");
 }
 </pre>
 </div>
-　ステージに配置されるオブジェクトは<b>GameObjectクラス</b>か、もしくは<b>GameObjectの派生クラス</b>をあらかじめ作成してそれを配置します。<br />
+　ステージに配置されるオブジェクトは<b>GameObjectクラス</b>か、もしくは<b>GameObjectの派生クラスをあらかじめ作成して</b>それを配置します。<br />
 　通常は派生クラスを作成します。プレートについては<b>派生クラスを作成しなくても作れる</b>ということのサンプルです。<br />
 　ここではまず
 <div class="box1">
@@ -125,7 +139,7 @@ void GameStage::CreatePlate() {
 　は、AddGameObjectの戻り値（shared_ptr）を使用して<b>Transformコンポーネント</b>を取得します。<br />
 　<b>BaseCross</b>は<b>コンポーネント方式</b>を使用しています。<b>コンポーネント</b>というのは、そのオブジェクトが使用する機能をそれぞれのクラスごとに変えることができるものです。<br />
 　コンポーネントには大きく分けて<b>Update系</b>と<b>Draw系</b>があります。<b>Update系</b>にはそのオブジェクトの動きや衝突判定などがあります。<b>Draw系</b>は描画方法です。主にシェーダに関連します。<br />
-　通常コンポーネントは<b>AddComponent関数</b>を使って、使用するコンポーネントを<b>追加</b>します。すでに追加されているコンポーネントは<b>GetComponent関数</b>で取得します。<br />
+　コンポーネントは<b>AddComponent関数</b>を使って、使用するコンポーネントを<b>追加</b>します。すでに追加されているコンポーネントは<b>GetComponent関数</b>で取得します。<br />
 　しかし、ここの<b>Transformコンポーネント</b>だけは特殊で<b>すべてのゲームオブジェクト</b>が保持しています。ですので追加しなくても<b>GetComponent関数</b>で取得することができます。<br />
 　<b>AddComponent関数</b>および<b>GetComponent関数</b>はどちらも<b>テンプレート関数</b>で以下のような書式です。
 <div class="box1">
@@ -175,11 +189,14 @@ L"DEFAULT_DODECAHEDRON"     正十二面体
 L"DEFAULT_ICOSAHEDRON"      正二十四面体
 </pre>
 </div>
-　これらの形状は、別にモデルを作成する必要がないオブジェクトの形状として使用できます。また、メモリ上は１個しかありませんのでメモリ上の圧迫は非常に少なくて済みます（描画上のコストはもちろんかかりますが）。<br />
+　これらば<b>頂点と法線とテクスチャUVを持つフォーマット</b>です。<br />
+　このほかに、<b>DEFAULT_PC_SQUARE、DEFAULT_PT_SQUARE、DEFAULT_PNTnT_SQUARE</b>などがあらかじめと登録されています。<b>PC</b>とついているのは<b>頂点とカラーを持つフォーマット</b>で<b>PTは頂点とテクスチャUV値を持つフォーマット</b>です。<b>PNTnTは頂点、法線、タンジェント、テクスチャUV</b>を持ちます。<b>タンジェント</b>は<b>接ベクトル（接線）</b>と呼ばれるもので、<b>法線マップ</b>を適用するときに使います。<br />
+　なおメッシュは、自分で作成することもできます。<br />
+　これらのデフォルトのメッシュは、別にモデルを作成する必要がないオブジェクトの形状として使用できます。また、メモリ上はそれぞれ１個ずつしかありませんのでメモリ上の圧迫は非常に少なくて済みます（描画上のコストはもちろんかかりますが）。<br />
 　プレートは<b>L"DEFAULT_SQUARE"（つまり３Ｄ上の平面）</b>を使います。<br />
 　続いて、<b>自分に影が映りこむようにする</b>設定を行います。<b>SetOwnShadowActive()関数</b>です。影は<b>シャドウマップ方式</b>を使用しています。影は<b>影を出すほう</b>と<b>影を受けるほう</b>を設定します。ここでプレートに設定しているのは<b>影を受ける</b>設定です。<br />
 　<b>影を出すほう</b>の設定は、<b>立方体の作成</b>のところで説明します。<br />
-　最後に<b>描画コンポーネントテクスチャの設定</b>を行います。ここではシーンで登録したテクスチャを<b>SetTextureResource()関数</b>で設定します。<br />
+　最後に<b>描画コンポーネントへテクスチャの設定</b>を行います。ここではシーンで登録したテクスチャを<b>SetTextureResource()関数</b>で設定します。<br />
 　ここまでで、プレートの作成は終わりです。実際にステージ上に配置するためにはこの<b>GameStage::CreatePlate()関数</b>を、<b> GameStage::OnCreate()関数</b>で呼び出す必要があります。<br />
 <br />
 <h4>立方体の作成</h4>
@@ -208,51 +225,53 @@ public:
 　続いて、<b>Character.cpp</b>です、ここでは宣言された関数の実体を記述します。
 <div class="box1">
 <pre>
-    Box::Box(const shared_ptr&lt;Stage>& StagePtr, const Vector3& StartPos) :
-        GameObject(StagePtr),
-        m_StartPos(StartPos),
-        m_TotalTime(0)
-    {
+//構築と破棄
+Box::Box(const shared_ptr&lt;Stage>& StagePtr, const Vector3& StartPos) :
+    GameObject(StagePtr),
+    m_StartPos(StartPos),
+    m_TotalTime(0)
+{
+}
+Box::~Box() {}
+
+//初期化
+void Box::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
+    Quaternion Qt;
+    Qt.Identity();
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(m_StartPos);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetTextureResource(L"TRACE_TX");
+    //透過処理
+    SetAlphaActive(true);
+}
+
+//更新
+void Box::OnUpdate() {
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime >= XM_2PI) {
+        m_TotalTime = 0;
     }
-    Box::~Box() {}
-
-    //初期化
-    void Box::OnCreate() {
-        auto PtrTrans = GetComponent&lt;Transform>();
-        PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-        Quaternion Qt;
-        Qt.Identity();
-        PtrTrans->SetQuaternion(Qt);
-        PtrTrans->SetPosition(m_StartPos);
-
-        //影をつける
-        auto ShadowPtr = AddComponent&lt;Shadowmap>();
-        ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
-
-        //描画コンポーネント
-        auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
-        PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-        PtrDraw->SetTextureResource(L"TRACE_TX");
-        //透過処理
-        SetAlphaActive(true);
-    }
-
-    //更新
-    void Box::OnUpdate() {
-        //前回のターンからの経過時間を求める
-        float ElapsedTime = App::GetApp()->GetElapsedTime();
-        m_TotalTime += ElapsedTime;
-        if (m_TotalTime >= XM_2PI) {
-            m_TotalTime = 0;
-        }
-        auto Pos = GetComponent&lt;Transform>()->GetPosition();
-        Pos.x = sin(m_TotalTime);
-        GetComponent&lt;Transform>()->SetPosition(Pos);
-    }
+    auto Pos = GetComponent&lt;Transform>()->GetPosition();
+    Pos.x = sin(m_TotalTime);
+    GetComponent&lt;Transform>()->SetPosition(Pos);
+}
 </pre>
 </div>
 　<b>Character.cpp</b>には上記のように<b>４つの関数</b>の実体があります。<br />
-　まずコンストラクタですが、メンバイニシャライザで、各メンバ変数の初期化を行っています。<br />
+　まずコンストラクタですが、<b>メンバイニシャライザで、各メンバ変数の初期化</b>を行っています。<br />
+　この<b>各メンバ変数の初期化</b>は、必ず行うようにしましょう。行わない場合思わぬバグになることが多いです。<br/>
 　デストラクタは空関数となっています。<br />
 　<b>OnCreate()仮想関数</b>では、プレートの構築時と同じように、コンポーネントの追加やそのパラメータ設定を行っています。<br />
 　ここで注意したいのは<b>影の表示</b>です。プレートでは<b>影の反映</b>を設定しましたが、ここでは<b>影を出す</b>設定をします。

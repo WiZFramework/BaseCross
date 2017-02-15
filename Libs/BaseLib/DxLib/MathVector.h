@@ -2760,6 +2760,18 @@ namespace basecross{
 		void Ceiling(const XMVector& other) {
 			*this = XMVectorCeiling(XMVECTOR(other));
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	各要素の指定された最大値と最小値の範囲にクランプする
+		@param[in]	min	最小値
+		@param[in]	max	最大値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Clamp(const XMVector& min, const XMVector& max) {
+			*this = XMVectorClamp(XMVECTOR(*this), XMVECTOR(min), XMVECTOR(max));
+		}
+
 
 		//--------------------------------------------------------------------------------------
 		/*!

@@ -24,6 +24,8 @@
 #include "DrawComponentsEx.h"
 //文字列描画コンポーネント
 #include "StringComponents.h"
+//行動クラス
+#include "../SharedLib/Behavior.h"
 //ゲームオブジェクト、ステージなど
 #include "../SharedLib/GameObject.h"
 //スプライトスタジオ５

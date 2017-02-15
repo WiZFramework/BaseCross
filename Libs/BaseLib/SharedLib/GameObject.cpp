@@ -8,6 +8,8 @@
 
 namespace basecross {
 
+
+
 	//--------------------------------------------------------------------------------------
 	//	struct GameObject::Impl;
 	//	用途: コンポーネントImplクラス
@@ -29,7 +31,8 @@ namespace basecross {
 		shared_ptr<Gravity> m_Gravity;	//Gravityは別にする
 		shared_ptr<Collision> m_Collision;	//Collisionも別にする
 		shared_ptr<Transform> m_Transform;	//Transformも別にする
-
+		//行動のマップ
+		map<type_index, shared_ptr<Behavior>> m_BehaviorMap;
 
 		Impl(const shared_ptr<Stage>& StagePtr) :
 			m_UpdateActive(true),
@@ -139,6 +142,30 @@ namespace basecross {
 			it++;
 		}
 	}
+
+	map<type_index, shared_ptr<Behavior> >& GameObject::GetBehaviorMap() const {
+		return pImpl->m_BehaviorMap;
+	}
+
+	shared_ptr<Behavior> GameObject::SearchBehavior(type_index TypeIndex)const {
+		auto it = pImpl->m_BehaviorMap.find(TypeIndex);
+		if (it != pImpl->m_BehaviorMap.end()) {
+			return it->second;
+		}
+		return nullptr;
+
+	}
+
+	void GameObject::AddMakedBehavior(type_index TypeIndex, const shared_ptr<Behavior>& Ptr) {
+		//mapに追加もしくは更新
+		pImpl->m_BehaviorMap[TypeIndex] = Ptr;
+//		Ptr->AttachGameObject(GetThis<GameObject>());
+
+	}
+
+
+
+
 
 
 

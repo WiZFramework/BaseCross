@@ -13,7 +13,7 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>１０６．モデルの描画</h3>
+<h3>１０６．さまざまなオブジェクト</h3>
 このサンプルは<b>FullTutorial006</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 　リビルドして実行すると以下の画面が出てきます。
@@ -23,128 +23,174 @@
 <p>&nbsp;</p>
 <br/>
 <h4>解説</h4>
-　この項でのデータは<b>モデルの描画</b>です。モデルは<b>FBXモデル</b>として作成し、あらかじめ<b>Fbx2BinVS2015</b>によって<b>.bmfファイル</b>として作成しておき、<b>mediaディレクトリ</b>に保存しておきます。<br />
+　ここにはいろんなタイプのオブジェクトが配置されています。<br />
+　また、オーディオも追加されています。
+<h4>オーディオ</h4>
+　オーディオはまず<b>リソース登録</b>をします。以下は<b>Scene::CreateResourses()</b>の抜粋ですが
+<div class="box1">
+<pre>
+    void Scene::CreateResourses() {
+        wstring DataDir;
+        //サンプルのためアセットディレクトリを取得
+        App::GetApp()->GetAssetsDirectory(DataDir);
+
+        //中略
+        //以下オーディオ
+        //サウンド
+        wstring CursorWav = DataDir + L"cursor.wav";
+        App::GetApp()->RegisterWav(L"cursor", CursorWav);
+        //BGM
+        wstring strMusic = DataDir + L"nanika .wav";
+        App::GetApp()->RegisterWav(L"Nanika", strMusic);
+    }
+</pre>
+</div>
+　また、宣言部に<b>m_AudioObjectPtr</b>を宣言しておきます。<br />
+　そして、<b>Scene::OnCreate()関数</b>で以下のように記述します。
+<div class="box1">
+<pre>
+void Scene::OnCreate(){
+    try {
+        //リソース作成
+        CreateResourses();
+
+        //BGMの再生
+        m_AudioObjectPtr = ObjectFactory::Create&lt;MultiAudioObject>();
+        m_AudioObjectPtr->AddAudioResource(L"Nanika");
+        m_AudioObjectPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
+
+        //自分自身にイベントを送る
+        //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
+        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToGameStage");
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　これで、ゲーム中ミュージックが繰り返し再生されます。<br />
 <br />
-<h4>プレイヤー</h4>
-　プレイヤーは<b>Player.h/cpp</b>に記述があります。<br />
-　前項までの球体のオブジェクトと実装方法は基本的に変わりません。
-　変わる部分は<b>描画コンポーネント</b>に<b>PNTBoneModelDraw</b>を使用するところと、衝突判定に<b>CollisionCapsule</b>を使っているところです。ただし衝突は<b>CollisionSphere</b>を使用したほうが処理は速いです。<br />
-　また今回は前項までのプレイヤーの動きから<b>ボールの発射</b>は抜いてあります。また<b>ステートマシン</b>も<b>単純なもの</b>を使用しています。<br />
-　以下は<b>Player::OnCreate()関数（抜粋）</b>です。
+<h4>プレーヤー</h4>
+　続いてプレイヤーですが、OnCreate()でサウンドを登録します。<br />
 <div class="box1">
 <pre>
 void Player::OnCreate() {
-
     //中略
 
-    //衝突判定
-    auto PtrColl = AddComponent&lt;CollisionCapsule>();
-    //親の影響を受ける
-    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, XM_PI, 0.0f),
-        Vector3(0.0f, -0.5f, 0.0f)
-    );
-
-    //影をつける（シャドウマップを描画する）
-    auto ShadowPtr = AddComponent&lt;Shadowmap>();
-    //影の形（メッシュ）を設定
-    ShadowPtr->SetMeshResource(L"Chara_R_MESH");
-    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
-
-    //描画コンポーネントの設定
-    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
-    //描画するメッシュを設定
-    PtrDraw->SetMeshResource(L"Chara_R_MESH");
-    PtrDraw->SetMeshToTransformMatrix(SpanMat);
-
-    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
-    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
-    PtrDraw->ChangeCurrentAnimation(L"Default");
+    //サウンドを登録.
+    <span class="red">auto pMultiSoundEffect = AddComponent&lt;MultiSoundEffect>();
+    pMultiSoundEffect->AddAudioResource(L"Cursor");</span>
 
     //中略
 
 }
 </pre>
 </div>
-　モデルのメッシュは<b>L"Chara_R_MESH"</b>という名前であらかじめ<b>リソース登録</b>されています。<b>GameStage.cpp</b>を参照ください。<br />
-　モデルを使う場合に注意したいのは<b>モデルの大きさや向き</b>です。<b>ローカル座標の中心</b>が、おなかの部分にある場合と足元にある場合もあるでしょう。これはモデルを作成するときに、モデル作成者と十分に話し合いを行い、また<b>Fbx2BinVS2015</b>によるデータ作成時にも調整が必要ですが、それでも実際のステージ上の大きさなどと違っている場合、
+　最後に、ジャンプのタイミングで
 <div class="box1">
 <pre>
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, XM_PI, 0.0f),
-        Vector3(0.0f, -0.5f, 0.0f)
-    );
+void PlayerJumpState::Enter(const shared_ptr&lt;Player>& Obj) {
+    auto PtrJump = Obj->GetBehavior&lt;JumpBehavior>();
+    PtrJump->StartJump(Vector3(0, 4.0f, 0));
+    auto pMultiSoundEffect = Obj->GetComponent&lt;MultiSoundEffect>();
+    pMultiSoundEffect->Start(L"cursor", 0, 0.5f);
+
+}
 </pre>
 </div>
-　のように<b>モデルとトランスフォームの間の差分行列</b>を作成し、
+　のように記述します。<br />
+　エフェクトは、<b>何かに衝突した瞬間に</b>なります。エフェクトは<b>ゲームオブジェクト</b>なので、まず<b>エフェクトクラス</b>を記述します。<b>Character.h/cpp</b>への記述です。まず宣言は、
 <div class="box1">
 <pre>
-    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+class MultiSpark : public MultiParticle {
+public:
+    //構築と破棄
+    MultiSpark(shared_ptr&lt;Stage>& StagePtr);
+    virtual ~MultiSpark();
+    //初期化
+    virtual void OnCreate() override;
+    void InsertSpark(const Vector3& Pos);
+};
 </pre>
 </div>
-　と差分行列を設定します。（影も同様です）<br />
-　このモデルはアニメーションがついています。アニメーションの設定は
+　のようになります。実体は、<b>MultiSpark::InsertSpark()関数</b>ですが、以下のように記述します。
 <div class="box1">
 <pre>
-    PtrDraw->AddAnimation(L"Default", 60, 20, true, 20.0f);
-    PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
-    PtrDraw->ChangeCurrentAnimation(L"Default");
+void MultiSpark::InsertSpark(const Vector3& Pos) {
+    auto ParticlePtr = InsertParticle(4);
+    ParticlePtr->SetEmitterPos(Pos);
+    ParticlePtr->SetTextureResource(L"SPARK_TX");
+    ParticlePtr->SetMaxTime(0.5f);
+    vector&lt;ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+    for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+        rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+        rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+        rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+        //各パーティクルの移動速度を指定
+        rParticleSprite.m_Velocity = Vector3(
+            rParticleSprite.m_LocalPos.x * 5.0f,
+            rParticleSprite.m_LocalPos.y * 5.0f,
+            rParticleSprite.m_LocalPos.z * 5.0f
+        );
+        //色の指定
+        rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+}
 </pre>
 </div>
-　のように描画コンポーネントに設定します。<br />
-　それで、アニメーションを切り替えるタイミングで
+　このようにしておいて、ステージでの構築時に、
 <div class="box1">
 <pre>
-    auto PtrDraw = GetComponent&lt;PNTBoneModelDraw>();
-    PtrDraw->ChangeCurrentAnimation(アニメーション名);
+void GameStage::CreateSpark() {
+    auto MultiSparkPtr = AddGameObject&lt;MultiSpark>();
+    //共有オブジェクトにスパークを登録
+    SetSharedGameObject(L"MultiSpark", MultiSparkPtr);
+}
 </pre>
 </div>
-　と、描画コンポーネントで呼び出せばアニメーションが切り替わります。<br/>
+　とするとプレイヤーからアクセスできるようになるので、<b>プレイヤーの何かに衝突したタイミング</b>で、
+<div class="box1">
+<pre>
+void Player::OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) {
+    //最初に衝突するオブジェクトがあったとき
+    //スパークの放出
+    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
+    if (PtrSpark) {
+        PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+    }
+    //中略
+}
+</pre>
+</div>
+　と記述すればスパークエフェクトが出ます。<br />
 <br />
-<h4>スタティックモデル</h4>
-　このサンプルにはもう一つモデルが配置されています。<br />
-　アニメションしないモデルです。これもあらかじめ<b>Fbx2BinVS2015</b>で<b>スタティックモデル</b>としてデータ化しておきます。<br />
-　スタティックモデルのオブジェクトは<b>Chgaracter.h/cpp</b>にある<b>StaticModelクラス</b>です。以下は<b>StaticModel::OnCreate()関数（抜粋）</b>です。
+<h4>SeekObjectクラス</h4>
+　SeekObjectは前項とほぼ同じですが、<b>球体の衝突判定</b>にすることと<b>ファイアのエフェクトを出す</b>が修正点です。エフェクトの送出はプレイヤーを参考にしてください。<br />
+　<b>球体の衝突判定</b>は、<b>SeekObject::OnCreate()関数</b>で以下のように記述します。
 <div class="box1">
 <pre>
-void StaticModel::OnCreate() {
+void SeekObject::OnCreate() {
 
     //中略
 
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(0.0f, -0.25f, 0.0f)
-    );
-
-    auto PtrColl = AddComponent&lt;CollisionCapsule>();
-    PtrColl->SetFixed(true);
-
-    //影をつける（シャドウマップを描画する）
-    auto ShadowPtr = AddComponent&lt;Shadowmap>();
-    //影の形（メッシュ）を設定
-    ShadowPtr->SetMeshResource(L"Chara_Rst_MESH");
-    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
-
-    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
-    PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
-    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+    //Sphereの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+    PtrColl->SetCalcScaling(CalcScaling::YScale);
+    PtrColl->SetDrawActive(true);
 
     //中略
-
 }
 </pre>
 </div>
-　ここでも<b>L"Chara_Rst_MESH"</b>はあらかじめリソース化しています。このモデルは<b>表示と衝突判定</b>だけするので、更新処理はありません。<br />
-<br/>
-　BaseCrossでは<b>ゲームオブジェクト</b>に対して<b>形状や描画方法</b>をコンポーネントによって設定することで別のタイプのオブジェクトを作成します。ですから<b>ゲームオブジェクト</b>は、初期時は<b>何もしない、何も表示しない</b>オブジェクトです。このような仕様によって自由度の高いオブジェクトの作成を実装しています。
+　ここで、<b>PtrColl->SetCalcScaling(CalcScaling::YScale);</b>となっているのは球体の直径を<b>Yスケール基準で</b>という設定です。このようにすると<b>SeekObject</b>が<b>でこぼこ床</b>に衝突するようになります。<br />
+　またこの項の<b>SeekObject</b>は前項と違い<b>行動クラス</b>は実装していません。記述方法の違いを確認しましょう。<br />
+<br />
+<h4>そのほかのオブジェクト</h4>
+　このサンプルには、たくさんのタイプのオブジェクトが実装されています。<b>Character.h/cpp</b>に記述されていますが、個別には説明しませんのでコードを参考にしてください。
+
+
 </div>
 <!-- /コンテンツ　-->
 <hr>
