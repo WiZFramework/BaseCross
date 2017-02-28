@@ -697,13 +697,13 @@ namespace basecross {
 	//操作
 	void MoveComponent::Run() {
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		pImpl->m_StartPosition = TransPtr->GetPosition();
+		pImpl->m_StartPosition = TransPtr->GetWorldPosition();
 		SetNowTime(0);
 		SetRun(true);
 		SetArrived(false);
 		if (GetTotalTime() <= 0) {
 			//トータルタイムが0以下なら、すでに到着していることになる
-			TransPtr->SetPosition(pImpl->m_TargetPosition);
+			TransPtr->SetWorldPosition(pImpl->m_TargetPosition);
 			SetTotalTime(0);
 			SetNowTime(0);
 			SetRun(false);
@@ -753,12 +753,12 @@ namespace basecross {
 						pImpl->m_RateZ
 						);
 				}
-				PtrTrans->SetPosition(Pos);
+				PtrTrans->SetWorldPosition(Pos);
 			}
 			else {
 				if (GetTotalTime() <= 0) {
 					//トータルタイムが0以下なら、すでに到着していることになる
-					PtrTrans->SetPosition(pImpl->m_TargetPosition);
+					PtrTrans->SetWorldPosition(pImpl->m_TargetPosition);
 					SetTotalTime(0);
 					SetNowTime(0);
 					SetRun(false);
@@ -885,7 +885,7 @@ namespace basecross {
 	//操作
 	void MoveBy::Run() {
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = PtrTrans->GetPosition();
+		Vector3 Pos = PtrTrans->GetWorldPosition();
 		Vector3 Target = Pos + pImpl->m_LocalVector;
 		SetTargetPosition(Target);
 		MoveComponent::Run();

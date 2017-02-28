@@ -29,11 +29,9 @@ namespace basecross{
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+		PtrCol->SetIsHitAction(IsHitAction::Auto);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -73,8 +71,14 @@ namespace basecross{
 		m_InputHandler.PushHandle(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
+	}
+
+	//後更新
+	void Player::OnUpdate2() {
 		//文字列の表示
 		DrawStrings();
+
+
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
@@ -122,30 +126,7 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring GravStr(L"Gravity:\t");
-
-		auto Grav = GetComponent<Gravity>()->GetGravity();
-		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-		wstring GravityStr(L"GravityVelocity:\t");
-		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
-		GravityStr += L"X=" + Util::FloatToWStr(GravityVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-		wstring HitObjectStr(L"HitObject: ");
-		if (GetComponent<Collision>()->GetHitObjectVec().size() > 0) {
-			for (auto&v : GetComponent<Collision>()->GetHitObjectVec()) {
-				HitObjectStr += Util::UintToWStr((UINT)v.get()) + L",";
-			}
-			HitObjectStr += L"\n";
-		}
-		else {
-			HitObjectStr += L"NULL\n";
-		}
-		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr;
+		wstring str = BEHAVIOR + FPS + PositionStr + RididStr ;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
@@ -163,8 +144,10 @@ namespace basecross{
 	}
 
 	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
-		auto PtrDefault = Obj->GetBehavior<PlayerBehavior>();
-		PtrDefault->MovePlayer();
+		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
+		PtrBehavior->MovePlayer();
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
 	}
 
 	void PlayerDefaultState::Exit(const shared_ptr<Player>& Obj) {
@@ -177,18 +160,16 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(PlayerJumpState)
 
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		PtrJump->StartJump(Vector3(0, 4.0f, 0));
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {
 		//ジャンプ中も方向変更可能
-		auto PtrDefault = Obj->GetBehavior<PlayerBehavior>();
-		PtrDefault->MovePlayer();
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		if (PtrJump->Execute()) {
-			Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
-		}
+		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
+		PtrBehavior->MovePlayer();
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
 	}
 
 	void PlayerJumpState::Exit(const shared_ptr<Player>& Obj) {

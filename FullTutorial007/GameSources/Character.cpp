@@ -24,142 +24,61 @@ namespace basecross{
 
 	//初期化
 	void SeekObject::OnCreate() {
-		auto PtrTransform = AddComponent<Transform>();
+		auto PtrTransform = GetComponent<Transform>();
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//反発係数は0.5（半分）
-		PtrRegid->SetReflection(0.5f);
-		//Seek操舵
-		auto PtrSeek = AddComponent<SeekSteering>();
-		//Arrive操舵
-		auto PtrArrive = AddComponent<ArriveSteering>();
-		//Arriveは無効にしておく
-		PtrArrive->SetUpdateActive(false);
 
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"ObjectGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<SeekObject>());
 		//分離行動をつける
-		AddComponent<SeparationSteering>(Group);
-		//Sphereの衝突判定をつける
-		auto PtrColl = AddComponent<CollisionSphere>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
-		PtrColl->SetCalcScaling(CalcScaling::YScale);
-
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(Group);
+		//衝突判定をつける
+		auto PtrCol = AddComponent<CollisionSphere>();
+		//親の影響を受ける
+		PtrCol->SetIsHitAction(IsHitAction::Auto);
+		PtrCol->SetDrawActive(true);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 		//透明処理をする
 		SetAlphaActive(true);
 
 		//ステートマシンの構築
-		m_StateMachine = make_shared< StateMachine<SeekObject> >(GetThis<SeekObject>());
+		m_StateMachine.reset(new StateMachine<SeekObject>(GetThis<SeekObject>()));
 		//最初のステートをSeekFarStateに設定
 		m_StateMachine->ChangeState(FarState::Instance());
 	}
 
-	//ユーティリティ関数群
-	Vector3 SeekObject::GetPlayerPosition() const {
-		//もしプレイヤーが初期化化されてない場合には、Vector3(0,0.125f,0)を返す
-		Vector3 PlayerPos(0, 0.125f, 0);
-		auto PtrPlayer = GetStage()->GetSharedGameObject<Player>(L"Player", false);
-		if (PtrPlayer) {
-			PlayerPos = PtrPlayer->GetComponent<Transform>()->GetPosition();
-		}
-		return PlayerPos;
-	}
-	float SeekObject::GetPlayerLength() const {
-		auto MyPos = GetComponent<Transform>()->GetPosition();
-		auto LenVec = GetPlayerPosition() - MyPos;
-		return LenVec.Length();
-	}
-
-	//モーションを実装する関数群
-	void  SeekObject::SeekStartMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(GetPlayerPosition());
-
-	}
-	bool  SeekObject::SeekUpdateMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetTargetPosition(GetPlayerPosition());
-		if (GetPlayerLength() <= m_StateChangeSize) {
-			return true;
-		}
-		return false;
-	}
-	void  SeekObject::SeekEndMoton() {
-		auto PtrSeek = GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
-	}
-
-	void  SeekObject::ArriveStartMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(GetPlayerPosition());
-	}
-	bool  SeekObject::ArriveUpdateMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(GetPlayerPosition());
-		if (GetPlayerLength() > m_StateChangeSize) {
-			//プレイヤーとの距離が一定以上ならtrue
-			return true;
-		}
-		return false;
-	}
-	void  SeekObject::ArriveEndMoton() {
-		auto PtrArrive = GetComponent<ArriveSteering>();
-		//Arriveコンポーネントを無効にする
-		PtrArrive->SetUpdateActive(false);
-	}
 
 	//操作
 	void SeekObject::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
-		//進行方向を向くようにする
-		RotToHead();
 	}
 
-	void SeekObject::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
-
+	void SeekObject::OnUpdate2() {
+		auto PtrUtil = GetBehavior<UtilBehavior>();
+		PtrUtil->RotToHead(0.1f);
 	}
 
-	//進行方向を向くようにする
-	void SeekObject::RotToHead(){
-		auto PtrTrans = GetComponent<Transform>();
-		auto PtrRigidbody = GetComponent<Rigidbody>();
-		//回転の更新
-		//Velocityの値で、回転を変更する
-		//これで進行方向を向くようになる
-		Vector3 Velocity = PtrRigidbody->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
-			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
-			//現在の回転を取得
-			Quaternion NowQt = PtrTrans->GetQuaternion();
-			//現在と目標を補間（10分の1）
-			NowQt.Slerp(NowQt, Qt, 0.1f);
-			PtrTrans->SetQuaternion(NowQt);
-		}
-	}
+
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
@@ -169,15 +88,15 @@ namespace basecross{
 		return instance;
 	}
 	void FarState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->SeekStartMoton();
 	}
 	void FarState::Execute(const shared_ptr<SeekObject>& Obj) {
-		if (Obj->SeekUpdateMoton()) {
+		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
+		float f = PtrSeek->Execute(L"Player");
+		if (f < Obj->GetStateChangeSize()) {
 			Obj->GetStateMachine()->ChangeState(NearState::Instance());
 		}
 	}
 	void FarState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->SeekEndMoton();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -189,16 +108,17 @@ namespace basecross{
 		return instance;
 	}
 	void NearState::Enter(const shared_ptr<SeekObject>& Obj) {
-		Obj->ArriveStartMoton();
 	}
 	void NearState::Execute(const shared_ptr<SeekObject>& Obj) {
-		if (Obj->ArriveUpdateMoton()) {
+		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
+		if (PtrArrive->Execute(L"Player") >= Obj->GetStateChangeSize()) {
 			Obj->GetStateMachine()->ChangeState(FarState::Instance());
 		}
 	}
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
-		Obj->ArriveEndMoton();
 	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -322,6 +242,7 @@ namespace basecross{
 
 		auto PtrObb = AddComponent<CollisionObb>();
 		PtrObb->SetFixed(true);
+		AddTag(L"MoveBox");
 
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();

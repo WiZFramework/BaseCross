@@ -14,6 +14,10 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	void Scene::OnCreate() {
 		try {
+			//クリアする色を設定
+			Color4 Col;
+			Col.SetUint8(31,30,71,255);
+			SetClearColor(Col);
 			//自分自身にイベントを送る
 			//これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
 			PostEvent(0.0f, GetThis<ObjectInterface>(), GetThis<Scene>(), L"ToGameStage");

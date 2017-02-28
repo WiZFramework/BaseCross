@@ -17,7 +17,6 @@ namespace basecross {
 		shared_ptr<Component> SearchComponent(type_index TypeIndex)const;
 		shared_ptr<Transform> GetTransform()const;
 		shared_ptr<Rigidbody> GetRigidbody()const;
-		shared_ptr<Gravity> GetGravity()const;
 		shared_ptr<Collision> GetCollision()const;
 		shared_ptr<CollisionSphere> GetCollisionSphere()const;
 		shared_ptr<CollisionCapsule> GetCollisionCapsule()const;
@@ -26,7 +25,6 @@ namespace basecross {
 		shared_ptr<CollisionRect> GetCollisionRect()const;
 
 		void SetRigidbody(const shared_ptr<Rigidbody>& Ptr);
-		void SetGravity(const shared_ptr<Gravity>& Ptr);
 		void SetTransform(const shared_ptr<Transform>& Ptr);
 		void SetCollision(const shared_ptr<Collision>& Ptr);
 		void AddMakedComponent(type_index TypeIndex, const shared_ptr<Component>& Ptr);
@@ -169,6 +167,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void  SetDrawLayer(int l);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タグのセットを得る
+		@return	タグのセット
+		*/
+		//--------------------------------------------------------------------------------------
+		set<wstring>& GetTagSet() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定するタグが存在するかどうかを得る
@@ -193,6 +199,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void  RemoveTag(const wstring& tagstr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	数字タグのセットを得る
+		@return	数字タグのセット
+		*/
+		//--------------------------------------------------------------------------------------
+		set<int>& GetNumTagSet() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定する数字タグが存在するかどうかを得る
@@ -315,30 +328,6 @@ namespace basecross {
 						L"コンポーネントが見つかりません",
 						L"Rigidbody",
 						L"GameObject::GetComponent<Rigidbody>()"
-					);
-				}
-				else {
-					return nullptr;
-				}
-			}
-			return Ptr;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	Gravityコンポーネントの取得
-		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
-		@return	コンポーネント
-		*/
-		//--------------------------------------------------------------------------------------
-		template <>
-		shared_ptr<Gravity> GetComponent<Gravity>(bool ExceptionActive)const {
-			auto Ptr = GetGravity();
-			if (!Ptr) {
-				if (ExceptionActive) {
-					throw BaseException(
-						L"コンポーネントが見つかりません",
-						L"Gravity",
-						L"GameObject::GetComponent<Gravity>()"
 					);
 				}
 				else {
@@ -595,25 +584,6 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	Gravityコンポーネントの追加
-		@return	コンポーネント
-		*/
-		//--------------------------------------------------------------------------------------
-		template <>
-		shared_ptr<Gravity> AddComponent<Gravity>() {
-			auto Ptr = GetGravity();
-			if (Ptr) {
-				return Ptr;
-			}
-			else {
-				//無ければ新たに制作する
-				auto GravityPtr = ObjectFactory::Create<Gravity>(GetThis<GameObject>());
-				SetGravity(GravityPtr);
-				return GravityPtr;
-			}
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	Collisionコンポーネントの追加。参照はできるが、直接作成はできない
 		@return	コンポーネント
 		*/
@@ -798,6 +768,28 @@ namespace basecross {
 		}
 
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動の検索。
+		@tparam	T	取得する型
+		@return	存在すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		bool FindBehavior() {
+			auto Ptr = SearchBehavior(type_index(typeid(T)));
+			if (Ptr) {
+				//指定の型の行動が見つかった
+				auto RetPtr = dynamic_pointer_cast<T>(Ptr);
+				if (RetPtr) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			return false;
+		}
 
 
 
@@ -1093,6 +1085,11 @@ namespace basecross {
 		virtual ~MultiParticle();
 		//アクセサ
 		vector< shared_ptr<Particle> >& GetParticleVec() const;
+
+		bool GetAddType() const;
+		bool IsAddType() const;
+		void SetAddType(bool b);
+
 		//操作
 		virtual void OnPreCreate() override;
 		shared_ptr<Particle> InsertParticle(size_t Count, Particle::DrawOption Option = Particle::DrawOption::Billboard);
@@ -1113,7 +1110,7 @@ namespace basecross {
 	class ParticleManager : public GameObject {
 	public:
 		//構築と消滅
-		explicit ParticleManager(const shared_ptr<Stage>& StagePtr);
+		explicit ParticleManager(const shared_ptr<Stage>& StagePtr,bool AddType);
 		virtual ~ParticleManager();
 		//初期化
 		virtual void OnCreate() override;
@@ -1142,12 +1139,12 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	衝突判定管理者
 	//--------------------------------------------------------------------------------------
-	class CollisionAdmin : public GameObject {
+	class CollisionManager : public GameObject {
 		void CollisionSub(size_t SrcIndex);
 	public:
 		//構築と消滅
-		explicit CollisionAdmin(const shared_ptr<Stage>& StagePtr);
-		virtual ~CollisionAdmin();
+		explicit CollisionManager(const shared_ptr<Stage>& StagePtr);
+		virtual ~CollisionManager();
 		//初期化
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;
@@ -1189,7 +1186,7 @@ namespace basecross {
 			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost = 1);
 		//初期化
 		virtual void OnCreate() override;
-		virtual void OnPreUpdate() override;
+		virtual void OnUpdate() override;
 		virtual void OnDraw() override;
 	private:
 		//Implイディオム
@@ -1250,7 +1247,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void SetUpdateActive(bool b);
 
-		shared_ptr<ParticleManager> GetParticleManager() const;
+		shared_ptr<ParticleManager> GetParticleManager(bool AddType) const;
 
 		vector< shared_ptr<GameObject> >& GetGameObjectVec();
 
@@ -1471,6 +1468,22 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		shared_ptr<Stage> GetActiveStage() const;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	画面をクリアする色を得る
+		@return	画面をクリアする色
+		*/
+		//--------------------------------------------------------------------------------------
+		Color4 GetClearColor() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	画面をクリアする色を設定する
+		@param[in]	params	このステージを構築するのに使用するパラメータ。
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetClearColor(const Color4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定の型の現在のステージを得る

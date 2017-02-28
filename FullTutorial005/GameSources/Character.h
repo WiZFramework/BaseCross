@@ -33,6 +33,7 @@ namespace basecross{
 		}
 		//ëÄçÏ
 		virtual void OnUpdate() override;
+		virtual void OnUpdate2() override;
 	};
 
 	//--------------------------------------------------------------------------------------

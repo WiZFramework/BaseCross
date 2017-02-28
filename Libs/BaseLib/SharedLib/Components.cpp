@@ -97,7 +97,10 @@ namespace basecross {
 		//再計算抑制用変数
 		bool m_Changeed;
 		Matrix4X4 m_WorldMatrix;
-
+		//親オブジェクト
+		weak_ptr<GameObject> m_Parent;
+		//子供オブジェクトの配列
+		vector<weak_ptr<GameObject>> m_ChildVec;
 		Impl():
 			//スケールのみ初期化（他はデフォルト処理でよい）
 			m_BeforeScale(1.0f,1.0f,1.0f),
@@ -146,7 +149,8 @@ namespace basecross {
 
 
 	const Matrix4X4& Transform::GetBeforeWorldMatrix() const{
-		if (pImpl->m_BeforeChangeed) {
+		auto ParPtr = GetParent();
+		if (pImpl->m_BeforeChangeed || ParPtr) {
 			pImpl->m_BeforeWorldMatrix.AffineTransformation(
 				pImpl->m_BeforeScale,
 				pImpl->m_BeforePivot,
@@ -154,6 +158,11 @@ namespace basecross {
 				pImpl->m_BeforePosition
 			);
 			pImpl->m_BeforeChangeed = false;
+			if (ParPtr) {
+				auto ParBeforeWorld = ParPtr->GetComponent<Transform>()->GetBeforeWorldMatrix();
+				ParBeforeWorld.ScaleIdentity();
+				pImpl->m_BeforeWorldMatrix = pImpl->m_BeforeWorldMatrix * ParBeforeWorld;
+			}
 		}
 		return pImpl->m_BeforeWorldMatrix;
 	}
@@ -225,6 +234,27 @@ namespace basecross {
 		pImpl->m_Position = Position;
 	}
 
+	Vector3 Transform::GetWorldPosition() const {
+		return GetWorldMatrix().PosInMatrixSt();
+	}
+	void Transform::SetWorldPosition(const Vector3& Position) {
+		auto SetPos = Position;
+		auto ParPtr = GetParent();
+		if (ParPtr) {
+			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
+			SetPos -= ParWorldPos;
+		}
+		SetPosition(SetPos);
+	}
+	void Transform::ResetWorldPosition(const Vector3& Position) {
+		auto SetPos = Position;
+		auto ParPtr = GetParent();
+		if (ParPtr) {
+			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
+			SetPos -= ParWorldPos;
+		}
+		ResetPosition(SetPos);
+	}
 
 	bool Transform::IsSameWorldMatrix(const Matrix4X4& mat) const {
 		return mat.EqualInt(GetWorldMatrix());
@@ -232,7 +262,8 @@ namespace basecross {
 
 
 	const Matrix4X4& Transform::GetWorldMatrix() const{
-		if (pImpl->m_Changeed) {
+		auto ParPtr = GetParent();
+		if (pImpl->m_Changeed || ParPtr) {
 			pImpl->m_WorldMatrix.AffineTransformation(
 				pImpl->m_Scale,
 				pImpl->m_Pivot,
@@ -240,9 +271,105 @@ namespace basecross {
 				pImpl->m_Position
 			);
 			pImpl->m_Changeed = false;
+			if (ParPtr) {
+				auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
+				ParWorld.ScaleIdentity();
+				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
+			}
 		}
 		return pImpl->m_WorldMatrix;
 	}
+
+	const shared_ptr<GameObject> Transform::GetParent()const {
+		auto ShPtr = pImpl->m_Parent.lock();
+		if (ShPtr) {
+			return ShPtr;
+		}
+		return nullptr;
+	}
+	void Transform::SetParent(const shared_ptr<GameObject>& Obj) {
+		if (GetParent() == Obj) {
+			return;
+		}
+		if (Obj) {
+			pImpl->m_Parent = Obj;
+			auto ParWorld = Obj->GetComponent<Transform>()->GetWorldMatrix();
+			auto PosSpan = GetPosition() - ParWorld.PosInMatrixSt();
+			auto ParInv = ParWorld;
+			ParInv.ScaleIdentity();
+			Vector4 Temp;
+			ParInv.Inverse(Temp);
+			Matrix4X4 Mat = GetWorldMatrix() * ParInv;
+			Vector3 Scale, Pos;
+			Quaternion Qt;
+			Mat.Decompose(Scale, Qt, Pos);
+			SetScale(Scale);
+			SetQuaternion(Qt);
+			SetPosition(PosSpan);
+			SetToBefore();
+			Obj->GetComponent<Transform>()->AddChild(GetGameObject());
+		}
+		else {
+			//nullptrが渡された
+			ClearParent();
+		}
+	}
+
+	void Transform::ClearParent() {
+		if (GetParent()) {
+			//今親がいる
+			auto Pos = GetWorldPosition();
+			SetPosition(Pos);
+			SetToBefore();
+		}
+		pImpl->m_Parent.reset();
+	}
+
+
+	vector<weak_ptr<GameObject>>& Transform::GetChildVec() {
+		return pImpl->m_ChildVec;
+	}
+	bool Transform::FindChild(const shared_ptr<GameObject>& Obj) {
+		for (auto& v : pImpl->m_ChildVec) {
+			auto shptr = v.lock();
+			if (shptr && shptr == Obj) {
+				return true;
+			}
+		}
+		return false;
+	}
+	void Transform::ClearChild(const shared_ptr<GameObject>& Obj) {
+		for (auto it = pImpl->m_ChildVec.begin(); it != pImpl->m_ChildVec.end(); ++it) {
+			auto shptr = (*it).lock();
+			if (shptr && shptr == Obj) {
+				auto PtrTrans = Obj->GetComponent<Transform>();
+				PtrTrans->ClearParent();
+				pImpl->m_ChildVec.erase(it);
+				break;
+			}
+		}
+	}
+	void Transform::AddChild(const shared_ptr<GameObject>& Obj) {
+		if (FindChild(Obj)) {
+			return;
+		}
+		pImpl->m_ChildVec.push_back(Obj);
+		auto PtrTrans = Obj->GetComponent<Transform>();
+		PtrTrans->SetParent(GetGameObject());
+	}
+	void Transform::ClearAllChild() {
+		for (auto& v : pImpl->m_ChildVec) {
+			auto shptr = v.lock();
+			if (shptr) {
+				auto PtrTrans = shptr->GetComponent<Transform>();
+				PtrTrans->ClearParent();
+			}
+		}
+		pImpl->m_ChildVec.clear();
+	}
+
+
+
 
 	Vector3 Transform::GetVelocity() const {
 		//前回のターンからの時間
@@ -1068,7 +1195,7 @@ namespace basecross {
 			//無かったらリターン
 			return false;
 		}
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
+		auto Pos = GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
 		//自分自身のインデックスを取得
 		if (!ShCellMap->FindCell(Pos, pImpl->m_BaseIndex)) {
 			//無かったらリターン

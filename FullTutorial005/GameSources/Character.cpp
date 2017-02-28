@@ -17,7 +17,7 @@ namespace basecross{
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_BaseY(0.125f),
-		m_StateChangeSize(5.0f)
+		m_StateChangeSize(7.0f)
 	{
 	}
 	SeekObject::~SeekObject() {}
@@ -30,24 +30,17 @@ namespace basecross{
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 		//操舵系のコンポーネントをつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//Seek操舵
-		auto PtrSeek = AddComponent<SeekSteering>();
-		//Arrive操舵
-		auto PtrArrive = AddComponent<ArriveSteering>();
-		//Arriveは無効にしておく
-		PtrArrive->SetUpdateActive(false);
 
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"ObjectGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<SeekObject>());
 		//分離行動をつける
-		AddComponent<SeparationSteering>(Group);
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(Group);
 		//Obbの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionObb>();
-
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
+		PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -68,10 +61,21 @@ namespace basecross{
 
 	//操作
 	void SeekObject::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void SeekObject::OnUpdate2() {
+		auto PtrUtil = GetBehavior<UtilBehavior>();
+		PtrUtil->RotToHead(0.1f);
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	class FarState : public ObjState<SeekObject>;
@@ -82,19 +86,15 @@ namespace basecross{
 		return instance;
 	}
 	void FarState::Enter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Enter(L"Player");
 	}
 	void FarState::Execute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		float f = PtrSeek->Execute(L"Player", true, 0.1f);
+		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
+		float f = PtrSeek->Execute(L"Player");
 		if (f < Obj->GetStateChangeSize()) {
 			Obj->GetStateMachine()->ChangeState(NearState::Instance());
 		}
 	}
 	void FarState::Exit(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Exit();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -106,18 +106,14 @@ namespace basecross{
 		return instance;
 	}
 	void NearState::Enter(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Enter(L"Player");
 	}
 	void NearState::Execute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		if (PtrArrive->Execute(L"Player", true, 0.1f) >= Obj->GetStateChangeSize()) {
+		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
+		if (PtrArrive->Execute(L"Player") >= Obj->GetStateChangeSize()) {
 			Obj->GetStateMachine()->ChangeState(FarState::Instance());
 		}
 	}
 	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Exit();
 	}
 
 
@@ -246,6 +242,8 @@ namespace basecross{
 		auto PtrObb = AddComponent<CollisionObb>();
 		PtrObb->SetFixed(true);
 
+		AddTag(L"MoveBox");
+
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
 		PtrAction->AddMoveBy(5.0f, Vector3(5.0f, 5.0f, 0));
@@ -255,12 +253,9 @@ namespace basecross{
 		//アクション開始
 		PtrAction->Run();
 
-
-
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
-
 
 		auto PtrDraw = AddComponent<BcPNTnTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_PNTnT_CUBE");

@@ -620,9 +620,10 @@ namespace basecross {
 		@brief	コンストラクタ
 		@param[in]	GameObjectPtr	ゲームオブジェクト
 		@param[in]	MaxInstance	パーティクル数上限
+		@param[in]	AddType	加算処理するかどうか
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PCTParticleDraw(const shared_ptr<GameObject>& GameObjectPtr, size_t MaxInstance);
+		explicit PCTParticleDraw(const shared_ptr<GameObject>& GameObjectPtr, size_t MaxInstance,bool AddType = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

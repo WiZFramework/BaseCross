@@ -18,10 +18,10 @@ namespace basecross {
 	///	 衝突した時の動作定義
 	//--------------------------------------------------------------------------------------
 	enum class IsHitAction {
+		None,			//何もしない
 		Slide,			//スライド
 		Repel,			//反発
-		AutoOnParentRepel,	//親子関係を実装反発
-		AutoOnParentSlide,	//親子関係を実装スライド
+		Auto,			//オート計算
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -90,6 +90,52 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void SetFixed(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 判定から除外するグループの取得。
+		@return	 判定から除外するグループ（指定されてなければnullptr）
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<GameObjectGroup> GetExcludeCollisionGroup() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 判定から除外するグループの設定。
+		@return	 なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetExcludeCollisionGroup(const shared_ptr<GameObjectGroup>& Group);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	判定から除外するタグが存在するかどうかを得る
+		@param[in]	tagstr	検証するタグ
+		@return	存在すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool FindExcludeCollisionTag(const wstring& tagstr) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	判定から除外するタグを追加する
+		@param[in]	tagstr	追加するタグ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void  AddExcludeCollisionTag(const wstring& tagstr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	判定から除外するタグが存在したら削除する（存在しない場合は何もしない）
+		@param[in]	tagstr	削除するタグ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void  RemoveExcludeCollisionTag(const wstring& tagstr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 判定から除外するオブジェクトかどうかを取得。
+		@param[in]	Obj	調査するゲームオブジェクト
+		@return	 判定から除外する設定ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsExcludeCollisionObject(const shared_ptr<GameObject>& Obj) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
@@ -236,63 +282,165 @@ namespace basecross {
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime) {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief /GravityとRigidbodyの後処理（Collision共通）
+		@brief 衝突法線を得る
 		@param[in]	DestColl	相手のCollision
-		@param[in]	ContactBase	スライドの基準となる法線
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AfterCollisionSub(const shared_ptr<Collision>& DestColl, const Vector3& ContactBase);
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionSphereとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime) {}
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionCapsuleとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) {}
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionObbとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime) {}
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionTrianglesとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionTriangles>& DestColl, float SpanTime) {}
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionRectとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突判定後処理（Collision共通）
+		@param[in]	DestColl	相手のCollision
+		@param[in]	SrcVelocity	自分の速度
+		@param[in]	DestVelocity	相手の速度
+		@param[in]	HitNormal	衝突法線
+		@param[in]	AfterHitTime 衝突後のターン時間
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime) {}
+		void AfterCollision(const shared_ptr<Collision>& DestColl, const Vector3& SrcVelocity,  const Vector3& DestVelocity, const Vector3& HitNormal,
+			float AfterHitTime);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 衝突判定後処理呼び出しテンプレート１
+		@tparam	SrcType	Srcのコリジョン型
+		@tparam	DestType	Destのコリジョン型
+		@param[in]	SrcVelocity	Srcの速度
+		@param[in]	DestVelocity	Destの速度
+		@param[in]	ElapsedTime	ターン時間
+		@param[in]	HitTime	衝突時間
+		@param[in]	SrcColl	Srcのコリジョン
+		@param[in]	DestColl	Destのコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename SrcType, typename DestType>
+		void AfterCollisionTmpl_1(const Vector3& SrcVelocity, const Vector3& DestVelocity, float ElapsedTime, float HitTime, 
+			const shared_ptr<SrcType>& SrcColl, const shared_ptr<DestType>&  DestColl) {
+			if (HitTime <= 0) {
+				HitTime = 0;
+			}
+			if (HitTime >= ElapsedTime) {
+				HitTime = ElapsedTime;
+			}
+			auto AfterHitTime = ElapsedTime - HitTime;
+			bool UseSrcAfter = false;
+			bool UseDestAfter = false;
+			//衝突相手の登録
+			AddHitObject(DestColl->GetGameObject());
+			if (GetIsHitAction() != IsHitAction::None) {
+				//事後処理が有効なら衝突前まで戻る
+				BackToBefore(SrcVelocity, HitTime);
+				UseSrcAfter = true;
+			}
+			if (!DestColl->IsFixed()) {
+				//もし相手がFixでなければ相手の衝突相手の登録
+				DestColl->AddHitObject(GetGameObject());
+				if (DestColl->GetIsHitAction() != IsHitAction::None) {
+					//事後処理が有効なら衝突前まで戻る
+					DestColl->BackToBefore(DestVelocity, HitTime);
+					UseDestAfter = true;
+				}
+			}
+			else {
+				//相手がFixなら自己退避だけでは衝突している可能性があるので判定をしてエスケープ処理
+				if (GetIsHitAction() != IsHitAction::None) {
+					CollisionEscape(DestColl);
+				}
+			}
+			if (UseSrcAfter) {
+				Vector3 HitNormal;
+				GetHitNormal(DestColl, HitNormal);
+				AfterCollision(DestColl, SrcVelocity, DestVelocity, HitNormal, AfterHitTime);
+			}
+			if (UseDestAfter) {
+				Vector3 HitNormal;
+				DestColl->GetHitNormal(SrcColl, HitNormal);
+				DestColl->AfterCollision(SrcColl, DestVelocity, SrcVelocity, HitNormal, AfterHitTime);
+			}
+
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 衝突判定後処理呼び出しテンプレート２
+		@tparam	SrcType	Srcのコリジョン型
+		@tparam	DestType	Destのコリジョン型
+		@param[in]	SrcVelocity	Srcの速度
+		@param[in]	DestVelocity	Destの速度
+		@param[in]	ElapsedTime	ターン時間
+		@param[in]	HitTime	衝突時間
+		@param[in]	SrcColl	Srcのコリジョン
+		@param[in]	DestColl	Destのコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename SrcType, typename DestType>
+		void AfterCollisionTmpl_2(const Vector3& SrcVelocity, const Vector3& DestVelocity, float ElapsedTime, float HitTime,
+			const shared_ptr<SrcType>& SrcColl, const shared_ptr<DestType>&  DestColl) {
+			if (HitTime <= 0) {
+				HitTime = 0;
+			}
+			if (HitTime >= ElapsedTime) {
+				HitTime = ElapsedTime;
+			}
+			auto AfterHitTime = ElapsedTime - HitTime;
+			bool UseSrcAfter = false;
+			//衝突相手の登録
+			AddHitObject(DestColl->GetGameObject());
+			if (GetIsHitAction() != IsHitAction::None) {
+				//事後処理が有効なら衝突前まで戻る
+				BackToBefore(SrcVelocity, HitTime);
+				UseSrcAfter = true;
+			}
+			if (GetIsHitAction() != IsHitAction::None) {
+				CollisionEscape(DestColl);
+			}
+			if (UseSrcAfter) {
+				Vector3 HitNormal;
+				GetHitNormal(DestColl, HitNormal);
+				AfterCollision(DestColl, SrcVelocity, DestVelocity, HitNormal, AfterHitTime);
+			}
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -361,6 +509,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 線分と自分の衝突チェック（判定するのみ）
@@ -528,54 +683,49 @@ namespace basecross {
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionSphereとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime) override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionCapsuleとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionObbとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionTrianglesとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionTriangles>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionRectとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -639,6 +789,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -798,54 +955,49 @@ namespace basecross {
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionSphereとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime) override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionCapsuleとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionObbとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionTrianglesとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionTriangles>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionRectとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -909,6 +1061,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -1042,54 +1201,49 @@ namespace basecross {
 		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionSphereとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionSphere>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionCapsuleとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionCapsule>& DestColl, float SpanTime) override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionObbとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	処理する時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionObb>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionTrianglesとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionTriangles>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief CollisionRectとの衝突後処理
-		@param[in]	TotalVelocoty	トータルの速度（RigidbodyとGravityを足したもの）
-		@param[in]	DestColl	相手のコリジョン
-		@param[in]	SpanTime	衝突時間
+		@brief 衝突法線を得る
+		@param[in]	DestColl	相手のCollision
+		@param[out]	Ret	戻す法線の参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void AfterCollision(const Vector3& TotalVelocoty, const shared_ptr<CollisionRect>& DestColl, float SpanTime)override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -1153,6 +1307,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -1249,6 +1410,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	三角形の配列を包み込むAABBを返す
@@ -1389,6 +1557,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetWrappingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual Vector3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる

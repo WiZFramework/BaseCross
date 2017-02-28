@@ -56,13 +56,10 @@ namespace basecross{
 		auto PtrRedit = AddComponent<Rigidbody>();
 		//あまり反発しなくする
 		PtrRedit->SetReflection(0.2f);
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
-		//衝突判定をつける(OBB)
-		//auto PtrCol = AddComponent<CollisionObb>();
+		//衝突判定をつける
 		//CollisionSphereを使う場合は、OBBを無効にして以下を有効にする
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+		PtrCol->SetIsHitAction(IsHitAction::Auto);
 		//コリジョンを表示する場合は以下を設定
 		PtrCol->SetDrawActive(true);
 
@@ -124,10 +121,15 @@ namespace basecross{
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+
+
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
-		wstring str = FPS;
+
+		wstring str = FPS ;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
@@ -163,6 +165,7 @@ namespace basecross{
 		auto PtrRedit = GetComponent<Rigidbody>();
 		//現在の速度を取り出す
 		auto Velo = PtrRedit->GetVelocity().x;
+		auto VeloY = PtrRedit->GetVelocity().y;
 		//目的地を最高速度を掛けて求める
 		auto Target = MoveX * m_MaxSpeed;
 		//目的地に向かうために力のかける方向を計算する
@@ -175,7 +178,7 @@ namespace basecross{
 		//減速する
 		Velo *= m_Decel;
 		//速度を設定する
-		Vector3 VecVelo(Velo, 0, 0);
+		Vector3 VecVelo(Velo, VeloY,0);
 		PtrRedit->SetVelocity(VecVelo);
 		////回転の計算
 		//元となるオブジェクトからアニメーションオブジェクトへの行列の設定
@@ -218,13 +221,8 @@ namespace basecross{
 	void Player::JumpStartMotion() {
 		auto PtrTrans = GetComponent<Transform>();
 		//重力
-		auto PtrGravity = GetComponent<Gravity>();
-		//ジャンプスタート
-		Vector3 JumpVec(0.0f, 4.0f, 0);
-		PtrGravity->StartJump(JumpVec, 0.05f);
-		auto PtrCol = GetComponent<Collision>();
-		//親があったら切り離す
-		//		PtrTrans->SetParent(nullptr);
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
 	}
 	//Aボタンでジャンプしている間の処理
 	//ジャンプ終了したらtrueを返す
@@ -234,11 +232,7 @@ namespace basecross{
 		//ジャンプは地面に着くまでアニメーション変更はしない
 		UpdateAnimeTime(ElapsedTime);
 		auto PtrTransform = GetComponent<Transform>();
-		//重力
-		auto PtrGravity = GetComponent<Gravity>();
-		if (PtrGravity->GetGravityVelocity().Length() <= 0) {
-			return true;
-		}
+
 		return false;
 	}
 
@@ -269,7 +263,6 @@ namespace basecross{
 	//左スティックでZレールを変更するかどうか
 	bool Player::IsRailChangeMotion() {
 		auto PtrTrans = GetComponent<Transform>();
-		auto PtrGra = GetComponent<Gravity>();
 		if (PtrTrans->GetPosition().y > 0.7f) {
 			//何かの上に乗ってる時は変更できない
 			return false;
@@ -314,10 +307,6 @@ namespace basecross{
 		auto PtrRedit = GetComponent<Rigidbody>();
 		//無効にする
 		PtrRedit->SetUpdateActive(false);
-		//重力を取得
-		auto PtrGravity = GetComponent<Gravity>();
-		//無効にする
-		PtrGravity->SetUpdateActive(false);
 		//衝突判定を取得
 		//auto PtrCol = GetComponent<Collision>();
 
@@ -376,10 +365,6 @@ namespace basecross{
 		PtrRedit->SetVelocity(0, 0, 0);
 		//有効にする
 		PtrRedit->SetUpdateActive(true);
-		//重力を取得
-		auto PtrGravity = GetComponent<Gravity>();
-		//有効にする
-		PtrGravity->SetUpdateActive(true);
 		//衝突判定を取得
 		auto PtrCol = GetComponent<Collision>();
 		//有効にする
@@ -595,20 +580,7 @@ namespace basecross{
 	//ステート実行中に毎ターン呼ばれる関数
 	void JumpState::Execute(const shared_ptr<Player>& Obj) {
 		auto AbsMoveX = abs(Obj->MoveRotationMotion());
-		if (Obj->JumpMotion()) {
-			if (AbsMoveX > 0.9f) {
-				//走る状態に戻る
-				Obj->GetStateMachine()->ChangeState(RunState::Instance());
-			}
-			if (AbsMoveX == 0.0f) {
-				//待ち状態に戻る
-				Obj->GetStateMachine()->ChangeState(WaitState::Instance());
-			}
-			else {
-				//歩き状態に戻る
-				Obj->GetStateMachine()->ChangeState(WalkState::Instance());
-			}
-		}
+		Obj->JumpMotion();
 	}
 	//ステートにから抜けるときに呼ばれる関数
 	void JumpState::Exit(const shared_ptr<Player>& Obj) {

@@ -44,7 +44,6 @@ namespace basecross{
 
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		//常に反発
 		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//影をつける
@@ -98,12 +97,9 @@ namespace basecross{
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentRepel);
-
+		PtrCol->SetIsHitAction(IsHitAction::Auto);
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
 		PtrString->SetText(L"");
@@ -141,21 +137,36 @@ namespace basecross{
 		m_InputHandler.PushHandle(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
+	}
+
+	//後更新
+	void Player::OnUpdate2() {
 		//文字列の表示
 		DrawStrings();
 	}
 
+
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+
+		auto PtrBehavior = GetBehavior<PlayerBehavior>();
+		shared_ptr<GameObject> v;
+		if (PtrBehavior->OnHitObjMoveBox(OtherVec,v)) {
+			GetStateMachine()->Reset(PlayerOnMoveboxState::Instance());
+			GetComponent<Transform>()->SetParent(v);
+			return;
+		}
+
 		//プレイヤーが何かに当たった
 		if (GetStateMachine()->GetTopState() == PlayerJumpState::Instance()) {
-			//現在がジャンプステートならPlayerDefaultにリセット
+			//現在がジャンプステートか移動ボックスステートならPlayerDefaultにリセット
 			GetStateMachine()->Reset(PlayerDefaultState::Instance());
 		}
 	}
 
 	//Aボタン
 	void  Player::OnPushA() {
-		if (GetStateMachine()->GetTopState() == PlayerDefaultState::Instance()) {
+		if (GetStateMachine()->GetTopState() == PlayerDefaultState::Instance() || 
+			GetStateMachine()->GetTopState() == PlayerOnMoveboxState::Instance()) {
 			switch (m_PlayerAction) {
 			case PlayerAction::Jump:
 				GetStateMachine()->Push(PlayerJumpState::Instance());
@@ -208,6 +219,12 @@ namespace basecross{
 		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+		if (GetComponent<Transform>()->GetParent()) {
+			PositionStr += L"OnParent\n";
+		}
+		else {
+			PositionStr += L"NotParent\n";
+		}
 
 		wstring RididStr(L"Velocity:\t");
 		auto Velocity = GetComponent<Rigidbody>()->GetVelocity();
@@ -215,18 +232,8 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring GravStr(L"Gravity:\t");
-
-		auto Grav = GetComponent<Gravity>()->GetGravity();
-		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-		wstring GravityStr(L"GravityVelocity:\t");
-		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
-		GravityStr += L"X=" + Util::FloatToWStr(GravityVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+		wstring StateStr(L"State: ");
+		StateStr += GetStateMachine()->GetTopState()->GetStateName() + L"\n";
 
 		wstring HitObjectStr(L"HitObject: ");
 		if (GetComponent<Collision>()->GetHitObjectVec().size() > 0) {
@@ -238,7 +245,7 @@ namespace basecross{
 		else {
 			HitObjectStr += L"NULL\n";
 		}
-		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr;
+		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + StateStr + HitObjectStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
@@ -258,10 +265,37 @@ namespace basecross{
 	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
 		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
 		PtrBehavior->MovePlayer();
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
 	}
 
 	void PlayerDefaultState::Exit(const shared_ptr<Player>& Obj) {
 		//何もしない
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	MoveBoxに乗っているステート
+	//--------------------------------------------------------------------------------------
+	IMPLEMENT_SINGLETON_INSTANCE(PlayerOnMoveboxState)
+	void PlayerOnMoveboxState::Enter(const shared_ptr<Player>& Obj) {
+		Obj->GetComponent<CollisionSphere>()->SetUpdateActive(false);
+	}
+
+	void PlayerOnMoveboxState::Execute(const shared_ptr<Player>& Obj) {
+		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
+		PtrBehavior->MovePlayer();
+		if (!PtrBehavior->OnMoveBox()) {
+			Obj->GetStateMachine()->Push(PlayerJumpState::Instance());
+		}
+	}
+
+	void PlayerOnMoveboxState::Sleep(const shared_ptr<Player>& Obj) {
+		Obj->GetComponent<CollisionSphere>()->SetUpdateActive(true);
+	}
+
+	void PlayerOnMoveboxState::Exit(const shared_ptr<Player>& Obj) {
+		Obj->GetComponent<CollisionSphere>()->SetUpdateActive(true);
+		Obj->GetComponent<Transform>()->SetParent(nullptr);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -270,18 +304,16 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(PlayerJumpState)
 
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		PtrJump->StartJump(Vector3(0, 4.0f, 0));
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {
 		//ジャンプ中も方向変更可能
-		auto PtrDefault = Obj->GetBehavior<PlayerBehavior>();
-		PtrDefault->MovePlayer();
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		if (PtrJump->Execute()) {
-			Obj->GetStateMachine()->Pop();
-		}
+		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
+		PtrBehavior->MovePlayer();
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
 	}
 
 	void PlayerJumpState::Exit(const shared_ptr<Player>& Obj) {

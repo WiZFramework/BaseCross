@@ -24,30 +24,20 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
-		//操舵系のコンポーネントをつける場合はRigidbodyをつける
+		//操舵系の行動をつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//Seek操舵
-		auto PtrSeek = AddComponent<SeekSteering>();
-		//Seekは無効にしておく
-		PtrSeek->SetUpdateActive(false);
-		//Arrive操舵
-		auto PtrArrive = AddComponent<ArriveSteering>();
-		//Arriveは無効にしておく
-		PtrArrive->SetUpdateActive(false);
 
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"EnemyGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<GameObject>());
 		//分離行動をつける
-		AddComponent<SeparationSteering>(Group);
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(Group);
 		//Obbの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionObb>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
-
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
+		PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -62,7 +52,6 @@ namespace basecross{
 		//透明処理
 		SetAlphaActive(true);
 
-
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<Enemy1>(GetThis<Enemy1>()));
 		//最初のステートをEnemy1FarStateに設定
@@ -70,11 +59,20 @@ namespace basecross{
 	}
 
 	void Enemy1::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
 
+	void Enemy1::OnUpdate2() {
+		auto PtrUtil = GetBehavior<UtilBehavior>();
+		PtrUtil->RotToHead(0.2f);
+	}
 
 
 	//--------------------------------------------------------------------------------------
@@ -83,21 +81,17 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy1FarState)
 
 	void Enemy1FarState::Enter(const shared_ptr<Enemy1>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Enter(L"Player");
 	}
 
 	void Enemy1FarState::Execute(const shared_ptr<Enemy1>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		float f = PtrSeek->Execute(L"Player",true,0.1f);
+		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
+		float f = PtrSeek->Execute(L"Player");
 		if (f < Obj->GetNearFarChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy1NearState::Instance());
 		}
 	}
 
 	void Enemy1FarState::Exit(const shared_ptr<Enemy1>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Exit();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -106,20 +100,16 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy1NearState)
 
 	void Enemy1NearState::Enter(const shared_ptr<Enemy1>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Enter(L"Player");
 	}
 
 	void Enemy1NearState::Execute(const shared_ptr<Enemy1>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		if (PtrArrive->Execute(L"Player",true,0.1f) >= Obj->GetNearFarChange()) {
+		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
+		if (PtrArrive->Execute(L"Player") >= Obj->GetNearFarChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy1FarState::Instance());
 		}
 	}
 
 	void Enemy1NearState::Exit(const shared_ptr<Enemy1>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Exit();
 	}
 
 
@@ -139,29 +129,20 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.25f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
-		//操舵系のコンポーネントをつける場合はRigidbodyをつける
+		//操舵系の行動をつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//Seek操舵
-		auto PtrSeek = AddComponent<SeekSteering>();
-		//Seekは無効にしておく
-		PtrSeek->SetUpdateActive(false);
-		//Arrive操舵
-		auto PtrArrive = AddComponent<ArriveSteering>();
-		//Arriveは無効にしておく
-		PtrArrive->SetUpdateActive(false);
 
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"EnemyGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<GameObject>());
 		//分離行動をつける
-		AddComponent<SeparationSteering>(Group);
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(Group);
+
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
-
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
+		PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -184,10 +165,30 @@ namespace basecross{
 	}
 
 	void Enemy2::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void Enemy2::OnUpdate2() {
+		auto PtrUtil = GetBehavior<UtilBehavior>();
+		PtrUtil->RotToHead(0.1f);
+	}
+
+	//衝突時
+	void Enemy2::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
+		if (m_StateMachine->GetCurrentState() == Enemy2MediumState::Instance()) {
+			auto PtrGrav = GetBehavior<Gravity>();
+			PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		}
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	Enemy2のlongステート
@@ -195,13 +196,11 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy2longState)
 
 	void Enemy2longState::Enter(const shared_ptr<Enemy2>& Obj) {
-		auto PtrWait = Obj->GetBehavior<WaitBehavior>();
-		PtrWait->Enter();
 	}
 
 	void Enemy2longState::Execute(const shared_ptr<Enemy2>& Obj) {
 		auto PtrWait = Obj->GetBehavior<WaitBehavior>();
-		float f = PtrWait->Execute();
+		float f = PtrWait->Execute(L"Player");
 		if (f < Obj->GetLongMediumChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy2MediumState::Instance());
 		}
@@ -219,20 +218,13 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy2MediumState)
 
 	void Enemy2MediumState::Enter(const shared_ptr<Enemy2>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Enter(L"Player");
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		PtrJump->StartJump(Vector3(0, 4.0f, 0));
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
 	}
 
 	void Enemy2MediumState::Execute(const shared_ptr<Enemy2>& Obj) {
-		auto PtrUtil = Obj->GetBehavior<UtilBehavior>();
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		if (PtrJump->Execute()) {
-			PtrJump->StartJump(Vector3(0, 4.0f, 0));
-		}
-		float f = PtrSeek->Execute(L"Player",true,0.1f);
+		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
+		float f = PtrSeek->Execute(L"Player");
 		if (f < Obj->GetMediumShortChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy2ShortState::Instance());
 		}
@@ -242,8 +234,6 @@ namespace basecross{
 	}
 
 	void Enemy2MediumState::Exit(const shared_ptr<Enemy2>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		PtrSeek->Exit();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -252,20 +242,16 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy2ShortState)
 
 	void Enemy2ShortState::Enter(const shared_ptr<Enemy2>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Enter(L"Player");
 	}
 
 	void Enemy2ShortState::Execute(const shared_ptr<Enemy2>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		if (PtrArrive->Execute(L"Player",true,0.1f) >= Obj->GetMediumShortChange()) {
+		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
+		if (PtrArrive->Execute(L"Player") >= Obj->GetMediumShortChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy2MediumState::Instance());
 		}
 	}
 
 	void Enemy2ShortState::Exit(const shared_ptr<Enemy2>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveBehavior>();
-		PtrArrive->Exit();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -283,23 +269,20 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPos);
 		PtrTransform->SetScale(0.25f, 0.25f, 0.25f);
 		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
-		//操舵系のコンポーネントをつける場合はRigidbodyをつける
+		//操舵系の行動をつける場合はRigidbodyをつける
 		auto PtrRegid = AddComponent<Rigidbody>();
-		//Seek操舵
-		auto PtrSeek = AddComponent<SeekSteering>();
 
 		//オブジェクトのグループを得る
 		auto Group = GetStage()->GetSharedObjectGroup(L"EnemyGroup");
 		//グループに自分自身を追加
 		Group->IntoGroup(GetThis<GameObject>());
 		//分離行動をつける
-		AddComponent<SeparationSteering>(Group);
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(Group);
+
 		auto PtrColl = AddComponent<CollisionSphere>();
 		//横部分のみ反発
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
-
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
+		PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -318,10 +301,21 @@ namespace basecross{
 	}
 
 	void Enemy3::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
 	}
+
+	void Enemy3::OnUpdate2() {
+		auto PtrUtil = GetBehavior<UtilBehavior>();
+		PtrUtil->RotToHead(0.1f);
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	Enemy3のDefaultステート
@@ -333,8 +327,8 @@ namespace basecross{
 	}
 
 	void Enemy3DefaultState::Execute(const shared_ptr<Enemy3>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		float f = PtrSeek->Execute(L"Player", true, 0.1f);
+		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
+		float f = PtrSeek->Execute(L"Player");
 		if (f < Obj->GetDefaultNearChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy3NearState::Instance());
 		}
@@ -350,18 +344,13 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(Enemy3NearState)
 
 	void Enemy3NearState::Enter(const shared_ptr<Enemy3>& Obj) {
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		PtrJump->StartJump(Vector3(0, 3.0f, 0));
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
 	}
 
 	void Enemy3NearState::Execute(const shared_ptr<Enemy3>& Obj) {
-		auto PtrJump = Obj->GetBehavior<JumpBehavior>();
-		if (PtrJump->Execute()) {
-			PtrJump->StartJump(Vector3(0, 3.0f, 0));
-		}
-		auto PtrSeek = Obj->GetBehavior<SeekBehavior>();
-		float f = PtrSeek->Execute(L"Player", true, 0.1f);
-		if (f >= Obj->GetDefaultNearChange()) {
+		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
+		if (PtrArrive->Execute(L"Player") >= Obj->GetDefaultNearChange()) {
 			Obj->GetStateMachine()->ChangeState(Enemy3DefaultState::Instance());
 		}
 	}
@@ -369,7 +358,6 @@ namespace basecross{
 	void Enemy3NearState::Exit(const shared_ptr<Enemy3>& Obj) {
 		//何もしない
 	}
-
 
 
 }

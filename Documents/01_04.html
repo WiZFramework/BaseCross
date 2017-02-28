@@ -178,20 +178,16 @@ public:
 IMPLEMENT_SINGLETON_INSTANCE(Enemy1NearState)
 
 void Enemy1NearState::Enter(const shared_ptr&lt;Enemy1>& Obj) {
-    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
-    PtrArrive->Enter(L"Player");
 }
 
 void Enemy1NearState::Execute(const shared_ptr&lt;Enemy1>& Obj) {
-    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
-    if (PtrArrive->Execute(L"Player",true,0.1f) >= Obj->GetNearFarChange()) {
+    auto PtrArrive = Obj->GetBehavior&lt;ArriveSteering>();
+    if (PtrArrive->Execute(L"Player") >= Obj->GetNearFarChange()) {
         Obj->GetStateMachine()->ChangeState(Enemy1FarState::Instance());
     }
 }
 
 void Enemy1NearState::Exit(const shared_ptr&lt;Enemy1>& Obj) {
-    auto PtrArrive = Obj->GetBehavior&lt;ArriveBehavior>();
-    PtrArrive->Exit();
 }
 </pre>
 </div>
@@ -225,6 +221,7 @@ shared_ptr&lt;Enemy1NearState> Enemy1NearState::Instance() {
 　このように<b>1回目の呼び出し</b>でインスタンスが作成され、以降は作成されることはありません。<br/>
 <br />
 　続く<b>Enemy1NearState::Enter()関数</b>、<b>Enemy1NearState::Execute()関数</b>、<b>Enemy1NearState::Exit()関数</b>は前述したように<b>このステートに入ったとき</b>、<b>このステートにいる間の毎ターン</b>、<b>このステートを抜けるとき</b>の実装を記述します。<br />
+　ここでは、<b>Enemy1NearState::Execute()関数</b>のみ記述されています。Enter()やExit()は記述がありませんが、前述したように<b>純粋仮想関数</b>なので、空関数でも記述しておく必要があります。<br />
 <br />
 <h4>ステートマシン</h4>
 　ステートマシンは、各ゲームオブジェクトに1つだけ記述します。まず宣言です。以下は<b>Enemy1のステートマシン</b>です。宣言とアクセサを記述します。
@@ -272,9 +269,14 @@ void Enemy1::OnCreate() {
 <div class="box1">
 <pre>
 void Enemy1::OnUpdate() {
+    //ステートによって変わらない行動を実行
+    auto PtrGrav = GetBehavior&lt;Gravity>();
+    PtrGrav->Execute();
+    auto PtrSep = GetBehavior&lt;SeparationSteering>();
+    PtrSep->Execute();
     //ステートマシンのUpdateを行う
     //この中でステートの切り替えが行われる
-    <span class="red">m_StateMachine->Update();</span>
+    m_StateMachine->Update();
 }
 </pre>
 </div>
@@ -301,8 +303,8 @@ void Enemy1::OnUpdate() {
 <div class="box1">
 <pre>
 void Enemy1NearState::Execute(const shared_ptr&lt;Enemy1>& Obj) {
-    auto PtrArrive = <span class="red">Obj->GetBehavior&lt;ArriveBehavior>();</span>
-    if (<span class="red">PtrArrive->Execute(L"Player",true,0.1f)</span> >= Obj->GetNearFarChange()) {
+    <span class="red">auto PtrArrive = Obj->GetBehavior&lt;ArriveSteering>();</span>
+    if (<span class="red">PtrArrive->Execute(L"Player")</span> >= Obj->GetNearFarChange()) {
         Obj->GetStateMachine()->ChangeState(Enemy1FarState::Instance());
     }
 }
@@ -316,48 +318,92 @@ Obj->GetBehavior<行動クラス名>()
 </div>
 　により、ゲームオブジェクトにその行動クラスが存在しなければ、インスタンスを作成しゲームオブジェクトに設置し、そのポインタを返します。<br />
 　ですから、あらかじめ<b>AddBehavior()</b>などの関数で行動を追加しておく必要はありません（そういう関数は存在しません）。<b>使うときに取得すれば</b>いいのです。<br />
-<b>ArriveBehavior</b>の宣言と実体は、ライブラリ中の<b>SharedLibプロジェクト</b>に<b>Behavior.h/cpp</b>に実装されています。以下がその宣言です。
+<b>ArriveBehavior</b>の宣言と実体は、<b>ライブラリ中、SharedLibプロジェクトのBehaviorSteering.h/cpp</b>に実装されています。以下がその宣言です。
 <div class="box1">
 <pre>
-//--------------------------------------------------------------------------------------
-/// Arrive行動クラス
-//--------------------------------------------------------------------------------------
-class ArriveBehavior : public Behavior {
-public:
-    ArriveBehavior(const shared_ptr&lt;GameObject>& GameObjectPtr) :
-        Behavior(GameObjectPtr)
-    {}
-    virtual ~ArriveBehavior() {}
-    void Enter(const Vector3& TargetPos);
-    void Enter(const wstring& TargetKey);
-    float Execute(const Vector3& TargetPos, bool RotHead, float LerpFact);
-    <span class="red">float Execute(const wstring& TargetKey, bool RotHead, float LerpFact);</span>
-    void Exit();
-};
+    //--------------------------------------------------------------------------------------
+    /// ArriveSteering行動クラス
+    //--------------------------------------------------------------------------------------
+    class ArriveSteering : public SteeringBehavior {
+    public:
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  コンストラクタ
+        @param[in]  GameObjectPtr   ゲームオブジェクト
+        */
+        //--------------------------------------------------------------------------------------
+        ArriveSteering(const shared_ptr&lt;GameObject>& GameObjectPtr);
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  デストラクタ
+        */
+        //--------------------------------------------------------------------------------------
+        virtual ~ArriveSteering();
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  減速値を得る（デフォルト3.0）
+        @return 減速値
+        */
+        //--------------------------------------------------------------------------------------
+        float GetDecl() const;
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  減速値を設定する
+        @param[in]  f   減速値
+        @return なし
+        */
+        //--------------------------------------------------------------------------------------
+        void SetDecl(float f);
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  行動を実行する
+        @param[in]  TargetPos   追いかける位置
+        @return 追いかける位置との距離
+        */
+        //--------------------------------------------------------------------------------------
+        float Execute(const Vector3& TargetPos);
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  行動を実行する
+        @param[in]  TargetKey   追いかけるオブジェクトのキー（SharedObjec）
+        @return 追いかけるオブジェクトとの距離
+        */
+        //--------------------------------------------------------------------------------------
+        float Execute(const wstring& TargetKey);
+    private:
+        // pImplイディオム
+        struct Impl;
+        unique_ptr&lt;Impl> pImpl;
+    };
 </pre>
 </div>
-　この行動クラスはオブジェクトに追加されている<b>ArriveSteeringコンポーネント</b>を呼び出して、そのパラメータの設定を行います。ステートから呼び出されている関数を見てみましょう（赤くなっている関数です）。
+　ステートから呼び出されている関数を見てみましょう（赤くなっている関数です）。
 <div class="box1">
 <pre>
-float ArriveBehavior::Execute(const wstring& TargetKey, 
-    bool RotHead, float LerpFact) {
-    auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-    auto TargetPos = TargetPtr->GetComponent&lt;Transform>()->GetPosition();
-    auto PtrArrive = GetGameObject()->GetComponent&lt;ArriveSteering>();
-    PtrArrive->SetTargetPosition(TargetPos);
-    if (RotHead) {
-        auto UtilPtr = GetGameObject()->GetBehavior&lt;UtilBehavior>();
-        UtilPtr->RotToHead(LerpFact);
+    float  ArriveSteering::Execute(const Vector3& TargetPos) {
+        auto RigidPtr = GetGameObject()->GetComponent&lt;Rigidbody>();
+        auto TransPtr = GetGameObject()->GetComponent&lt;Transform>();
+        Vector3 Force = RigidPtr->GetForce();
+        Vector3 WorkForce;
+        WorkForce = <span class="red">Steering::Arrive(RigidPtr->GetVelocity(), TargetPos,
+            TransPtr->GetPosition(), RigidPtr->GetMaxSpeed(), pImpl->m_Decl)</span> *  GetWeight();
+        Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
+        RigidPtr->SetForce(Force);
+        auto Pos = TransPtr->GetPosition();
+        return Vector3EX::Length(Pos - TargetPos);
     }
-    auto Pos = GetGameObject()->GetComponent&lt;Transform>()->GetPosition();
-    return Vector3EX::Length(Pos - TargetPos);
-}
+
+    <span class="red">float ArriveSteering::Execute(const wstring& TargetKey) {
+        auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
+        auto TargetPos = TargetPtr->GetComponent&lt;Transform>()->GetPosition();
+        return Execute(TargetPos);
+    }</span>
 </pre>
 </div>
-　ここには、関連するオブジェクトのコンポーネントを取り出し、そのコンポーネントを操作することで<b>行動を作成</b>しています。<br />
-　ですから、<b>ArriveBehaviorを実装するオブジェクト</b>は<b>ArriveSteeringコンポーネント</b>をあらかじめ追加しておかなければなりません。<br />
+　<b>ArriveSteering::Execute()関数</b>は多重定義されていて、<b>パラメータがキーワードせ呼び出される関数</b>が呼ばれます。ここでは、キーワードからプレイヤーを特定し、その<b>位置情報</b>で、もう一つの関数を呼び出します。<br/>
+　また、赤くなっている<b>Steering::Arrive()関数呼び出し</b>は、フォースを作り出す<b>操舵</b>関数です。ここでは<b>到着</b>操舵を呼び出しています。<br />
 <br />
-　さて、それでは、<b>行動を一般化するメリット</b>とはなんでしょう。<br />
+　それでは、<b>行動を一般化するメリット</b>とはなんでしょう。<br />
 　それは多くの場合、<b>敵やアイテムやギミック</b>の<b>AI動作</b>を少ないコード行数で実装できる、という部分です。<br />
 　たとえば、<b>敵Aにはプレイヤーを追いかける行動がある</b>とします。また<b>敵Bにもプレイヤーを追いかける行動がある</b>とした場合、同じようなコードを、これまでは<b>敵A及び敵B</b>に記述する必要がありました。また、そうでない場合でも<b>Strategyデザインパターン</b>などを作成し、ゲーム側で共有する行動を作成する必要がありました。<br />
 　もちろん<b>Strategyパターン</b>もいいのですが、今回実装した<b>行動クラス</b>は<b>Strategyパターン</b>よりも自由度が高い設計になってます。<b>Strategyパターン</b>は、ある程度、親クラス側で仮想関数もしくはテンプレート内関数の関数名を固定する必要があります。これは<b>Strategyパターン</b>を呼び出す側が<b>関数名を決める</b>ことにより、<b>後からのクラス追加</b>がしやすい設計になっているからです。しかし<b>行動クラス</b>では<b>保持する関数の形式はどのようにでも書ける</b>というメリットがあります。<br />

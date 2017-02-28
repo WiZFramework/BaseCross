@@ -17,8 +17,7 @@
 　これから、<b>フルバージョン</b>のサンプルの説明を始めます。このサンプルは<b>FullTutorial001</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 <br />
-　現時点で<b>Dx12版</b>は未実装です。<b>Dx11版</b>のみとなります。<br />
-　実行結果は以下のような画面が出ます。真黒な画面です。
+　実行結果は以下のような画面が出ます。濃い青の画面です。
 <p>&nbsp;</p>
 <img src="img/0101a.png" width="80%"/>
 <p>図0101a</p>
@@ -215,6 +214,10 @@ namespace basecross{
     //--------------------------------------------------------------------------------------
     void Scene::OnCreate() {
         try {
+            //クリアする色を設定
+            Color4 Col;
+            Col.SetUint8(31,30,71,255);
+            SetClearColor(Col);
             //自分自身にイベントを送る
             //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
             PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToGameStage");
@@ -235,7 +238,9 @@ namespace basecross{
 //end basecross
 </pre>
 </div>
-　シーンもステージ同様構築時に呼ばれるのは<b>Scene::OnCreate()関数</b>です。しかし、ここで、<b>ゲームステージをアクティブステージにする</b>という処理は行わずに、
+　シーンもステージ同様構築時に呼ばれるのは<b>Scene::OnCreate()関数</b>です。<br/>
+　まず、背景色を濃い青に設定してます。<b>Color4</b>は色を管理するクラスです。内部では、各色、0.0fから1.0fまでの値を持つように設計されていますが<b>SetUint8()関数</b>を使用することで<b>0から255の値</b>で設定できます（内部で小数点値に変換されます）。<br />
+　続いては、ここで、<b>ゲームステージをアクティブステージにする</b>という処理は行わずに、
 <div class="box1">
 <pre>
     //自分自身にイベントを送る
@@ -306,6 +311,10 @@ namespace basecross{
 
     void Scene::OnCreate(){
         try {
+            //クリアする色を設定
+            Color4 Col;
+            Col.SetUint8(31,30,71,255);
+            SetClearColor(Col);
             //最初のアクティブステージの設定
             ResetActiveStage&lt;GameStage>();
         }

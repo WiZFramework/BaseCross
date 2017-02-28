@@ -77,8 +77,8 @@ public:
     void MovePlayer();
     //--------------------------------------------------------------------------------------
     /*!
-    @brief  最大スピードを得る
-    @return 最大スピード
+    @brief  最高速度を得る
+    @return 最高速度
     */
     //--------------------------------------------------------------------------------------
     float GetMaxSpeed() const {
@@ -116,13 +116,32 @@ public:
     */
     //--------------------------------------------------------------------------------------
     virtual void OnUpdate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  後更新処理
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate2() override;
 };
 </pre>
 </div>
 　このように、メンバ変数に<b>m_MaxSpeed、m_Decel、m_Mass</b>と3つの変数があります。これらはプレイヤーをなめらかに動くように物理計算をするためのパラメータです。<br />
 <br/>
 <h4>初期化</h4>
-　では、実体を見てみましょう。<b>Player.cpp</b>に記述があります。まず、<b>Player::OnCreate()関数</b>です。
+　では、実体を見てみましょう。<b>Player.cpp</b>に記述があります。まず、<b>コンストラクタ</b>です。ここでは各メンバ変数を<b>メンバイニシャライズ</b>で初期化しています。<br />
+<div class="box1">
+<pre>
+Player::Player(const shared_ptr&lt;Stage>& StagePtr) :
+    GameObject(StagePtr),
+    m_MaxSpeed(10.0f),  //最高速度
+    m_Decel(0.95f), //減速値
+    m_Mass(0.5f)    //質量
+{}
+</pre>
+</div>
+　<b>メンバ変数の初期化は非常に重要</b>です。初期化を忘れるとなかなか発見できないバグに結び付く場合があります。初期化すべき変数は、必ず行いましょう。<br />
+　続いて、<b>Player::OnCreate()関数</b>です。
 
 <div class="box1">
 <pre>
@@ -137,11 +156,9 @@ void Player::OnCreate() {
 
     //Rigidbodyをつける
     auto PtrRedid = AddComponent&lt;Rigidbody>();
-    //重力をつける
-    auto PtrGravity = AddComponent&lt;Gravity>();
     //衝突判定をつける
     auto PtrCol = AddComponent&lt;CollisionSphere>();
-    PtrCol->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+    PtrCol->SetIsHitAction(IsHitAction::Auto);
     //デバッグ用文字列をつける
     auto PtrString = AddComponent&lt;StringSprite>();
     PtrString->SetText(L"");
@@ -171,7 +188,7 @@ void Player::OnCreate() {
 </pre>
 </div>
 　まず、<b>Transformコンポーネント</b>を取り出して、<b>スケール、回転、位置</b>の初期値を設定します。<br />
-　続いて、<b>Update系コンポーネント</b>を追加します。プレイヤーに設定するUpdate系コンポーネントは<b>Rigidbody、Gravity、CollisionSphere</b>の3つです。今回のサンプルでは、<b>衝突する相手</b>は配置されてませんが、<b>Gravity</b>を実装しているため、プレイヤーは常に<b>プレート（ゲーム盤）</b>と衝突します。<br />
+　続いて、<b>Update系コンポーネント</b>を追加します。プレイヤーに設定するUpdate系コンポーネントは<b>Rigidbody、CollisionSphere</b>の2つです。今回のサンプルでは、<b>衝突する相手</b>は配置されてませんが、<b>Gravity行動</b>を実装しているため、プレイヤーは常に<b>プレート（ゲーム盤）</b>と衝突します。<br />
 　また、<b>StringSpriteコンポーネント</b>も追加します。これはデバッグ用の文字列を表示されすためのもので、プレイヤーの現在の位置や速度、重力による速度や、衝突している相手を表示します。<br />
 　カメラは
 <div class="box1">
@@ -197,24 +214,40 @@ void Player::OnCreate() {
 void Player::OnUpdate() {
     //プレイヤーの移動
     MovePlayer();
-    //文字列の表示
-    DrawStrings();
+    //重力を加える
+    auto PtrGrav = GetBehavior&lt;Gravity>();
+    PtrGrav->Execute();
 }
 </pre>
 </div>
-　記述はいたってシンプルです。<b>プレイヤーの移動</b>と<b>文字列の表示</b>です。<br/>
+　記述はいたってシンプルです。<b>プレイヤーの移動</b>と<b>重力の対応</b>です。<br/>
+<div class="box1">
+<pre>
+    auto PtrGrav = GetBehavior&lt;Gravity>();
+</pre>
+</div>
+　という記述は<b>重力行動</b>を<b>（必要なら）追加して、取り出して</b>います。<b>行動クラス</b>は次項でも詳しく取りあげますが、簡単に言えばプレイヤーや敵キャラ（あるいはアイテム）などの<b>処理</b>を<b>クラス化</b>して再利用できるようにする仕組みです。<br />
+　例えば<b>重力をかける</b>などの処理はある程度決まった処理です。ですのでクラス化されています。<br />
+　ここで<b>行動とコンポーネントの違い</b>について考えます。<b>コンポーネント</b>は<b>道具</b>のようなものです。それに対して<b>行動</b>は<b>コンポーネントに影響を与える処理</b>と考えられます。<br />
+<br/>
 　<b>プレイヤーの移動</b>は、<b>MovePlayer()関数</b>を呼び出します。以下はその実体です。<br />
 <div class="box1">
 <pre>
 void Player::MovePlayer() {
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     Vector3 Angle = GetMoveVector();
-    //Transform
-    auto PtrTransform = GetComponent&lt;Transform>();
     //Rigidbodyを取り出す
     auto PtrRedit = GetComponent&lt;Rigidbody>();
-    //現在の速度を取り出す
     auto Velo = PtrRedit->GetVelocity();
+    if (Angle.Length() &lt;= 0.0f && Velo.y == 0.0f) {
+        //コントローラを離したとき対策
+        Velo *= GetDecel();
+        PtrRedit->SetVelocity(Velo);
+        return;
+    }
+    //Transform
+    auto PtrTransform = GetComponent&lt;Transform>();
+    //現在の速度を取り出す
     //目的地を最高速度を掛けて求める
     auto Target = Angle * GetMaxSpeed();
     //目的地に向かうために力のかける方向を計算する
@@ -226,26 +259,13 @@ void Player::MovePlayer() {
     auto Accel = Force / GetMass();
     //ターン時間を掛けたものを速度に加算する
     Velo += (Accel * ElapsedTime);
-    //減速する
-    Velo *= GetDecel();
     //速度を設定する
     PtrRedit->SetVelocity(Velo);
     //回転の計算
-    float YRot = PtrTransform->GetRotation().y;
-    Quaternion Qt;
-    Qt.Identity();
     if (Angle.Length() > 0.0f) {
-        //ベクトルをY軸回転に変換
-        float PlayerAngle = atan2(Angle.x, Angle.z);
-        Qt.RotationRollPitchYaw(0, PlayerAngle, 0);
-        Qt.Normalize();
+        auto UtilPtr = GetBehavior&lt;UtilBehavior>();
+        UtilPtr->RotToHead(Angle, 1.0f);
     }
-    else {
-        Qt.RotationRollPitchYaw(0, YRot, 0);
-        Qt.Normalize();
-    }
-    //Transform
-    PtrTransform->SetQuaternion(Qt);
 }
 </pre>
 </div>
@@ -267,8 +287,17 @@ void Player::MovePlayer() {
 <p>&nbsp;</p>
 　上図は現在の速度と目標地点から、どの方向に<b>フォース</b>をかければいいのかを図解したものです。単純に目標地点に向かって<b>フォース</b>をかけるのではなく、<b>ベクトルの引き算</b>で求めているのがわかります。<br />
 　フォースが決まったら<b>加速度</b>を求めます。<b>加速度</b>は<b>フォースを質量で割って</b>求めます。<br />
-　そしてその加速度を、<b>前回からののターン時間</b>をかけて、現在の億度に加算します。最後に、減速値（摩擦などを想定しています）をかけて、最終的に設定すべき<b>速度</b>を算出します。算出した速度は<b>Rigidbodyコンポーネント</b>を介して設定します。<br />
+　そしてその加速度を、<b>前回からののターン時間</b>をかけて、現在の速度に加算します。算出した速度は<b>Rigidbodyコンポーネント</b>を介して設定します。<br />
 　またこの関数では<b>進行方向を見る</b>という処理をしています。<br />
+　そして<b>文字列の表示</b>は<b>Player::Update2()関数</b>に記述します。この関数は<b>Updateの後処理</b>と言える関数です。
+<div class="box1">
+<pre>
+    void Player::OnUpdate2() {
+        //文字列の表示
+        DrawStrings();
+    }
+</pre>
+</div>
 <br />
 　今回紹介したサンプルは、プレイヤーの動きの中でも、非常に単純なものとなっています。<br />
 　実際のゲーム内のプレイヤーは、もっともっと活動的ですし、もっと多くの処理を必要とします。<br />

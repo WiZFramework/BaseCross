@@ -22,7 +22,7 @@ namespace basecross {
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				auto PtrCamera = GetGameObject()->OnGetDrawCamera();
 				//進行方向の向きを計算
-				Vector3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+				Vector3 Front = PtrTransform->GetWorldMatrix().PosInMatrixSt() - PtrCamera->GetEye();
 				Front.y = 0;
 				Front.Normalize();
 				//進行方向向きからの角度を算出
@@ -52,12 +52,18 @@ namespace basecross {
 	void PlayerBehavior::MovePlayer() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		Vector3 Angle = GetMoveVector();
-		//Transform
-		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		//Rigidbodyを取り出す
 		auto PtrRedit = GetGameObject()->GetComponent<Rigidbody>();
-		//現在の速度を取り出す
 		auto Velo = PtrRedit->GetVelocity();
+		if (Angle.Length() <= 0.0f && Velo.y == 0.0f) {
+			//コントローラを離したとき対策
+			Velo *= GetDecel();
+			PtrRedit->SetVelocity(Velo);
+			return;
+		}
+		//Transform
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		//現在の速度を取り出す
 		//目的地を最高速度を掛けて求める
 		auto Target = Angle * GetMaxSpeed();
 		//目的地に向かうために力のかける方向を計算する
@@ -69,14 +75,12 @@ namespace basecross {
 		auto Accel = Force / GetMass();
 		//ターン時間を掛けたものを速度に加算する
 		Velo += (Accel * ElapsedTime);
-		//減速する
-		Velo *= GetDecel();
 		//速度を設定する
 		PtrRedit->SetVelocity(Velo);
 		//回転の計算
 		if (Angle.Length() > 0.0f) {
 			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(Angle,1.0f);
+			UtilPtr->RotToHead(Angle, 1.0f);
 		}
 	}
 
@@ -94,7 +98,7 @@ namespace basecross {
 					auto Angle = Vector3(sin(RotY), 0, cos(RotY));
 					Angle.Normalize();
 					auto Span = Angle * 0.5f;
-					AttackPtr->Weakup(PtrTrans->GetPosition() + Span, Angle * 10.0f);
+					AttackPtr->Weakup(PtrTrans->GetWorldMatrix().PosInMatrixSt() + Span, Angle * 10.0f);
 					return;
 				}
 			}
@@ -102,33 +106,46 @@ namespace basecross {
 
 	}
 
-
-
-	//--------------------------------------------------------------------------------------
-	///	何もしない行動クラス
-	//--------------------------------------------------------------------------------------
-	void WaitBehavior::Enter() {
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(false);
-	}
-
-	float WaitBehavior::Execute() {
-		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
-		auto Velo = PtrRigid->GetVelocity();
-		//減速
-		Velo *= 0.95f;
-		PtrRigid->SetVelocity(Velo);
-		auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-		UtilPtr->RotToHead(0.1f);
-		auto TargetPtr = GetStage()->GetSharedObject(L"Player");
-		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetPosition();
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+	bool PlayerBehavior::OnHitObjMoveBox(vector<shared_ptr<GameObject>>& OtherVec, shared_ptr<GameObject>& retv) {
+		for (auto& v : OtherVec) {
+			if (v->FindTag(L"MoveBox")) {
+				auto PtrTrans = GetGameObject()->GetComponent<Transform>();
+				auto sp = GetGameObject()->GetComponent<CollisionSphere>()->GetSphere();
+				auto obb = v->GetComponent<CollisionObb>()->GetObb();
+				Vector3 RetPoint;
+				HitTest::SPHERE_OBB(sp, obb, RetPoint);
+				auto Normal = sp.m_Center - RetPoint;
+				if (Normal.Length() > sp.m_Radius * 1.5f) {
+					return false;
+				}
+				Normal.Normalize();
+				if (Vector3EX::AngleBetweenNormals(Vector3(0, 1.0f, 0), Normal) >= 0.1f) {
+					return false;
+				}
+				retv = v;
+				return true;
+			}
+		}
+		return false;
 	}
 
 
+	bool PlayerBehavior::OnMoveBox() {
+		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
+		auto sp = GetGameObject()->GetComponent<CollisionSphere>()->GetSphere();
+		auto obb = PtrTrans->GetParent()->GetComponent<CollisionObb>()->GetObb();
+		Vector3 RetPoint;
+		HitTest::SPHERE_OBB(sp, obb, RetPoint);
+		auto Normal = sp.m_Center - RetPoint;
+		if (Normal.Length() > sp.m_Radius * 1.5f) {
+			return false;
+		}
+		Normal.Normalize();
+		if (Vector3EX::AngleBetweenNormals(Vector3(0,1.0f,0), Normal) >= 0.1f) {
+			return false;
+		}
+		return true;
+	}
 
 }
 

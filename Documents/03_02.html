@@ -1,0 +1,132 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０２．Action系コンポーネント</h3>
+　オブジェクトの位置や回転、スケーリングを動的に変更する手段として、<b>何秒間でどこまで移動</b>といった指定ができると便利です。<br />
+　<b>Action系コンポーネント</b>はこのような動きを指定できます。<br />
+<br />
+<h4>Actionコンポーネント</h4>
+　<b>FullSample302</b>は<b>Actionコンポーネント</b>を実装したサンプルです。リビルドして実行すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0302a.png" width="80%"/>
+<p>図0302a</p>
+<p>&nbsp;</p>
+　３つの球体が<b>回転、そしてジャンプ</b>しながら<b>区画に沿って移動</b>します。<br />
+　このような動きを実装するには、<b>Character.h/cpp</b>にある、<b>ActionObjectクラス</b>のような記述をします。<br />
+　以下は<b> ActionObject::OnCreate()関数</b>です。<br />
+<div class="box1">
+<pre>
+//初期化
+void ActionObject::OnCreate() {
+    auto Ptr = GetComponent&lt;Transform>();
+    Ptr->SetPosition(m_StartPos);
+    Ptr->SetScale(0.25f, 0.25f, 0.25f); //直径25センチの球体
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+
+    <span class="red">//アクションの登録
+    auto PtrAction = AddComponent&lt;Action>();
+    PtrAction->AddRotateBy(1.0f, Vector3(0, XM_PI, 0));
+    PtrAction->AddRotateInterval(1.0f);
+    PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));
+    PtrAction->AddMoveBy(0.5f, Vector3(0, 1.0f, -1.0f), 
+        Lerp::Linear, Lerp::EaseOut, Lerp::Linear);
+    PtrAction->AddMoveBy(0.5f, Vector3(0, -1.0f, -1.0f), 
+        Lerp::Linear, Lerp::Easein, Lerp::Linear);
+    PtrAction->AddMoveBy(2.0f, Vector3(-4.0f, 0, 0));
+    PtrAction->AddMoveBy(1.0f, Vector3(0, 0, 2.0f));
+    PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));</span>
+
+    //ループする
+    PtrAction->SetLooped(true);
+    //アクション開始
+    PtrAction->Run();
+
+    //影の作成
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形状
+    ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+    //メッシュの登録
+    PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    //テクスチャの登録
+    PtrDraw->SetTextureResource(L"TRACE_TX");
+
+
+    //透過処理する
+    SetAlphaActive(true);
+}
+</pre>
+</div>
+　赤くなっているところが<b>Actionコンポーネント</b>の実装です。<br/>
+　<b>Actionコンポーネント</b>は<b>スケーリング、回転、移動</b>の３つのラインがありそれぞれ独立して動き、組み合わさった状態になります。<br />
+　例えば<b>１秒間でXM_PIだけY軸回転</b>と<b>２秒間で2.0移動</b>と指定した場合、<b>スタートから0.5秒後</b>は<b>XM_PI/2ぶん回転して、0.5だけ移動</b>の状態になります。<br />
+　<b>スケーリング、回転、移動</b>の３つのラインに指定できるアクションは<b>ScaleBy、RotateBy、MoveBy</b>の<b>○○By</b>であらわされる動作と<b>ScaleTo、RotateTo、MoveTo</b>の<b>○○To</b>であらわされる動きです。<br/>
+　<b>○○By</b>は<b>現在の状態からの変化</b>を表します。例えば、現在<b>Vector3(1.0f,1.0f,1.0f)</b>にいるオブジェクトを<b>AddMoveBy(1.0f, Vector3(2.0f, 0, 0));</b>した場合、<b>1秒間でVector3(2.0f, 0, 0)だけ相対的に移動</b>の意味になり移動後の位置は<b>Vector3(3.0f,1.0f,1.0f)</b>になります。<br />
+　<b>○○To</b>は、<b>AddMoveTo(1.0f, Vector3(2.0f, 0, 0));</b>した場合、現在位置がどこにあっても、1秒後には<b>Vector3(2.0f, 0, 0)</b>に移動します。<b>1秒間でVector3(2.0f, 0, 0)まで移動</b>となり絶対位置の表現となります。<br />
+　<b>Scale、Rotate</b>も同様で<b>ScaleBy、RotateBy</b>の場合は相対的な変化であり<b>ScaleTo、RotateTo</b>は絶対的な変化になります。<br />
+　サンプルのように
+<div class="box1">
+<pre>
+    //ループする
+    PtrAction->SetLooped(true);
+</pre>
+</div>
+　にすると、繰り返し変化を続けます。
+<div class="box1">
+<pre>
+    //ループしない
+    PtrAction->SetLooped(false);
+</pre>
+</div>
+　にすると、登録された一連の動作が終了した時点で変化を終了します（デフォルトはループしない、です）。<br/>
+　その場合<b>Scale、Rotate、Move</b>の3つのラインがすべて終了したら、<b>IsArrived()関数</b>により、<b>到着したかどうか</b>を検証できます。<br />
+　また、それぞれのラインには<b>○○Interval</b>という動作があります。これは<b>何もしない</b>という動作で、指定した時間は何もしません。<br />
+<div class="box1">
+<pre>
+    PtrAction->AddRotateInterval(1.0f);
+</pre>
+</div>
+　で、1秒間回転を止めることができます。<br />
+<br />
+<h4>その他のActionコンポーネント</h4>
+　<b>Action系コンポーネント</b>には、<b>MoveBy</b>や<b>RotateBy</b>を単独で実装できるコンポーネントがあります。
+<div class="box1">
+<pre>
+ScaleToコンポーネント    目的の拡大率に拡大縮小
+ScaleByコンポーネント    目的の相対スケールにに拡大縮小
+RotateToコンポーネント   目的の角度に回転
+RotateByコンポーネント   目的の相対角度に回転
+MoveToコンポーネント     目的の位置に移動
+MoveByコンポーネント     目的の相対位置に移動
+</pre>
+</div>
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="03_03.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

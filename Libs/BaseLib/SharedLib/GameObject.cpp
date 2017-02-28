@@ -28,7 +28,6 @@ namespace basecross {
 		list<type_index> m_CompOrder;	//コンポーネント実行順番
 
 		shared_ptr<Rigidbody> m_Rigidbody;	//Rigidbodyは別にする
-		shared_ptr<Gravity> m_Gravity;	//Gravityは別にする
 		shared_ptr<Collision> m_Collision;	//Collisionも別にする
 		shared_ptr<Transform> m_Transform;	//Transformも別にする
 		//行動のマップ
@@ -64,9 +63,6 @@ namespace basecross {
 	shared_ptr<Rigidbody> GameObject::GetRigidbody()const {
 		return pImpl->m_Rigidbody;
 	}
-	shared_ptr<Gravity> GameObject::GetGravity()const {
-		return pImpl->m_Gravity;
-	}
 	shared_ptr<Collision> GameObject::GetCollision()const {
 		return pImpl->m_Collision;
 	}
@@ -96,10 +92,6 @@ namespace basecross {
 	void GameObject::SetRigidbody(const shared_ptr<Rigidbody>& Ptr) {
 		Ptr->AttachGameObject(GetThis<GameObject>());
 		pImpl->m_Rigidbody = Ptr;
-	}
-	void GameObject::SetGravity(const shared_ptr<Gravity>& Ptr) {
-		Ptr->AttachGameObject(GetThis<GameObject>());
-		pImpl->m_Gravity = Ptr;
 	}
 	void GameObject::SetCollision(const shared_ptr<Collision>& Ptr) {
 		Ptr->AttachGameObject(GetThis<GameObject>());
@@ -159,8 +151,6 @@ namespace basecross {
 	void GameObject::AddMakedBehavior(type_index TypeIndex, const shared_ptr<Behavior>& Ptr) {
 		//mapに追加もしくは更新
 		pImpl->m_BehaviorMap[TypeIndex] = Ptr;
-//		Ptr->AttachGameObject(GetThis<GameObject>());
-
 	}
 
 
@@ -198,6 +188,9 @@ namespace basecross {
 	int GameObject::GetDrawLayer() const {return pImpl->m_DrawLayer;}
 	void  GameObject::SetDrawLayer(int l) {pImpl->m_DrawLayer = l;}
 	//タグの検証と設定
+	set<wstring>& GameObject::GetTagSet() const {
+		return pImpl->m_Tag;
+	}
 	bool GameObject::FindTag(const wstring& tagstr) const {
 		if (pImpl->m_Tag.find(tagstr) == pImpl->m_Tag.end()) {
 			return false;
@@ -219,6 +212,10 @@ namespace basecross {
 		pImpl->m_Tag.erase(tagstr);
 	}
 	//数字タグの検証と設定
+	set<int>& GameObject::GetNumTagSet() const {
+		return pImpl->m_NumTag;
+	}
+
 	bool GameObject::FindNumTag(int numtag) const {
 		if (pImpl->m_NumTag.find(numtag) == pImpl->m_NumTag.end()) {
 			return false;
@@ -258,11 +255,6 @@ namespace basecross {
 	void GameObject::ComponentUpdate() {
 		auto TMptr = GetComponent<Transform>();
 		auto RigidPtr = GetComponent<Rigidbody>(false);
-		auto GravityPtr = GetComponent<Gravity>(false);
-		if (RigidPtr) {
-			//Rigidbodyがあればフォースを初期化
-			RigidPtr->SetForce(0, 0, 0);
-		}
 		//マップを検証してUpdate
 		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
 		while (it != pImpl->m_CompOrder.end()) {
@@ -275,10 +267,6 @@ namespace basecross {
 				}
 			}
 			it++;
-		}
-		if (GravityPtr && GravityPtr->IsUpdateActive()) {
-			//GravityPtrがあればUpdate()
-			GravityPtr->OnUpdate();
 		}
 		if (RigidPtr && RigidPtr->IsUpdateActive()) {
 			//RigidbodyがあればUpdate()
@@ -328,7 +316,6 @@ namespace basecross {
 		//Transformがなければ例外
 		auto Tptr = GetComponent<Transform>();
 		auto RigidPtr = GetComponent<Rigidbody>(false);
-		auto GravityPtr = GetComponent<Gravity>(false);
 		auto CollisionPtr = GetComponent<Collision>(false);
 		//マップを検証してDraw
 		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
@@ -346,10 +333,6 @@ namespace basecross {
 			it++;
 		}
 		//派生クラス対策
-		if (GravityPtr && GravityPtr->IsDrawActive()) {
-			//GravityPtrがあればDraw()
-			GravityPtr->OnDraw();
-		}
 		if (RigidPtr && RigidPtr->IsDrawActive()) {
 			//RigidbodyがあればDraw()
 			RigidPtr->OnDraw();
@@ -617,7 +600,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct MultiParticle::Impl {
 		vector< shared_ptr<Particle> > m_ParticleVec;
-		Impl()
+		//加算処理するかどうか
+		bool m_AddType;
+		Impl():
+			m_AddType(false)
 		{}
 		~Impl() {}
 	};
@@ -636,6 +622,17 @@ namespace basecross {
 	vector< shared_ptr<Particle> >& MultiParticle::GetParticleVec() const {
 		return pImpl->m_ParticleVec;
 	}
+
+	bool  MultiParticle::GetAddType() const {
+		return pImpl->m_AddType;
+	}
+	bool MultiParticle::IsAddType() const {
+		return pImpl->m_AddType;
+	}
+	void MultiParticle::SetAddType(bool b) {
+		pImpl->m_AddType = b;
+	}
+
 
 
 	shared_ptr<Particle> MultiParticle::InsertParticle(size_t Count, Particle::DrawOption Option) {
@@ -682,7 +679,7 @@ namespace basecross {
 		if (pImpl->m_ParticleVec.size() > 0) {
 			for (auto Ptr : pImpl->m_ParticleVec) {
 				if (Ptr->IsActive()) {
-					Ptr->Draw(GetStage()->GetParticleManager());
+					Ptr->Draw(GetStage()->GetParticleManager(IsAddType()));
 				}
 			}
 		}
@@ -695,9 +692,12 @@ namespace basecross {
 	struct ParticleManager::Impl {
 		bool m_ZBufferUse;				//Zバッファを使用するかどうか
 		bool m_SamplerWrap;				//サンプラーのラッピングするかどうか
-		Impl() :
-			m_ZBufferUse{ true },
-			m_SamplerWrap{ false }
+		//加算処理するかどうか
+		bool m_AddType;
+		Impl(bool AddType) :
+			m_ZBufferUse(true),
+			m_SamplerWrap(false),
+			m_AddType(AddType)
 		{}
 		~Impl() {}
 	};
@@ -707,9 +707,9 @@ namespace basecross {
 	//	用途: パーティクルマネージャ
 	//--------------------------------------------------------------------------------------
 	//構築と消滅
-	ParticleManager::ParticleManager(const shared_ptr<Stage>& StagePtr) :
+	ParticleManager::ParticleManager(const shared_ptr<Stage>& StagePtr, bool AddType) :
 		GameObject(StagePtr),
-		pImpl(new Impl())
+		pImpl(new Impl(AddType))
 	{}
 	ParticleManager::~ParticleManager() {}
 
@@ -717,7 +717,7 @@ namespace basecross {
 	void ParticleManager::OnCreate() {
 		try {
 			//上限2000でマネージャ作成
-			AddComponent<PCTParticleDraw>(2000);
+			AddComponent<PCTParticleDraw>(2000,pImpl->m_AddType);
 			//透明処理のみ指定しておく
 			SetAlphaActive(true);
 		}
@@ -846,10 +846,10 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	struct CollisionAdmin::Impl;
+	//	struct CollisionManager::Impl;
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
-	struct CollisionAdmin::Impl {
+	struct CollisionManager::Impl {
 		vector<CillisionItem> m_ItemVec;
 		Impl()
 		{}
@@ -860,17 +860,17 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	衝突判定管理者
 	//--------------------------------------------------------------------------------------
-	CollisionAdmin::CollisionAdmin(const shared_ptr<Stage>& StagePtr):
+	CollisionManager::CollisionManager(const shared_ptr<Stage>& StagePtr):
 		GameObject(StagePtr),
 		pImpl(new Impl())
 	{}
-	CollisionAdmin::~CollisionAdmin() {}
+	CollisionManager::~CollisionManager() {}
 
-	void CollisionAdmin::OnCreate() {
+	void CollisionManager::OnCreate() {
 
 	}
 
-	void CollisionAdmin::CollisionSub(size_t SrcIndex) {
+	void CollisionManager::CollisionSub(size_t SrcIndex) {
 		CillisionItem& Src = pImpl->m_ItemVec[SrcIndex];
 		for (auto& v : pImpl->m_ItemVec) {
 			if (Src == v) {
@@ -885,6 +885,13 @@ namespace basecross {
 			if (Src.m_MinZ > v.m_MaxZ || Src.m_MaxZ < v.m_MinZ) {
 				continue;
 			}
+			//相手が除外オブジェクトになってるかどうか
+			if (v.m_Collision->IsExcludeCollisionObject(Src.m_Collision->GetGameObject())) {
+				continue;
+			}
+			if (Src.m_Collision->IsExcludeCollisionObject(v.m_Collision->GetGameObject())) {
+				continue;
+			}
 			if (v.m_Collision->IsHitObject(Src.m_Collision->GetGameObject())) {
 				continue;
 			}
@@ -894,7 +901,7 @@ namespace basecross {
 	}
 
 
-	void CollisionAdmin::OnUpdate() {
+	void CollisionManager::OnUpdate() {
 		pImpl->m_ItemVec.clear();
 		auto& ObjVec = GetStage()->GetGameObjectVec();
 		for (auto& v : ObjVec) {
@@ -932,10 +939,12 @@ namespace basecross {
 	struct Stage::Impl {
 		//updateするかどうか
 		bool m_UpdateActive;
-		//パーティクルマネージャ
-		shared_ptr<ParticleManager> m_ParticleManager;
+		//パーティクルマネージャ(透明処理)
+		shared_ptr<ParticleManager> m_AlphaParticleManager;
+		//パーティクルマネージャ(加算処理)
+		shared_ptr<ParticleManager> m_AddParticleManager;
 		//コリジョン管理者
-		shared_ptr<CollisionAdmin> m_CollisionAdmin;
+		shared_ptr<CollisionManager> m_CollisionManager;
 		//オブジェクトの配列
 		vector< shared_ptr<GameObject> > m_GameObjectVec;
 		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
@@ -1046,7 +1055,14 @@ namespace basecross {
 		return nullptr;
 	}
 
-	shared_ptr<ParticleManager> Stage::GetParticleManager() const { return pImpl->m_ParticleManager; }
+	shared_ptr<ParticleManager> Stage::GetParticleManager(bool Addtype) const { 
+		if (Addtype) {
+			return pImpl->m_AddParticleManager;
+		}
+		else {
+			return pImpl->m_AlphaParticleManager;
+		}
+	}
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
 
@@ -1219,10 +1235,12 @@ namespace basecross {
 	void Stage::SetUpdateActive(bool b) { pImpl->m_UpdateActive = b; }
 
 	void Stage::OnPreCreate() {
-		//パーティクルマネージャの作成
-		pImpl->m_ParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>());
+		//パーティクルマネージャの作成(透明処理)
+		pImpl->m_AlphaParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>(),false);
+		//パーティクルマネージャの作成(加算処理)
+		pImpl->m_AddParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>(),true);
 		//コリジョン管理者の作成
-		pImpl->m_CollisionAdmin = ObjectFactory::Create<CollisionAdmin>(GetThis<Stage>());
+		pImpl->m_CollisionManager = ObjectFactory::Create<CollisionManager>(GetThis<Stage>());
 	}
 
 
@@ -1235,18 +1253,23 @@ namespace basecross {
 			if (ptr->IsUpdateActive()) {
 				auto ptr2 = ptr->GetComponent<Transform>();
 				ptr2->SetToBefore();
+				auto RigidPtr = ptr->GetComponent<Rigidbody>(false);
+				if (RigidPtr) {
+					//Rigidbodyがあればフォースを初期化
+					RigidPtr->SetForce(0, 0, 0);
+				}
 			}
 		}
 
-		//配置オブジェクトの更新前処理
+		//配置オブジェクトの更新処理
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
-				ptr->OnPreUpdate();
+				ptr->OnUpdate();
 			}
 		}
-		//自身の更新前処理
+		//自身の更新処理
 		if (IsUpdateActive()) {
-			OnPreUpdate();
+			OnUpdate();
 		}
 
 		//配置オブジェクトのコンポーネント更新
@@ -1259,15 +1282,15 @@ namespace basecross {
 		UpdateCollision();
 		//衝突判定のメッセージ発行（ステージから呼ぶ）
 		UpdateMessageCollision();
-		//配置オブジェクトの更新1
+		//配置オブジェクトの更新後処理
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
-				ptr->OnUpdate();
+				ptr->OnUpdate2();
 			}
 		}
 		//自身の更新1
 		if (IsUpdateActive()) {
-			OnUpdate();
+			OnUpdate2();
 		}
 		//自身のビューをアップデート
 		auto ViewPtr = GetView(false);
@@ -1291,7 +1314,7 @@ namespace basecross {
 	//この関数を多重定義する
 	void Stage::UpdateCollision() {
 		//衝突判定管理者のUpdate
-		pImpl->m_CollisionAdmin->OnUpdate();
+		pImpl->m_CollisionManager->OnUpdate();
 	}
 
 	void Stage::UpdateMessageCollision() {
@@ -1381,10 +1404,10 @@ namespace basecross {
 		for (auto ptr : pImpl->m_Object3DAlphaVec) {
 			ptr->OnPreDraw();
 		}
-		//パーティクルの描画準備
-		if (GetParticleManager()) {
-			GetParticleManager()->OnPreDraw();
-		}
+		//パーティクルの描画準備（透明）
+		GetParticleManager(false)->OnPreDraw();
+		//パーティクルの描画準備（加算）
+		GetParticleManager(true)->OnPreDraw();
 		//スプライトオブジェクトの描画準備
 		for (auto ptr : pImpl->m_SpriteVec) {
 			ptr->OnPreDraw();
@@ -1424,10 +1447,10 @@ namespace basecross {
 			//パーティクルの描画
 			//パーティクルマネージャは描画レイヤーごとに初期化されるので
 			//毎レイヤー描画する
-			auto PartPtr = GetParticleManager();
-			if (PartPtr) {
-				PartPtr->OnDraw();
-			}
+			//透明処理
+			GetParticleManager(false)->OnDraw();
+			//加算処理
+			GetParticleManager(true)->OnDraw();
 			//スプライトオブジェクトの描画
 			for (auto ptr : pImpl->m_SpriteVec) {
 				if (ptr->GetDrawLayer() == Tgt) {
@@ -1497,9 +1520,13 @@ namespace basecross {
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct SceneBase::Impl {
-		shared_ptr<Stage> m_ActiveStage;	//アクティブなステージ
+		//アクティブなステージ
+		shared_ptr<Stage> m_ActiveStage;
+		//クリアする色
+		Color4 m_ClearColor;
 		Impl():
-			m_ActiveStage()
+			m_ActiveStage(),
+			m_ClearColor(0,0,0,1.0f)
 		{}
 		~Impl() {}
 	};
@@ -1691,6 +1718,15 @@ namespace basecross {
 		pImpl->m_ActiveStage = stage;
 	}
 
+	Color4 SceneBase::GetClearColor() const {
+		return pImpl->m_ClearColor;
+
+	}
+	void SceneBase::SetClearColor(const Color4& col) {
+		pImpl->m_ClearColor = col;
+	}
+
+
 	void SceneBase::OnUpdate() {
 		if (pImpl->m_ActiveStage) {
 			//ステージのアップデート
@@ -1701,7 +1737,7 @@ namespace basecross {
 		if (pImpl->m_ActiveStage) {
 			//描画デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
-			Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+			Dev->ClearDefultViews(GetClearColor());
 			pImpl->m_ActiveStage->RenderStage();
 
 		}
@@ -1966,7 +2002,7 @@ namespace basecross {
 
 
 
-	void  StageCellMap::OnPreUpdate() {
+	void  StageCellMap::OnUpdate() {
 		if (pImpl->m_IsCellStringActive) {
 			auto StringPtr = GetComponent<MultiStringSprite>();
 			Matrix4X4 World, View, Proj;

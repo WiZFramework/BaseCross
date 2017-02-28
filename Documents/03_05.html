@@ -1,0 +1,162 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０５．衝突判定コンポーネント</h3>
+
+<h4>BaseCrossの衝突判定</h4>
+　<b>BaseCross</b>では<b>球体、直方体、カプセル</b>の<b>境界ボリューム</b>を扱うことができます。これらの形状は、移動により何かと衝突し、反作用を起こします。また、<b>矩形、三角形の集合</b>という追加の形状があり、これらは、反作用を起こすようには設定できませんが、境界ボリュームと衝突させることができます。<br />
+　この<b>反作用を起こすような設定</b>というのは<b>Fixed</b>というフラグです。<b>Fixed</b>が真になってる形状同士は衝突判定は行いません。一方、<b>Fixed</b>が<b>偽</b>になっている形状は<b>Fixed</b>が真の形状と衝突すると、<b>反発</b>もしくは<b>スライス</b>という反応を起こします。<b>Fixed</b>が<b>偽</b>になっている形状同士の衝突は、お互いに<b>反発</b>もしくは<b>スライス</b>します。<br />
+　つまり<b>Fixed</b>というのは<b>衝突しても影響を受けない</b>という意味です。例えば、<b>移動する床</b>があった場合、何かがそれに衝突しても、その移動には影響を受けません。これが<b>Fixedが真</b>です。<br />
+　一方<b>Fixedが偽</b>になっている場合、<b>何かに衝突した場合、その反動が起こる</b>という意味です。<br />
+　これらを表にまとめると以下のようになります。
+<table>
+<tr>
+<th>形状</th>
+<th>Fixed</th>
+</tr>
+<tr>
+<td>球体（CollisionSphere）</td>
+<td>真または偽</td>
+</tr>
+<tr>
+<td>カプセル（CollisionCapsule）</td>
+<td>真または偽</td>
+</tr>
+<tr>
+<td>直方体（CollisionObb）</td>
+<td>真または偽</td>
+</tr>
+<tr>
+<td>三角形の集合（CollisionTriangles）</td>
+<td>つねに真</td>
+</tr>
+<tr>
+<td>矩形（CollisionRect）</td>
+<td>つねに真</td>
+</tr>
+</table>
+　このように<b>球体、直方体、カプセル</b>はどちらにも設定できますが<b>矩形、三角形の集合</b>は<b>Fixedが真</b>にしか設定できません。つまり<b>矩形、三角形の集合</b>は<b>ゲーム盤</b>や<b>でこぼこ床</b>に設定する形状と考えられます。<br />
+<br/>
+<h4>衝突判定を実装する</h4>
+　<b>衝突判定コンポーネント</b>を実装した例は<b>FullSample305</b>にあります。このサンプルは<b>FullSample304</b>の衝突判定をコンポーネントを使って実装した例です。<br />
+　以下に違うコードを述べます。<br />
+　まず、<b>Player.cpp</b>にある、<b>AttackBall::OnCreate()関数</b>に以下を記述します。
+
+<div class="box1">
+<pre>
+//初期化
+void AttackBall::OnCreate() {
+    //中略
+
+    //CollisionSphere衝突判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    //常に反発
+    PtrColl->SetIsHitAction(IsHitAction::Repel);
+    //中略
+
+}
+</pre>
+</div>
+　そして、<b>AttackBall::OnUpdate2()関数</b>は無くします。<br />
+　プレイヤーは、<b>Player::OnCreate()関数</b>で
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+
+//中略
+
+    //CollisionSphere衝突判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    //何かに乗ってないときは反発
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+
+//中略
+}
+</pre>
+</div>
+　ここで<b>SetIsHitAction</b>で設定しているのは、何かの上に乗ったときの処理です。アタックボールとは違い、ボックスに乗った場合などを想定してこの設定にしています。<br />
+　また<b>Player::OnUpdate2()関数</b>は無くします。<br />
+　最後に<b>Character.cpp</b>の<b>FixedBox::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+//初期化
+void FixedBox::OnCreate() {
+    //中略
+
+    //OBB衝突j判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionObb>();
+    PtrColl->SetFixed(true);
+
+    //中略
+
+}
+</pre>
+</div>
+　ここでは<b>SetFixed(true)</b>としています。この設定でボックスは<b>衝突するがほかの影響は受けない</b>設定になります。<br />
+<br />
+　以上で終了です。プレイヤーはボックスと衝突しますし、アタックボールも衝突します。<br />
+<br />
+<h4>衝突したくない相手の設定</h4>
+　このサンプルの前項との違いは、<b>プレイヤーとアタックボール</b>も衝突するところです。<b>アタックボール</b>がプレイヤーの武器と考えるなら、たとえばプレイヤーには影響を与えたくないとしたら、<b>AttackBall::OnCreate()関数</b>で
+<div class="box1">
+<pre>
+//初期化
+void AttackBall::OnCreate() {
+    //中略
+
+    <span class="red">AddTag(L"AttackBall");</span>
+
+    //中略
+
+}
+</pre>
+</div>
+　と<b>タグ</b>を追加しておいて、<b>Player::OnCreate()関数</b>で
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+
+//中略
+
+    //CollisionSphere衝突判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    //何かに乗ってないときは反発
+    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+    //衝突しないタグの設定
+    <span class="red">PtrColl->AddExcludeCollisionTag(L"AttackBall");</span>
+
+//中略
+}
+</pre>
+</div>
+　とすると、アタックボールとプレイヤーは衝突しなくなります。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="03_06.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

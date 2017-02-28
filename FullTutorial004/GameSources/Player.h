@@ -46,6 +46,8 @@ namespace basecross{
 		virtual void OnCreate() override;
 		//更新
 		virtual void OnUpdate() override;
+		//後更新
+		virtual void OnUpdate2() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 		//Aボタンハンドラ

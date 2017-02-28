@@ -71,6 +71,8 @@ namespace basecross{
 		virtual void OnCreate() override;
 		//更新
 		virtual void OnUpdate() override;
+		//後更新
+		virtual void OnUpdate2() override;
 		//衝突時
 		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
 		//Aボタン
@@ -89,8 +91,25 @@ namespace basecross{
 	public:
 		//ステートのインスタンス取得
 		DECLARE_SINGLETON_INSTANCE(PlayerDefaultState)
+		virtual wstring GetStateName()const { return L"PlayerDefaultState"; }
 		virtual void Enter(const shared_ptr<Player>& Obj)override;
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
+		virtual void Exit(const shared_ptr<Player>& Obj)override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	MoveBoxに乗っているステート
+	//--------------------------------------------------------------------------------------
+	class PlayerOnMoveboxState : public ObjState<Player>
+	{
+		PlayerOnMoveboxState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(PlayerOnMoveboxState)
+		virtual wstring GetStateName()const { return L"PlayerOnMoveboxState"; }
+		virtual void Enter(const shared_ptr<Player>& Obj)override;
+		virtual void Execute(const shared_ptr<Player>& Obj)override;
+		virtual void Sleep(const shared_ptr<Player>& Obj)override;
 		virtual void Exit(const shared_ptr<Player>& Obj)override;
 	};
 
@@ -103,10 +122,12 @@ namespace basecross{
 	public:
 		//ステートのインスタンス取得
 		DECLARE_SINGLETON_INSTANCE(PlayerJumpState)
+		virtual wstring GetStateName()const { return L"PlayerJumpState"; }
 		virtual void Enter(const shared_ptr<Player>& Obj)override;
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
 		virtual void Exit(const shared_ptr<Player>& Obj)override;
 	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	アタックステート
@@ -117,14 +138,11 @@ namespace basecross{
 	public:
 		//ステートのインスタンス取得
 		DECLARE_SINGLETON_INSTANCE(PlayerAttackState)
+		virtual wstring GetStateName()const { return L"PlayerAttackState"; }
 		virtual void Enter(const shared_ptr<Player>& Obj)override;
 		virtual void Execute(const shared_ptr<Player>& Obj)override;
 		virtual void Exit(const shared_ptr<Player>& Obj)override;
 	};
-
-
-
-
 
 }
 //end basecross

@@ -71,7 +71,8 @@ namespace basecross{
 		//‰Šú‰»
 		virtual void OnCreate() override;
 		//‘€ì
-		virtual void OnPreUpdate() override;
+		virtual void OnUpdate() override;
+		virtual void OnUpdate2() override;
 	};
 
 	//--------------------------------------------------------------------------------------

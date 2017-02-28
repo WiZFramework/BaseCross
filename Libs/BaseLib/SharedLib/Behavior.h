@@ -92,56 +92,134 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void RotToHead(const Vector3& Velocity,float LerpFact);
+		void RotToHead(const Vector3& Velocity, float LerpFact);
 
 	};
 
 	//--------------------------------------------------------------------------------------
-	///	Jump行動クラス
+	///	何もしない行動クラス(速度は減速)
 	//--------------------------------------------------------------------------------------
-	class JumpBehavior : public Behavior {
+	class WaitBehavior : public Behavior {
 	public:
-		JumpBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		WaitBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
 			Behavior(GameObjectPtr)
 		{}
-		virtual ~JumpBehavior() {}
-		void StartJump(const Vector3& FirstVelocity);
-		bool Execute();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~WaitBehavior() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を実行する
+		@param[in]	TargetPos	追いかける位置
+		@return	追いかける位置との距離
+		*/
+		//--------------------------------------------------------------------------------------
+		float Execute(const Vector3& TargetPos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を実行する
+		@param[in]	TargetKey	追いかけるオブジェクトのキー（SharedObjec）
+		@return	追いかけるオブジェクトとの距離
+		*/
+		//--------------------------------------------------------------------------------------
+		float Execute(const wstring& TargetKey);
 	};
 
 
+
+
 	//--------------------------------------------------------------------------------------
-	///	Seek行動クラス
+	///	Gravity行動クラス
 	//--------------------------------------------------------------------------------------
-	class SeekBehavior : public Behavior {
+	class Gravity : public Behavior {
 	public:
-		SeekBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
-			Behavior(GameObjectPtr)
-		{}
-		virtual ~SeekBehavior() {}
-		void Enter(const Vector3& TargetPos);
-		void Enter(const wstring& TargetKey);
-		float Execute(const Vector3& TargetPos,bool RotHead, float LerpFact);
-		float Execute(const wstring& TargetKey, bool RotHead, float LerpFact);
-		void Exit();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	このコンポーネントを所持するゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		Gravity(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~Gravity();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在の重力を得る
+		@return	現在の重力
+		*/
+		//--------------------------------------------------------------------------------------
+		const Vector3& GetGravity() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在の重力を設定する
+		@param[in]	gravity	重力値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetGravity(const Vector3& gravity);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在の重力を設定する
+		@param[in]	x	重力値X
+		@param[in]	y	重力値Y
+		@param[in]	z	重力値Z
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetGravity(float x, float y, float z);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジャンプのスタート
+		@param[in]	StartVec	初速度
+		@param[in]	EscapeSpan	ジャンプ開始地点への上部調整値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void StartJump(const Vector3& StartVec, float EscapeSpan = 0.01f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジャンプのスタート
+		@param[in]	x	初速度X
+		@param[in]	y	初速度Y
+		@param[in]	z	初速度Z
+		@param[in]	EscapeSpan	ジャンプ開始地点への上部調整値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void StartJump(float x, float y, float z, float EscapeSpan = 0.01f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定した時間だけ重力をかける
+		@param[in]	CalcTime	時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateFromTime(float CalcTime);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行動を実行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Execute();
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
 	};
-
-	//--------------------------------------------------------------------------------------
-	///	Arrive行動クラス
-	//--------------------------------------------------------------------------------------
-	class ArriveBehavior : public Behavior {
-	public:
-		ArriveBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
-			Behavior(GameObjectPtr)
-		{}
-		virtual ~ArriveBehavior() {}
-		void Enter(const Vector3& TargetPos);
-		void Enter(const wstring& TargetKey);
-		float Execute(const Vector3& TargetPos, bool RotHead, float LerpFact);
-		float Execute(const wstring& TargetKey, bool RotHead, float LerpFact);
-		void Exit();
-	};
-
 
 }
 //end basecross

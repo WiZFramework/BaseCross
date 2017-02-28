@@ -1,0 +1,444 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０４．衝突判定を考える</h3>
+　<b>BaseCross</b>には<b>衝突判定機能</b>がついています。ここではその機能を説明する前に<b>衝突判定とは</b>という基本的な部分から説明します。<br />
+　ゲームには<b>何かと何かがぶつかる</b>という処理はほぼ必須の機能と言えます。古くは<b>ブロック崩し</b>や<b>テニス</b>も<b>球が何かと衝突する</b>のを基本に<b>ゲーム</b>が作成されてきました。<br />
+　その後、ゲームの進化とともに<b>アクションRPG</b>などにおける<b>敵との戦い</b>や<b>アイテムの取得</b>などの行動にも<b>衝突判定</b>は必須なものと言えます。<br />
+　また、衝突判定は<b>２Ｄと３Ｄではかなり違い</b>ます。ここでは３Ｄの衝突判定について述べるとともに、問題点も明らかにします。<br />
+　まず<b>FullSample304</b>を実行してみましょう。以下のような画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0304a.png" width="80%"/>
+<p>図0304a</p>
+　コントローラを動かすとプレイヤーが移動します。しかし、奥のボックスに当たっても<b>素通り</b>してしまいます。<br />
+　この項では、このプレイヤーに、簡単な<b>衝突判定処理</b>を実装してみます。<br />
+<br />
+<h4>境界ボリューム</h4>
+　例えばプレイヤーなどのモデルの形状をそのまま判定に使うのは、リスクが大きすぎます。そのため、多くの場合<b>境界ボリューム</b>という<b>比較的単純な形</b>に見立てて、判定します。そのような形状を<b>境界ボリューム</b>といいます。<br />
+　<b>BaseCross</b>では<b>球体、直方体、カプセル</b>の<b>境界ボリューム</b>を扱うことができます。<br />
+　まずサンプルの<b>プレイヤー</b>の<b>境界ボリューム</b>は<b>球</b>です。<b>球のデータ構造</b>は以下のようになります。
+<div class="box1">
+<pre>
+struct SPHERE {
+    ///中心点の座標
+    Vector3 m_Center;
+    ///半径
+    float m_Radius;
+    //以下略
+};
+</pre>
+</div>
+　略されている部分はコンストラクタとかいくつかのユーティリティ関数があります。<b>球（SPHERE）</b>は<b>中心の座標</b>と<b>半径</b>で決定します。XYZ軸による計算上の違いはありません。<br />
+　ですから、<b>球対球</b>の衝突は以下のように記述できます。
+<div class="box1">
+<pre>
+    static bool SPHERE_SPHERE(const SPHERE& sp1, const SPHERE& sp2){
+        Vector3 d = sp1.m_Center - sp2.m_Center;
+        float dist2 = Vector3EX::Dot(d,d);
+        float radiussum = sp1.m_Radius + sp2.m_Radius;
+        return dist2 &lt;= radiussum * radiussum;
+    }
+</pre>
+</div>
+　一方、このサンプルにある<b>ボックス</b>は<b>OBB</b>という<b>境界ボリューム</b>を使用します。実際はこのボックスは<b>XYZ軸に平行</b>なので<b>AABB</b>という<b>境界ボリューム</b>でも実装可能なのですが、ここでは<b>OBB</b>を使用します。<br />
+　<b>OBB</b>のデータ構造は以下のようになります。
+
+<div class="box1">
+<pre>
+    struct OBB{
+        // 中心点の座標
+        Vector3 m_Center;
+        // XYZ の各座標軸の傾きを表す方向ベクトル
+        Vector3 m_Rot[3];
+        // OBB の各座標軸に沿った長さの半分（中心点から面までの長さ）
+        Vector3 m_Size;
+        //以下略
+    };
+</pre>
+</div>
+　略されている部分は、SPHERE同様コンストラクタとかいくつかのユーティリティ関数です。<br />
+　さて、SPHEREとOBBの衝突は以下のようになります。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/*!
+@brief  pointから見たOBBの最近接点を得る
+@param[in]  point   基準点
+@param[in]  obb OBB
+@param[out] retvec  最近接点を返す参照
+@return なし
+*/
+//--------------------------------------------------------------------------------------
+static void ClosestPtPointOBB(const Vector3& point, const OBB& obb, Vector3& retvec){
+    Vector3 d = point - obb.m_Center;
+    retvec = obb.m_Center;
+    float dist;
+    for(int i = 0; i &lt; 3; i++)
+    {
+        dist = Vector3EX::Dot(d,obb.m_Rot[i]);
+        if(dist > obb.m_Size[i])
+        {
+            dist = obb.m_Size[i];
+        }
+        if(dist &lt; -obb.m_Size[i])
+        {
+            dist = -obb.m_Size[i];
+        }
+        retvec +=  dist * obb.m_Rot[i];
+    }
+}
+//--------------------------------------------------------------------------------------
+/*!
+@brief  球とOBBとの衝突判定
+@param[in]  sp  球
+@param[in]  obb OBB
+@param[out] retvec  最近接点が代入される参照
+@return 衝突していればtrue
+*/
+//--------------------------------------------------------------------------------------
+static bool SPHERE_OBB(const SPHERE& sp, const OBB& obb, Vector3& retvec){
+    ClosestPtPointOBB(sp.m_Center,obb,retvec);
+    Vector3 v = retvec - sp.m_Center;
+    return Vector3EX::Dot(v,v) &lt;= sp.m_Radius * sp.m_Radius;
+}
+</pre>
+</div>
+　このように<b>SPHERE_OBB()関数</b>は<b>ClosestPtPointOBB()関数</b>を呼び出します。この関数は<b>点とOBBの最近接点</b>を導く関数です。<b>最近接点</b>というのは<b>OBB上の点と一番近い位置</b>です<br />
+　<b>SPHERE_OBB()関数</b>は3つ目のパラメータ<b>Vector3& retvec</b>に<b>最近接点</b>を返します。ここでは<b>SPHEREとOBBの最近接点</b>ということになります。<br />
+　この<b>最近接点</b>は、衝突後の処理を実装するのに非常に便利な値となります。<br />
+<br />
+　まえに紹介した<b>SPHERE_SPHERE()関数</b>や<b>SPHERE_OBB()関数</b>などは、<b>BaseCrossのライブラリ中</b>の<b>TransHelper.h</b>に記述されています（HitTest構造体のスタティック関数）ので、これらの関数まで新規に記述する必要はありません。<br />
+<br />
+<h4>衝突判定を記述する</h4>
+　それでは、<b>FullSample304</b>の<b>Player::OnUpdate2()関数</b>に以下のように記述します。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    //Transformコンポーネントを取り出す
+    auto PtrTrans = GetComponent&lt;Transform>();
+    //SPHEREの作成
+    SPHERE sp;
+    sp.m_Center = PtrTrans->GetPosition();
+    sp.m_Radius = 0.125f;
+    //Rigidbodyを取り出す
+    auto PtrRigid = GetComponent&lt;Rigidbody>();
+    //現在の速度を取り出す
+    Vector3 Velo = PtrRigid->GetVelocity();
+    //ステージ上のオブジェクトの配列を取得
+    auto& ObjectVec = GetStage()->GetGameObjectVec();
+    for (auto& v : ObjectVec) {
+        if (v->FindTag(L"FixedBox")) {
+            //FixedBoxというタグを持っているオブジェクトを検証
+            auto PtrBoxTrans = v->GetComponent&lt;Transform>();
+            //ボックスのワールド行列を使ってOBBを作成
+            OBB obb(Vector3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
+            //最近接点の変数
+            Vector3 Ret;
+            if (HitTest::SPHERE_OBB(sp, obb, Ret)) {
+                //衝突した(最近接点から法線を計算)
+                Vector3 Normal = sp.m_Center - Ret;
+                //正規化
+                Normal.Normalize();
+                //反発を計算
+                Velo = Vector3EX::Reflect(Velo, Normal);
+                //反発した速度を設定
+                PtrRigid->SetVelocity(Velo);
+                //ボックスの領域からプレイヤーを追い出す
+                Vector3 NewPos = Ret + Normal * 0.125f;
+                PtrTrans->ResetPosition(NewPos);
+
+            }
+        }
+    }
+}
+</pre>
+</div>
+　このようにすると、今度は<b>ボックス</b>と<b>衝突する</b>ようになります。また衝突したら反発するように記述されています。<br />
+<br />
+<h4>衝突判定の問題点</h4>
+　では、ボックスを正面を向いて<b>Aボタン</b>を押してみましょう。白いボールがプレイヤーから飛び出します。<br />
+　白いボールがボックスに当たると、<b>時には反発し、時には通り抜ける</b>という不安定な動きになると思います。<br />
+　まさにこれこそ<b>衝突判定の問題点</b>となります。<br />
+<br />
+　方向を持ちながら落下する<b>球</b>の行く先に<b>ボックス</b>があったとします。以下の図のような感じです。
+<p>&nbsp;</p>
+<img src="img/0304b.png" width="80%"/>
+<p>図0304b</p>
+　ゲーム上で<b>何かが動く</b>ということは<b>アニメーションをする</b>ということです。それは<b>OnUpdateやOnDrow</b>が呼ばれるタイミングで、約60分の1秒に一度更新や描画されます。<br />
+　当然、その更新や描画は厳密には<b>連続している</b>ものではなくて、<b>パラパラ漫画</b>のようなアニメーションを行っているわけです。そのため上図のように<b>ボックス1</b>では<b>球とボックスは衝突する</b>のですが、<b>ボックス2</b>では<b>衝突せずにすり抜けて</b>しまいます。<br />
+　これを<b>トンネル現象</b>といいます。<b>トンネル現象</b>を避けるために、以下のような考え方で判定します。<br />
+<br />
+<h4>トンネル現象を避ける</h4>
+　まず、以下の図を見てください。
+<p>&nbsp;</p>
+<img src="img/0304c.png" width="80%"/>
+<p>図0304c</p>
+　赤い球は右から左に移動してます。<b>1ターン内</b>のどこかのタイミングでボックスと衝突します。ということは、<b>大きな青い球がボックスと衝突する</b>のと同じ意味になります。<br />
+　つまり、球の移動も含めた大きな球を考え、まず、その大きな球とボックスの判定を行います。<br />
+　そして、その大きな球とボックスが衝突していたら、以下のように、<b>球を直径を半分にした大きさ</b>に分割していきます。<br /
+　分割した球のどちらかに衝突していたら、衝突している球さらに半分にします。
+><p>&nbsp;</p>
+<img src="img/0304d.png" width="80%"/>
+<p>図0304d</p>
+　それを繰り返していくと、<b>判別する球の半径</b>が限りなく小さくなります。ある一定の大きさ以下になったら、その場所を<b>衝突点</b>として、<b>衝突点が導かれるまでの分割数</b>を求め、それを時間に換算します。<b>1ターンは約60分の1秒</b>ですから、例えば、<b>480分の1秒後に衝突している</b>のが算出されるわけです。正確には<b>衝突する直前</b>を算出するわけですが、その関数は以下のようになります。以下は<b>球対ボックス（OBB）</b>の判定です。
+<div class="box1">
+<pre>
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  Sphereと動かないObbの衝突判定
+    @param[in]  SrcSp   Srcの球
+    @param[in]  SrcVelocity ソース速度
+    @param[in]  DestObb DestのOBB
+    @param[in]  StartTime   開始時間
+    @param[in]  EndTime 終了時間
+    @param[out] HitTime ヒット時間
+    @return 衝突していればtrue
+    */
+    //--------------------------------------------------------------------------------------
+    static bool CollisionTestSphereObb(const SPHERE& SrcSp, const Vector3& SrcVelocity,
+        const OBB& DestObb,
+        float StartTime, float EndTime, float& HitTime){
+        const float m_EPSILON = 0.005f;
+        SPHERE SrcSp2;
+        float mid = (StartTime + EndTime) * 0.5f;
+        SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
+        SrcSp2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcSp.m_Radius;
+        Vector3 RetVec;
+        if (!HitTest::SPHERE_OBB(SrcSp2, DestObb, RetVec)){
+            return false;
+        }
+        if (EndTime - StartTime &lt; m_EPSILON){
+            HitTime = StartTime;
+            return true;
+        }
+        if (CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, StartTime, mid, HitTime)){
+            return true;
+        }
+        return CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, mid, EndTime, HitTime);
+    }
+</pre>
+</div>
+　これも<b>HitTest構造体のスタティック関数</b>として定義されてますが、移動も含めた大きな球体を作成し、もし衝突していたら、大きな球体を半分にして判別しているのがわかります。<br />
+　この関数は<b>再帰呼び出し</b>をする関数として作成されています。どんどんネストが深くなる部分を<b>再帰</b>で表現しています。<br />
+　ではこの処置を<b>白いボール</b>にあてはめてみましょう。
+<div class="box1">
+<pre>
+void AttackBall::OnUpdate2() {
+    //Transformコンポーネントを取り出す
+    auto PtrTrans = GetComponent&lt;Transform>();
+    //SPHEREの作成
+    SPHERE sp;
+    sp.m_Center = PtrTrans->GetPosition();
+    sp.m_Radius = 0.05f;
+    //Rigidbodyを取り出す
+    auto PtrRigid = GetComponent&lt;Rigidbody>();
+    //現在の速度を取り出す
+    Vector3 Velo = PtrRigid->GetVelocity();
+    //前回のターンからの時間
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //ステージ上のオブジェクトの配列を取得
+    auto& ObjectVec = GetStage()->GetGameObjectVec();
+    for (auto& v : ObjectVec) {
+        if (v->FindTag(L"FixedBox")) {
+            //FixedBoxというタグを持っているオブジェクトを検証
+            auto PtrBoxTrans = v->GetComponent&lt;Transform>();
+            //ボックスのワールド行列を使ってOBBを作成
+            OBB obb(Vector3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
+            <span class="red">float HitTime;
+            if (HitTest::CollisionTestSphereObb(sp, Velo, obb, 0, ElapsedTime, HitTime)) {</span>
+                //ターン時間内のどこかで衝突した
+                //ヒットする直前まで戻る
+                //1ターン前の位置を取得
+                auto BeforePos = PtrTrans->GetBeforePosition();
+                //ヒット位置の計算
+                auto HitPos = BeforePos + Velo * HitTime;
+                sp.m_Center = HitPos;
+                Vector3 Ret;
+                //最近接点を得る
+                HitTest::SPHERE_OBB(sp, obb, Ret);
+                //衝突した(最近接点から法線を計算)
+                Vector3 Normal = sp.m_Center - Ret;
+                //正規化
+                Normal.Normalize();
+                //ボックスの領域からプレイヤーを追い出す
+                //HitPosを新しい位置にすると、少しずれるので以下で求める
+                Vector3 NewPos = Ret + Normal * 0.05f;
+                float OtherTime = ElapsedTime - HitTime;
+                //衝突後の余った時間を<b>スライド</b>処理
+                if (OtherTime > 0.0f) {
+                    //HitTime以降の残った時間はスライドさせる
+                    Vector3 SledeVelo = Vector3EX::Slide(Velo, Normal);
+                    NewPos += SledeVelo * OtherTime;
+                }
+                //新しい位置を設定（ResetPositionを使用）
+                PtrTrans->ResetPosition(NewPos);
+                //反発を計算
+                Velo = Vector3EX::Reflect(Velo, Normal);
+                //反発した速度を設定
+                PtrRigid->SetVelocity(Velo);
+            }
+        }
+    }
+}
+</pre>
+</div>
+　さて、まず最初のポイントは
+<div class="box1">
+<pre>
+    <span class="red">float HitTime;
+    if (HitTest::CollisionTestSphereObb(sp, Velo, obb, 0, ElapsedTime, HitTime)) {</span>
+</pre>
+</div>
+　の部分です。この関数は、<b>もし衝突していたらHitTimeにヒット時間を返す</b>となります。<br />
+　そして
+<div class="box1">
+<pre>
+    //ターン時間内のどこかで衝突した
+    //ヒットする直前まで戻る
+    //1ターン前の位置を取得
+    auto BeforePos = PtrTrans->GetBeforePosition();
+    //ヒット位置の計算
+    auto HitPos = BeforePos + Velo * HitTime;
+    sp.m_Center = HitPos;
+</pre>
+</div>
+　で、そのヒットした場所まで戻ります。そこであらためて
+<div class="box1">
+<pre>
+    //最近接点を得る
+    HitTest::SPHERE_OBB(sp, obb, Ret);
+</pre>
+</div>
+　を実行します。これは<b>衝突してるかどうか</b>を確認するものではありません。<b>最近接点</b>を導くものです。その後
+<div class="box1">
+<pre>
+    //衝突した(最近接点から法線を計算)
+    Vector3 Normal = sp.m_Center - Ret;
+    //正規化
+    Normal.Normalize();
+    //ボックスの領域からプレイヤーを追い出す
+    //HitPosを新しい位置にすると、少しずれるので以下で求める
+    Vector3 NewPos = Ret + Normal * 0.05f;
+</pre>
+</div>
+　で<b>NewPos</b>を新しい位置に仮設定します。<br />
+　続く処理は、以下の図を見てください。
+
+<p>&nbsp;</p>
+<img src="img/0304e.png" width="80%"/>
+<p>図0304e</p>
+　これは、ある移動ターンで、<b>球Ｏ</b>が<b>Ｂ地点まで移動</b>しようとしていて時に<b>Ａ地点</b>で衝突した場合のケースを示しています。<br />
+　1ターンは<b>約60分の1秒</b>ですがそのどこかの位置で衝突したわけです。この時物体はどう動くでしょうか？<br />
+　いろんな処理があると思います。例えば<b>Ａ地点に制止させる</b>という方法もあるでしょう。そして次のターンで反発なりの新しい速度を発生させる方法です。また<b>即座に反発させる</b>という方法もあるでしょう。<br />
+　今回の処理は、この<b>衝突後の残った時間</b>を<b>スライドさせる</b>といいう方法をとってます。上図の<b>C地点に移動させる方法</b>です。<br />
+　では<b>C地点へのスライド</b>をどう計算すればいいでしょうか？計算をわかりやすくするために、下の図を見てください。
+<p>&nbsp;</p>
+<img src="img/0304f.png" width="80%"/>
+<p>図0304f</p>
+　まず、スライドする<b>スピード</b>を考えます。<b>速度（Vecocity）</b>は<b>方向とスピード</b>を両方持つベクトルですから、その<b>スピード</b>です。これは、もともとの<b>Velicity</b>を<b>衝突面（基準面）の法線への内積</b>で求められます。<br />
+<div class="box1">
+<pre>
+    float ADの長さ = Dot(ベクトルAO,正規化された基準面の法線);
+</pre>
+</div>
+　そしてベクトルADに変換します
+<div class="box1">
+<pre>
+    Vector3 ベクトルAD = 正規化された基準面の法線 * ADの長さ;
+</pre>
+</div>
+　最後に、ベクトルACを求めます
+<div class="box1">
+<pre>
+    Vector3 ベクトルAC = ベクトルAD - ベクトルAO;
+</pre>
+</div>
+　このように<b>ベクトルの引き算</b>を使います。
+<div class="box1">
+<pre>
+    ベクトルAO + ベクトルAC = ベクトルAD;
+</pre>
+</div>
+　の関係にあるので、ベクトルACを求めるには、ベクトルADからベクトルAOを引いてあげればいいのがわかりますね。<br />
+<br />
+　さてコードに戻ります。
+<div class="box1">
+<pre>
+    float OtherTime = ElapsedTime - HitTime;
+    //衝突後の余った時間を<b>スライド</b>処理
+    if (OtherTime > 0.0f) {
+        //HitTime以降の残った時間はスライドさせる
+        Vector3 SledeVelo = Vector3EX::Slide(Velo, Normal);
+        NewPos += SledeVelo * OtherTime;
+    }
+</pre>
+</div>
+　<b>OtherTime</b>は<b>衝突後の時間</b>です。これが0以上であれば、スライドさせます。<b>Vector3EX::Slide()関数</b>の中身は
+<div class="box1">
+<pre>
+inline  Vector3 Slide(const Vector3& Vec, const Vector3& Norm) {
+    //thisと法線から直行線の長さ（内積で求める）
+    float Len = Dot(Vec,Norm);
+    //その長さに伸ばす
+    Vector3 Contact = Norm * Len;
+    //スライドする方向は現在のベクトルから引き算
+    return (Vec - Contact);
+}
+</pre>
+</div>
+　となっています。上記で説明したアルゴリズムです。このようにして求めた値を<b>NewPos</b>に反映させます。<br />
+　最後に、
+<div class="box1">
+<pre>
+    //新しい位置を設定（ResetPositionを使用）
+    PtrTrans->ResetPosition(NewPos);
+</pre>
+</div>
+　と位置を変更します。<b>ResetPosition()関数</b>は、位置を前の位置と現在の位置の両方設定します。こうすることで、この最新位置からまた、新たな移動の開始とできます。<b>ResetPosition()関数</b>は<b>リスポーン処理（スタートに戻る）</b>などにも利用できます。<br />
+　その後の
+<div class="box1">
+<pre>
+    //反発を計算
+    Velo = Vector3EX::Reflect(Velo, Normal);
+    //反発した速度を設定
+    PtrRigid->SetVelocity(Velo);
+</pre>
+</div>
+　は反発処理です。反発させたくなかったら
+<div class="box1">
+<pre>
+    //スライドした速度を設定
+    PtrRigid->SetVelocity(SledeVelo);
+</pre>
+</div>
+　のようにすると反発せずにスライドの状態のままになります。<br />
+<br />
+　さてこの項は<b>衝突判定の考え方</b>について説明しました。次項では<b>BaseCross</b>の<b>衝突判定コンポーネント</b>について述べます。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="03_05.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

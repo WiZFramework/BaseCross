@@ -21,9 +21,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Rigidbody.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)Gravity.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Collision.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -34,6 +31,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)Behavior.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)BehaviorSteering.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,9 +50,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Rigidbody.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)Gravity.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Collision.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
@@ -63,6 +60,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Behavior.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)BehaviorSteering.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

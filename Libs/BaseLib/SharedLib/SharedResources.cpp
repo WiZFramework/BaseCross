@@ -177,7 +177,7 @@ namespace basecross {
 		if (auto ShPtr = pImpl->m_CameraObject.lock()) {
 			auto TransPtr = ShPtr->GetComponent<Transform>();
 			if (TransPtr) {
-				pImpl->m_Eye = TransPtr->GetPosition();
+				pImpl->m_Eye = TransPtr->GetWorldPosition();
 				pImpl->m_ViewMatrix.LookAtLH(pImpl->m_Eye, pImpl->m_At, pImpl->m_Up);
 				if (pImpl->m_Pers) {
 					pImpl->m_ProjMatrix.PerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
@@ -407,7 +407,7 @@ namespace basecross {
 			auto TargetPtr = GetTargetObject();
 			if (TargetPtr) {
 				//–ÚŽw‚µ‚½‚¢êŠ
-				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetPosition();
+				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
 				ToAt += pImpl->m_TargetToAt;
 				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0, Lerp::Linear);
 			}
@@ -942,9 +942,14 @@ namespace basecross {
 		);
 		WanderTarget.Normalize();
 		WanderTarget *= WanderRadius;
-		Vector3 wander_target = WanderTarget + Vector3(WanderDistance, 0, WanderDistance);
-		wander_target.Transform(Matrix);
-		return wander_target - Matrix.PosInMatrix();
+		Vector3 target_Local = WanderTarget + Vector3(0, 0, WanderDistance);
+		Vector3 Scale,  Pos;
+		Quaternion Qt;
+		Matrix.Decompose(Scale, Qt, Pos);
+		Matrix4X4 mat;
+		mat.AffineTransformation(Scale, target_Local, Qt, Pos);
+		target_Local.Transform(Matrix);
+		return target_Local - Matrix.PosInMatrix();
 	}
 
 	struct ObstacleAvoidanceSphere {
@@ -1073,8 +1078,8 @@ namespace basecross {
 				if (PtrObj != MyObj) {
 					PtrObj->GetComponent<Transform>();
 					Vector3 ToAgent
-						= MyObj->GetComponent<Transform>()->GetPosition()
-						- PtrObj->GetComponent<Transform>()->GetPosition();
+						= MyObj->GetComponent<Transform>()->GetWorldPosition()
+						- PtrObj->GetComponent<Transform>()->GetWorldPosition();
 					SteeringForce += Vector3EX::Normalize(ToAgent) / ToAgent.Length();
 				}
 			}
@@ -1137,7 +1142,7 @@ namespace basecross {
 				auto PtrObj = Ptr.lock();
 				if (PtrObj != MyObj) {
 					auto PtrT = PtrObj->GetComponent<Transform>();
-					CenterOfMass += PtrT->GetPosition();
+					CenterOfMass += PtrT->GetWorldPosition();
 					count++;
 				}
 			}
@@ -1145,7 +1150,7 @@ namespace basecross {
 		if (count > 0) {
 			CenterOfMass /= (float)count;
 			auto PtrT = MyObj->GetComponent<Transform>();
-			SteeringForce = Seek(Velocity, CenterOfMass, PtrT->GetPosition(), MaxSpeed);
+			SteeringForce = Seek(Velocity, CenterOfMass, PtrT->GetWorldPosition(), MaxSpeed);
 			SteeringForce.Normalize();
 		}
 		return SteeringForce;

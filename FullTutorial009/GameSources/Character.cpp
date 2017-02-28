@@ -131,14 +131,14 @@ namespace basecross{
 		auto MapPtr = m_CelMap.lock();
 		if (MapPtr) {
 			if (SearchPlayer()) {
-				auto PtrSeek = GetComponent<SeekSteering>();
+				auto PtrSeek = GetBehavior<SeekSteering>();
 				if (m_NextCellIndex == 0) {
 					auto PtrRigid = GetComponent<Rigidbody>();
 					auto Velo = PtrRigid->GetVelocity();
 					Velo *= 0.95f;
 					PtrRigid->SetVelocity(Velo);
 					PlayerPos.y = m_StartPosition.y;
-					PtrSeek->SetTargetPosition(PlayerPos);
+					PtrSeek->Execute(PlayerPos);
 				}
 				else {
 					if (Vector3EX::Length(MyPos - PlayerPos) <= 3.0f){
@@ -151,19 +151,19 @@ namespace basecross{
 					MapPtr->FindAABB(m_CellPath[m_NextCellIndex], ret);
 					auto Pos = ret.GetCenter();
 					Pos.y = m_StartPosition.y;
-					PtrSeek->SetTargetPosition(Pos);
+					PtrSeek->Execute(Pos);
 				}
 				return true;
 			}
 			else {
+				auto PtrSeek = GetBehavior<SeekSteering>();
 				CellIndex PlayerCell;
 				if (MapPtr->FindCell(PlayerPos, PlayerCell)) {
-					auto PtrSeek = GetComponent<SeekSteering>();
 					AABB ret;
 					MapPtr->FindAABB(PlayerCell, ret);
 					auto Pos = ret.GetCenter();
 					Pos.y = m_StartPosition.y;
-					PtrSeek->SetTargetPosition(Pos);
+					PtrSeek->Execute(Pos);
 					return true;
 				}
 			}
@@ -178,12 +178,8 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPosition);
 		PtrTransform->SetScale(m_Scale);
 		PtrTransform->SetRotation(m_StartRotation);
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
 		//Rigidbodyをつける
 		auto PtrRigid = AddComponent<Rigidbody>();
-		auto PtrSeek = AddComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
 		//パス検索
 		auto MapPtr = m_CelMap.lock();
 		if (!MapPtr) {
@@ -197,7 +193,7 @@ namespace basecross{
 
 		//SPの衝突判定をつける
 		auto PtrColl = AddComponent<CollisionSphere>();
-		PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+		PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -215,13 +211,20 @@ namespace basecross{
 	}
 
 	//更新
-	void Enemy::OnPreUpdate() {
+	void Enemy::OnUpdate() {
+		//ステートによって変わらない行動を実行
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+	}
+
+	void Enemy::OnUpdate2() {
 		//進行方向を向くようにする
 		RotToHead();
 	}
+
 
 	//進行方向を向くようにする
 	void Enemy::RotToHead() {
@@ -273,8 +276,6 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(EnemySeek)
 
 	void EnemySeek::Enter(const shared_ptr<Enemy>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
 	}
 
 	void EnemySeek::Execute(const shared_ptr<Enemy>& Obj) {
@@ -284,8 +285,6 @@ namespace basecross{
 	}
 
 	void EnemySeek::Exit(const shared_ptr<Enemy>& Obj) {
-		auto PtrSeek = Obj->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
 	}
 
 	//--------------------------------------------------------------------------------------

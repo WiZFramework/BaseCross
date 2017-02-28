@@ -111,127 +111,86 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	///	Jump行動クラス
+	///	何もしない行動クラス
 	//--------------------------------------------------------------------------------------
-	void JumpBehavior::StartJump(const Vector3& FirstVelocity) {
-		//重力
-		auto PtrGravity = GetGameObject()->GetComponent<Gravity>();
-		//ジャンプスタート
-		PtrGravity->StartJump(FirstVelocity);
-	}
-
-	bool JumpBehavior::Execute() {
-		//重力
-		auto PtrGravity = GetGameObject()->GetComponent<Gravity>();
-		if (PtrGravity->GetGravityVelocity().Length() <= 0) {
-			return true;
-		}
-		return false;
-	}
-
-
-
-
-
-	//--------------------------------------------------------------------------------------
-	///	Seek行動クラス
-	//--------------------------------------------------------------------------------------
-	void SeekBehavior::Enter(const Vector3& TargetPos) {
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(TargetPos);
-	}
-	void SeekBehavior::Enter(const wstring& TargetKey) {
-		auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetPosition();
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(true);
-		PtrSeek->SetTargetPosition(TargetPos);
-	}
-
-
-
-	float  SeekBehavior::Execute(const Vector3& TargetPos, bool RotHead, float LerpFact) {
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetTargetPosition(TargetPos);
-		if (RotHead) {
-			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(LerpFact);
-		}
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
+	float WaitBehavior::Execute(const Vector3& TargetPos) {
+		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
+		auto Velo = PtrRigid->GetVelocity();
+		//減速
+		Velo *= 0.95f;
+		PtrRigid->SetVelocity(Velo);
+		auto Pos = GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
 		return Vector3EX::Length(Pos - TargetPos);
 	}
 
-	float SeekBehavior::Execute(const wstring& TargetKey, bool RotHead, float LerpFact) {
+	float WaitBehavior::Execute(const wstring& TargetKey) {
 		auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetPosition();
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetTargetPosition(TargetPos);
-		if (RotHead) {
-			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(LerpFact);
-		}
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
-		return Vector3EX::Length(Pos - TargetPos);
-	}
-
-
-	void SeekBehavior::Exit() {
-		auto PtrSeek = GetGameObject()->GetComponent<SeekSteering>();
-		PtrSeek->SetUpdateActive(false);
+		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetWorldPosition();
+		return Execute(TargetPos);
 	}
 
 
 	//--------------------------------------------------------------------------------------
-	///	Arrive行動クラス
+	//	struct GravityBehavior::Impl;
 	//--------------------------------------------------------------------------------------
-	void ArriveBehavior::Enter(const Vector3& TargetPos) {
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(TargetPos);
+	struct Gravity::Impl {
+		//現在の重力加速度
+		Vector3 m_Gravity;
+	public:
+		Impl() :
+			m_Gravity(0, -9.8f, 0)
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	Gravity行動クラス
+	//--------------------------------------------------------------------------------------
+	Gravity::Gravity(const shared_ptr<GameObject>& GameObjectPtr) :
+		Behavior(GameObjectPtr),
+		pImpl(new Impl())
+	{}
+	Gravity::~Gravity() {}
+
+	const Vector3& Gravity::GetGravity() const {
+		return pImpl->m_Gravity;
 	}
-	void ArriveBehavior::Enter(const wstring& TargetKey) {
-		auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetPosition();
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(true);
-		PtrArrive->SetTargetPosition(TargetPos);
+	void Gravity::SetGravity(const Vector3& gravity) {
+		pImpl->m_Gravity = gravity;
 	}
-
-
-
-	float  ArriveBehavior::Execute(const Vector3& TargetPos, bool RotHead, float LerpFact) {
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(TargetPos);
-		if (RotHead) {
-			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(LerpFact);
-		}
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
-		return Vector3EX::Length(Pos - TargetPos);
-	}
-
-	float ArriveBehavior::Execute(const wstring& TargetKey, bool RotHead, float LerpFact) {
-		auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-		auto TargetPos = TargetPtr->GetComponent<Transform>()->GetPosition();
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetTargetPosition(TargetPos);
-		if (RotHead) {
-			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(LerpFact);
-		}
-		auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+	void Gravity::SetGravity(float x, float y, float z) {
+		pImpl->m_Gravity = Vector3(x, y, z);
 	}
 
-
-	void ArriveBehavior::Exit() {
-		auto PtrArrive = GetGameObject()->GetComponent<ArriveSteering>();
-		PtrArrive->SetUpdateActive(false);
+	void Gravity::StartJump(const Vector3& StartVec, float EscapeSpan) {
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
+		auto Velo = PtrRigid->GetVelocity();
+		Velo += StartVec;
+		PtrRigid->SetVelocity(Velo);
+		Vector3 EscapeVec = StartVec;
+		//ジャンプして親オブジェクトボリュームから脱出できないとき対応
+		EscapeVec *= EscapeSpan;
+		auto Pos = PtrTransform->GetWorldPosition();
+		Pos += EscapeVec;
+		PtrTransform->ResetWorldPosition(Pos);
+	}
+	void Gravity::StartJump(float x, float y, float z, float EscapeSpan) {
+		StartJump(Vector3(x, y, z), EscapeSpan);
 	}
 
+	void Gravity::UpdateFromTime(float CalcTime) {
+		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
+		auto Velo = PtrRigid->GetVelocity();
+		Velo += pImpl->m_Gravity * CalcTime;
+		PtrRigid->SetVelocity(Velo);
+	}
 
-
+	void Gravity::Execute() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		UpdateFromTime(ElapsedTime);
+	}
 
 
 }

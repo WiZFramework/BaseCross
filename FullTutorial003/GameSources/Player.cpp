@@ -16,9 +16,9 @@ namespace basecross{
 	//構築と破棄
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
-		m_MaxSpeed(30.0f),	//最高速度
+		m_MaxSpeed(10.0f),	//最高速度
 		m_Decel(0.95f),	//減速値
-		m_Mass(1.0f)	//質量
+		m_Mass(0.5f)	//質量
 	{}
 
 
@@ -63,12 +63,18 @@ namespace basecross{
 	void Player::MovePlayer() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		Vector3 Angle = GetMoveVector();
-		//Transform
-		auto PtrTransform = GetComponent<Transform>();
 		//Rigidbodyを取り出す
 		auto PtrRedit = GetComponent<Rigidbody>();
-		//現在の速度を取り出す
 		auto Velo = PtrRedit->GetVelocity();
+		if (Angle.Length() <= 0.0f && Velo.y == 0.0f) {
+			//コントローラを離したとき対策
+			Velo *= GetDecel();
+			PtrRedit->SetVelocity(Velo);
+			return;
+		}
+		//Transform
+		auto PtrTransform = GetComponent<Transform>();
+		//現在の速度を取り出す
 		//目的地を最高速度を掛けて求める
 		auto Target = Angle * GetMaxSpeed();
 		//目的地に向かうために力のかける方向を計算する
@@ -80,26 +86,13 @@ namespace basecross{
 		auto Accel = Force / GetMass();
 		//ターン時間を掛けたものを速度に加算する
 		Velo += (Accel * ElapsedTime);
-		//減速する
-		Velo *= GetDecel();
 		//速度を設定する
 		PtrRedit->SetVelocity(Velo);
 		//回転の計算
-		float YRot = PtrTransform->GetRotation().y;
-		Quaternion Qt;
-		Qt.Identity();
 		if (Angle.Length() > 0.0f) {
-			//ベクトルをY軸回転に変換
-			float PlayerAngle = atan2(Angle.x, Angle.z);
-			Qt.RotationRollPitchYaw(0, PlayerAngle, 0);
-			Qt.Normalize();
+			auto UtilPtr = GetBehavior<UtilBehavior>();
+			UtilPtr->RotToHead(Angle, 1.0f);
 		}
-		else {
-			Qt.RotationRollPitchYaw(0, YRot, 0);
-			Qt.Normalize();
-		}
-		//Transform
-		PtrTransform->SetQuaternion(Qt);
 	}
 
 	//初期化
@@ -113,11 +106,9 @@ namespace basecross{
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
-		//重力をつける
-		auto PtrGravity = AddComponent<Gravity>();
 		//衝突判定をつける
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+		PtrCol->SetIsHitAction(IsHitAction::Auto);
 		//デバッグ用文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
 		PtrString->SetText(L"");
@@ -149,9 +140,16 @@ namespace basecross{
 	void Player::OnUpdate() {
 		//プレイヤーの移動
 		MovePlayer();
+		//重力を加える
+		auto PtrGrav = GetBehavior<Gravity>();
+		PtrGrav->Execute();
+	}
+
+	void Player::OnUpdate2() {
 		//文字列の表示
 		DrawStrings();
 	}
+
 
 	//文字列の表示
 	void Player::DrawStrings() {
@@ -177,18 +175,6 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring GravStr(L"Gravity:\t");
-
-		auto Grav = GetComponent<Gravity>()->GetGravity();
-		GravStr += L"X=" + Util::FloatToWStr(Grav.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Y=" + Util::FloatToWStr(Grav.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Z=" + Util::FloatToWStr(Grav.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-		wstring GravityStr(L"GravityVelocity:\t");
-		auto GravityVelocity = GetComponent<Gravity>()->GetGravityVelocity();
-		GravityStr += L"X=" + Util::FloatToWStr(GravityVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Y=" + Util::FloatToWStr(GravityVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravityStr += L"Z=" + Util::FloatToWStr(GravityVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
 		wstring HitObjectStr(L"HitObject: ");
 		if (GetComponent<Collision>()->GetHitObjectVec().size() > 0) {
@@ -200,7 +186,7 @@ namespace basecross{
 		else {
 			HitObjectStr += L"NULL\n";
 		}
-		wstring str = FPS + PositionStr + RididStr + GravStr + GravityStr + HitObjectStr;
+		wstring str = FPS + PositionStr + RididStr +  HitObjectStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);

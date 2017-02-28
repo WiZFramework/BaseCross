@@ -32,6 +32,7 @@
 　<b>Stageクラス</b>は、1ターンの間に様々な処理をこなします。以下は、<b>ステージのアップデート処理</b>を行う<b>Stage::UpdateStage()関数</b>です。
 <div class="box1">
 <pre>
+//ステージ内の更新（シーンからよばれる）
 void Stage::UpdateStage() {
     //追加・削除まちオブジェクトの追加と削除
     SetWaitToObjectVec();
@@ -40,20 +41,26 @@ void Stage::UpdateStage() {
         if (ptr->IsUpdateActive()) {
             auto ptr2 = ptr->GetComponent&lt;Transform>();
             ptr2->SetToBefore();
+            auto RigidPtr = ptr->GetComponent&lt;Rigidbody>(false);
+            if (RigidPtr) {
+                //Rigidbodyがあればフォースを初期化
+                RigidPtr->SetForce(0, 0, 0);
+            }
         }
     }
 
-    //配置オブジェクトの更新1
+    //配置オブジェクトの更新処理
     for (auto ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             ptr->OnUpdate();
         }
     }
-    //自身の更新1
+    //自身の更新処理
     if (IsUpdateActive()) {
         OnUpdate();
     }
-    //配置オブジェクトのコンポーネント更新1
+
+    //配置オブジェクトのコンポーネント更新
     for (auto ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             ptr->ComponentUpdate();
@@ -61,23 +68,24 @@ void Stage::UpdateStage() {
     }
     //衝突判定の更新（ステージから呼ぶ）
     UpdateCollision();
+    //衝突判定のメッセージ発行（ステージから呼ぶ）
+    UpdateMessageCollision();
+    //配置オブジェクトの更新後処理
+    for (auto ptr : GetGameObjectVec()) {
+        if (ptr->IsUpdateActive()) {
+            ptr->OnUpdate2();
+        }
+    }
+    //自身の更新1
+    if (IsUpdateActive()) {
+        OnUpdate2();
+    }
     //自身のビューをアップデート
     auto ViewPtr = GetView(false);
     if (ViewPtr && ViewPtr->IsUpdateActive()) {
         ViewPtr->OnUpdate();
     }
-    //配置オブジェクトの最後の更新
-    for (auto ptr : GetGameObjectVec()) {
-        if (ptr->IsUpdateActive()) {
-            ptr->OnLastUpdate();
-        }
-    }
-    //衝突判定のメッセージ発行（ステージから呼ぶ）
-    UpdateMessageCollision();
-    //自身の最後の更新
-    if (IsUpdateActive()) {
-        OnLastUpdate();
-    }
+
     //コリジョンのリセット
     for (auto ptr : GetGameObjectVec()) {
         ptr->CollisionReset();

@@ -362,7 +362,7 @@ namespace basecross {
 			//ライトの取得
 			auto StageLight = PtrGameObject->OnGetDrawLight();
 			//位置の取得
-			auto Pos = PtrTrans->GetPosition();
+			auto Pos = PtrTrans->GetWorldMatrix().PosInMatrixSt();
 			Vector3 PosSpan = StageLight.m_Directional;
 			PosSpan *= 0.1f;
 			Pos += PosSpan;
@@ -502,8 +502,12 @@ namespace basecross {
 		const size_t m_MaxInstance;				///<インスタンス最大値
 		ComPtr<ID3D11Buffer> m_MatrixBuffer;	///<行列用の頂点バッファ
 
-		Impl(size_t MaxInstance) :
-			m_MaxInstance(MaxInstance)
+		//加算処理するかどうか
+		bool m_Addtype;
+
+		Impl(size_t MaxInstance,bool AddType) :
+			m_MaxInstance(MaxInstance),
+			m_Addtype(AddType)
 		{}
 		~Impl() {}
 		//頂点バッファの作成
@@ -544,9 +548,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	PCTParticle描画コンポーネント(パーティクル描画)
 	//--------------------------------------------------------------------------------------
-	PCTParticleDraw::PCTParticleDraw(const shared_ptr<GameObject>& GameObjectPtr, size_t MaxInstance) :
+	PCTParticleDraw::PCTParticleDraw(const shared_ptr<GameObject>& GameObjectPtr, size_t MaxInstance, bool AddType) :
 		DrawComponent(GameObjectPtr),
-		pImpl(new Impl(MaxInstance))
+		pImpl(new Impl(MaxInstance, AddType))
 	{}
 
 	PCTParticleDraw::~PCTParticleDraw() {}
@@ -661,8 +665,14 @@ namespace basecross {
 		pD3D11DeviceContext->IASetInputLayout(VSPCTInstance::GetPtr()->GetInputLayout());
 
 		//ブレンドステート
-		//透明処理
-		pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+		if (pImpl->m_Addtype) {
+			//加算処理
+			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+		}
+		else {
+			//透明処理
+			pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+		}
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthRead(), 0);
 		//テクスチャとサンプラーの設定
@@ -952,8 +962,8 @@ namespace basecross {
 		Vector2 Scale, Pos, Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
-		Pos.x = PtrTrans->GetPosition().x;
-		Pos.y = PtrTrans->GetPosition().y;
+		Pos.x = PtrTrans->GetWorldPosition().x;
+		Pos.y = PtrTrans->GetWorldPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
 		Vector3 Rot = PtrTrans->GetRotation();
@@ -1170,8 +1180,8 @@ namespace basecross {
 		Vector2 Scale,Pos,Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
-		Pos.x = PtrTrans->GetPosition().x;
-		Pos.y = PtrTrans->GetPosition().y;
+		Pos.x = PtrTrans->GetWorldPosition().x;
+		Pos.y = PtrTrans->GetWorldPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
 		Vector3 Rot = PtrTrans->GetRotation();
@@ -1398,8 +1408,8 @@ namespace basecross {
 		Vector2 Scale, Pos, Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
-		Pos.x = PtrTrans->GetPosition().x;
-		Pos.y = PtrTrans->GetPosition().y;
+		Pos.x = PtrTrans->GetWorldPosition().x;
+		Pos.y = PtrTrans->GetWorldPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
 		Vector3 Rot = PtrTrans->GetRotation();

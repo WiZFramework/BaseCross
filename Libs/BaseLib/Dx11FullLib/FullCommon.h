@@ -14,8 +14,6 @@
 #include "../SharedLib/Action.h"
 //衝突判定コンポーネント
 #include "../SharedLib/Collision.h"
-//重力コンポーネント
-#include "../SharedLib/Gravity.h"
 //物理計算コンポーネント
 #include "../SharedLib/Rigidbody.h"
 //描画コンポーネント
@@ -26,6 +24,8 @@
 #include "StringComponents.h"
 //行動クラス
 #include "../SharedLib/Behavior.h"
+//行動クラス(Rigidbody関連)
+#include "../SharedLib/BehaviorSteering.h"
 //ゲームオブジェクト、ステージなど
 #include "../SharedLib/GameObject.h"
 //スプライトスタジオ５

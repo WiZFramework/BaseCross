@@ -25,6 +25,7 @@ namespace basecross {
 		}
 	};
 
+
 	//--------------------------------------------------------------------------------------
 	///	プレイヤーの行動クラス
 	//--------------------------------------------------------------------------------------
@@ -51,9 +52,9 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		PlayerBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
 			Behavior(GameObjectPtr),
-			m_MaxSpeed(30.0f),	//最高速度
+			m_MaxSpeed(10.0f),	//最高速度
 			m_Decel(0.95f),	//減速値
-			m_Mass(1.0f)	//質量
+			m_Mass(0.5f)	//質量
 		{}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -97,19 +98,6 @@ namespace basecross {
 		void MovePlayer();
 	};
 
-
-	//--------------------------------------------------------------------------------------
-	///	何もしない行動クラス
-	//--------------------------------------------------------------------------------------
-	class WaitBehavior : public Behavior {
-	public:
-		WaitBehavior(const shared_ptr<GameObject>& GameObjectPtr) :
-			Behavior(GameObjectPtr)
-		{}
-		virtual ~WaitBehavior() {}
-		void Enter();
-		float Execute();
-	};
 
 
 

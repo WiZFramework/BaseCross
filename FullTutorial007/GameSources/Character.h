@@ -13,16 +13,10 @@ namespace basecross{
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	class SeekObject : public GameObject {
-		shared_ptr< StateMachine<SeekObject> >  m_StateMachine;	//ステートマシーン
+		//ステートマシーン
+		unique_ptr< StateMachine<SeekObject> >  m_StateMachine;
 		Vector3 m_StartPos;
 		float m_StateChangeSize;
-		//ユーティリティ関数群
-		//プレイヤーの位置を返す
-		Vector3 GetPlayerPosition() const;
-		//プレイヤーまでの距離を返す
-		float GetPlayerLength() const;
-		//進行方向を向くようにする
-		void RotToHead();
 	public:
 		//構築と破棄
 		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
@@ -30,22 +24,15 @@ namespace basecross{
 		//初期化
 		virtual void OnCreate() override;
 		//アクセサ
-		shared_ptr< StateMachine<SeekObject> > GetStateMachine() const {
+		const unique_ptr<StateMachine<SeekObject>>& GetStateMachine() {
 			return m_StateMachine;
 		}
-		//モーションを実装する関数群
-		void  SeekStartMoton();
-		bool  SeekUpdateMoton();
-		void  SeekEndMoton();
-
-		void  ArriveStartMoton();
-		bool  ArriveUpdateMoton();
-		void  ArriveEndMoton();
-
+		float GetStateChangeSize() const {
+			return m_StateChangeSize;
+		}
 		//操作
 		virtual void OnUpdate() override;
-		//衝突時
-		virtual void OnCollision(vector<shared_ptr<GameObject>>& OtherVec) override;
+		virtual void OnUpdate2() override;
 	};
 
 	//--------------------------------------------------------------------------------------

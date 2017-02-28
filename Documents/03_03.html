@@ -1,0 +1,247 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０３．Rigidbodyコンポーネント</h3>
+　<b>Rigidbodyコンポーネント</b>は<b>速度</b>を管理するコンポーネントです。<b>速度</b>が<b>Velocity</b>と呼ばれ、<b>向きベクトルを持ったスピード</b>です。<br />
+　単位は<b>秒速</b>です。<br />
+　<b>Rigidbodyコンポーネント</b>を実装するには、ゲームオブジェクトの<b>OnCreate()関数</b>などで
+<div class="box1">
+<pre>
+    //Rigidbodyをつける
+    auto PtrRedid = AddComponent&lt;Rigidbody>();
+    PtrRedid->SetVelocity(Vector3(0, 0, 1.0f));
+</pre>
+</div>
+　のように記述します。これでオブジェクトは<b>秒速1.0fでZの方向に</b>移動するようになります。<br />
+　動的に変化させる場合は、ゲームオブジェクトの<b>OnUpdate()関数</b>などで
+<div class="box1">
+<pre>
+    //Rigidbodyを呼び出す
+    auto PtrRedid = GetComponent&lt;Rigidbody>();
+    PtrRedid->SetVelocity(Vector3(0, 0, 1.0f));
+</pre>
+</div>
+　のように設定します。<b>SetVelocity()関数</b>に渡す値を動的に変更すれば、違う動きを演出できます。<br />
+<br />
+<h4>ステアリング（操舵）</h4>
+　さて、主に<b>AIで操作するオブジェクト</b>に関しては、前項のように<b>Action系</b>で動かす方法もありますが、<b>ステアリング（操舵）</b>と呼ばれる方法があります。<br />
+　<b>ステアリング</b>は<b>ニュートンの第2法則</b>に基づき<b>フォース</b>を利用したAI動作です。<br />
+　まず、<b>ニュートンの第2法則</b>とはどんなものかを考えましょう。公式は以下です。
+<div class="box1">
+<pre>
+　M（質量）　×　A（加速） = F（フォース）
+</pre>
+</div>
+　というのが<b>ニュートンの第2法則</b>です。これは
+<div class="box1">
+<pre>
+　A（加速） = F（フォース）　／　M（質量）
+</pre>
+</div>
+　とも書けます。これはどういうことかというと、<b>加速（A）は、フォース（F）をM（質量）で割った値である</b>ということです。<b>フォースとは力</b>のことです。<br />
+　<b>静止している物体が動く</b>ことや<b>動いている物体が止まる</b>というのは必ず<b>加速</b>が発生します。<b>動いている物体がそのまま同じ速度で動く</b>のは<b>慣性</b>が働いているので、<b>加速</b>は加わりません。つまり、<b>速度を変化させる</b>のには<b>加速</b>が必要なのです。<br />
+　<b>ステアリング</b>というのは<b>F（フォース）を発生させ、その力の向きに加速をつける</b>方法です。<br />
+<br/>
+　では、具体的にはどのように計算するかですが、<b>目標地点に向かうステアリング</b>を考えてみましょう。<br />
+　以下の図は<b>チュートリアル003</b>でも紹介した図ですが
+<p>&nbsp;</p>
+<img src="img/0103c.png" width="60%"/>
+<p>図0303a</p>
+<p>&nbsp;</p>
+　今、移動している物体がある目標に向かうために方向転換をするとします。<br />
+　すると、必要なベクトルは<b>青い線</b>で表されたベクトルです。物体が静止しているのであれば、単純に<b>F（力）</b>は目標の方向にかければいいのですが、現在も移動中で、<b>速度</b>を持ってます。そのため、現在の速度を考慮した方向に力をかけなければいけません。<br />
+　図を見ればわかるように、
+<div class="box1">
+<pre>
+現在のベクトル + 赤い線のベクトル　= 青い線のベクトル
+</pre>
+</div>
+　という関係があります。ですので<b>赤い線のベクトル</b>を導くには
+<div class="box1">
+<pre>
+赤い線のベクトル　= 青い線のベクトル - 現在のベクトル
+</pre>
+</div>
+　と引き算をしてあげればいいのです。ですので、以下は概念ですが
+<div class="box1">
+<pre>
+    //準備
+    //目標地点までのベクトルを得る（正規化されていてよい）
+    Vector3 Target = <span class="red">GetTarget();</span>
+    //最高秒速をかける
+    Target *= <span class="red">GetMaxSpeed();</span>
+    //前回のターンからの時間（秒）
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //Rigidbodyを取り出す
+    auto PtrRedit = GetComponent&lt;Rigidbody>();
+    //現在の速度を取り出す
+    auto Velo = PtrRedit->GetVelocity();
+    //目的地に向かうために力のかける方向を計算する
+    //Forceはフォース（力）である
+    auto Force = Target - Velo;
+    //加速度を求める
+    //GetMass()は質量を得る関数
+    auto Accel = Force / <span class="red">GetMass();</span>
+    //ターン時間を掛けたものを速度に加算する
+    Velo += (Accel * ElapsedTime);
+    //速度を設定する
+    PtrRedit->SetVelocity(Velo);
+</pre>
+</div>
+　上記の例で赤くなっている<b>GetTarget()は目標までの正規化されたベクトルを得る関数</b>で<b>GetMaxSpeed()は最高秒速を得る関数</b>です。また<b>GetMass()は物体の質量を得る関数</b>です。こららはどこかに用意しておきます。<br />
+　このようなコードを<b>OnUpdate()関数など、毎ターン実行されるように</b>記述しておきます。<br />
+　そうすると<b>目標地点が移動</b>しても、常に目標を追いかけるAI動作を実装できます。また、このAI動作は目まぐるしく<b>加速</b>が変わるために、生きてるような動作を実装できます。追いかける速度を調整した場合は、GetMaxSpeed()が返す値を変えればいいのです。<br />
+<br/>
+　ちなみに<b>BaseCrossサンプル</b>の多くは<b>プレイヤーの動き</b>に上記のアルゴリズムを使用していますので、確認しましょう。<br />
+<br />
+<h4>ステアリング（操舵）行動</h4>
+　<b>ステアリング</b>を実装するには、<b>Rigidbodyコンポーネント</b>を追加して、<b>OnUpdate()関数などで</b>上記のようなコードを記述すればいいのですが、いくつかのパターン化された<b>ステアリング</b>が<b>行動クラス</b>として用意されているので、それを使う方法もあります。<br />
+　<b>チュートリアル006</b>サンプルには、<b>SeekObject</b>という<b>プレイヤーを追いかけるオブジェクト</b>があり、これに<b>SeekSteeringコンポーネント</b>と<b>ArriveSteering行動</b>、そして<b>SeparationSteering行動</b>という３つの行動でＡＩ動作を実装しています。<br />
+　<b>SeekObject</b>における実装はまず<b>SeekObject::OnCreate()関数</b>において
+<div class="box1">
+<pre>
+//初期化
+void SeekObject::OnCreate() {
+    //中略
+
+    //操舵系のコンポーネントをつける場合はRigidbodyをつける
+    auto PtrRegid = AddComponent&lt;Rigidbody>();
+    //Seek操舵
+    auto PtrSeek = <span class="red">AddComponent&lt;SeekSteering>();</span>
+    //Arrive操舵
+    auto PtrArrive = <span class="red">AddComponent&lt;ArriveSteering>();</span>
+    //Arriveは無効にしておく
+    PtrArrive->SetUpdateActive(false);
+
+    //オブジェクトのグループを得る
+    auto Group = GetStage()->GetSharedObjectGroup(L"ObjectGroup");
+    //グループに自分自身を追加
+    Group->IntoGroup(GetThis&lt;SeekObject>());
+    //分離行動をつける
+    <span class="red">AddComponent&lt;SeparationSteering>(Group);</span>
+
+    //中略
+}
+</pre>
+</div>
+　このように、３つの<b>ステアリングコンポーネント</b>を実装しています。<br/>
+　<b>SeekSteering</b>は<b>目標を追いかける操舵</b>を発生させるコンポーネントで、<b>ArriveSteering</b>は<b>目標に到着する操舵</b>です。この2つの違いは<b>目標に近づいたときにブレーキをかけるかどうか</b>です。発生する速度は<b>SeekSteering</b>のほうが速いです。<b>SeekSteering</b>は目標に到達しても、そのまま行き過ぎてしまいます。ですから、追いかける対象に近づいたら、<b>ArriveSteering</b>に操舵を切り替える処理をしています。<br />
+　このオブジェクトはインスタンスは４つ作成されます。それらはすべて初期値は<b>プレイヤーから離れている</b>位置にいるので、最初は<b>SeekSteeringのみ有効</b>にしているのです。<br />
+　オブジェクトとプレイヤーの位置が近くなったときに<b>SeekSteeringは無効になりArriveSteeringが有効</b>になります。<br />
+　また<b>SeparationSteering</b>は<b>分離行動</b>と呼ばれるステアリングで、このステアリングは<b>お互いが離れる操舵</b>を発生させます。SeekObjectは、4つにインスタンスが作成されますが、これらがすべてプレイヤーを追いかけると、次第に同じ軌道をとるようになります。なるべくお互いがぶつからないようにするためにこの操舵を加えています。<br />
+　ここで<b>なるべく</b>というのは<b>ステアリング</b>を考えるのにヒントとなる表現です。<b>ステアリング</b>は<b>フォース</b>を発生させ、現在の速度を変化させる（加速をかける）アルゴリズムです。ですから、<b>現在の速度</b>によっては<b>ステアリングがあまり効かない</b>場合もあります。まあ、現実の<b>自動車</b>と同じですね。<b>車は急に止まれない</b>のは<b>出ている速度が速い</b>場合、ブレーキをかけても思うように止まれません。<b>ステアリング</b>はそうした現実の現象をアルゴリズム化したものです。<br />
+<br />
+　<b>ステアリングコンポーネント</b>はすべて<b>同じフォース変数</b>を使います。つまり<b>フォースは合成することが可能</b>ということです。<b>追いかける</b>というフォースと<b>お互いが離れる</b>というフォースを合成するには、単純にフォース同士を足し算します。<br />
+　このように、<b>複数のステアリングコンポーネント</b>を同居させて、最終的には<b>RigidbodyのVelocity</b>を変更します。<br />
+　<b>Basecross</b>にあらかじめ実装されている<b>ステアリング系コンポーネント</b>は以下のものがあります。
+<table>
+<tr>
+<th>コンポーネント名</th>
+<th>用途</th>
+<th>備考</th>
+</tr>
+
+<tr>
+<td>SeekSteering</td>
+<td>探索する（追いかける）</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>ArriveSteering</td>
+<td>到着する</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>PursuitSteering</td>
+<td>追跡</td>
+<td>精度の高いSEEK</td>
+</tr>
+
+<tr>
+<td>WanderSteering</td>
+<td>徘徊</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>WallAvoidanceSteering</td>
+<td>壁回避</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>ObstacleAvoidanceSteering</td>
+<td>障害物回避</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>FollowPathSteering</td>
+<td>経路追従</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>AlignmentSteering</td>
+<td>整列</td>
+<td>グループ操舵</td>
+</tr>
+
+<tr>
+<td>CohesionSteering</td>
+<td>結合</td>
+<td>グループ操舵</td>
+</tr>
+
+<tr>
+<td>SeparationSteering</td>
+<td>分離</td>
+<td>グループ操舵</td>
+</tr>
+
+<tr>
+<td>SeparationSteering</td>
+<td>分離</td>
+<td>グループ操舵</td>
+</tr>
+
+</table>
+　<b>グループ操舵</b>となっているのは<b>分離行動</b>のように、<b>グループ</b>を指定する操舵です。また、操舵によってはパラメータを複数設定するものもあります。ソースコードのコメントも参照ください。<br />
+　また<b>ステアリング</b>のアルゴリズムは<b>実例で学ぶゲームAIプログラミング</b>（オライリージャパン）を参考に、コンポーネント化しています。<br />
+<br />
+<h4>ステアリング（操舵）コンポーネントを自作する</h4>
+　さて、上記のようにいくつかの<b>ステアリングコンポーネント</b>が用意されていますが、本当にゲームにぴったりくるステアリングを実現するには、<b>コンポーネントを自作する</b>のが良いでしょう。<br />
+　<b>ステアリングの自作方法</b>として、<b>FullSample303</b>を参考にしてください。<b>Character.h/cpp</b>にある<b>MySeekSteeringコンポーネント</b>は、<b>Seekステアリングを自作する</b>方法が記述されています。アルゴリズムは<b>SeekSteering</b>と同じですが、計算方法を変えるといろんな表現ができると思います。<br />
+
+
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="03_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

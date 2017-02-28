@@ -1744,7 +1744,7 @@ namespace basecross {
 		auto PtrT = GetComponent<Transform>();
 		PtrT->SetScale(ret.ScaleInMatrix());
 		PtrT->SetQuaternion(ret.QtInMatrix());
-		PtrT->SetPosition(ret.PosInMatrix());
+		PtrT->SetWorldPosition(ret.PosInMatrix());
 		//Žq‹Ÿ‚Ìs—ñ‚ðŒvŽZ‚·‚é
 		for (auto ptr : pImpl->m_Childlen){
 			ptr->CaluclateMatrix();
@@ -2111,13 +2111,13 @@ namespace basecross {
 			float count = 0;
 			for (auto ptr : PartVec){
 				auto PtrT = ptr->GetComponent<Transform>();
-				auto TempPos = PtrT->GetPosition();
-				auto Pos = PtrT->GetPosition();
+				auto TempPos = PtrT->GetWorldPosition();
+				auto Pos = PtrT->GetWorldPosition();
 				Vector3 Z(0, 0, count);
 				Pos += Z;
-				PtrT->SetPosition(Pos);
+				PtrT->SetWorldPosition(Pos);
 				ptr->OnDraw();
-				PtrT->SetPosition(TempPos);
+				PtrT->SetWorldPosition(TempPos);
 				count -= 0.001f;
 			}
 		}

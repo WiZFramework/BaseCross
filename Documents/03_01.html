@@ -1,0 +1,131 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０１．Transformコンポーネント</h3>
+<h4>コンポーネント概要</h4>
+　<b>コンポーネント</b>とは<b>GameObject</b>に<b>追加</b>することでその機能を有効にするオブジェクトです。<br />
+　<b>コンポーネント</b>には、大きく分けて<b>更新系コンポーネント</b>と<b>描画系コンポーネント</b>があります。<br />
+　<b>更新系コンポーネント</b>は動きや回転、スケーリングなどの動的な変化を制御します。<b>描画系コンポーネント</b>は<b>形状の指定</b>や<b>色や明るさの設定</b>そして<b>描画方法の指定</b>を行います。<b>シェーダとの橋渡し</b>の意味合いもあります。<br />
+　<b>コンポーネント</b>を実装するには<b>GameObject</b>の<b>OnCreate()関数</b>などで、
+<div class="box1">
+<pre>
+        auto Ptr = AddComponent&lt;コンポーネント型>(引数);
+</pre>
+</div>
+　のように記述します。引数はないものが多いです（全部ではない）。<b>AddComponent()関数</b>は<b>テンプレート関数</b>です。<b>型</b>を渡すことでその型のインスタンスを作成し、<b>GameObject</b>に結び付けます。<br />
+　戻り値は、作成したコンポーネントの<b>shared_ptr</b>です。そのポインタを利用して、コンポーネントのパラメータの設定などを行います。
+<div class="box1">
+<pre>
+        auto Ptr = AddComponent&lt;コンポーネント型>(引数);
+        Ptr->Function();
+</pre>
+</div>
+　上記<b>Function()</b>はそのコンポーネントが持っている関数の例です。多くはアクセサや振る舞いの設定などです。<br />
+　<b>AddComponent()関数</b>はすでにそのコンポーネントが設定されていたらそのポインタを返します。なかった場合だけ新規に作成します。ですから、取得後も常に<b>AddComponent()関数</b>でコンポーネントの取得も行えますが、関数名的にも的確ではありません。ですのですでに作成したコンポーネントを利用する場合は、多くは<b>OnUpdate()</b>などでの処理になりますが
+<div class="box1">
+<pre>
+        auto Ptr = GetComponent&lt;コンポーネント型>(なかった時に例外を送出するかどうか);
+        Ptr->Function();
+</pre>
+</div>
+　のように<b>GetComponent()関数</b>を使用します。<br />
+　引数は<b>trueかfalse</b>を指定します。デフォルト引数になっていまして、デフォルト値は<b>true（送出する）</b>です。<br />
+　<b>false</b>を渡した場合<b>nullptr</b>が返ってくる可能性があります。ですから、そのコンポーネントが間違いなく存在する場合<br />
+<div class="box1">
+<pre>
+        auto Ptr = GetComponent&lt;コンポーネント型>();
+        Ptr->Function();
+</pre>
+</div>
+　のような記述をします。しかし、<b>存在したら何かの処理をする</b>場合
+<div class="box1">
+<pre>
+        auto Ptr = GetComponent&lt;コンポーネント型>(false);
+        if(Ptr){
+            //存在した場合の処理
+            Ptr->Function();
+        }
+        else{
+            //存在しなかったときの処理
+        }
+</pre>
+</div>
+　のように記述します。<br />
+　更新系コンポーネントが評価される（計算される）タイミングは<b>OnUpdate()関数</b>が呼ばれた後で、かつ、<b>OnLastUpdate()関数</b>が呼ばれる前です。
+<br />
+　この項では<b>更新系コンポーネント</b>のなかでも、特殊な<b>Transformコンポーネント</b>について述べます。<br />
+<br />
+<h4>Transformコンポーネント</h4>
+　<b>Transformコンポーネント</b>は一番大事で、そして特殊なコンポーネントです。<b>Transform</b>だけは、すべての<b>GamaObject</b>がデフォルトで保持しています。<br />
+　<b>Transform</b>は<b>スケーリング、重心、回転、移動</b>の4つのパラメータを持ち、<b>1ターン前</b>の<b>スケーリング、重心、回転、移動</b>を持ちます。<br />
+　デフォルトで保持しているので、<b>AddComponent()関数</b>を実行しなくても取得できます。例えば<b>OnCreate()関数</b>で
+<div class="box1">
+<pre>
+        auto PtrTrans = GetComponent&lt;Transform>();
+        PtrTrans->SetPosition(Vector3(0.0f,0.0f,0.0f));
+</pre>
+</div>
+　のように<b>位置の設定</b>を行います。<br/>
+<br />
+　次項以降で説明する<b>Action系コンポーネント</b>や<b>Rigidbodyコンポーネント</b>、そして<b>Collision系コンポーネント</b>などはこの<b>Transform</b>の値を変更します。<br />
+　ですから<b>直接Transformを変更するのか</b>もしくは<b>更新系コンポーネントに任せるのか</b>あるいは<b>任せつつも直接変更もするのか</b>は、オブジェクトの作成方法にもよりますが、慎重に設計する必要があります。<br />
+　前述しましたように、GameObjectの更新処理（仮想関数が呼び出されるタイミング）と、更新系コンポーネントが計算されるタイミングは以下のような順番になります。
+<div class="box1">
+<pre>
+【１】各GameObjectの、OnPreUpdate()関数呼び出し
+【２】各GameObjectが持つコンポーネントの計算
+【３】ステージのビューの計算
+【４】各GameObjectの、OnUpdate()関数呼び出し
+</pre>
+</div>
+　また<b>【２】各GameObjectが持つコンポーネントの計算</b>は、特殊なコンポーネントとそうでないコンポーネントの評価順があります。以下にその順番を述べます。
+<div class="box1">
+<pre>
+＊各GameObjectが持つコンポーネントの計算内の計算順番
+１、特殊なコンポーネント以外のコンポーネントの計算（場合によってはTransformに影響を与える）
+２、Gravityコンポーネント（重力コンポーネント）の計算（Transformに影響を与える）
+３、Rigidbodyコンポーネント（速度を管理するコンポーネント）の計算（Transformに影響を与える）
+４、Transformの計算（何もしない。ワールド行列は描画系コンポーネントが取得する）
+５、Collision管理者（マネージャ）による衝突判定（Transformに影響を与える）
+</pre>
+</div>
+　このような形になっていますので、<b>【１】各GameObjectの、OnPreUpdate()関数呼び出し</b>で、Transformの値を変更しても、その後、各コンポーネントが影響を与えますので、あまり意味がありません。（場合によっては変な動きになります）<br />
+　ですから、<b>Transformの値を直接変更したい</b>のであれば<b>Update系コンポーネントは追加しない</b>か、もしくは<b>【４】各GameObjectの、OnUpdate()関数呼び出し</b>で行ったほうが比較的思い通りに行くことがあります。<br />
+　基本的に以下の方針で設計すればよいと思います。
+<div class="box1">
+<pre>
+＊Transformの値を直接変更したい場合は、できれば、更新系コンポーネントは追加しない。
+＊RigidbodyやGravityを利用したい場合は、Rigidbodyの速度や、Gravityの現在の速度を変更する
+＊OnUpdate()関数ならTransformの値を直接変更しても比較的安全。
+</pre>
+</div>
+　直接<b>Transform</b>の値を変更するサンプルとして<b>FullTutorial002</b>があります。<br />
+　このサンプルでは<b>Transform</b>以外の更新系コンポーネントは持ちません。<b>OnUpdate()関数</b>でオブジェクトの位置を変更しています。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="02_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="03_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

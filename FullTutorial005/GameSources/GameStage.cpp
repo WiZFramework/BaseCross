@@ -168,7 +168,6 @@ namespace basecross {
 
 	//上下移動しているボックスの作成
 	void GameStage::CreateMoveBox() {
-		CreateSharedObjectGroup(L"MoveBox");
 		AddGameObject<MoveBox>(
 			Vector3(5.0f, 0.5f, 5.0f),
 			Vector3(0.0f, 0.0f, 0.0f),
@@ -280,10 +279,10 @@ namespace basecross {
 			CreateSphere();
 			//でこぼこ床の作成
 			CreateUnevenGround();
-			//プレーヤーの作成
-			CreatePlayer();
 			//追いかけるオブジェクトの作成
 			CreateSeekObject();
+			//プレーヤーの作成
+			CreatePlayer();
 		}
 		catch (...) {
 			throw;
