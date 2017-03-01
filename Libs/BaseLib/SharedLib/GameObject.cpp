@@ -924,6 +924,22 @@ namespace basecross {
 				}
 			}
 		}
+
+
+		auto func = [&](CillisionItem& Left, CillisionItem& Right)->bool {
+			auto PtrLeftVelo = Left.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
+			auto PtrRightVelo = Right.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
+
+
+			auto LeftLen = Vector3EX::Length(PtrLeftVelo);
+			auto RightLen = Vector3EX::Length(PtrRightVelo);
+
+			return (LeftLen < RightLen);
+		};
+
+		std::sort(pImpl->m_ItemVec.begin(), pImpl->m_ItemVec.end(), func);
+
+
 		for (size_t i = 0; i < pImpl->m_ItemVec.size(); i++) {
 			if (!pImpl->m_ItemVec[i].m_Collision->IsFixed()) {
 				CollisionSub(i);
