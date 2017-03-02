@@ -46,7 +46,6 @@ namespace basecross{
 
 		//Õ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();
@@ -258,6 +257,13 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
+		wstring GravStr(L"GravityVelocity:\t");
+		auto GravVelocity = GetComponent<Rigidbody>()->GetGravityVelocity();
+		GravStr += L"X=" + Util::FloatToWStr(GravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Y=" + Util::FloatToWStr(GravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Z=" + Util::FloatToWStr(GravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+
 		wstring StateStr(L"State: ");
 		StateStr += GetStateMachine()->GetTopState()->GetStateName() + L"\n";
 
@@ -271,7 +277,7 @@ namespace basecross{
 		else {
 			HitObjectStr += L"NULL\n";
 		}
-		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + StateStr + HitObjectStr;
+		wstring str = BEHAVIOR + FPS + PositionStr + RididStr + GravStr+ StateStr + HitObjectStr;
 		//•¶š—ñ‚ğ‚Â‚¯‚é
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);

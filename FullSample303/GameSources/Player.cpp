@@ -45,8 +45,6 @@ namespace basecross{
 
 		//Õ“Ë”»’è‚ğ‚Â‚¯‚é
 		auto PtrCol = AddComponent<CollisionSphere>();
-		//í‚É”½”­
-		PtrCol->SetIsHitAction(IsHitAction::Repel);
 
 		//‰e‚ğ‚Â‚¯‚é
 		auto ShadowPtr = AddComponent<Shadowmap>();

@@ -1,0 +1,146 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０６．衝突判定と反発</h3>
+　衝突判定は後処理も重要になります。<br />
+　前項で紹介した<b>衝突判定の自作</b>では<b>反発処理</b>は一定の固定値で行っていました。<br />
+　動かない物体との衝突の場合はそれでもいいのかもしれませんが、相手が<b>（今は止まっていても）動く場合</b>、あるいは<b>動いている物体同士</b>の後処理は計算しなければいけません。<br />
+　たとえて言うなら<b>ビリヤード</b>のような動きを実装する場合はどうしたらいいか、ということです。<br />
+　<b>BaseCross</b>には単純ですが<b>摩擦や空気抵抗を考えない</b>形で後処理が実装されています。<br />
+<br />
+　まず<b>FullSample306</b>を実行してみましょう。以下のような画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0306a.png" width="80%"/>
+<p>図0306a</p>
+　コントローラの<b>Aボタン</b>を押すと、左側のボールが動き、右のボールに当たります。すると、左のボールは止まって、右側だけが動きます。<br />
+<br />
+<h4>衝突判定の後処理</h4>
+　この処理は、<b>ニュートンの第3法則（作用・反作用の法則）</b>とも呼ばれ、ようは左のボールの力がそのまま右のボールに移動するという処理です。<br />
+　この処理は、<b>SharedLibプロジェクト</b>の<b>Collision.cpp</b>の<b>Collision::AfterCollision()関数</b>に実装があります。<br />
+　以下抜粋ですが
+<div class="box1">
+<pre>
+void Collision::AfterCollision(
+    const shared_ptr&lt;Collision>& DestColl,
+     const Vector3& SrcVelocity, const Vector3& DestVelocity, 
+    const Vector3& HitNormal,float AfterHitTime) {
+
+//中略
+
+    auto PtrRigid = GetGameObject()->GetComponent&lt;Rigidbody>(false);
+    if (PtrRigid) {
+        switch (GetIsHitAction()) {
+        case IsHitAction::Slide:
+        {
+            auto DestVelocity = PtrDestTransform->GetVelocity();
+            Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+            PtrRigid->SetVelocity(Slide);
+            //重力は0にする
+            PtrRigid->SetGravityVelocityZero();
+        }
+        break;
+        case IsHitAction::Auto:
+            if (horizontal) {
+                //乗っているときはスライドさせる
+                Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+                PtrRigid->SetVelocity(Slide);
+                //何かに乗ったときは重力は0にする
+                PtrRigid->SetGravityVelocityZero();
+            }
+            else {
+                //乗ってないときは反発
+                <span class="red">
+                auto DestRigid = DestColl->GetGameObject()->GetComponent&lt;Rigidbody>(false);
+                float ResultPower = -(1.0f + PtrRigid->GetReflection());
+                if (DestRigid) {
+                    Vector3 RelativeVelo = SrcVelocity - DestVelocity;
+                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) 
+                        * Vector3EX::Dot(RelativeVelo, HitNormal)) 
+                        / (Vector3EX::Dot(HitNormal, HitNormal) 
+                        * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
+                }
+                else {
+                    Vector3 RelativeVelo = SrcVelocity;
+                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) 
+                    * Vector3EX::Dot(RelativeVelo, HitNormal)) 
+                    / (Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
+                }</span>
+                auto Velo = PtrRigid->GetVelocity();
+                Velo += (HitNormal * ResultPower) / PtrRigid->GetMass();
+                PtrRigid->SetVelocity(Velo);
+            }
+            break;
+        }
+    }
+}
+</pre>
+</div>
+　赤くなっているところで、反発する力を算出しています。最終的には現在の速度に質量で割った値を、衝突法線を基準に加算します。<br />
+<br />
+　では、少しパラメータを変えて実行してみましょう。<br />
+　<b>GameSources</b>内の<b>GameStage.cpp</b>の<b>GameStage::CreateBalls()関数</b>を以下のように書き換えます。<br />
+<div class="box1">
+<pre>
+//ボールの作成
+void GameStage::CreateBalls() {
+    //ボールの作成
+    auto Ball1 = AddGameObject&lt;Ball>(Vector3(-2.5f, 0.125f, <span class="red">5.1f</span>), true);
+    //シェア配列にプレイヤーを追加
+    SetSharedGameObject(L"Ball1", Ball1);
+    auto Ball2 = AddGameObject&lt;Ball>(Vector3(2.5f, 0.125f, 5.0f), false);
+    SetSharedGameObject(L"Ball2", Ball2);
+}
+</pre>
+</div>
+　赤くなっている値を変更します。そしてビルドして実行すると、今度は、ちょっと違う動きになります。左のボールは止まりません。<br />
+　デバッグ文字列にある、両ボールの速度（Velocity）を見てみましょう。両方を足すと、おおむねもともと持っていた分量になっていると思います。<br />
+<br />
+　このサンプルは<b>反発率</b>を<b>1.0</b>にしているので完全に反発しますが、<b>Character.cpp</b>でボールの反発率を以下のように<b>0.5f</b>にすると、また違う動きになります。
+
+<div class="box1">
+<pre>
+//初期化
+void Ball::OnCreate() {
+    //中略
+
+
+    //Rigidbodyをつける
+    auto PtrRedid = AddComponent&lt;Rigidbody>();
+    PtrRedid->SetReflection(<span class="red">0.5f</span>);
+    //衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionSphere>();
+
+
+    //中略
+}
+</pre>
+</div>
+　このように、ある程度リアルな動きを実装するためには物理演算が必須となります。ただし、摩擦や風の影響は加味してませんのでそのあたりも必要な場合は、<b>衝突判定メッセージ</b>などで追加処理するか、あるいは<b>衝突判定そのものを自作</b>しましょう。<br />
+　また、このサンプルのボールは「重力」は加味してません。「重力」を加味すると衝突した瞬間に減速が発生することがありますので注意しましょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

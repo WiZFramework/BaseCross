@@ -62,8 +62,6 @@ void AttackBall::OnCreate() {
 
     //CollisionSphere衝突判定を付ける
     auto PtrColl = AddComponent&lt;CollisionSphere>();
-    //常に反発
-    PtrColl->SetIsHitAction(IsHitAction::Repel);
     //中略
 
 }
@@ -134,8 +132,6 @@ void Player::OnCreate() {
 
     //CollisionSphere衝突判定を付ける
     auto PtrColl = AddComponent&lt;CollisionSphere>();
-    //何かに乗ってないときは反発
-    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
     //衝突しないタグの設定
     <span class="red">PtrColl->AddExcludeCollisionTag(L"AttackBall");</span>
 

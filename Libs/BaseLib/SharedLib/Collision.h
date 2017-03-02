@@ -20,7 +20,6 @@ namespace basecross {
 	enum class IsHitAction {
 		None,			//何もしない
 		Slide,			//スライド
-		Repel,			//反発
 		Auto,			//オート計算
 	};
 

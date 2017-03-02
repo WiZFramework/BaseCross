@@ -13,6 +13,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct Rigidbody::Impl {
 		Vector3 m_Velocity;				//速度
+		Vector3 m_GravityVelocity;		//重力速度
 		float m_MaxSpeed;				//最高速度(フォースで使用)
 		Vector3 m_MinVelocity;			//最低速度（XYZを指定できる）
 		Vector3 m_AngularVelocity;		//回転速度
@@ -24,6 +25,7 @@ namespace basecross {
 		float m_MaxForce;				//最高フォース
 		Impl() :
 			m_Velocity(0, 0, 0),
+			m_GravityVelocity(0,0,0),
 			m_MaxSpeed(10.0f),
 			m_MinVelocity(0.01f, 0.01f, 0.01f),
 			m_AngularVelocity(0, 0, 0),
@@ -68,6 +70,27 @@ namespace basecross {
 	}
 	void Rigidbody::SetVelocity(float x, float y, float z) {
 		SetVelocity(Vector3(x, y, z));
+	}
+	void Rigidbody::SetVelocityZero() {
+		SetVelocity(Vector3(0, 0, 0));
+	}
+	const Vector3& Rigidbody::GetGravityVelocity() const {
+		return pImpl->m_GravityVelocity;
+	}
+	void Rigidbody::SetGravityVelocity(const Vector3& Velocity) {
+		if (Velocity.IsNaN() || Velocity.IsInfinite()) {
+			pImpl->m_GravityVelocity = Vector3(0, 0, 0);
+		}
+		else {
+			pImpl->m_GravityVelocity = Velocity;
+		}
+	}
+	void Rigidbody::SetGravityVelocity(float x, float y, float z) {
+		SetGravityVelocity(Vector3(x, y, z));
+
+	}
+	void Rigidbody::SetGravityVelocityZero() {
+		SetGravityVelocity(Vector3(0, 0, 0));
 	}
 
 	float Rigidbody::GetMaxSpeed() const { return pImpl->m_MaxSpeed; }
@@ -156,6 +179,7 @@ namespace basecross {
 		Qt *= QtSpan;
 		Qt.Normalize();
 		Pos += pImpl->m_Velocity * CalcTime;
+		Pos += pImpl->m_GravityVelocity * CalcTime;
 		PtrTransform->SetQuaternion(Qt);
 		PtrTransform->SetWorldPosition(Pos);
 	}

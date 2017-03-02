@@ -166,9 +166,9 @@ namespace basecross {
 	void Gravity::StartJump(const Vector3& StartVec, float EscapeSpan) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
-		auto Velo = PtrRigid->GetVelocity();
+		auto Velo = PtrRigid->GetGravityVelocity();
 		Velo += StartVec;
-		PtrRigid->SetVelocity(Velo);
+		PtrRigid->SetGravityVelocity(Velo);
 		Vector3 EscapeVec = StartVec;
 		//ジャンプして親オブジェクトボリュームから脱出できないとき対応
 		EscapeVec *= EscapeSpan;
@@ -182,9 +182,9 @@ namespace basecross {
 
 	void Gravity::UpdateFromTime(float CalcTime) {
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
-		auto Velo = PtrRigid->GetVelocity();
+		auto Velo = PtrRigid->GetGravityVelocity();
 		Velo += pImpl->m_Gravity * CalcTime;
-		PtrRigid->SetVelocity(Velo);
+		PtrRigid->SetGravityVelocity(Velo);
 	}
 
 	void Gravity::Execute() {

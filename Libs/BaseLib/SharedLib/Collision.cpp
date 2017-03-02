@@ -255,32 +255,17 @@ namespace basecross {
 				auto DestVelocity = PtrDestTransform->GetVelocity();
 				Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
 				PtrRigid->SetVelocity(Slide);
+				//重力は0にする
+				PtrRigid->SetGravityVelocityZero();
 			}
-				break;
-			case IsHitAction::Repel:
-			{
-				auto DestRigid = DestColl->GetGameObject()->GetComponent<Rigidbody>(false);
-				float ResultPower = -(1.0f + PtrRigid->GetReflection());
-				if (DestRigid) {
-					Vector3 RelativeVelo = SrcVelocity - DestVelocity;
-					ResultPower = (-(1.0f + PtrRigid->GetReflection()) * Vector3EX::Dot(RelativeVelo, HitNormal)) /
-						(Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
-				}
-				else {
-					Vector3 RelativeVelo = SrcVelocity;
-					ResultPower = (-(1.0f + PtrRigid->GetReflection()) * Vector3EX::Dot(RelativeVelo, HitNormal)) /
-						(Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
-				}
-				auto Velo = PtrRigid->GetVelocity();
-				Velo += (HitNormal * ResultPower) / PtrRigid->GetMass();
-				PtrRigid->SetVelocity(Velo);
-			}
-				break;
+			break;
 			case IsHitAction::Auto:
 				if (horizontal) {
 					//乗っているときはスライドさせる
 					Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
 					PtrRigid->SetVelocity(Slide);
+					//何かに乗ったときは重力は0にする
+					PtrRigid->SetGravityVelocityZero();
 				}
 				else {
 					//乗ってないときは反発

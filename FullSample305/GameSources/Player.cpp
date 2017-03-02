@@ -44,7 +44,6 @@ namespace basecross{
 
 		//CollisionSphereÕ“Ë”»’è‚ğ•t‚¯‚é
 		auto PtrColl = AddComponent<CollisionSphere>();
-		PtrColl->SetIsHitAction(IsHitAction::Repel);
 
 
 		//‰e‚ğ‚Â‚¯‚é
