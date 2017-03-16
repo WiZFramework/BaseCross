@@ -295,7 +295,7 @@ namespace basecross{
 
 		}
 		PtrDraw->CreateOriginalMesh(m_BackupVertices, indices);
-		PtrDraw->SeOriginalMeshUse(true);
+		PtrDraw->SetOriginalMeshUse(true);
 
 	}
 	const shared_ptr<Camera>& RollingCube::OnGetDrawCamera() const {
@@ -497,7 +497,7 @@ namespace basecross{
 
 		}
 		PtrDraw->CreateOriginalMesh(m_BackupVertices, indices);
-		PtrDraw->SeOriginalMeshUse(true);
+		PtrDraw->SetOriginalMeshUse(true);
 		PtrDraw->SetTextureResource(m_TextureKey);
 		SetAlphaActive(m_Trace);
 

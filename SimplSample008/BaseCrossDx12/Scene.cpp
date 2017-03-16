@@ -32,13 +32,13 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0));
 		//デフォルト描画の開始
-		Dev->StartDefultDraw();
+		Dev->StartDefaultDraw();
 		m_WallSprite->OnDraw();
 		m_SquareSprite->OnDraw();
 		//デフォルト描画の終了
-		Dev->EndDefultDraw();
+		Dev->EndDefaultDraw();
 	}
 
 }

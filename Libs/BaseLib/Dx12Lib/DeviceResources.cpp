@@ -863,7 +863,7 @@ namespace basecross {
 
 
 	//通常描画のクリア
-	void DeviceResources::ClearDefultViews(const Color4& col) {
+	void DeviceResources::ClearDefaultViews(const Color4& col) {
 		ThrowIfFailed(pImpl->m_CommandAllocator->Reset(),
 			L"コマンドアロケータのリセットに失敗しました",
 			L"m_CommandAllocator->Reset()",

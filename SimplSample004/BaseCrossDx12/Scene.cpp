@@ -19,15 +19,16 @@ namespace basecross {
 	void Scene::OnUpdate() {
 		m_SquareSpriteGroup->OnUpdate();
 	}
+	
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
-		Dev->StartDefultDraw();
+		Dev->StartDefaultDraw();
 		m_SquareSpriteGroup->OnDraw();
 		//デフォルト描画の終了
-		Dev->EndDefultDraw();
+		Dev->EndDefaultDraw();
 	}
 
 }

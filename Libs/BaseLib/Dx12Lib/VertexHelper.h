@@ -463,6 +463,72 @@ namespace basecross{
 		}
 	};
 
+	//--------------------------------------------------------------------------------------
+	/// 位置と法線とタンジェントとテクスチャとスキン情報を持つ入力レイアウトの定義
+	//--------------------------------------------------------------------------------------
+	const D3D12_INPUT_ELEMENT_DESC VertexPositionNormalTangentTextureSkinningLayout[] =
+	{
+		{ "SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "BLENDINDICES",0, DXGI_FORMAT_R32G32B32A32_UINT,0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT,0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	//--------------------------------------------------------------------------------------
+	/// 位置と法線とタンジェントとテクスチャとスキン情報を持つ頂点の定義
+	//--------------------------------------------------------------------------------------
+	struct VertexPositionNormalTangentTextureSkinning
+	{
+		VertexPositionNormalTangentTextureSkinning()
+		{ }
+
+
+		VertexPositionNormalTangentTextureSkinning(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& tan, XMFLOAT2 const& tex,
+			uint32_t* index, float* weight)
+			: position(pos),
+			normal(norm),
+			tangent(tan),
+			textureCoordinate(tex)
+		{
+			for (int i = 0; i < 4; i++) {
+				indices[i] = index[i];
+				weights[i] = weight[i];
+			}
+		}
+
+		VertexPositionNormalTangentTextureSkinning(FXMVECTOR pos, FXMVECTOR norm, FXMVECTOR tan, CXMVECTOR tex,
+			uint32_t* index, float* weight)
+			: position(pos),
+			normal(norm),
+			tangent(tan),
+			textureCoordinate(tex)
+		{
+			for (int i = 0; i < 4; i++) {
+				indices[i] = index[i];
+				weights[i] = weight[i];
+			}
+		}
+
+
+		Vector3 position;
+		Vector3 normal;
+		Vector4 tangent;
+		Vector2 textureCoordinate;
+		uint32_t indices[4];
+		float weights[4];
+
+
+		static const D3D12_INPUT_ELEMENT_DESC* GetVertexElement() {
+			return VertexPositionNormalTangentTextureSkinningLayout;
+		}
+		static UINT GetNumElements() {
+			return  ARRAYSIZE(VertexPositionNormalTangentTextureSkinningLayout);
+		}
+	};
+
+
 
 
 	//--------------------------------------------------------------------------------------
