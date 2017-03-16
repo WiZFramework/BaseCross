@@ -4,22 +4,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
-
-
-cbuffer SimpleConstantBuffer : register(b0)
-{
-	float4x4 World	: packoffset(c0);
-	float4x4 View	: packoffset(c4);
-	float4x4 Projection	: packoffset(c8);
-	float4 LightDir	: packoffset(c12);
-	float4 Emissive : packoffset(c13);
-	float4 Diffuse	: packoffset(c14);
-	float4 LightPos	: packoffset(c15);
-	float4 EyePos	: packoffset(c16);
-	uint4 Activeflags	: packoffset(c17);			//フラグ
-	float4x4 LightView	: packoffset(c18);
-	float4x4 LightProjection	: packoffset(c22);
-};
+#include "INCParameters.hlsli"
 
 
 PSPNTInputShadow main(VSPNTInput input)
@@ -38,6 +23,9 @@ PSPNTInputShadow main(VSPNTInput input)
 	//ライティング
 	result.norm = mul(input.norm, (float3x3)World);
 	result.norm = normalize(result.norm);
+	//スペキュラー
+	float3 H = normalize(normalize(-LightDir.xyz) + normalize(EyePos.xyz - pos.xyz));
+	result.specular = Specular * dot(result.norm, H);
 	//テクスチャUV
 	result.tex = input.tex;
 	//影のための変数

@@ -5,17 +5,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
-
-cbuffer SimpleConstantBuffer : register(b0)
-{
-	float4x4 World	: packoffset(c0);
-	float4x4 View	: packoffset(c4);
-	float4x4 Projection	: packoffset(c8);
-	float4 LightDir	: packoffset(c12);
-	float4 Emissive : packoffset(c13);
-	float4 Diffuse	: packoffset(c14);
-};
-
+#include "INCParameters.hlsli"
 
 PSPNTInput main(VSPNTInput input)
 {
@@ -33,6 +23,9 @@ PSPNTInput main(VSPNTInput input)
 	//ライティング
 	result.norm = mul(input.norm, (float3x3)World);
 	result.norm = normalize(result.norm);
+	//スペキュラー
+	float3 H = normalize(normalize(-LightDir.xyz) + normalize(EyePos.xyz - pos.xyz));
+	result.specular = Specular * dot(result.norm, H);
 	//テクスチャUV
 	result.tex = input.tex;
 	return result;

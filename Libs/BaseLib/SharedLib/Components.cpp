@@ -280,6 +280,31 @@ namespace basecross {
 		return pImpl->m_WorldMatrix;
 	}
 
+	const Matrix4X4& Transform::Get2DWorldMatrix() const {
+		auto ParPtr = GetParent();
+		if (pImpl->m_Changeed || ParPtr) {
+			pImpl->m_Scale.z = 1.0f;
+			XMVector temp_z(pImpl->m_Position.z);
+			temp_z.Clamp(0.0f, 1.0f);
+			pImpl->m_Position.z = temp_z.z;
+			pImpl->m_Pivot.z = 0;
+			pImpl->m_WorldMatrix.AffineTransformation(
+				pImpl->m_Scale,
+				pImpl->m_Pivot,
+				pImpl->m_Quaternion,
+				pImpl->m_Position
+			);
+			pImpl->m_Changeed = false;
+			if (ParPtr) {
+				auto ParWorld = ParPtr->GetComponent<Transform>()->Get2DWorldMatrix();
+				ParWorld.ScaleIdentity();
+				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
+			}
+		}
+		return pImpl->m_WorldMatrix;
+	}
+
+
 	const shared_ptr<GameObject> Transform::GetParent()const {
 		auto ShPtr = pImpl->m_Parent.lock();
 		if (ShPtr) {

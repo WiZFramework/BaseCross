@@ -29,7 +29,7 @@ namespace basecross {
 		Matrix4X4 m_ViewMatrix;
 		Matrix4X4 m_ProjMatrix;
 		Impl() :
-			m_Eye(0, 10.0f, -20.0f),	//デフォルトは後方斜め上
+			m_Eye(0, 0.0f, -20.0f),	//デフォルトは後方
 			m_At(0, 0, 0),
 			m_Up(0, 1.0f, 0),
 			m_Pers(true),
@@ -262,8 +262,15 @@ namespace basecross {
 	LookAtCamera::LookAtCamera() :
 		Camera(),
 		pImpl(new Impl())
+	{}
+
+	LookAtCamera::LookAtCamera(float ArmLen):
+		Camera(),
+		pImpl(new Impl())
 	{
+		pImpl->m_ArmLen = ArmLen;
 	}
+
 	LookAtCamera::~LookAtCamera() {}
 	//アクセサ
 	shared_ptr<GameObject> LookAtCamera::GetTargetObject() const {
@@ -352,6 +359,7 @@ namespace basecross {
 
 	void LookAtCamera::OnUpdate() {
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		auto KeyData = App::GetApp()->GetInputDevice().GetKeyState();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		Vector3 NewEye = GetEye();
@@ -362,10 +370,10 @@ namespace basecross {
 		ArmVec.Normalize();
 		if (CntlVec[0].bConnected) {
 			//上下角度の変更
-			if (CntlVec[0].fThumbRY >= 0.1f) {
+			if (CntlVec[0].fThumbRY >= 0.1f || KeyData.m_bPushKeyTbl[VK_UP]) {
 				pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
 			}
-			else if (CntlVec[0].fThumbRY <= -0.1f) {
+			else if (CntlVec[0].fThumbRY <= -0.1f || KeyData.m_bPushKeyTbl[VK_DOWN]) {
 				pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
 			}
 			if (pImpl->m_RadY > XM_PI * 4 / 9.0f) {
@@ -377,9 +385,17 @@ namespace basecross {
 			}
 			ArmVec.y = sin(pImpl->m_RadY);
 			//ここでY軸回転を作成
-			if (CntlVec[0].fThumbRX != 0) {
+			if (CntlVec[0].fThumbRX != 0 || KeyData.m_bPushKeyTbl[VK_LEFT] || KeyData.m_bPushKeyTbl[VK_RIGHT]) {
 				//回転スピードを反映
-				pImpl->m_RadXZ += -CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+				if (CntlVec[0].fThumbRX != 0) {
+					pImpl->m_RadXZ += -CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+				}
+				else if (KeyData.m_bPushKeyTbl[VK_LEFT]) {
+					pImpl->m_RadXZ += ElapsedTime * pImpl->m_RotSpeed;
+				}
+				else if (KeyData.m_bPushKeyTbl[VK_RIGHT]) {
+					pImpl->m_RadXZ -= ElapsedTime * pImpl->m_RotSpeed;
+				}
 				if (abs(pImpl->m_RadXZ) >= XM_2PI) {
 					//1週回ったら0回転にする
 					pImpl->m_RadXZ = 0;
@@ -434,6 +450,12 @@ namespace basecross {
 			Vector3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
 			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
 		}
+		if (KeyData.m_bPressedKeyTbl[VK_LEFT]) {
+			int a = 0;
+		}
+
+
+
 		SetAt(NewAt);
 		SetEye(NewEye);
 		UpdateArmLengh();
@@ -843,6 +865,38 @@ namespace basecross {
 		SetAmbientLightColor(defaultAmbient);
 		pImpl->m_MainIndex = 2;
 	}
+
+	void MultiLight::SetDefaultLighting2() {
+		static const Vector3 defaultDirections[3] =
+		{
+			{ -0.5265408f, -0.5735765f, -0.6275069f },
+			{ 0.7198464f,  0.3420201f,  0.6040227f },
+			{ 0.4545195f, -0.7660444f,  0.4545195f },
+		};
+
+		static const Color4 defaultDiffuse[3] =
+		{
+			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+			{ 0.9647059f, 0.7607844f, 0.4078432f,0.0f },
+			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+		};
+
+		static const Color4 defaultSpecular[3] =
+		{
+			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+			{ 0.0000000f, 0.0000000f, 0.0000000f,0.0f },
+			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+		};
+		static const Color4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
+		for (size_t i = 0; i < 3; i++) {
+			pImpl->m_LightVec[i].m_Directional = defaultDirections[i];
+			pImpl->m_LightVec[i].m_DiffuseColor = defaultDiffuse[i];
+			pImpl->m_LightVec[i].m_SpecularColor = defaultSpecular[i];
+		}
+		SetAmbientLightColor(defaultAmbient);
+		pImpl->m_MainIndex = 2;
+	}
+
 
 	const Light& MultiLight::GetTargetLight() const {
 		return pImpl->m_LightVec[pImpl->m_MainIndex];

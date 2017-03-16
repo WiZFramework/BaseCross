@@ -154,7 +154,7 @@ namespace basecross {
 	//半透明のスプライト作成
 	void GameStage::CreateTraceSprite() {
 		AddGameObject<TraceSprite>( true,
-			Vector2(200.0f, 200.0f), Vector2(-500.0f, -280.0f));
+			Vector2(200.0f, 200.0f), Vector3(-500.0f, -280.0f,0.0f));
 	}
 
 

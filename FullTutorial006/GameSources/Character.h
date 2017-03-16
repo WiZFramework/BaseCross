@@ -43,7 +43,7 @@ namespace basecross{
 	class TraceSprite : public GameObject {
 		bool m_Trace;
 		Vector2 m_StartScale;
-		Vector2 m_StartPos;
+		Vector3 m_StartPos;
 		float m_TotalTime;
 		//バックアップ頂点データ
 		vector<VertexPositionColor> m_BackupVertices;
@@ -58,7 +58,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-			const Vector2& StartScale, const Vector2& StartPos);
+			const Vector2& StartScale, const Vector3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

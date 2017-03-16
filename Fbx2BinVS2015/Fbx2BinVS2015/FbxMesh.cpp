@@ -231,6 +231,94 @@ namespace basecross {
 		}
 	}
 
+	void FbxMeshResource2::GetStaticVerticesIndicesMaterialsWithTangent(vector<VertexPositionNormalTangentTexture>& vertices,
+		vector<uint16_t>& indices, vector<MaterialEx>& materials) {
+		vertices.clear();
+		indices.clear();
+		materials.clear();
+		GetMaterialVec(materials);
+		auto MaterialCount = materials.size();
+		UINT NumVertices = 0;
+		//メッシュ単体の読み込み
+		DWORD dwNumPolygons = 0;	//ポリゴン数
+		//頂点がない	
+		if ((NumVertices = pImpl->m_FbxMesh->GetControlPointsCount()) <= 0) {
+			//失敗した
+			throw BaseException(L"Fbxに頂点がありません",
+				L"m_FbxMesh->GetControlPointsCount() <= 0",
+				L"FbxMeshResource::GetStaticVerticesIndicesMaterialsWithTangent()");
+		}
+		//ポリゴン数の取得
+		dwNumPolygons = pImpl->m_FbxMesh->GetPolygonCount();
+		//頂点を作成するための配列
+		vertices.resize(NumVertices);
+		FbxStringList sUVSetNames;
+		pImpl->m_FbxMesh->GetUVSetNames(sUVSetNames);
+		FbxString sUVSetName = sUVSetNames.GetStringAt(0);
+		bool bUnmapped = true;
+		//頂点座標・法線・テクスチャ座標の取得
+		for (DWORD i = 0; i < dwNumPolygons; i++) {
+			//ポリゴンのサイズを得る（通常３）
+			const DWORD dwPolygonSize = pImpl->m_FbxMesh->GetPolygonSize(i);
+			for (DWORD j = 0; j < dwPolygonSize; j++) {
+				const int	iIndex = pImpl->m_FbxMesh->GetPolygonVertex(i, j);
+				FbxVector4	vPos, vNormal;
+				FbxVector2	vUV;
+				FbxVector4 fbxTangent;
+				//Fbxから頂点を得る
+				vPos = pImpl->m_FbxMesh->GetControlPointAt(iIndex);
+				//法線を得る
+				pImpl->m_FbxMesh->GetPolygonVertexNormal(i, j, vNormal);
+				//UV値を得る
+				pImpl->m_FbxMesh->GetPolygonVertexUV(i, j, sUVSetName, vUV, bUnmapped);
+				vertices[iIndex] =
+					VertexPositionNormalTangentTexture(
+						//頂点の設定
+						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
+						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						//法線の設定
+						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
+						//XMFLOAT3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						//タンジェントの設定
+						XMFLOAT4(0,0,0,0),
+						//UV値の設定
+						//Vの値が、1.0から引いた値になる
+						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
+					);
+
+				int tangentCount = pImpl->m_FbxMesh->GetElementTangentCount();
+				int binormalCount = pImpl->m_FbxMesh->GetElementBinormalCount();
+
+			}
+		}
+		//インデックス
+		//マテリアルのポインタを取得する
+		const FbxLayerElementMaterial*	fbxMaterial = pImpl->m_FbxMesh->GetLayer(0)->GetMaterials();
+		DWORD dwIndexCount = 0;
+		for (DWORD i = 0; i < MaterialCount; i++) {
+			//頂点インデックスを最適化する(同じマテリアルを使用するポリゴンをまとめて描画できるように並べ、
+			//描画時にマテリアルの切り替え回数を減らす)
+			for (DWORD j = 0; j < dwNumPolygons; j++) {
+				DWORD	dwMaterialId = fbxMaterial->GetIndexArray().GetAt(j);
+				if (dwMaterialId == i) {
+					int iPolygonSize = pImpl->m_FbxMesh->GetPolygonSize(j);
+					for (int k = 0; k < iPolygonSize; k++) {
+						indices.push_back(static_cast< uint16_t >(pImpl->m_FbxMesh->GetPolygonVertex(j, 2 - k)));
+						materials[i].m_IndexCount++;
+					}
+				}
+			}
+		}
+		//マテリアル配列にスタート地点を設定
+		UINT StarIndex = 0;
+		for (DWORD i = 0; i < materials.size(); i++) {
+			materials[i].m_StartIndex = StarIndex;
+			StarIndex += materials[i].m_IndexCount;
+		}
+	}
+
+
 	void FbxMeshResource2::CreateInstanceFromStaticFbx() {
 		//このFBXに名前があればそれを保持
 		if (pImpl->m_FbxMesh->GetName()) {
@@ -959,7 +1047,7 @@ namespace basecross {
 		ProjMat.Transpose();
 
 		//コンスタントバッファの設定
-		PNTBoneConstantBuffer cb1;
+		SimpleConstants cb1;
 		ZeroMemory(&cb1, sizeof(cb1));
 		//行列の設定(転置する)
 		//コンスタントバッファの設定
@@ -969,6 +1057,7 @@ namespace basecross {
 		auto StageLight = GameObjectPtr->OnGetDrawLight();
 		cb1.LightDir = StageLight.m_Directional;
 		cb1.LightDir.w = 1.0f;
+		cb1.ActiveFlg.x = 1;
 
 		//ボーンの設定
 		size_t BoneSz = pImpl->m_vecLocalBones.size();
@@ -1060,10 +1149,12 @@ namespace basecross {
 		pID3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
 
 		for (auto& m : MatVec) {
-			cb1.Emissive = m.m_Emissive;
-			cb1.Diffuse = m.m_Diffuse;
+			cb1.Emissive = GetEmissive();
+			cb1.Diffuse = GetDiffuse();
+//			cb1.Emissive = m.m_Emissive;
+//			cb1.Diffuse = m.m_Diffuse;
 			//コンスタントバッファの更新
-			ID3D11Buffer* pConstantBuffer = CBPNTBone::GetPtr()->GetBuffer();
+			ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
 			pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb1, 0, 0);
 			pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
 			pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
@@ -1157,7 +1248,7 @@ namespace basecross {
 
 	}
 
-	void FbxMeshObject::OnPreUpdate() {
+	void FbxMeshObject::OnUpdate() {
 		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
 		if (PtrBoneDraw && m_IsAnimeRun) {
 			if (PtrBoneDraw->IsTargetAnimeEnd()) {
@@ -1169,7 +1260,7 @@ namespace basecross {
 		}
 	}
 
-	void FbxMeshObject::OnUpdate() {
+	void FbxMeshObject::OnUpdate2() {
 		//文字列表示
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
@@ -1268,7 +1359,6 @@ namespace basecross {
 				RemoveComponent<BasicFbxPNTBoneDraw>();
 				auto PtrDraw = AddComponent<PNTStaticModelDraw>();
 				PtrDraw->SetMeshResource(PtrFbxMesh);
-				PtrDraw->SetLighting(ShaderLighting::Simple);
 			}
 		}
 		catch (...) {

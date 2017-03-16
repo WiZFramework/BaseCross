@@ -18,11 +18,9 @@ cbuffer ConstantBuffer : register(b0)
 
 float4 main(PSPCTInput input) : SV_TARGET
 {
-	//テクスチャと頂点色からライティングを作成
-	float4 Light = g_texture.Sample(g_sampler, input.tex) * input.color;
-	//デフューズ追加
-	Light *= saturate(Diffuse);
-	//エミッシブを足す
-	return saturate(Light + Emissive);
+	float4 Light = (saturate(input.color) * Diffuse) + Emissive;
+	Light.a = Diffuse.a;
+	Light = g_texture.Sample(g_sampler, input.tex) * Light;
+	return Light;
 }
 

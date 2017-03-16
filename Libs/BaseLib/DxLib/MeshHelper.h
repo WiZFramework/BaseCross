@@ -234,6 +234,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static void SetNormalTangent(vector<VertexPositionNormalTangentTexture>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	VertexPositionNormalTangentTextureSkinningフォーマットのメッシュのタンジェントを追加する
+		@param[inout]	vertices	頂点の配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void SetNormalTangent(vector<VertexPositionNormalTangentTextureSkinning>& vertices);
+
 
 
 	};

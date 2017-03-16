@@ -1,0 +1,159 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>リアルな３Ｄの描画</h3>
+　この項では<b>３Ｄ表現</b>に中でも、<b>よりリアルな描画方法</b>について説明します。<br />
+　<b>FullSample404</b>を実行すると以下のような画面が現れます。<br />
+<p>&nbsp;</p>
+<img src="img/0404a.png" width="80%"/>
+<p>図0404a</p>
+　前項のサンプルとほぼ同じですが、シェーダが違います。<b>リアルなライティング</b>や<b>フォグ</b>が施されています。<br />
+　また、モデルの描画には<b>法線マップ</b>が設定されているものもあります。<br />
+<br />
+<h4>プリミティブの描画</h4>
+　奥に並んでいる球体は、前項とほぼ同じです。<b>描画コンポーネント</b>をリアルな描画のものに変更すればおおむね実装できます。以下は<b>PtSphere（PT頂点を持つ球）</b>ですが、<b>PtSphere::OnCreate()</b>には以下のようになってます。
+<div class="box1">
+<pre>
+void PtSphere::OnCreate() {
+//中略
+
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;<span class="red">BcPTStaticDraw</span>>();
+    PtrDraw->SetFogEnabled(true);
+
+//中略
+}
+</pre>
+</div>
+　上記のように<b>BcPTStaticDrawコンポーネント</b>を描画コンポーネントにすればリアルな描画になります。<br />
+　また<b>PtrDraw->SetFogEnabled(true);</b>と設定すれば<b>フォグ</b>が有効になります。<br />
+　フォグを有効にすると画面を引いたときに以下のような表示になります。
+<p>&nbsp;</p>
+<img src="img/0404b.png" width="80%"/>
+<p>図0404b</p>
+<br/>
+<h4>モデルの描画</h4>
+　モデルをリアルな描画にしたのが手前の4体です。左２つはアニメーションが入ってます。<br />
+　以下はボーンモデルの描画ですが<b>タンジェントがついているものとついてないもの</b>の違いを確認してください。
+<p>&nbsp;</p>
+<img src="img/0404c.png" width="80%"/>
+<p>図0404c</p>
+<br/>
+　モデルは通常<b>PNT頂点</b>で作成します。これを<b>リアルなライティング</b>にするためには、描画コンポーネントを以下のようにします。以下は<b>スタティックモデル</b>の描画（右から2つ）ですが
+<div class="box1">
+<pre>
+void StaticChara::OnCreate() {
+
+    //中略
+
+    if (m_TamgentUse) {
+        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTnTStaticModelDraw</span>>();
+        PtrDraw->SetFogEnabled(true);
+        PtrDraw->SetMeshResource(L"MODEL_MESH_WITH_TAN");
+        PtrDraw->SetNormalMapTextureResource(L"MODEL_NORMAL_TX");
+        PtrDraw->SetMeshToTransformMatrix(SpanMat);
+    }
+    else {
+        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTStaticModelDraw</span>>();
+        PtrDraw->SetFogEnabled(true);
+        PtrDraw->SetMeshResource(L"MODEL_MESH");
+        PtrDraw->SetMeshToTransformMatrix(SpanMat);
+    }
+
+}
+</pre>
+</div>
+　<b>m_TamgentUse</b>が有効の場合<b>タンジェント</b>が入っているモデルのリソースを記述します。<br />
+　以下は<b>ボーンモデル</b>の処理です。
+<div class="box1">
+<pre>
+void BoneChara::OnCreate() {
+    //中略
+    if (m_TamgentUse) {
+        //描画コンポーネントの設定
+        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTnTBoneModelDraw</span>>();
+        PtrDraw->SetFogEnabled(true);
+        //描画するメッシュを設定
+        PtrDraw->SetMeshResource(L"Chara_R_MESH_WITH_TAN");
+        PtrDraw->SetNormalMapTextureResource(L"Chara_R_NORMAL_TX");
+        PtrDraw->SetMeshToTransformMatrix(SpanMat);
+        PtrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
+        PtrDraw->ChangeCurrentAnimation(L"Default");
+    }
+    else {
+        //描画コンポーネントの設定
+        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTBoneModelDraw</span>>();
+        PtrDraw->SetFogEnabled(true);
+        //描画するメッシュを設定
+        PtrDraw->SetMeshResource(L"Chara_R_MESH");
+        PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+        PtrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
+        PtrDraw->ChangeCurrentAnimation(L"Default");
+
+    }
+    //透明処理
+    SetAlphaActive(true);
+}
+</pre>
+</div>
+　<b>タンジェント付きモデル</b>は、例えば、シーンなどで<b>MeshResource::CreateBoneModelMeshWithTangent()関数（ボーンモデル用）</b>や<b>MeshResource::CreateStaticModelMeshWithTangent()関数（スタティック用）</b>で<b>PNT頂点のモデルをPNTnT頂点のモデルに変換</b>して使用します。<br/>
+<div class="box1">
+<pre>
+void Scene::CreateResourses() {
+    //中略
+
+    //ボーンモデルの通常リソース
+    auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
+    App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+    //ボーンモデルのタンジェント付きリソース
+    <span class="red">ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");</span>
+    App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", ModelMesh);
+    //法線マップ
+    strTexture = DataDir + L"Chara_R_narmal.png";
+    App::GetApp()->RegisterTexture(L"Chara_R_NORMAL_TX", strTexture);
+
+    //スタティックモデルの通常リソース
+    auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+    App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
+    //スタティックモデルのタンジェント付きリソース
+    <span class="red">StaticModelMesh 
+        = MeshResource::CreateStaticModelMeshWithTangent(DataDir, L"Character_01.bmf");</span>
+    App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", StaticModelMesh);
+    //法線マップ
+    strTexture = DataDir + L"Character_2_normal.png";
+    App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);
+
+
+}
+</pre>
+</div>
+　このように<b>リアルな描画</b>を実装するためには、基本的に<b>描画コンポーネント</b>の変更や、<b>タンジェント付きのリソースを作成</b>すればいいわけですが、ゲームによって<b>どこまでリアルな描画が必要かどうか</b>が違うと思いますので、前項のような描画が良いかどうかはしっかり検討して実装するといいと思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="04_05.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

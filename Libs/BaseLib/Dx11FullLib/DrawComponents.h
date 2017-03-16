@@ -1,6 +1,6 @@
 /*!
 @file DrawComponents.h
-@brief 描画コンポーネント
+@brief Drawコンポーネント
 @copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
 */
 #pragma once
@@ -35,12 +35,10 @@ namespace basecross {
 		pID3D11DeviceContext->RSSetScissorRects(1, &rect);
 	}
 
-
-
 	//--------------------------------------------------------------------------------------
 	///	Shadowコンスタントバッファ構造体
 	//--------------------------------------------------------------------------------------
-	struct ShadowConstantBuffer
+	struct ShadowConstants
 	{
 		/// ワールド行列
 		XMMATRIX mWorld;
@@ -50,19 +48,20 @@ namespace basecross {
 		XMMATRIX mProj;
 		/// Bone用
 		XMVECTOR Bones[3 * 72];
-		ShadowConstantBuffer() {
-			memset(this, 0, sizeof(ShadowConstantBuffer));
+		ShadowConstants() {
+			memset(this, 0, sizeof(ShadowConstants));
 		};
 	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBShadow, ShadowConstantBuffer)
+	DECLARE_DX11_CONSTANT_BUFFER(CBShadow, ShadowConstants)
 	DECLARE_DX11_VERTEX_SHADER(VSShadowmap, VertexPositionNormalTexture)
 	DECLARE_DX11_VERTEX_SHADER(VSShadowmapBone, VertexPositionNormalTextureSkinning)
+	DECLARE_DX11_VERTEX_SHADER(VSShadowmapBoneWithTan, VertexPositionNormalTangentTextureSkinning)
 
 
 	//--------------------------------------------------------------------------------------
 	///	スプライト用コンスタントバッファ構造体
 	//--------------------------------------------------------------------------------------
-	struct SpriteConstantBuffer
+	struct SpriteConstants
 	{
 		/// ワールド行列
 		Matrix4X4 World;
@@ -70,12 +69,13 @@ namespace basecross {
 		Color4 Emissive;
 		/// デフューズ色
 		Color4 Diffuse;
-		SpriteConstantBuffer() {
-			memset(this, 0, sizeof(SpriteConstantBuffer));
+		SpriteConstants() {
+			memset(this, 0, sizeof(SpriteConstants));
 			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBSprite, SpriteConstantBuffer)
+	/// スプライトコンスタントバッファ
+	DECLARE_DX11_CONSTANT_BUFFER(CBSprite, SpriteConstants)
 	//PCSprite
 	DECLARE_DX11_VERTEX_SHADER(VSPCSprite, VertexPositionColor)
 	DECLARE_DX11_PIXEL_SHADER(PSPCSprite)
@@ -87,10 +87,11 @@ namespace basecross {
 	DECLARE_DX11_PIXEL_SHADER(PSPCTSprite)
 
 
+
 	//--------------------------------------------------------------------------------------
-	///	static系コンスタントバッファ構造体
+	///	SimpleConstantsコンスタントバッファ構造体
 	//--------------------------------------------------------------------------------------
-	struct StaticConstantBuffer
+	struct SimpleConstants
 	{
 		/// ワールド行列
 		Matrix4X4 World;
@@ -102,12 +103,29 @@ namespace basecross {
 		Color4 Emissive;
 		/// デフューズ色
 		Color4 Diffuse;
-		StaticConstantBuffer() {
-			memset(this, 0, sizeof(StaticConstantBuffer));
+		/// スペキュラー
+		Color4 Specular;
+		/// テクスチャ=xがアクティブかどうか
+		XMUINT4 ActiveFlg;
+		/// ライイト方向
+		Vector4 LightDir;
+		/// ライト位置
+		Vector4 LightPos;
+		/// Eyeの位置
+		Vector4 EyePos;
+		/// ライトビュー行列
+		Matrix4X4 LightView;
+		/// ライト射影行列
+		Matrix4X4 LightProjection;
+		/// Bone配列
+		XMVECTOR Bones[3 * 72];
+		SimpleConstants() {
+			memset(this, 0, sizeof(SimpleConstants));
 			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBStatic, StaticConstantBuffer)
+	//CBSimple
+	DECLARE_DX11_CONSTANT_BUFFER(CBSimple, SimpleConstants)
 	//PCStatic
 	DECLARE_DX11_VERTEX_SHADER(VSPCStatic, VertexPositionColor)
 	DECLARE_DX11_PIXEL_SHADER(PSPCStatic)
@@ -118,205 +136,16 @@ namespace basecross {
 	DECLARE_DX11_VERTEX_SHADER(VSPCTInstance, VertexPositionColorTextureMatrix)
 	DECLARE_DX11_VERTEX_SHADER(VSPCTStatic, VertexPositionColorTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPCTStatic)
-
-	//--------------------------------------------------------------------------------------
-	///	ライティングを使用するstatic系コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct StaticLightingConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		StaticLightingConstantBuffer() {
-			memset(this, 0, sizeof(StaticLightingConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		};
-	};
-
-	DECLARE_DX11_CONSTANT_BUFFER(CBStaticLighting, StaticLightingConstantBuffer)
-	DECLARE_DX11_VERTEX_SHADER(VSPNStatic, VertexPositionNormal)
+	///PNTStatic
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStatic, VertexPositionNormalTexture)
-	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticMidium, VertexPositionNormalTexture)
-	DECLARE_DX11_PIXEL_SHADER(PSPNStatic)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticNoTex)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticMidium)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticMidiumNoTex)
-
-	//--------------------------------------------------------------------------------------
-	///	リアルライティングを使用するstatic系コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct StaticRealLightingConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		/// Eyeの位置
-		Vector4 EyePosition;
-		StaticRealLightingConstantBuffer() {
-			memset(this, 0, sizeof(StaticRealLightingConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		};
-	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBStaticRealLighting, StaticRealLightingConstantBuffer)
-	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticReal, VertexPositionNormalTexture)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticReal)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticRealNoTex)
-
-
-
-	//--------------------------------------------------------------------------------------
-	///	影付きstatic系コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct PNTStaticShadowConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		/// ライト位置
-		Vector4 LightPos;
-		/// Eyeの位置
-		Vector4 EyePos;
-		/// 汎用フラグ
-		XMUINT4 ActiveFlg;
-		/// ライトビュー行列
-		Matrix4X4 LightView;
-		/// ライト射影行列
-		Matrix4X4 LightProjection;
-		PNTStaticShadowConstantBuffer() {
-			memset(this, 0, sizeof(PNTStaticShadowConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		};
-	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTStaticShadow, PNTStaticShadowConstantBuffer)
+	///PNTStaticShadow
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticShadow, VertexPositionNormalTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow2)
-
-
-	//--------------------------------------------------------------------------------------
-	///	Bone付コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct PNTBoneConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		/// Bone配列
-		XMVECTOR Bones[3 * 72];
-		PNTBoneConstantBuffer() {
-			memset(this, 0, sizeof(PNTBoneConstantBuffer));
-		};
-	};
-
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBone, PNTBoneConstantBuffer)
+	///PNTBoneShadow
 	DECLARE_DX11_VERTEX_SHADER(VSPNTBone, VertexPositionNormalTextureSkinning)
-	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneMidium, VertexPositionNormalTextureSkinning)
-
-	//--------------------------------------------------------------------------------------
-	///	リアルライティングを使用するBone付コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct PNTBoneRealLightingConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		/// Eyeの位置
-		Vector4 EyePosition;
-		/// Bone配列
-		XMVECTOR Bones[3 * 72];
-		PNTBoneRealLightingConstantBuffer() {
-			memset(this, 0, sizeof(PNTBoneRealLightingConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		};
-	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBoneRealLighting, PNTBoneRealLightingConstantBuffer)
-	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneReal, VertexPositionNormalTextureSkinning)
-
-
-
-	//--------------------------------------------------------------------------------------
-	///	影とBone付コンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct PNTBoneShadowConstantBuffer
-	{
-		/// ワールド行列
-		Matrix4X4 World;
-		/// ビュー行列
-		Matrix4X4 View;
-		/// 射影行列
-		Matrix4X4 Projection;
-		/// ライイト方向
-		Vector4 LightDir;
-		/// エミッシブ色
-		Color4 Emissive;
-		/// デフューズ色
-		Color4 Diffuse;
-		/// ライト位置
-		Vector4 LightPos;
-		/// Eyeの位置
-		Vector4 EyePos;
-		/// テクスチャ=xがアクティブかどうか
-		XMUINT4 ActiveFlg;
-		/// ライトビュー行列
-		Matrix4X4 LightView;
-		/// ライト射影行列
-		Matrix4X4 LightProjection;
-		/// Bone配列
-		XMVECTOR Bones[3 * 72];
-		PNTBoneShadowConstantBuffer() {
-			memset(this, 0, sizeof(PNTBoneShadowConstantBuffer));
-		};
-	};
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTBoneShadow, PNTBoneShadowConstantBuffer)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneShadow, VertexPositionNormalTextureSkinning)
-
-
 
 	class GameObject;
 
@@ -711,21 +540,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		shared_ptr<TextureResource> GetTextureResource() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ラッピングサンプラーかどうかを得る
-		@return	ラッピングサンプラーかどうか
-		*/
-		//--------------------------------------------------------------------------------------
-		bool GetWrapSampler() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ラッピングサンプラーかどうか設定する
-		@param[in]	b	ラッピングサンプラーかどうか
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetWrapSampler(bool b);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1021,18 +835,9 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	/// ライティングシェーダ設定用のenum
+	///	static描画コンポーネントの親(頂点を変更する場合も可)
 	//--------------------------------------------------------------------------------------
-	enum class ShaderLighting {
-		Simple,
-		Midium,
-		Real
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	3D描画コンポーネントの親(3D描画の親)
-	//--------------------------------------------------------------------------------------
-	class Base3DDraw : public DrawComponent {
+	class StaticBaseDraw : public DrawComponent, public TextureDrawInterface {
 	protected:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1040,29 +845,22 @@ namespace basecross {
 		@param[in]	GameObjectPtr	ゲームオブジェクト
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit Base3DDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		explicit StaticBaseDraw(const shared_ptr<GameObject>& GameObjectPtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	プロテクトデストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~Base3DDraw();
-	public:
+		virtual ~StaticBaseDraw();
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	メッシュリソースの取得(仮想関数)
-		@return	メッシュリソース
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<MeshResource> GetMeshResource() const = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	メッシュリソースの設定（仮想関数）
-		@param[in]	MeshRes	メッシュリソース
+		@brief	コンスタントバッファの設定
+		@param[out]	Cb	設定する構造体
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes) = 0;
+		void SetConstants(SimpleConstants& Cb, bool shadowUse = false);
+	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の取得
@@ -1093,373 +891,235 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetDiffuse(const Color4& col);
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-
-	};
-
-
-
-	//--------------------------------------------------------------------------------------
-	///	Dynamic描画コンポーネントの親(頂点を変更できる3D描画)
-	//--------------------------------------------------------------------------------------
-	class DynamicBaseDraw : public Base3DDraw {
-	protected:
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	プロテクトコンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
+		@brief	スペキュラー色の取得
+		@return	スペキュラー色
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit DynamicBaseDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		Color4 GetSpecular() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	プロテクトデストラクタ
+		@brief	スペキュラー色の設定
+		@param[in]	col	スペキュラー色
+		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~DynamicBaseDraw();
-	public:
+		void SetSpecular(const Color4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	メッシュリソースの取得
-		@return	メッシュリソース
+		@brief	オリジナルメッシュを使うかどうか
+		@return	使う場合はtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<MeshResource> GetMeshResource() const override;
+		bool IsOriginalMeshUse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	メッシュリソースの設定
+		@brief	オリジナルメッシュを使うかどうかを設定
+		@param[in]	b	オリジナルメッシュを使うかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetOriginalMeshUse(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルなメッシュリソースの取得
+		@return	オリジナルなメッシュリソース
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<MeshResource> GetOriginalMeshResource() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルなメッシュリソースの設定
 		@param[in]	MeshRes	メッシュリソース
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	PCDynamic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	class PCDynamicDraw : public DynamicBaseDraw {
-	public:
+		void SetOriginalMeshResource(const shared_ptr<MeshResource>& MeshRes);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	コンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit PCDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PCDynamicDraw();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点変更できるメッシュを作成する（すでにある場合は差し替える）
+		@brief	オリジナルメッシュを作成する
 		@param[in]	Vertices	頂点の配列
 		@param[in]	indices		インデックスの配列
 		*/
 		//--------------------------------------------------------------------------------------
-		void CreateMesh(vector<VertexPositionColor>& Vertices, vector<uint16_t>& indices);
+		template <typename T>
+		void CreateOriginalMesh(vector<T>& Vertices, vector<uint16_t>& indices) {
+			try {
+				auto MeshRes = MeshResource::CreateMeshResource(Vertices, indices, true);
+				SetOriginalMeshResource(MeshRes);
+			}
+			catch (...) {
+				throw;
+			}
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	頂点バッファの設定
+		@brief	オリジナルメッシュの頂点バッファを変更する
 		@param[in]	Vertices	頂点配列
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void UpdateVertices(const vector<VertexPositionColor>& Vertices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnUpdate処理（空関数）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnDraw処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
+		template <typename T>
+		void UpdateVertices(const vector<T>& Vertices) {
+			auto MeshRes = GetOriginalMeshResource();
+			if (!MeshRes) {
+				throw BaseException(
+					L"オリジナルメッシュが作成されていません",
+					L"if (!GetOriginalMeshResource())",
+					L"StaticBaseDraw::UpdateVertices()"
+				);
 
-	//--------------------------------------------------------------------------------------
-	///	PTDynamic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	class PTDynamicDraw : public DynamicBaseDraw, public TextureDrawInterface {
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit PTDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PTDynamicDraw();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点変更できるメッシュを作成する（すでにある場合は差し替える）
-		@param[in]	Vertices	頂点の配列
-		@param[in]	indices		インデックスの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		void CreateMesh(vector<VertexPositionTexture>& Vertices, vector<uint16_t>& indices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点バッファの設定
-		@param[in]	Vertices	頂点配列
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void UpdateVertices(const vector<VertexPositionTexture>& Vertices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnUpdate処理（空関数）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnDraw処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
+			}
+			MeshRes->UpdateVirtexBuffer(Vertices);
+		}
 
-
-
-	//--------------------------------------------------------------------------------------
-	///	PCTDynamic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	class PCTDynamicDraw : public DynamicBaseDraw, public TextureDrawInterface {
-	public:
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	コンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit PCTDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PCTDynamicDraw();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点変更できるメッシュを作成する（すでにある場合は差し替える）
-		@param[in]	Vertices	頂点の配列
-		@param[in]	indices		インデックスの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		void CreateMesh(vector<VertexPositionColorTexture>& Vertices, vector<uint16_t>& indices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点バッファの設定
-		@param[in]	Vertices	頂点配列
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void UpdateVertices(const vector<VertexPositionColorTexture>& Vertices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnUpdate処理（空関数）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnDraw処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	PNTDynamic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	class PNTDynamicDraw : public DynamicBaseDraw, public TextureDrawInterface {
-		void DrawNotShadow();
-		void DrawWithShadow();
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit PNTDynamicDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PNTDynamicDraw();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点変更できるメッシュを作成する（すでにある場合は差し替える）
-		@param[in]	Vertices	頂点の配列
-		@param[in]	indices		インデックスの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		void CreateMesh(vector<VertexPositionNormalTexture>& Vertices, vector<uint16_t>& indices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	頂点バッファの設定
-		@param[in]	Vertices	頂点配列
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void UpdateVertices(const vector<VertexPositionNormalTexture>& Vertices);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool GetOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool IsOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか設定する
-		@param[in]	b		影を描画するかどうか
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetOwnShadowActive(bool b);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnUpdate処理（空関数）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnDraw処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
-
-
-
-
-
-	//--------------------------------------------------------------------------------------
-	///	static描画コンポーネントの親(頂点を変更できない3D描画)
-	//--------------------------------------------------------------------------------------
-	class StaticBaseDraw : public Base3DDraw {
-	protected:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	プロテクトコンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit StaticBaseDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	プロテクトデストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~StaticBaseDraw();
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	メッシュリソースの取得
+		@brief	メッシュリソースの取得(オリジナルかどうかは内部で処理される)
 		@return	メッシュリソース
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<MeshResource> GetMeshResource() const override;
+		shared_ptr<MeshResource> GetMeshResource() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	メッシュリソースの設定
+		@brief	オリジナルではないメッシュリソースの設定（仮想関数）
 		@param[in]	MeshRes	メッシュリソース
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
+		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	メッシュリソースの登録
+		@brief	オリジナルではないメッシュリソースの登録
 		@param[in]	MeshKey	登録されているメッシュキー
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void SetMeshResource(const wstring& MeshKey);
+		void SetMeshResource(const wstring& MeshKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタティックメッシュの描画
+		@tparam[in]	T_VShader	使用する頂点シェーダ
+		@tparam[in]	T_PShader	使用するピクセルシェーダ
+		@param[in]	TextureUse	テクスチャを使用するかどうか
+		@param[in]	ShadoUuse	影を描画するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T_VShader, typename T_PShader>
+		void DrawStatic(bool TextureUse, bool ShadoUuse) {
+			auto PtrStage = GetGameObject()->GetStage();
+			if (!PtrStage) {
+				return;
+			}
+			//メッシュがなければ描画しない
+			auto MeshRes = GetMeshResource();
+			if (!MeshRes) {
+				throw BaseException(
+					L"メッシュが作成されていません",
+					L"if (!MeshRes)",
+					L"StaticBaseDraw::DrawStatic()"
+				);
+			}
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+			auto RenderState = Dev->GetRenderState();
+			//コンスタントバッファの準備
+			SimpleConstants Cb;
+			SetConstants(Cb, ShadoUuse);
+			if (TextureUse) {
+				//テクスチャ
+				auto shTex = GetTextureResource();
+				if (shTex) {
+					Cb.ActiveFlg.x = 1;
+					pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
+					//サンプラーは設定に任せる
+					SetDeviceSamplerState();
+				}
+				else {
+					Cb.ActiveFlg.x = 0;
+				}
+			}
+
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &Cb, 0, 0);
+			//ストライドとオフセット
+			UINT stride = MeshRes->GetNumStride();
+			UINT offset = 0;
+			//頂点バッファのセット
+			pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+			//インデックスバッファのセット
+			pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+			//描画方法（3角形）
+			pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+			if (ShadoUuse) {
+				//シェーダの設定
+				if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+					//シャドウマップがあれば自己影防止用のピクセルシェーダ
+					pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+					pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow2::GetPtr()->GetShader(), nullptr, 0);
+				}
+				else {
+					pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+					pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow::GetPtr()->GetShader(), nullptr, 0);
+				}
+				//シャドウマップのレンダラーターゲット
+				auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+				ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
+				pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
+				//シャドウマップサンプラー
+				ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+				pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
+			}
+			else {
+				//シェーダの設定
+				pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+				pD3D11DeviceContext->PSSetShader(T_PShader::GetPtr()->GetShader(), nullptr, 0);
+			}
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(T_VShader::GetPtr()->GetInputLayout());
+			//デプスステンシルステートは設定に任せる
+			SetDeviceDepthStencilState();
+			//透明処理なら
+			if (GetGameObject()->GetAlphaActive()) {
+				//ブレンドステート
+				//透明処理
+				if (GetBlendState() == BlendState::Additive) {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+				}
+				else {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				}
+				//ラスタライザステート(裏描画)
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+				//ラスタライザステート（表描画）
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+			}
+			else {
+				//透明処理しない
+				//ブレンドステートは設定に任せる
+				SetDeviceBlendState();
+				//ラスタライザステートは設定に任せる
+				SetDeviceRasterizerState();
+				//描画
+				pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+			}
+			//後始末
+			Dev->InitializeStates();
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1515,7 +1175,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	PTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PTStaticDraw : public StaticBaseDraw, public TextureDrawInterface {
+	class PTStaticDraw : public StaticBaseDraw {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1561,7 +1221,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	PCTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PCTStaticDraw : public StaticBaseDraw, public TextureDrawInterface {
+	class PCTStaticDraw : public StaticBaseDraw {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1603,85 +1263,10 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
-
-	//--------------------------------------------------------------------------------------
-	///	PNStatic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	class PNStaticDraw : public StaticBaseDraw {
-		void DrawNotShadow();
-		void DrawWithShadow();
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	GameObjectPtr	ゲームオブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		explicit PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PNStaticDraw();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool GetOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool IsOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	影を描画するかどうか設定する
-		@param[in]	b		影を描画するかどうか
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetOwnShadowActive(bool b);
-		//操作
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnUpdate処理（空関数）
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnDraw処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnDraw()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
-
-
 	//--------------------------------------------------------------------------------------
 	///	PNTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PNTStaticDraw : public StaticBaseDraw, public TextureDrawInterface {
-		void DrawNotShadow();
-		void DrawWithShadow();
+	class PNTStaticDraw : public StaticBaseDraw {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1698,21 +1283,6 @@ namespace basecross {
 		virtual ~PNTStaticDraw();
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ライティングを得る
-		@return	シェーダーライティング
-		*/
-		//--------------------------------------------------------------------------------------
-		ShaderLighting GetLighting() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ライティングを設定する
-		@param[in]	Lighting	シェーダーライティング
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetLighting(ShaderLighting Lighting);
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	影を描画するかどうか得る
 		@return	影を描画すればtrue
 		*/
@@ -1762,53 +1332,81 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class PNTStaticModelDraw : public DrawComponent;
+	//	class PNTStaticModelDraw : public PNTStaticDraw;
 	//	用途: PNTStaticModelDraw描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PNTStaticModelDraw : public StaticBaseDraw {
+	class PNTStaticModelDraw : public PNTStaticDraw {
 		void DrawWithShadow();
 		void DrawNotShadow();
 	public:
 		explicit PNTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
 		virtual ~PNTStaticModelDraw();
-
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ライティングを得る
-		@return	シェーダーライティング
+		@brief	デフィーズ色をモデル設定優先かどうか得る
+		@return	デフィーズ色をモデル設定優先ならtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		ShaderLighting GetLighting() const;
+		bool GetModelDiffusePriority() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ライティングを設定する
-		@param[in]	Lighting	シェーダーライティング
+		@brief	デフィーズ色をモデル設定優先かどうか得る
+		@return	デフィーズ色をモデル設定優先ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsModelDiffusePriority() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デフィーズ色をモデル設定優先かどうか設定する
+		@param[in]	b	デフィーズ色をモデル設定優先かどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLighting(ShaderLighting Lighting);
+		void SetModelDiffusePriority(bool b);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
+		@brief	エミッシブ色をモデル設定優先かどうか得る
+		@return	エミッシブ色をモデル設定優先ならtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool GetOwnShadowActive() const;
+		bool GetModelEmissivePriority() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	影を描画するかどうか得る
-		@return	影を描画すればtrue
+		@brief	エミッシブ色をモデル設定優先かどうか得る
+		@return	エミッシブ色をモデル設定優先ならtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool IsOwnShadowActive() const;
+		bool IsModelEmissivePriority() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	影を描画するかどうか設定する
-		@param[in]	b		影を描画するかどうか
+		@brief	エミッシブ色をモデル設定優先かどうか設定する
+		@param[in]	b	エミッシブ色をモデル設定優先かどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetOwnShadowActive(bool b);
+		void SetModelEmissivePriority(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	モデルのテクスチャを有効にするかどうか得る
+		@return	モデルのテクスチャを有効ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetModelTextureEnabled() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	モデルのテクスチャを有効にするかどうか得る
+		@return	モデルのテクスチャを有効ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsModelTextureEnabled() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	モデルのテクスチャを有効にするかどうか設定する
+		@param[in]	b	モデルのテクスチャを有効にするかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SeModelTextureEnabled(bool b);
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1887,7 +1485,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	PNTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
 	//--------------------------------------------------------------------------------------
-	class PNTBoneModelDraw : public Base3DDraw {
+	class PNTBoneModelDraw : public PNTStaticModelDraw {
 		void DrawWithShadow();
 		void DrawNotShadow();
 	public:
@@ -1904,30 +1502,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual ~PNTBoneModelDraw();
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ライティングを得る
-		@return	シェーダーライティング
-		*/
-		//--------------------------------------------------------------------------------------
-		ShaderLighting GetLighting() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	ライティングを設定する
-		@param[in]	Lighting	シェーダーライティング
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetLighting(ShaderLighting Lighting);
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	メッシュリソースの取得
-		@return	メッシュリソース
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<MeshResource> GetMeshResource() const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュリソースの設定
@@ -1944,28 +1518,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetMeshResource(const wstring& MeshKey);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	自己影描画を行うかどうかの取得
-		@return	自己影描画を行うかどうか
-		*/
-		//--------------------------------------------------------------------------------------
-		bool GetOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	自己影描画を行うかどうかの取得
-		@return	自己影描画を行うかどうか
-		*/
-		//--------------------------------------------------------------------------------------
-		bool IsOwnShadowActive() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	自己影描画を行うかどうかの設定
-		@param[in]	b	自己影描画を行うかどうか
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetOwnShadowActive(bool b);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	開始行列から終了行列の間のt時間時の行列を返す

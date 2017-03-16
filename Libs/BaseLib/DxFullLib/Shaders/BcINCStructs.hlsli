@@ -25,6 +25,14 @@ struct VSInputTxVc
     float4 Color    : COLOR;
 };
 
+struct VSInputVcTx
+{
+	float4 Position : SV_Position;
+	float4 Color    : COLOR;
+	float2 TexCoord : TEXCOORD0;
+};
+
+
 struct VSInputNm
 {
     float4 Position : SV_Position;
@@ -94,6 +102,15 @@ struct VSInputNmTxWeights
     float4 Weights  : BLENDWEIGHT0;
 };
 
+struct VSInputNmTxTangentWeights
+{
+	float4 Position : SV_Position;
+	float3 Normal   : NORMAL;
+	float4 Tangent  : TANGENT;
+	float2 TexCoord : TEXCOORD0;
+	uint4  Indices  : BLENDINDICES0;
+	float4 Weights  : BLENDWEIGHT0;
+};
 
 
 // Vertex shader output structures.

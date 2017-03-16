@@ -541,6 +541,20 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateStaticModelMesh(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タンジェント付きオリジナルメッシュの作成（スタティックメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateStaticModelMeshWithTangent(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（ボーンメッシュ）
@@ -552,6 +566,19 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateBoneModelMesh(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルメッシュの作成（ボーンメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュリソースの作成
@@ -957,21 +984,21 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearDefultViews(const Color4& col = Color4(0, 0, 0, 1.0f));
+		virtual void ClearDefaultViews(const Color4& col = Color4(0, 0, 0, 1.0f));
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	通常描画の開始
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void StartDefultDraw();
+		virtual void StartDefaultDraw();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	通常描画の終了
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EndDefultDraw();
+		virtual void EndDefaultDraw();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	描画の後始末<br />

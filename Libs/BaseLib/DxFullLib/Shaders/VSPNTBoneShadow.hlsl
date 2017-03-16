@@ -5,23 +5,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
-
-
-cbuffer SimpleConstantBuffer : register(b0)
-{
-	float4x4 World	: packoffset(c0);
-	float4x4 View	: packoffset(c4);
-	float4x4 Projection	: packoffset(c8);
-	float4 LightDir	: packoffset(c12);
-	float4 Emissive : packoffset(c13);
-	float4 Diffuse	: packoffset(c14);
-	float4 LightPos	: packoffset(c15);
-	float4 EyePos	: packoffset(c16);
-	uint4 Activeflags	: packoffset(c17);			//フラグ、texture=x
-	float4x4 LightView	: packoffset(c18);
-	float4x4 LightProjection	: packoffset(c22);
-	float4x3 Bones[72] : packoffset(c26);
-};
+#include "INCParameters.hlsli"
 
 void Skin(inout VSPNTBoneInput vin, uniform int boneCount)
 {
@@ -57,15 +41,18 @@ PSPNTInputShadow main(VSPNTBoneInput input)
 	//ライティング
 	result.norm = mul(input.norm, (float3x3)World);
 	result.norm = normalize(result.norm);
+	//スペキュラー
+	float3 H = normalize(normalize(-LightDir.xyz) + normalize(EyePos.xyz - pos.xyz));
+	result.specular = Specular * dot(result.norm, H);
 	//テクスチャUV
 	result.tex = input.tex;
 	//影のための変数
 	float4 LightModelPos = float4(input.position.xyz, 1.0f);
-		//ワールド変換
-		LightModelPos = mul(LightModelPos, World);
+	//ワールド変換
+	LightModelPos = mul(LightModelPos, World);
 
 	float4 LightSpacePos = mul(LightModelPos, LightView);
-		LightSpacePos = mul(LightSpacePos, LightProjection);
+	LightSpacePos = mul(LightSpacePos, LightProjection);
 	result.lightSpacePos = LightSpacePos;
 
 	// Light ray
@@ -73,9 +60,8 @@ PSPNTInputShadow main(VSPNTBoneInput input)
 	//View
 	result.lightView = EyePos.xyz - LightModelPos.xyz;
 
-
-
-
 	return result;
+
+
 }
 

@@ -128,6 +128,18 @@ namespace basecross {
 			vector<uint16_t>& indices,vector<MaterialEx>& materials);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@breaf 頂点とインデックスとマテリアルを取り出す(タンジェント付き)
+		@param[out] vertices	頂点配列
+		@param[out] indices	インデックス配列
+		@param[out] materials	マテリアル配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetStaticVerticesIndicesMaterialsWithTangent(vector<VertexPositionNormalTangentTexture>& vertices,
+			vector<uint16_t>& indices, vector<MaterialEx>& materials);
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@breaf 頂点とインデックスとマテリアルを取り出す
 		@param[out] vertices	頂点配列
 		@param[out] indices	インデックス配列
@@ -383,7 +395,7 @@ namespace basecross {
 		const vector< Bone >* GetVecLocalFbxBonesPtr() const;
 
 		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
-		virtual void SetMeshResource(const wstring& MeshKey)override;
+		void SetMeshResource(const wstring& MeshKey);
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -490,8 +502,8 @@ namespace basecross {
 
 		//初期化
 		virtual void OnCreate() override;
-		virtual void OnPreUpdate() override;
 		virtual void OnUpdate() override;
+		virtual void OnUpdate2() override;
 
 
 	};

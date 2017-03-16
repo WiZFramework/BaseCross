@@ -19,9 +19,9 @@ SamplerState g_sampler : register(s0);
 
 float4 main(PSPTInput input) : SV_TARGET
 {
-	//テクスチャとデフィーズからライティングを作成
-	float4 Light = g_texture.Sample(g_sampler, input.tex) * saturate(Diffuse);
-	//エミッシブを足す
-	return saturate(Light + Emissive);
+	float4 Light = Diffuse + Emissive;
+	Light.a = Diffuse.a;
+	Light = g_texture.Sample(g_sampler, input.tex) * Light;
+	return Light;
 }
 

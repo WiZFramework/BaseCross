@@ -678,6 +678,43 @@ namespace basecross {
 		}
 	}
 
+	shared_ptr<MeshResource> MeshResource::CreateStaticModelMeshWithTangent(const wstring& BinDataDir, const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			//頂点配列
+			vector<VertexPositionNormalTexture> vertices;
+			//タンジェント付きにコンバートする配列
+			vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
+			//インデックスを作成するための配列
+			vector<uint16_t> indices;
+			//マテリアルを設定する配列
+			vector<MaterialEx> Materials;
+			ReadBaseData(BinDataDir, BinDataFile, vertices, indices, Materials);
+
+			new_pntnt_vertices.clear();
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionNormalTangentTexture new_pntnt_v;
+
+				new_pntnt_v.position = vertices[i].position;
+				new_pntnt_v.normal = vertices[i].normal;
+				new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+				Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+				new_pntnt_v.tangent = XMFLOAT4(0,0,0,0);
+				new_pntnt_vertices.push_back(new_pntnt_v);
+			}
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTexture>(new_pntnt_vertices, indices, AccessWrite);
+			Ptr->m_MaterialExVec.clear();
+			for (auto& v : Materials) {
+				Ptr->m_MaterialExVec.push_back(v);
+			}
+			return Ptr;
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
 
 	shared_ptr<MeshResource> MeshResource::CreateBoneModelMesh(const wstring& BinDataDir,
 		const wstring& BinDataFile, bool AccessWrite) {
@@ -715,6 +752,68 @@ namespace basecross {
 		}
 
 	}
+
+	shared_ptr<MeshResource> MeshResource::CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			//頂点配列
+			vector<VertexPositionNormalTextureSkinning> vertices;
+			//タンジェント付きにコンバートする配列
+			vector<VertexPositionNormalTangentTextureSkinning> new_pntnt_vertices;
+
+			//インデックスを作成するための配列
+			vector<uint16_t> indices;
+			//マテリアルを設定する配列
+			vector<MaterialEx> Materials;
+			//サンプリング行列
+			vector<Matrix4X4> SampleMatrices;
+			//ボーン数
+			UINT BoneCount;
+			//サンプル数
+			UINT SampleCount;
+			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, indices, Materials,
+				SampleMatrices, BoneCount, SampleCount);
+
+			new_pntnt_vertices.clear();
+			for (size_t i = 0; i < vertices.size(); i++) {
+				VertexPositionNormalTangentTextureSkinning new_pntnt_v;
+
+				new_pntnt_v.position = vertices[i].position;
+				new_pntnt_v.normal = vertices[i].normal;
+				new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+				Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+				new_pntnt_v.tangent = XMFLOAT4(0, 0, 0, 0);
+				for (size_t j = 0; j < 4; j++) {
+					new_pntnt_v.indices[j] = vertices[i].indices[j];
+					new_pntnt_v.weights[j] = vertices[i].weights[j];
+				}
+				new_pntnt_vertices.push_back(new_pntnt_v);
+			}
+			MeshUtill::SetNormalTangent(new_pntnt_vertices);
+
+
+
+			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTextureSkinning>(new_pntnt_vertices, indices, AccessWrite);
+			Ptr->m_MaterialExVec.clear();
+			for (auto& v : Materials) {
+				Ptr->m_MaterialExVec.push_back(v);
+			}
+			Ptr->m_SampleMatrixVec.clear();
+			for (auto& v : SampleMatrices) {
+				Ptr->m_SampleMatrixVec.push_back(v);
+			}
+			Ptr->m_BoneCount = BoneCount;
+			Ptr->m_SampleCount = SampleCount;
+			Ptr->m_IsSkining = true;
+			return Ptr;
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct MultiAudioObject::Impl;
@@ -1485,15 +1584,15 @@ namespace basecross {
 		auto ShadowTarget = GetShadowMapRenderTarget();
 		ShadowTarget->EndRenderTarget();
 	}
-	void DeviceResources::ClearDefultViews(const Color4& col) {
+	void DeviceResources::ClearDefaultViews(const Color4& col) {
 		auto DefaultTarget = GetDefaultRenderTarget();
 		DefaultTarget->ClearViews(col);
 	}
-	void DeviceResources::StartDefultDraw() {
+	void DeviceResources::StartDefaultDraw() {
 		auto DefaultTarget = GetDefaultRenderTarget();
 		DefaultTarget->StartRenderTarget();
 	}
-	void DeviceResources::EndDefultDraw() {
+	void DeviceResources::EndDefaultDraw() {
 		auto DefaultTarget = GetDefaultRenderTarget();
 		DefaultTarget->EndRenderTarget();
 	}

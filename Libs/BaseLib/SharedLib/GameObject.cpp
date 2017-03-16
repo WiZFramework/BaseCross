@@ -1500,11 +1500,11 @@ namespace basecross {
 					Dev->EndShadowmapDraw();
 				}
 				//デフォルト描画の開始
-				Dev->StartDefultDraw();
+				Dev->StartDefaultDraw();
 				RsSetViewport(MultiPtr->GetTargetViewport());
 				DrawStage();
 				//デフォルト描画の終了
-				Dev->EndDefultDraw();
+				Dev->EndDefaultDraw();
 			}
 			//描画が終わったら更新処理用に先頭のカメラにターゲットを設定する
 			MultiPtr->SetTargetIndex(0);
@@ -1517,11 +1517,11 @@ namespace basecross {
 				Dev->EndShadowmapDraw();
 			}
 			//デフォルト描画の開始
-			Dev->StartDefultDraw();
+			Dev->StartDefaultDraw();
 			RsSetViewport(GetView()->GetTargetViewport());
 			DrawStage();
 			//デフォルト描画の終了
-			Dev->EndDefultDraw();
+			Dev->EndDefaultDraw();
 		}
 		//子供ステージの描画
 		for (auto PtrChileStage : pImpl->m_ChildStageVec) {
@@ -1753,7 +1753,7 @@ namespace basecross {
 		if (pImpl->m_ActiveStage) {
 			//描画デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
-			Dev->ClearDefultViews(GetClearColor());
+			Dev->ClearDefaultViews(GetClearColor());
 			pImpl->m_ActiveStage->RenderStage();
 
 		}
@@ -2093,7 +2093,7 @@ namespace basecross {
 		Proj.Transpose();
 
 		//コンスタントバッファの準備
-		StaticConstantBuffer sb;
+		SimpleConstants sb;
 		sb.World = World;
 		sb.View = View;
 		sb.Projection = Proj;
@@ -2101,7 +2101,7 @@ namespace basecross {
 		sb.Emissive = Color4(0, 0, 0, 0);
 		sb.Diffuse = Color4(1, 1, 1, 1);
 		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+		pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 
 		//ストライドとオフセット
 		UINT stride = sizeof(VertexPositionColor);
@@ -2113,7 +2113,7 @@ namespace basecross {
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 		//コンスタントバッファの設定
-		ID3D11Buffer* pConstantBuffer = CBStatic::GetPtr()->GetBuffer();
+		ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
 		ID3D11Buffer* pNullConstantBuffer = nullptr;
 		//頂点シェーダに渡す
 		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);

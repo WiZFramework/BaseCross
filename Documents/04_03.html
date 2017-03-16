@@ -1,0 +1,374 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０３．シンプルな３Ｄの描画</h3>
+　この項では<b>３Ｄ表現</b>に中でも、<b>一番シンプルな描画方法</b>について説明します。<br />
+　<b>FullSample403</b>を実行すると以下のような画面が現れます。<br />
+<p>&nbsp;</p>
+<img src="img/0403a.png" width="80%"/>
+<p>図0403a</p>
+　このサンプルは<b>シンプルな３Ｄ表現</b>のサンプルです。<br />
+　ポイントを絞るために、<b>衝突判定</b>は実装していません。プレイヤー（中央の球）は移動しますが、これは各オブジェクトを見やすくするためです。<br />
+<br />
+<h4>プリミティブオブジェクト</h4>
+　まず、<b>プリミティブオブジェクト</b>について説明します。<br />
+　球が奥に７つ並んでいます。それぞれ<b>頂点フォーマット</b>が違います。<br />
+　一番左は<b>PCフォーマット（位置と頂点色）</b>を持ったフォーマットです。２番目は<b>PTフォーマット（位置とテクスチャUV）</b>、３番目は<b>PCTフォーマット（位置と頂点色とテクスチャUV）</b>、そして４番目は<b>PNTフォーマット（位置と法線とテクスチャUV）</b>、５番目は４番目と同じ<b>PNTフォーマット</b>ですが、<b>テクスチャを設定しない</b>形です。<br />
+　さらに共通の設定として、それぞれ<b>色要素</b>として<b>エミッシブ（放射光）とデフューズ（拡散光）</b>を設定できます。<br />
+　そして右の２つの球体は<b>PNTフォーマット</b>です。これらは<b>スペキュラー色（反射光）</b>を加えています。<br />
+　これらの<b>光</b>の計算はまさしく<b>シェーダ</b>での記述であり、どのように導くかはシェーダをどう記述するかによって変わります。ですから各光に名前はついているものの、決まりがあるかわけではありません。<br />
+<br />
+　<b>BaseCross</b>での記述はおおむね以下のようになってます。<br />
+<div class="box1">
+<pre>
+１、基本色（PNTフォーマットは法線ライティング）にデフューズ（拡散光）を掛ける。
+２、１にエミッシブ色を足す
+３、PNTフォーマットはスペキュラーを足す
+４、３を基本色とし、テクスチャがある場合はサンプリングした値に３を掛ける。
+５、影がある場合は影要素を掛ける
+</pre>
+</div>
+　これらの計算は頂点フォーマットによって微妙に違います。詳しくはシェーダを参照してください。<br />
+　シェーダを自作する場合は、これらの計算の計算順番を変えたり、あるいは、ある要素は強調するように計算したりなど、無限の表現方法があります。<br />
+　また、これらの計算は<b>頂点シェーダ</b>と<b>ピクセルシェーダ</b>での計算であり、シェーダを自作する場合は、この２つの間に<b>ハルシェーダ、ドメインシェーダ</b>そして<b>ジオメトリシェーダ</b>を加えることができます。<b>ハルシェーダとドメインシェーダ</b>は<b>テセレーション（ポリゴン分割）</b>を実現するためのシェーダであり、<b>ジオメトリシェーダ</b>は<b>頂点を増やす</b>シェーダです。<br />
+　<b>BaseCross</b>では<b>ジオメトリシェーダ</b>については比較的簡単に実装できるようクラス化されています。（言い方を変えれば<b>テセレーション</b>は作成可能ですが、実装は各自直接記述ということです）。<br />
+　以下に、<b>グラフィックパイプライン</b>の実行順番を記します。
+<p>&nbsp;</p>
+<img src="img/0403b.png" width="80%"/>
+<p>図0403b</p>
+　この中で<b>頂点シェーダ</b>と<b>ピクセルシェーダ</b>は必須なシェーダです。<br />
+　さてそれではさまざまなオブジェクトの実装を見ていきます。<br />
+<br />
+<h4>ビューの作成</h4>
+　<b>GameStage.h/cpp</b>を見てください。<br />
+　<b>GameStage::CreateViewLight()関数</b>で、<b>ビュー</b>を作成しています。このサンプルで使用するビューは<b>シングルビュー</b>で、ライトは1個です。<b>シンプルな３D描画</b>のシェーダは複数のライトには対応してません。また、カメラは<b>LookAtCamera</b>を使用していますが、パラメータで<b>10.0f</b>を指定しています。これは<b>初期のアーム（腕の長さ）の設定</b>です。
+<div class="box1">
+<pre>
+    //ビューのカメラの設定
+    auto PtrLookAtCamera = ObjectFactory::Create&lt;LookAtCamera>(<span class="red">10.0f</span>);
+</pre>
+</div>
+<br />
+<h4>球体の作成</h4>
+　7つの球体はそれぞれ<b>PcSphere（PC頂点の球）、PtSphere（PT頂点の球）、PctSphere（PCT頂点の球）、PntSphere（PNT頂点の球）、PntSpSphere（PNT頂点のスペキュラー使用の球）</b>です。<br />
+　PNT頂点の球以外は<b>MeshUtill::CreateSphere()関数</b>を使って<b>PNT頂点の球</b>を作成し、必要に応じて法線やテクスチャUVを削除したりしています。<br/>
+　サンプルを簡略化するために今回は<b>OnUpdate()等</b>による更新処理は実装してません。<br />
+　また、プレイヤーは移動できますので、各球体に近づいて表現を細かく見ることができます。<br />
+<br />
+<h4>シェーダによる表現の違い</h4>
+　表現を細かく見ていきますと、頂点定義の違いによりずいぶん違うのがわかります。一番使われるのは<b>PNT頂点</b>ですが、インターフェイスや特殊な表現にはほかの頂点定義も有用なのがわかります。<br />
+　例えば<b>チュートリアル006</b>で紹介した<b>背番号</b>のような数字は<b>PCT頂点</b>が有効なのが想像できると思います（ライティングは必要ない）。<br />
+　それではタイプごとに内容を見てみましょう。<br />
+<br/>
+<h4>頂点変更ができるメッシュ</h4>
+　以下は<b>PC頂点</b>を持った球体の作成方法です。<b>PcSphere::OnCreate()</b>に記述があります。
+<div class="box1">
+<pre>
+void PcSphere::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
+    Quaternion Qt;
+    Qt.Identity();
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(m_StartPos);
+
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;PCStaticDraw>();
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;VertexPositionColor> new_vertices;
+    vector&lt;uint16_t> indices;
+    <span class="red">MeshUtill::CreateSphere(1.0f,18, vertices, indices);</span>
+    for (size_t i = 0; i &lt; vertices.size(); i++) {
+        VertexPositionColor new_v;
+        new_v.position = vertices[i].position;
+        new_v.color = Color4(
+            new_v.position.x * 2.0f, 
+            new_v.position.y * 2.0f, 
+            new_v.position.z * 2.0f, 
+            1.0f);
+        new_vertices.push_back(new_v);
+
+    }
+    PtrDraw->CreateOriginalMesh(new_vertices, indices);
+    PtrDraw->SetOriginalMeshUse(true);
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+}
+</pre>
+</div>
+　赤くなっているところは<b>球体</b>を作成しているところです。前述したように<b>PNT球体</b>が作成され、<b>verticesおよびindices</b>に<b>頂点の配列とインデックスの配列</b>が代入されます。<br />
+　その後、<b>PC頂点の配列</b>である<b>new_vertices</b>に移植するわけですが、<b>PNT頂点</b>にはない<b>カラー要素</b>を持っているのでカラーグラデーションを、<b>位置情報をもとに</b>作成しています。<br />
+　その後
+<div class="box1">
+<pre>
+    PtrDraw->CreateOriginalMesh(new_vertices, indices);
+    PtrDraw->SetOriginalMeshUse(true);
+</pre>
+</div>
+　この2行で<b>オリジナルメッシュを作成し、そのメッシュを使用する</b>という設定にします。描画コンポートに設定するメッシュは、一般的は<b>リソース</b>として登録してそのポインタを保持します。そうすることで同じメッシュを複数のオブジェクトで使用できるようにします。<br />
+　しかし、上記の例のように<b>他では使用しないオリジナルメッシュ</b>という形で登録することができます。このようにしておけば<b>動的に頂点を変更</b>してもほかのオブジェクトには影響を与えません。<br />
+　また影の描画にこのオリジナルメッシュを使用するので
+<div class="box1">
+<pre>
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+</pre>
+</div>
+　と設定します。<br />
+<br />
+<h4>頂点の変更</h4>
+　このサンプルは、<b>PC頂点、PT頂点、PCT頂点</b>についてはオリジナルメッシュを作成してます。<br />
+　それらは動的に頂点の変更がされるのですが、その変更に<b>行動クラス</b>を使ってます。以下がそのクラスです。<b>ProjectBehavior.h</b>に記述されてます。
+
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+///頂点を変更する行動クラス
+//--------------------------------------------------------------------------------------
+class VertexBehavior : public Behavior {
+    float m_TotalTime;
+
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  GameObjectPtr   このコンポーネントを所持するゲームオブジェクト
+    */
+    //--------------------------------------------------------------------------------------
+    VertexBehavior(const shared_ptr&lt;GameObject>& GameObjectPtr) :
+        Behavior(GameObjectPtr),
+        m_TotalTime(0)
+    {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~VertexBehavior() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 伸び縮みする
+    @tparam T   頂点の型
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    template&lt;typename T>
+    void ExpandAndContract() {
+        float ElapsedTime = App::GetApp()->GetElapsedTime();
+        m_TotalTime += ElapsedTime;
+        if (m_TotalTime >= XM_2PI) {
+            m_TotalTime = 0;
+        }
+        <span class="red">auto PtrDraw = GetGameObject()->GetDynamicComponent&lt;StaticBaseDraw>();</span>
+        const vector&lt;T>& BackupVec = PtrDraw->GetOriginalMeshResource()->GetBackupVerteces&lt;T>();
+        vector&lt;T> new_vec;
+        for (auto& v : BackupVec) {
+            T new_v;
+            new_v = v;
+            auto Len = (sin(m_TotalTime) * 0.5f) + 1.0f;
+            new_v.position.x *= Len;
+            new_v.position.z *= Len;
+            new_vec.push_back(new_v);
+        }
+        PtrDraw->UpdateVertices(new_vec);
+    }
+
+};
+</pre>
+</div>
+　このクラス内の<b>ExpandAndContract()テンプレート関数</b>によって頂点の伸び縮みを表現します。<br />
+　<b>行動クラスのメンバ関数</b>を<b>テンプレート関数</b>にすることで、複数の頂点型に対応した<b>行動</b>を作成することができます。<br/>
+　注意したいのは描画コンポーネントの取り出しに
+<div class="box1">
+<pre>
+<span class="red">auto PtrDraw = GetGameObject()->GetDynamicComponent&lt;StaticBaseDraw>();</span>
+</pre>
+</div>
+　としているところです。<b>StaticBaseDrawコンポーネント</b>を取り出しいぇいるところです。こららは<b>PCStaticDraw</b>や<b>PCTStaticDraw</b>などの親クラスにあたり、共通の処理なので、<b>GetDynamicComponent()関数</b>で取り出します。この関数は<b>ダイナミックキャスト</b>で、コンポーネントの存在チェックをします。<br />
+　この行動クラスの呼び出しは、各球体クラスの<b>OnUpdate()関数</b>を使います。<br />
+　以下は<b>PcSphere::OnUpdate()</b>です。
+<div class="box1">
+<pre>
+void PcSphere::OnUpdate() {
+    auto Beh = GetBehavior&lt;VertexBehavior>();
+    Beh->ExpandAndContract&lt;VertexPositionColor>();
+}
+</pre>
+</div>
+　このようにテンプレート関数を呼び出します。<br />
+<br />
+<h4>PNT頂点</h4>
+　<b>BaceCross</b>で一番よく使用されるのは<b>PNT頂点</b>でしょう。これは<b>位置、法線、テクスチャUV</b>を持ちます。<b>法線</b>はライティング処理に必要です。<br />
+　このサンプルの右の４つは<b>PNT頂点</b>を持つオブジェクトです。表現方法が少しずつ違います。<br />
+　その中の左2つは通常の描画です。テクスチャが設定されてないときは白く描画されます。色を付ける場合は<b>ディフューズ色やエミッシブ色</b>を調整してください。スペキュラーを設定する場合は右2つのように設定します。<br />
+　以下は、<b>スペキュラー色</b>をテクスチャ付きの球体に設定した例です。右から2番目のオブジェクトです。
+<div class="box1">
+<pre>
+    //初期化
+    void PntSpSphere::OnCreate() {
+        auto PtrTrans = GetComponent&lt;Transform>();
+        PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
+        Quaternion Qt;
+        Qt.Identity();
+        PtrTrans->SetQuaternion(Qt);
+        PtrTrans->SetPosition(m_StartPos);
+
+        //影をつける
+        auto ShadowPtr = AddComponent&lt;Shadowmap>();
+        ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+        //描画コンポーネント
+        auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+        <span class="red">PtrDraw->SetSpecular(Color4(1.0f, 1.0f, 1.0f, 1.0f));</span>
+        PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+        if (m_TextureUse) {
+            PtrDraw->SetTextureResource(L"SKY_TX");
+        }
+    }
+</pre>
+</div>
+　赤くなっているところがスペキュラーの設定です。<br />
+<br />
+<h4>モデルの描画</h4>
+　モデル描画例として、<b>ボーンアニメーション付き</b>のモデルと<b>ついてない</b>モデルのサンプルが実装されています。<br />
+　モデルのメッシュは、あらかじめ<b>Fbx2Bin</b>ツールによって<b>Fbxファイルからbmfファイル</b>に変換しておきます。<br />
+<br />
+<h4>ボーンモデル</h4>
+　まず、<b>ボーンモデル</b>ですが、<b>BoneCharaクラス</b>がそうです。モデルのファイルは<b>シーン</b>などで以下のようにリソース化しておきます。
+
+<div class="box1">
+<pre>
+void Scene::CreateResourses() {
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //各ゲームは以下のようにデータディレクトリを取得すべき
+    //App::GetApp()->GetDataDirectory(DataDir);
+
+    //中略
+
+    auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
+    App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+    auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+    App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
+
+}
+</pre>
+</div>
+　このようにして<b>リソース登録</b>した<b>L"Chara_R_MESH"</b>を使用します。以下は<b>BoneChara::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+//初期化
+void BoneChara::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(0.5f, 0.5f, 0.5f);
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(m_StartPos);
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, 0.0f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"Chara_R_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
+    //描画するメッシュを設定
+    PtrDraw->SetMeshResource(L"Chara_R_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    <span class="red">PtrDraw->AddAnimation(L"Default", 0, 50, true, 20.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");</span>
+
+    //透明処理
+    SetAlphaActive(true);
+
+}
+</pre>
+</div>
+　ここでは<b>アニメーション</b>を追加して、そのアニメーションを<b>カレントアニメーション</b>にしています。赤くなっているところです。<br />
+　アニメーションを動かすのには<b>BoneChara::OnUpdate()関数</b>などで<b>アニメーションの更新</b>を行います。<br />
+<div class="box1">
+<pre>
+//更新
+void BoneChara::OnUpdate() {
+    //アニメーションを更新する
+    auto PtrDraw = GetComponent&lt;PNTBoneModelDraw>();
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    PtrDraw->UpdateAnimation(ElapsedTime);
+}
+</pre>
+</div>
+<br />
+<h4>スタティックモデル</h4>
+　以下は<b>スタティックモデル</b>の作成です。<b>StaticChara::OnCreate()関数</b>に記述します。
+<div class="box1">
+<pre>
+void StaticChara::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(0.5f, 0.5f, 0.5f);
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(m_StartPos);
+
+    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.DefTransformation(
+        Vector3(1.0f, 1.0f, 1.0f),
+        Vector3(0.0f, 0.0f, 0.0f),
+        Vector3(0.0f, 0.0f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"MODEL_MESH");
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
+    PtrDraw->SetMeshResource(L"MODEL_MESH");
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+}
+</pre>
+</div>
+<br />
+<h4>GameStageへの配置</h4>
+　以上が各オブジェクトの初期化や更新です。最後に<b>GameStage::OnCreate()</b>で各オブジェクトを<b>AddGameObject</b>します。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="04_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

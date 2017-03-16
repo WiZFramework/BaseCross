@@ -8,7 +8,10 @@
 // PSBasicTx
 float4 main(PSInputTx pin) : SV_Target0
 {
-	float4 color = Texture.Sample(Sampler, pin.TexCoord) * pin.Diffuse;
+	float4 color = pin.Diffuse;
+	if (Activeflags.y > 0) {
+		color = Texture.Sample(Sampler, pin.TexCoord) * pin.Diffuse;
+	}
 
 	ApplyFog(color, pin.Specular.w);
 

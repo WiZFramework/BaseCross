@@ -5,9 +5,14 @@
 
 @uBaseCrossv‚ÍuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ð–ÚŽw‚·ƒQ[ƒ€‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚Å‚·B
 @‚±‚ê‚Ü‚ÅŒöŠJ‚µ‚Ä‚«‚Ü‚µ‚½uDxBase2015vuDxBase2016v‚ÌŒãŒp‚É‚ ‚½‚è‚Ü‚·B
-@2016”N7ŒŽŒ»ÝAuBaseCrossv‚Í§ì“r’†‚Å‚·B¡‰ñ‚Í§ì“r’†‚©‚çŒöŠJ‚·‚é‚±‚Æ‚É‚µ‚Ü‚µ‚½B
-@‚¨‹}‚¬‚Ìê‡‚ÍuDxBase2015v‚âuDxBase2016v‚ð‚²—˜—p‚­‚¾‚³‚¢B
+@2017”N3ŒŽŒ»ÝAuBaseCrossv‚ÍDx11”Å‚É‚Â‚«‚Ü‚µ‚Ä‚Í‚¨‚¨‚Þ‚Ë‚Ü‚Æ‚Ü‚Á‚Ä‚«‚Ü‚µ‚½B
 
+@‚Ü‚½uBaseCrossv‚É‚Íƒ‚ƒfƒ‹‚Ìƒf[ƒ^•ÏŠ·ƒc[ƒ‹uFbx2BinVS2015v‚ªŠÜ‚Ü‚ê‚Ü‚·B
+@‚±‚Ìƒc[ƒ‹‚ðƒrƒ‹ƒh‚·‚é‚É‚ÍuFBXSDKv‚¨‚æ‚ÑuMFCv‚ª•K—v‚Æ‚È‚è‚Ü‚·B
+@iƒQ[ƒ€‚ÌƒTƒ“ƒvƒ‹“™‚ðƒrƒ‹ƒh‚·‚é‚¾‚¯‚Å‚ ‚ê‚ÎA‚±‚ê‚ç‚Í•K—v‚ ‚è‚Ü‚¹‚ñj
+
+
+@‰ß‹Ž§ì‚µ‚½uDxBase2015v‚âuDxBase2016v‚Æ‚¢‚¤ƒtƒŒ[ƒ€ƒ[ƒN‚à‚ ‚è‚Ü‚·B
 uDxBase2015v‚Í
 https://github.com/WiZFramework/DxBase2015
 uDxBase2016v‚Í
@@ -48,6 +53,7 @@ Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo
 2017”N01ŒŽ05“ú@readmeC³Bƒtƒ‹ƒo[ƒWƒ‡ƒ“ƒhƒLƒ…ƒƒ“ƒg’Ç‰ÁBCopyright”N‚ð2017‚É•ÏX
 2017”N02ŒŽ07“ú@readmeC³BƒOƒ‰ƒtƒBƒbƒN[ŽÀ‚Ì‚½‚ß‚Ìƒo[ƒWƒ‡ƒ“ƒAƒbƒvŠJŽn
 2017”N02ŒŽ28“ú@readmeC³B2017t§ì‚Ì‚½‚ß‚ÌC³‚Ð‚Æ‚Ü‚¸Š®—¹
+2017”N03ŒŽ16“ú@readmeC³B2017tƒVƒF[ƒ_C³‚Ð‚Æ‚Ü‚¸Š®—¹B
 
 
 @@@@@@@@@@@@@@@@@@@@@2017”NVt@ŽRƒmˆä@–õiWiZƒQ[ƒ€‰È”ñí‹ÎuŽtFC++’S“–j

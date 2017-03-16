@@ -4,6 +4,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
+#include "INCParameters.hlsli"
 
 Texture2D<float4> g_texture : register(t0);
 // 深度マップ
@@ -12,22 +13,6 @@ SamplerState g_sampler : register(s0);
 SamplerComparisonState g_SamplerDepthMap : register(s1);
 
 float3 DplusS(float3 N, float3 L, float NdotL, float3 view);
-
-cbuffer SimpleConstantBuffer : register(b0)
-{
-	float4x4 World	: packoffset(c0);
-	float4x4 View	: packoffset(c4);
-	float4x4 Projection	: packoffset(c8);
-	float4 LightDir	: packoffset(c12);
-	float4 Emissive : packoffset(c13);
-	float4 Diffuse	: packoffset(c14);
-	float4 LightPos	: packoffset(c15);
-	float4 EyePos	: packoffset(c16);
-	uint4 Activeflags	: packoffset(c17);			//フラグ
-	float4x4 LightView	: packoffset(c18);
-	float4x4 LightProjection	: packoffset(c22);
-};
-
 
 
 //--------------------------------------------------------------------------------------
@@ -38,14 +23,14 @@ float4 main(PSPNTInputShadow input) : SV_TARGET
 	//法線ライティング
 	float3 lightdir = normalize(LightDir.xyz);
 	float3 N1 = normalize(input.norm);
-	float4 RetColor = saturate(dot(N1, -lightdir) + Diffuse);
+	float4 RetColor = (saturate(dot(N1, -lightdir)) * Diffuse) + Emissive;
+	RetColor += input.specular;
 	RetColor.a = Diffuse.a;
 	if (Activeflags.x){
 		//テクスチャとデフィーズからライティングを作成
 		RetColor = g_texture.Sample(g_sampler, input.tex) * RetColor;
 	}
-	//エミッシブを足す
-	RetColor = saturate(RetColor + Emissive);
+	RetColor = saturate(RetColor);
 
 	//影の濃さ
 	const float3 ambient = float3(0.7f, 0.7f, 0.7f);

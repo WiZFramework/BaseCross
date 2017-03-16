@@ -149,7 +149,7 @@ BOOL CFbx2BinVS2015App::OnIdle(LONG lCount)
 
 
 	//ここに設定したキーボード入力を得る
-	vector<DWORD> UseKeyVec = {};
+	vector<DWORD> UseKeyVec = { VK_LEFT,VK_RIGHT ,VK_UP,VK_DOWN };
 	App::GetApp()->ResetInputState(m_DxHWnd, UseKeyVec);
 	//更新描画処理
 	App::GetApp()->UpdateDraw(1);

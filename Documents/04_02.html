@@ -1,0 +1,335 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０２．２Ｄの描画（スプライト）</h3>
+　この項では<b>スプライトの描画</b>について述べます。<br />
+　<b>BaseCross</b>では、２Ｄのオブジェクトを表現する方法として２つの方法があります。<br />
+　１つめは<b>スプライト</b>と称し、完全な２Ｄ描画です。この場合はオブジェクトは、スクリーンに直接描画され、奥行きは持ちません。<br />
+　２つめは<b>３Ｄ上の２次元オブジェクト</b>です。この場合は、３Ｄステージ上に配置されます。３Ｄ上の２Ｄオブジェクトは<b>スクエア</b>と称しています。<br />
+　では、<b>FullSample402</b>をビルドし実行してみましょう。以下のような画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0402a.png" width="80%"/>
+<p>図0402a</p>
+　ここに配置されているオブジェクトは<b>FullTutorial006</b>に配置されているのと同じものです。スプライトオブジェクトのみを取り出したものです。<br />
+　３Ｄでゲームを作成した場合は<b>スプライト</b>は<b>FullTutorial006</b>のように手前の絶対的な位置に表示されます。カメラの角度やライティングに影響されることがありません。<br />
+　しかし、<b>完全に２Ｄで作成されるメニューステージ</b>や<b>２Ｄのゲーム</b>を作成する場合は、<b>３Ｄ用のカメラやライティング</b>や<b>影の作成</b>は無駄な処理となります。<br />
+　このようなステージを作成する場合は<b>FullSample402</b>のようなごくシンプルなステージを作成して、そこに配置するといいでしょう。<br />
+<br />
+<h4>ビューの作成</h4>
+　<b>GameStage.cpp</b>の<b>GameStage::CreateViewLight()</b>を以下のように記述します。
+<div class="box1">
+<pre>
+//ビューの作成
+void GameStage::CreateViewLight() {
+    auto PtrView = CreateView</b>SingleView>();
+    //シャドウマップは使用しない
+    SetShadowmapDraw(false);
+}
+</pre>
+</div>
+　カメラはデフォルトで<b>カメラ位置(Eye)</b>が<b>Vector3(0, 0.0f, -20.0f)</b>に、<b>注視点(At)</b>が<b>Vector3(0.0f, 0.0f, 0.0f)</b>に設定されます。このサンプルは<b>２D描画しか行わない</b>のでカメラは必要ないのですが、仕様上、何か設定する必要があります。デフォルトで上記のカメラを作成するので、ここでは何も設定する必要がありません。続く
+<div class="box1">
+<pre>
+    //シャドウマップは使用しない
+    SetShadowmapDraw(false);
+</pre>
+</div>
+　は<b>シャドウマップ</b>を使うかどうかを設定します。<b>シャドウマップ</b>は影を作り出すコンポーネントです。各オブジェクトでこのコンポーネントを使用する場合は、指定しますが、ステージ全体としても<b>使用するかしないか</b>の設定を行う必要があります。使う場合はデフォルトでかまいませんが、<b>使用しない</b>場合は設定する必要があります。<br />
+　スプライトは<b>シャドウマップコンポーネント</b>を設定しても何の対応もしませんので、デフォルトのままでも問題ありませんが、<b>シャドウマップ描画</b>はそれなりに時間を使う処理ですので、いらない場合は<b>使わない</b>設定にするのをお勧めします。<br />
+<br />
+<h4>PCスプライトの作成</h4>
+　<b>スプライト</b>に限らず<b>Draw系コンポーネント</b>は<b>PCなんたら</b>のように<b>コンポーネントの先頭に頂点フォーマットを意味する略字</b>が入ってます<b>P</b>は<b>頂点位置</b>、<b>C</b>は<b>カラー情報</b>です。ですから<b>PCSpriteDraw</b>という描画コンポーネントは<b>位置とカラー情報を持つ、スプライト用頂点フォーマット</b>といいう意味です。<br />
+　さてそのことを前提に、<b>TraceSpriteクラス</b>の作成を見てみましょう。左側で、透明になったり色がついたりするオブジェクトです。<b>Character.h/cpp</b>に記述があります。<br />
+　まず、宣言部ですが
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 半透明のスプライト
+//--------------------------------------------------------------------------------------
+class TraceSprite : public GameObject {
+    bool m_Trace;
+    Vector2 m_StartScale;
+    Vector3 m_StartPos;
+    float m_TotalTime;
+    //バックアップ頂点データ
+    vector&lt;VertexPositionColor> m_BackupVertices;
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    @param[in]  StagePtr    ステージ
+    @param[in]  Trace   透明処理するかどうか
+    @param[in]  StartScale  初期スケール
+    @param[in]  StartPos    初期位置
+    */
+    //--------------------------------------------------------------------------------------
+    TraceSprite(const shared_ptr&lt;Stage>& StagePtr, bool Trace,
+        const Vector2& StartScale, const Vector3& StartPos);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~TraceSprite();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 更新
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate()override;
+};
+</pre>
+</div>
+　このように、コントラクタといくつかのメンバ変数、また関数が宣言されます。<br />
+　それでは、コンストラクタから実体を見てみます。<b>Character.cpp</b>にある<b>TraceSprite::TraceSprite()関数</b>です。
+<div class="box1">
+<pre>
+TraceSprite::TraceSprite(const shared_ptr&lt;Stage>& StagePtr, bool Trace,
+    const Vector2& StartScale, const Vector3& StartPos) :
+    GameObject(StagePtr),
+    m_Trace(Trace),
+    m_StartScale(StartScale),
+    m_StartPos(StartPos),
+    m_TotalTime(0)
+{}
+</pre>
+</div>
+　このように<b>第1引数</b>は親のコンストラクタに直接わたし、残りの引数はメンバの初期化に使用しています。<br />
+　<b>StartScale</b>や<b>StartPos</b>は初期の大きさと初期位置です。大きさは<b>Vector2</b>ですが<b>位置</b>は<b>Vector3</b>なのを注意しましょう。<br />
+　２Ｄスプライトにおける、<b>Ｚ位置</b>というのは、どちらがどちらより手前に描画されるか、を設定します。ただし、0.0fから1.0fの間を指定します。この値は描画直前にZ順番ソートされます。Zが大きいほうが奥に行きます。同じ値に設定した場合は、オブジェクトの配置した順番になります。<br />
+　続いて<b>TraceSprite::OnCreate()関数</b>ですが、ここでは<b>頂点</b>を作成して、それらを<b>描画コンポーネント</b>に設定します。
+<div class="box1">
+<pre>
+void TraceSprite::OnCreate() {
+    float HelfSize = 0.5f;
+    <span class="red">//頂点配列
+    m_BackupVertices = {
+        { VertexPositionColor(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0.0f,0.0f,0.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 0.0f)) },
+        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 0.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 0.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };</span>
+    SetAlphaActive(m_Trace);
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+    PtrTransform->SetRotation(0, 0, 0);
+    PtrTransform->SetPosition(m_StartPos);
+    <span class="red">//頂点とインデックスを指定してスプライト作成
+    AddComponent&lt;PCSpriteDraw>(m_BackupVertices, indices);</span>
+}
+</pre>
+</div>
+　赤くなっているところがその部分です。<b>m_BackupVertices</b>は<b>VertexPositionColor型</b>の配列です。このスプライトは動的に頂点データが変更されますので、バックアップを作成しておく必要があります。（インデックスのほうはバックアップは必要ありません）。<br />
+　ここでは幅及び高さが1.0の矩形を作成しています。矩形を表現するのに<b>三角形を２つ</b>描画します。色情報には自動的にグラデーションがかかるように、頂点毎に別の色を設定しています。<br />
+　頂点とインデックスを作成したら
+<div class="box1">
+<pre>
+    AddComponent&lt;PCSpriteDraw>(m_BackupVertices, indices);
+</pre>
+</div>
+　と<b>PCSpriteDrawコンポーネント</b>を設置します。<br />
+<br />
+<h4>PCスプライトの更新処理</h4>
+　更新処理は<b>TraceSprite::OnUpdate()</b>に記述します。ここでは<b>sinカーブ</b>を利用して、頂点色の透明要素を変更します。
+<div class="box1">
+<pre>
+void TraceSprite::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime >= XM_PI) {
+        m_TotalTime = 0;
+    }
+    <span class="red">vector&lt;VertexPositionColor> NewVertices;
+    for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
+        Color4 col = m_BackupVertices[i].color;
+        col.w = sin(m_TotalTime);
+        auto v = VertexPositionColor(
+            m_BackupVertices[i].position,
+            col
+        );
+        NewVertices.push_back(v);
+    }</span>
+    auto PtrDraw = GetComponent&lt;PCSpriteDraw>();
+    PtrDraw->UpdateVertices(NewVertices);
+
+}
+</pre>
+</div>
+　赤くなっているところが頂点を変更する処理です。<br />
+　ここで気を付けたいのは、<b>m_BackupVertices</b>を直接変更するのではなく、いったん<b>auto v</b>という形で頂点データにコピーして、それを<b>NewVertices</b>という配列を作成しているところです。<b>m_BackupVertices</b>の各データを破棄してしまっていいのであれば直接変化させてもいいのですが、多くの場合そうではないので、注意しましょう。最後に
+<div class="box1">
+<pre>
+    auto PtrDraw = GetComponent&lt;PCSpriteDraw>();
+    PtrDraw->UpdateVertices(NewVertices);
+</pre>
+</div>
+　で<b>描画コンポーネントに変更後の頂点配列</b>を渡します。<br />
+<br />
+　このように記述すると、<b>PCSpriteDrawコンポーネント</b>は描画のタイミングで新しい頂点を使用して描画するようにになります。<br />
+<br />
+　以上が<b>スプライトを実装する場合の基本</b>です。ほかの３Ｄデータと違い、スプライトは、頂点データが小さいのと、また、頂点の変更が行われるのが基本と考えられますので、オブジェクトごとに<b>スプライト用のメッシュ</b>を作成します。<br />
+　しかし、<b>発射する砲弾</b>などをスプライトで表現する場合、砲弾ごとにメッシュを作成したのではリソースの無駄になります。そのような場合の方法は、別のサンプルで説明します。<br />
+<br />
+<h4>PTスプライトの作成</h4>
+　<b>PCスプライト</b>が<b>位置と色</b>を持つ頂点とすれば<b>PTスプライト</b>は<b>位置とテクスチャ情報</b>を持つ頂点です。<br />
+　このサンプルには<b>ScrollSpriteクラス</b>と<b>ScoreSpriteクラス</b>があります。<br />
+　設定方法は<b>頂点フォーマット</b>が違う以外は、<b>PCスプライトの作成</b>と大きくは変わりません。<br />
+　しかし、これらのオブジェクトは<b>テクスチャUV値の変更</b>を行っています。UV値は、２Ｄのメッシュに限ったことではないのですが、メッシュの頂点とテクスチャの張り付け方には以下のような決まりがあります。<br />
+　まず、基本的には<b>Ｕ方向（Ｘ）</b>に<b>0.0fから1.0f</b>、<b>V方向（Y）</b>に<b>0.0fから1.0f</b>というように各頂点を設定すると、この面にはテクスチャ全体が張り付きます。（下図）<br/>
+<p>&nbsp;</p>
+<img src="img/0402b.png" width="80%"/>
+<p>図0402b</p>
+　それに対して、以下のように<b>UV値</b>を設定すると、テクスチャを分割して張り付けるようになります。<b>ScoreSpriteクラス</b>の数字のテクスチャの貼り付け方はこのような形です。<br />
+　またこの方法は<b>テクスチャアニメーション</b>を表現するのに役立ちます。1つのテクスチャに複数の画像を含ませて、分割した部分を順番に表示すると<b>アニメーション</b>になりますね。<br />
+<p>&nbsp;</p>
+<img src="img/0402c.png" width="80%"/>
+<p>図0402c</p>
+　そして下図は<b>タイリング処理</b>です。1つのテクスチャを一つの面に複数貼り付けます。下図がそのイメージです。ScrollSpriteクラス</b>がそうですね。
+<p>&nbsp;</p>
+<img src="img/0402d.png" width="80%"/>
+<p>図0402d</p>
+<br/>
+　さて、これらの実装方法ですが、それぞれの<b>OnUpdate()関数</b>で、<b>UV値</b>を変化させてます。<br />
+　以下は<b>ScoreSprite::OnUpdate()関数</b>ですが、
+<div class="box1">
+<pre>
+void ScoreSprite::OnUpdate() {
+    vector&lt;VertexPositionTexture> NewVertices;
+    UINT Num;
+    int VerNum = 0;
+    for (UINT i = m_NumberOfDigits; i > 0; i--) {
+        UINT Base = (UINT)pow(10, i);
+        Num = ((UINT)m_Score) % Base;
+        Num = Num / (Base / 10);
+        Vector2 UV0 = m_BackupVertices[VerNum].textureCoordinate;
+        UV0.x = (float)Num / 10.0f;
+        auto v = VertexPositionTexture(
+            m_BackupVertices[VerNum].position,
+            UV0
+        );
+        NewVertices.push_back(v);
+
+        Vector2 UV1 = m_BackupVertices[VerNum + 1].textureCoordinate;
+        UV1.x = UV0.x + 0.1f;
+        v = VertexPositionTexture(
+            m_BackupVertices[VerNum + 1].position,
+            UV1
+        );
+        NewVertices.push_back(v);
+
+        Vector2 UV2 = m_BackupVertices[VerNum + 2].textureCoordinate;
+        UV2.x = UV0.x;
+
+        v = VertexPositionTexture(
+            m_BackupVertices[VerNum + 2].position,
+            UV2
+        );
+        NewVertices.push_back(v);
+
+        Vector2 UV3 = m_BackupVertices[VerNum + 3].textureCoordinate;
+        UV3.x = UV0.x + 0.1f;
+
+        v = VertexPositionTexture(
+            m_BackupVertices[VerNum + 3].position,
+            UV3
+        );
+        NewVertices.push_back(v);
+
+        VerNum += 4;
+    }
+    auto PtrDraw = GetComponent&lt;PTSpriteDraw>();
+    PtrDraw->UpdateVertices(NewVertices);
+}
+</pre>
+</div>
+　４つの数字表示領域があるので、少し複雑ですが、それぞれの<b>表示すべき数字</b>にあわせて<b>頂点のUV値</b>を変更しているのがわかります。もともと<b>数字のテクスチャ</b>は以下のようなものなので<b>U方向（X方向）</b>のみ動的に変更しています。
+<p>&nbsp;</p>
+<img src="img/number.png" width="60%"/>
+<p>図0402e</p>
+<br/>
+　そして以下は、<b>ScrollSpriteクラス</b>のUVの変化です。こちらは<b>タイリング処理</b>になってます。<b>タイリング</b>は<b>OnCreate()関数</b>などで、<b>SetSamplerState(SamplerState::LinearWrap)</b>と<b>サンプラーをラッピング（包み込む）</b>処理に設定します。以下のような形です。
+<div class="box1">
+<pre>
+void ScrollSprite::OnCreate() {
+    //中略
+    //頂点とインデックスを指定してスプライト作成
+    auto PtrDraw = AddComponent&lt;PTSpriteDraw>(m_BackupVertices, indices);
+    PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+    PtrDraw->SetTextureResource(m_TextureKey);
+}
+</pre>
+</div>
+　そして、<b>ScrollSprite::OnUpdate()関数</b>で、<b>UV値</b>を変更します。横にスクロールするだけですので、ここも<b>U方向（X方向）</b>だけ変化させます。
+<div class="box1">
+<pre>
+void ScrollSprite::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime > 1.0f) {
+        m_TotalTime = 0;
+    }
+    vector&lt;VertexPositionTexture> NewVertices;
+    <span class="red">for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
+        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        if (UV.x == 0.0f) {
+            UV.x = m_TotalTime;
+        }
+        else if (UV.x == 4.0f) {
+            UV.x += m_TotalTime;
+        }
+        auto v = VertexPositionTexture(
+            m_BackupVertices[i].position,
+            UV
+        );
+        NewVertices.push_back(v);
+    }</span>
+    auto PtrDraw = GetComponent&lt;PTSpriteDraw>();
+    PtrDraw->UpdateVertices(NewVertices);
+}
+</pre>
+</div>
+　このように、<b>テクスチャのUVの変更</b>はスプライトの演出にはなくてはならない手法ですので、ぜひマスターしましょう。<br />
+<br />
+<h4>PCTスプライトの作成</h4>
+　<b>位置、カラー要素、テクスチャUV</b>の３つの頂点データを持ったスプライトが<b>PCTスプライト</b>です。サンプルでは<b>WallSprite（壁模様のスプライト）</b>がこの処理をしています。<br />
+　このオブジェクトは動的な変化を起こしてないので、<b>OnCreate()関数</b>で頂点を作成して描画コンポーネントを設定したらそれで終了です。なお、<b>ScrollSpriteクラス</b>がこの<b>WallSprite</b>に乗っているように表現されています。<b>WallSprite</b>の<b>Z位置</b>は<b>0.1f</b>になっていますので<b>WallSprite</b>が奥に表示されます。<b>GameStage::CreateWallSprite()</b>を確認しましょう。<br />
+<br />
+　それぞれのクラスを作成したら、<b>GameStageクラス</b>に各オブジェクトの作成関数を記述し、最後に<b>GameStage::OnCreate()</b>でビューや各オブジェクトを追加します。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="04_03.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

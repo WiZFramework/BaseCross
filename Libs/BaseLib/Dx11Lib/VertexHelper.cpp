@@ -8,6 +8,7 @@
 
 namespace basecross{
 
+
 	void XM_CALLCONV VertexPositionNormalTangentColorTexture::SetColor( FXMVECTOR color )
 	{
 		DirectX::PackedVector::XMUBYTEN4 rgba;

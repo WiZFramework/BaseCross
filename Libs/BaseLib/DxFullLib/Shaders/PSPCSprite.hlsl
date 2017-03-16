@@ -16,6 +16,6 @@ cbuffer ConstantBuffer : register(b0)
 float4 main(PSPCInput input) : SV_TARGET
 {
 	//頂点色からライティングを作成
-	float4 Light = input.color * saturate(Diffuse);
-	return saturate(Emissive + Light);
+	float4 Light = (saturate(input.color) * Diffuse) + Emissive;
+	return Light;
 }

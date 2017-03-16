@@ -25,6 +25,18 @@ struct VS_INPUT_WEIGHTS
     float4 Weights  : BLENDWEIGHT0;
 };
 
+struct VS_INPUT_TANGENT_WEIGHTS
+{
+	float4 vPosition : SV_Position;
+	float3 Normal   : NORMAL;
+	float4 Tangent  : TANGENT;
+	float2 TexCoord : TEXCOORD0;
+	uint4  Indices  : BLENDINDICES0;
+	float4 Weights  : BLENDWEIGHT0;
+};
+
+
+
 
 struct VS_OUTPUT
 {

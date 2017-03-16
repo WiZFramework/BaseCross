@@ -86,7 +86,7 @@ namespace basecross{
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-		const Vector2& StartScale, const Vector2& StartPos):
+		const Vector2& StartScale, const Vector3& StartPos):
 		GameObject(StagePtr),
 		m_Trace(Trace),
 		m_StartScale(StartScale),
@@ -166,7 +166,7 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y, 0.0f);
 		//頂点とインデックスを指定してスプライト作成
 		auto PtrDraw = AddComponent<PCTSpriteDraw>(vertices, indices);
-		PtrDraw->SetWrapSampler(true);
+		PtrDraw->SetSamplerState(SamplerState::LinearWrap);
 		PtrDraw->SetTextureResource(m_TextureKey);
 	}
 
@@ -205,7 +205,7 @@ namespace basecross{
 		PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y,0.0f);
 		//頂点とインデックスを指定してスプライト作成
 		auto PtrDraw = AddComponent<PTSpriteDraw>(m_BackupVertices, indices);
-		PtrDraw->SetWrapSampler(true);
+		PtrDraw->SetSamplerState(SamplerState::LinearWrap);
 		PtrDraw->SetTextureResource(m_TextureKey);
 	}
 	void ScrollSprite::OnUpdate() {
@@ -269,7 +269,7 @@ namespace basecross{
 		PtrTransform->SetQuaternion(m_StartQt);
 		PtrTransform->SetPosition(m_StartPos);
 
-		auto PtrDraw = AddComponent<PCDynamicDraw>();
+		auto PtrDraw = AddComponent<PCStaticDraw>();
 
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
@@ -294,7 +294,8 @@ namespace basecross{
 			m_BackupVertices.push_back(new_v);
 
 		}
-		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		PtrDraw->CreateOriginalMesh(m_BackupVertices, indices);
+		PtrDraw->SeOriginalMeshUse(true);
 
 	}
 	const shared_ptr<Camera>& RollingCube::OnGetDrawCamera() const {
@@ -317,7 +318,7 @@ namespace basecross{
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
 			m_BackupVertices[i].color.w = sin(m_TotalTime);
 		}
-		auto PtrDraw = GetComponent<PCDynamicDraw>();
+		auto PtrDraw = GetComponent<PCStaticDraw>();
 		PtrDraw->UpdateVertices(m_BackupVertices);
 	}
 
@@ -481,7 +482,7 @@ namespace basecross{
 
 
 
-		auto PtrDraw = AddComponent<PCTDynamicDraw>();
+		auto PtrDraw = AddComponent<PCTStaticDraw>();
 
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
@@ -495,7 +496,8 @@ namespace basecross{
 			m_RuntimeVertices.push_back(new_v);
 
 		}
-		PtrDraw->CreateMesh(m_BackupVertices, indices);
+		PtrDraw->CreateOriginalMesh(m_BackupVertices, indices);
+		PtrDraw->SeOriginalMeshUse(true);
 		PtrDraw->SetTextureResource(m_TextureKey);
 		SetAlphaActive(m_Trace);
 
@@ -526,7 +528,7 @@ namespace basecross{
 			Pos.z *= Len;
 			m_RuntimeVertices[i].position = Pos;
 		}
-		auto PtrDraw = GetComponent<PCTDynamicDraw>();
+		auto PtrDraw = GetComponent<PCTStaticDraw>();
 		PtrDraw->UpdateVertices(m_RuntimeVertices);
 	}
 
