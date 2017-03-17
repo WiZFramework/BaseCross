@@ -1,0 +1,440 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０５．シェーダを自作する</h3>
+　この項では<b>シェーダを自作する方法</b>について説明します。<br />
+　<b>FullSample405</b>を実行すると以下のような画面が現れます。<br />
+<p>&nbsp;</p>
+<img src="img/0405a.png" width="80%"/>
+<p>図0405a</p>
+　中心にある茶色い球体は<b>自作シェーダ</b>による描画です。内容的には<b>PNTStatic描画コンポーネント</b>の簡略版となります。<br />
+　シェーダを自作するということは描画を自分で記述する、ということです。描画コンポーネントでは対応してない処理や表現が実装できます。<br />
+　シェーダを自作する手順は大きく以下のようになります。なお今回は<b>頂点シェーダとピクセルシェーダ</b>の自作です。
+<div class="box1">
+<pre>
+１、頂点シェーダの準備と記述
+２、ピクセルシェーダの準備と記述
+３、インクルードファイルの準備と記述
+４、シェーダクラスの作成（コンスタントバッファ、頂点、ピクセル）
+５、描画処理
+</pre>
+</div>
+　順を追って説明します。<br />
+<br />
+<h4>１、頂点シェーダの準備と記述</h4>
+　まず、以下のように<b>シェーダのフィルタ</b>を作成します。これは必須ではないですが、シェーダのコードをC++と分けるためにも行ったほうがいいと思います。<b>フィルタ</b>は以下のように<b>ソリューションエクスプローラ</b>で<b>新しいフィルタ</b>として作成します。
+<p>&nbsp;</p>
+<img src="img/0405b.png" width="50%"/>
+<p>図0405b</p>
+
+<p>&nbsp;</p>
+<img src="img/0405c.png" width="50%"/>
+<p>図0405c</p>
+　続いて、作成した<b>シェーダー</b>フィルタに<b>追加・新しい項目の追加</b>を選びます。
+<p>&nbsp;</p>
+<img src="img/0405d.png" width="80%"/>
+<p>図0405d</p>
+　すると以下のような画面がでますので<b>頂点シェーダ</b>を選びます。シェーダ名を<b>VSTest.hlsl</b>とし、作成するディレクトリを<b>GameSources</b>ディレクトリにします。ここで<b>ShadersSrc</b>のようなサブディレクトリを作成してもいいですが、ここでは<b>C++ファイル</b>が置かれているディレクトリと同じにしています。<b>フィルタ</b>が別なので、ファイル自体が同じディレクトリにあっても混乱は少ないと思います。
+<p>&nbsp;</p>
+<img src="img/0405e.png" width="80%"/>
+<p>図0405e</p>
+　ファイルが作成されます。
+<p>&nbsp;</p>
+<img src="img/0405f.png" width="50%"/>
+<p>図0405f</p>
+　作成したファイルの<b>プロパティ</b>を選びます。
+<p>&nbsp;</p>
+<img src="img/0405g.png" width="80%"/>
+<p>図0405g</p>
+　<b>構成プロパティ</b>の<b>HLSLコンパイラ</b>の<b>出力ファイル</b>が、
+<div class="box1">
+<pre>
+$(SolutionDir)media\Shaders\%(Filename).cso
+</pre>
+</div>
+　となっているのを確認します。これはコンパイルされたファイル<b>.csoファイル</b>の出力ファイル名の設定です。上記の記述（デフォルト）で<b>ソリューションディレクトリのmedia\Shadersディレクトリ</b>に、<b>hlslファイルと同じファイル名</b>の<b>拡張子は.cso</b>で作成しなさい、という意味です。<br />
+　続いてコードの記述です。頂点シェーダ<b>VSTest.hlsl</b>は以下のように記述します。
+<div class="box1">
+<pre>
+struct VSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+struct PSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+cbuffer ParametersBuffer : register(b0)
+{
+    float4x4 World  : packoffset(c0);
+    float4x4 View   : packoffset(c4);
+    float4x4 Projection : packoffset(c8);
+    float4 Emissive : packoffset(c12);
+    float4 Diffuse : packoffset(c13);
+    float4 LightDir : packoffset(c14);
+};
+
+
+PSPNTInput main(VSPNTInput input)
+{
+    PSPNTInput result;
+    //頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);
+    //ピクセルシェーダに渡す変数に設定
+    result.position = pos;
+    //ライティング
+    result.norm = mul(input.norm, (float3x3)World);
+    result.norm = normalize(result.norm);
+    //テクスチャUV
+    result.tex = input.tex;
+    return result;
+}
+</pre>
+</div>
+<br />
+<h4>２、ピクセルシェーダの準備と記述</h4>
+　同様の手順でピクセルシェーダも作成します。ファイル名は<b>PSTest.hsls</b>とします。<br />
+<p>&nbsp;</p>
+<img src="img/0405h.png" width="80%"/>
+<p>図0405h</p>
+　以下がコードです。
+<div class="box1">
+<pre>
+struct VSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+struct PSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+cbuffer ParametersBuffer : register(b0)
+{
+    float4x4 World  : packoffset(c0);
+    float4x4 View   : packoffset(c4);
+    float4x4 Projection : packoffset(c8);
+    float4 Emissive : packoffset(c12);
+    float4 Diffuse : packoffset(c13);
+    float4 LightDir : packoffset(c14);
+};
+
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
+
+float4 main(PSPNTInput input) : SV_TARGET
+{
+    //ライティング
+    float3 lightdir = normalize(LightDir.xyz);
+    float4 Light = (saturate(dot(input.norm, -lightdir)) * Diffuse) + Emissive;
+    Light.a = Diffuse.a;
+    Light = g_texture.Sample(g_sampler, input.tex) * Light;
+    return Light;
+}
+</pre>
+</div>
+<br />
+<h4>３、インクルードファイルの準備と記述</h4>
+　両方のシェーダのコードを見てみると、上のほうに共通の構造体などがあると思います。これらはまとめておいたほうが修正があったときなどに間違いがなくて良いです。<br />
+　シェーダの追加の要領で<b>ファイルの追加</b>で<b>HLSLヘッダーファイル</b>を選び<b>INCTest.hlsli</b>を作成します。
+<p>&nbsp;</p>
+<img src="img/0405i.png" width="80%"/>
+<p>図0405i</p>
+　そしてそのファイルに以下のように記述します。
+<div class="box1">
+<pre>
+struct VSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+struct PSPNTInput
+{
+    float4 position : SV_POSITION;
+    float3 norm : NORMAL;
+    float2 tex : TEXCOORD;
+};
+
+cbuffer ParametersBuffer : register(b0)
+{
+    float4x4 World  : packoffset(c0);
+    float4x4 View   : packoffset(c4);
+    float4x4 Projection : packoffset(c8);
+    float4 Emissive : packoffset(c12);
+    float4 Diffuse : packoffset(c13);
+    float4 LightDir : packoffset(c14);
+};
+</pre>
+</div>
+　こうすると<b>頂点シェーダやピクセルシェーダ</b>はこのファイルを<b>インクルード</b>すればよくなるので、各シェーダを以下のように書き換えます。<br />
+　まず<b>頂点シェーダ（VSTest.hlsl）</b>です。
+<div class="box1">
+<pre>
+
+<span class="red">//共通の項目をインクルード
+#include "INCTest.hlsli"</span>
+
+
+PSPNTInput main(VSPNTInput input)
+{
+    PSPNTInput result;
+    //頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);
+    //ピクセルシェーダに渡す変数に設定
+    result.position = pos;
+    //ライティング
+    result.norm = mul(input.norm, (float3x3)World);
+    result.norm = normalize(result.norm);
+    //テクスチャUV
+    result.tex = input.tex;
+    return result;
+}
+</pre>
+</div>
+　そして<b>ピクセルシェーダ（PSTest.hlsl）</b>です。
+<div class="box1">
+<pre>
+<span class="red">//共通の項目をインクルード
+#include "INCTest.hlsli"</span>
+
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
+
+float4 main(PSPNTInput input) : SV_TARGET
+{
+    //ライティング
+    float3 lightdir = normalize(LightDir.xyz);
+    float4 Light = (saturate(dot(input.norm, -lightdir)) * Diffuse) + Emissive;
+    Light.a = Diffuse.a;
+    Light = g_texture.Sample(g_sampler, input.tex) * Light;
+    return Light;
+}
+</pre>
+</div>
+　これでシェーダの記述は終わりです。<br />
+<br />
+<h4>４、シェーダクラスの作成（コンスタントバッファ、頂点、ピクセル）</h4>
+　シェーダは作成したのですが、<b>シェーダとC++のインターフェイス</b>を考えなくてはいけません。<b>BaseCross</b>では、その橋渡し役として<b>コンスタントバッファクラス、頂点シェーダクラス、ピクセルシェーダクラス</b>があります。これらを<b>マクロ</b>で作成します。<br />
+　<b>ProjectShader.h</b>を開き、以下のように記述します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// コンスタントバッファ構造体
+//--------------------------------------------------------------------------------------
+struct TestConstants
+{
+    /// ワールド行列
+    Matrix4X4 World;
+    /// ビュー行列
+    Matrix4X4 View;
+    /// 射影行列
+    Matrix4X4 Projection;
+    /// エミッシブ色
+    Color4 Emissive;
+    /// デフューズ色
+    Color4 Diffuse;
+    /// ライイト方向
+    Vector4 LightDir;
+    TestConstants() {
+        memset(this, 0, sizeof(TestConstants));
+        Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    };
+};
+//コンスタントバッファ用マクロ
+DECLARE_DX11_CONSTANT_BUFFER(CBTest, TestConstants)
+//頂点シェーダ用マクロ
+DECLARE_DX11_VERTEX_SHADER(VSTest, VertexPositionNormalTexture)
+//ピクセルシェーダ用マクロ
+DECLARE_DX11_PIXEL_SHADER(PSTest)
+</pre>
+</div>
+　まず、コンスタントバッファ（シェーダへのパラメータ入力バッファ）は、C++側では<b>構造体</b>として宣言します。そして、
+<div class="box1">
+<pre>
+//コンスタントバッファ用マクロ
+DECLARE_DX11_CONSTANT_BUFFER(CBTest, TestConstants)
+</pre>
+</div>
+　として<b>CBTest（クラス名）</b>と<b>TestConstants構造体</b>をマクロに設定します。<br />
+<br />
+　続いて<b>頂点シェーダ</b>は
+<div class="box1">
+<pre>
+//頂点シェーダ用マクロ
+DECLARE_DX11_VERTEX_SHADER(VSTest, VertexPositionNormalTexture)
+</pre>
+</div>
+　と<b>VSTest（クラス名）</b>と<b>VertexPositionNormalTexture頂点の型</b>を設定します。<br />
+<br />
+　続いて<b>ピクセルシェーダ</b>は
+<div class="box1">
+<pre>
+//ピクセルシェーダ用マクロ
+DECLARE_DX11_PIXEL_SHADER(PSTest)
+</pre>
+</div>
+　と<b>PSTest（クラス名）</b>を設定します。<br />
+　以上のマクロ呼び出して<b>CBTestクラス、VSTestクラス、PSTestクラス</b>が宣言されます。<br />
+<br />
+　シェーダクラスの実装は<b>ProjectShader.cpp</b>に<b>実体記述用マクロ</b>を記述します。以下がその内容です。
+<div class="box1">
+<pre>
+//コンスタントバッファ実体マクロ
+IMPLEMENT_DX11_CONSTANT_BUFFER(CBTest)
+//頂点シェーダ実体マクロ
+IMPLEMENT_DX11_VERTEX_SHADER(VSTest, App::GetApp()->GetShadersPath() + L"VSTest.cso")
+//ピクセルシェーダ実体マクロ
+IMPLEMENT_DX11_PIXEL_SHADER(PSTest, App::GetApp()->GetShadersPath() + L"PSTest.cso")
+</pre>
+</div>
+　それぞれ、ヘッダ部のマクロと対になっているのがわかります。<b>頂点シェーダとピクセルシェーダ</b>は<b>コンパイルされたシェーダファイル（.cso）</b>も記述します。ここでの<b>App::GetApp()->GetShadersPath()</b>というのはすなわち各シェーダ作成時の<b>出力ファイル</b>のディレクトリとなります。<br />
+　コンスタントバッファは<b>クラス名</b>だけ記述すれば大丈夫です。<br />
+<br />
+<h4>シェーダクラスの構造</h4>
+　各シェーダは、マクロを追いかけていくとわかると思いますが<b>シングルトン</b>として作成されます。そして<b>最初の呼び出し</b>でシェーダがメモリ上に構築される設計になっています。ゲーム盤には様々なオブジェクトが置かれます。当然使用するシェーダもそれぞれ違うわけですが、各オブジェクトごとにシェーダがメモリを占めたのでは<b>同じ描画</b>をするのに複数のシェーダが常駐するのでは無駄になります。また、<b>使わないシェーダ</b>がメモリを占めるのも無駄です。（２Ｄのみのゲーム内に３Ｄのシェーダが常駐することを想像してみてください）。そのために上記のような設計になっています。<br />
+<br />
+<h4>５、描画処理</h4>
+　ここまでで準備が整ったので、いよいよ描画処理を記述します。描画を自分で行うには<b>OnDraw()関数</b>を多重定義します。今回のサンプルでは<b>Character.h/cpp</b>にある<b>PntSphere::OnDraw()関数</b>がそれにあたります。
+<div class="box1">
+<pre>
+void PntSphere::OnDraw() {
+    //メッシュの取得
+    auto MeshRes = App::GetApp()->GetResource&lt;MeshResource>(L"DEFAULT_SPHERE");
+    //デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //デバイスコンテキストの取得
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+    //レンダーステートの取得
+    auto RenderState = Dev->GetRenderState();
+    //コンスタントバッファの準備
+    TestConstants Cb;
+    //行列の定義
+    auto PtrTrans = GetComponent&lt;Transform>();
+    //行列の定義
+    Matrix4X4 World, ViewMat, ProjMat;
+    //ワールド行列の決定
+    World = PtrTrans->GetWorldMatrix();
+    //転置する
+    World.Transpose();
+    //カメラを得る
+    auto CameraPtr = OnGetDrawCamera();
+    //ビューと射影行列を得る
+    ViewMat = CameraPtr->GetViewMatrix();
+    //転置する
+    ViewMat.Transpose();
+    ProjMat = CameraPtr->GetProjMatrix();
+    //転置する
+    ProjMat.Transpose();
+    Cb.World = World;
+    Cb.View = ViewMat;
+    Cb.Projection = ProjMat;
+    //エミッシブ
+    Cb.Emissive = Color4(0.5f, 0.5f, 0.5f,0);
+    //デフィーズ
+    Cb.Diffuse = Color4(1, 1, 1, 1);
+    //ライティング
+    auto StageLight = OnGetDrawLight();
+    Cb.LightDir = StageLight.m_Directional;
+    Cb.LightDir.w = 1.0f;
+    //テクスチャ（シェーダリソース）の取得
+    auto Res = App::GetApp()->GetResource&lt;TextureResource>(L"WALL_TX");
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, Res->GetShaderResourceView().GetAddressOf());
+    auto pSampler = RenderState->GetLinearClamp();
+    //サンプラーを設定
+    pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+    //コンスタントバッファの更新
+    pD3D11DeviceContext->UpdateSubresource(CBTest::GetPtr()->GetBuffer(), 0, nullptr, &Cb, 0, 0);
+    //ストライドとオフセット
+    UINT stride = MeshRes->GetNumStride();
+    UINT offset = 0;
+    //頂点バッファのセット
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    //インデックスバッファのセット
+    pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), 
+        DXGI_FORMAT_R16_UINT, 0);
+    //描画方法（3角形）
+    pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBTest::GetPtr()->GetBuffer();
+    //頂点シェーダに渡す
+    pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ピクセルシェーダに渡す
+    pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //シェーダの設定
+    pD3D11DeviceContext->VSSetShader(VSTest::GetPtr()->GetShader(), nullptr, 0);
+    pD3D11DeviceContext->PSSetShader(PSTest::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pD3D11DeviceContext->IASetInputLayout(VSTest::GetPtr()->GetInputLayout());
+    //デプスステンシルステート
+    pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+    //ブレンドステート
+    pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+    //ラスタライザステート
+    pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+    //描画
+    pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+    //後始末
+    Dev->InitializeStates();
+}
+</pre>
+</div>
+　それぞれ細かくコメントを書いたので内容の解説は省略します。描画するのにいろんな処理がされているのがわかると思います。<br />
+　<b>BaseCrossの描画コンポーネント</b>はこれらの処理をライブラリ側で行っているというわけです。<br />
+<br />
+　ただ、これらの処理は<b>各オブジェクトごとに毎回設定を初期化する</b>ので、たった1つの描画なのに記述が多くなります。<br/>
+　<b>複数のオブジェクトを管理するゲームオブジェクト</b>を作成すれば、共通の処理はできるだけまとめて描画することができます。これらの<b>最適化</b>はゲームごとに違うので具体的には触れませんが、各自検討してみてください。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="04_06.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
