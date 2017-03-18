@@ -521,7 +521,6 @@ namespace basecross {
 		}
 		else
 		{
-			// When fog is disabled, make sure the fog vector is reset to zero.
 			BcCb.fogVector = g_XMZero;
 			BcCb.fogColor = g_XMZero;
 
@@ -556,28 +555,6 @@ namespace basecross {
 
 			BcCb.eyePosition = viewInverse.r[3];
 		}
-
-		// Material color parameters. The desired lighting model is:
-		//
-		//     ((ambientLightColor + sum(diffuse directional light)) * diffuseColor) + emissiveColor
-		//
-		// When lighting is disabled, ambient and directional lights are ignored, leaving:
-		//
-		//     diffuseColor + emissiveColor
-		//
-		// For the lighting disabled case, we can save one shader instruction by precomputing
-		// diffuse+emissive on the CPU, after which the shader can use diffuseColor directly,
-		// ignoring its emissive parameter.
-		//
-		// When lighting is enabled, we can merge the ambient and emissive settings. If we
-		// set our emissive parameter to emissive+(ambient*diffuse), the shader no longer
-		// needs to bother adding the ambient contribution, simplifying its computation to:
-		//
-		//     (sum(diffuse directional light) * diffuseColor) + emissiveColor
-		//
-		// For futher optimization goodness, we merge material alpha with the diffuse
-		// color parameter, and premultiply all color values by this alpha.
-
 		XMVECTOR diffuse = GetDiffuse();
 		XMVECTOR alphaVector = XMVectorReplicate(GetAlpha());
 		XMVECTOR emissiveColor = GetEmissive();

@@ -53,6 +53,17 @@ namespace basecross {
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBone, App::GetApp()->GetShadersPath() + L"VSPNTBone.cso")
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTBoneShadow, App::GetApp()->GetShadersPath() + L"VSPNTBoneShadow.cso")
 
+	//PCStaticInstance
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCStaticInstance, App::GetApp()->GetShadersPath() + L"VSPCStaticInstance.cso")
+	//PTStaticInstance
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStaticInstance, App::GetApp()->GetShadersPath() + L"VSPTStaticInstance.cso")
+	//PCTStaticInstance
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTStaticInstance, App::GetApp()->GetShadersPath() + L"VSPCTStaticInstance.cso")
+	//PNTStaticInstance
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticInstance, App::GetApp()->GetShadersPath() + L"VSPNTStaticInstance.cso")
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticInstanceShadow, App::GetApp()->GetShadersPath() + L"VSPNTStaticInstanceShadow.cso")
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct DrawComponent::Impl;
@@ -311,7 +322,7 @@ namespace basecross {
 			return;
 		}
 		//メッシュリソースの取得
-		auto PtrMeshResource = GetMeshResource();
+		auto PtrMeshResource = GetMeshResource(false);
 
 		if (PtrMeshResource) {
 
@@ -405,10 +416,6 @@ namespace basecross {
 				pID3D11DeviceContext->IASetInputLayout(VSShadowmap::GetPtr()->GetInputLayout());
 				//ストライドとオフセット
 				UINT stride = PtrMeshResource->GetNumStride();
-				if (IsSkinStride) {
-					//ストライドがスキンだった場合の特殊処理
-//					stride = sizeof(VertexPositionNormalTextureSkinning);
-				}
 				UINT offset = 0;
 				//頂点バッファをセット
 				pID3D11DeviceContext->IASetVertexBuffers(0, 1, PtrMeshResource->GetVertexBuffer().GetAddressOf(), &stride, &offset);
@@ -1621,6 +1628,141 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
+	//	struct StaticInstanceDraw::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct StaticInstanceDraw::Impl {
+		size_t m_MaxInstance;
+		///<行列用の頂点バッファ
+		ComPtr<ID3D11Buffer> m_MatrixBuffer;
+		//行列の配列
+		vector<Matrix4X4> m_MatrixVec;
+		//行列を自動クリアするかどうか
+		bool m_AutoClearMatrixVec;
+		Impl() :
+			m_MaxInstance(2000),
+			m_AutoClearMatrixVec(false)
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	インスタンス描画コンポーネントの親
+	//--------------------------------------------------------------------------------------
+	StaticInstanceDraw::StaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticBaseDraw(GameObjectPtr),
+		pImpl(new Impl()) {
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+		//ライティングのみだと極端になるので調整
+		SetEmissive(Color4(0.5f, 0.5f, 0.5f, 0.0f));
+		SetDiffuse(Color4(0.6f, 0.6f, 0.6f, 1.0f));
+		//行列バッファの作成
+		CreateMatrixBuffer();
+	}
+
+	StaticInstanceDraw::~StaticInstanceDraw() {}
+
+	//行列バッファの作成
+	void StaticInstanceDraw::CreateMatrixBuffer() {
+		//インスタンス行列バッファの作成
+		//Max値で作成する
+		vector<Matrix4X4> matrices(pImpl->m_MaxInstance);
+		for (auto& m : matrices) {
+			m = Matrix4X4();
+		}
+		MeshResource::CreateDynamicVertexBuffer(pImpl->m_MatrixBuffer, matrices);
+	}
+
+	//行列バッファのマップ
+	void StaticInstanceDraw::MapMatrixBuffer() {
+		//デバイスの取得
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pDx11Device = Dev->GetD3DDevice();
+		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+		//インスタンスバッファにマップ
+		D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+		//行列のマップ
+		if (FAILED(pID3D11DeviceContext->Map(pImpl->m_MatrixBuffer.Get(), 0, mapType, 0, &mappedBuffer))) {
+			// Map失敗
+			throw BaseException(
+				L"行列のMapに失敗しました。",
+				L"if(FAILED(pID3D11DeviceContext->Map()))",
+				L"StaticInstanceDraw::MapMatrixBuffer()"
+			);
+		}
+		//行列の変更
+		auto* matrices = (Matrix4X4*)mappedBuffer.pData;
+		Matrix4X4 World;
+		for (size_t i = 0; i < pImpl->m_MatrixVec.size(); i++) {
+			//ワールド行列
+			World = pImpl->m_MatrixVec[i];
+			//転置する
+			World.Transpose();
+			matrices[i] = World;
+		}
+		//アンマップ
+		pID3D11DeviceContext->Unmap(pImpl->m_MatrixBuffer.Get(), 0);
+
+	}
+
+
+
+
+	size_t StaticInstanceDraw::GetMaxInstance() const {
+		return pImpl->m_MaxInstance;
+	}
+
+	void StaticInstanceDraw::ResizeMaxInstance(size_t NewSize) {
+		pImpl->m_MaxInstance = NewSize;
+		CreateMatrixBuffer();
+	}
+
+	void StaticInstanceDraw::AddMatrix(const Matrix4X4& NewMat) {
+		if (pImpl->m_MatrixVec.size() >= GetMaxInstance()) {
+			throw BaseException(
+				L"インスタンス上限を超えてます",
+				L"if (pImpl->m_MatrixVec.size() >= GetMaxInstance())",
+				L"StaticInstanceDraw::AddMatrix()"
+			);
+		}
+		pImpl->m_MatrixVec.push_back(NewMat);
+	}
+
+	void StaticInstanceDraw::UpdateMultiMatrix(const vector<Matrix4X4>& NewMatVec) {
+		pImpl->m_MatrixVec.resize(NewMatVec.size());
+		pImpl->m_MatrixVec = NewMatVec;
+	}
+
+	vector<Matrix4X4>& StaticInstanceDraw::GetMatrixVec() const {
+		return pImpl->m_MatrixVec;
+	}
+
+	void StaticInstanceDraw::ClearMatrixVec() {
+		pImpl->m_MatrixVec.clear();
+	}
+
+	bool StaticInstanceDraw::IsAutoClearMatrixVec() const {
+		return pImpl->m_AutoClearMatrixVec;
+	}
+	void StaticInstanceDraw::SetAutoClearMatrixVec(bool b) {
+		pImpl->m_AutoClearMatrixVec = b;
+	}
+
+
+
+	ComPtr<ID3D11Buffer>& StaticInstanceDraw::GetMatrixBuffer() const {
+		return pImpl->m_MatrixBuffer;
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	//	struct PCStaticDraw::Impl;
 	//--------------------------------------------------------------------------------------
 	struct PCStaticDraw::Impl {
@@ -1650,6 +1792,41 @@ namespace basecross {
 		DrawStatic<VSPCStatic, PSPCStatic>(false, false);
 	}
 
+
+	//--------------------------------------------------------------------------------------
+	//	struct PCStaticInstanceDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PCStaticInstanceDraw::Impl {
+		Impl()
+		{}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	PCStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PCStaticInstanceDraw::PCStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticInstanceDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+
+	PCStaticInstanceDraw::~PCStaticInstanceDraw() {}
+
+	void PCStaticInstanceDraw::OnDraw() {
+		MapMatrixBuffer();
+		DrawStaticInstance<VSPCStaticInstance, PSPCStatic>(false, false);
+	}
+
+
+
+
+
+
 	//--------------------------------------------------------------------------------------
 	//	struct PTStaticDraw::Impl;
 	//--------------------------------------------------------------------------------------
@@ -1675,6 +1852,38 @@ namespace basecross {
 	void PTStaticDraw::OnDraw() {
 		DrawStatic<VSPTStatic, PSPTStatic>(true, false);
 	}
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct PTStaticInstanceDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PTStaticInstanceDraw::Impl {
+		Impl()
+		{}
+	};
+	//--------------------------------------------------------------------------------------
+	///	PTStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PTStaticInstanceDraw::PTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticInstanceDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+	PTStaticInstanceDraw::~PTStaticInstanceDraw() {}
+
+	void PTStaticInstanceDraw::OnDraw() {
+		MapMatrixBuffer();
+		DrawStaticInstance<VSPTStaticInstance, PSPTStatic>(true, false);
+	}
+
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1706,6 +1915,39 @@ namespace basecross {
 	void PCTStaticDraw::OnDraw() {
 		DrawStatic<VSPCTStatic, PSPCTStatic>(true, false);
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct PCTStaticInstanceDraw::Impl;
+	//--------------------------------------------------------------------------------------
+	struct PCTStaticInstanceDraw::Impl {
+		Impl()
+		{}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PCTStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PCTStaticInstanceDraw::PCTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticInstanceDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの3D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+
+	PCTStaticInstanceDraw::~PCTStaticInstanceDraw() {}
+
+
+	void PCTStaticInstanceDraw::OnDraw() {
+		MapMatrixBuffer();
+		DrawStaticInstance<VSPCTStaticInstance, PSPCTStatic>(true,false);
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1763,6 +2005,65 @@ namespace basecross {
 			DrawStatic<VSPNTStatic, PSPNTStatic>(true, false);
 		}
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	struct PNTStaticInstanceDraw::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct PNTStaticInstanceDraw::Impl {
+		bool m_OwnShadowActive;
+		Impl() :
+			m_OwnShadowActive(false)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	PNTStaticインスタンス描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PNTStaticInstanceDraw::PNTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		StaticInstanceDraw(GameObjectPtr),
+		pImpl(new Impl()) {
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+		//ライティングのみだと極端になるので調整
+		SetEmissive(Color4(0.5f, 0.5f, 0.5f, 0.0f));
+		SetDiffuse(Color4(0.6f, 0.6f, 0.6f, 1.0f));
+	}
+
+	PNTStaticInstanceDraw::~PNTStaticInstanceDraw() {}
+
+	void PNTStaticInstanceDraw::OnCreate() {
+		CreateMatrixBuffer();
+	}
+
+
+	bool PNTStaticInstanceDraw::GetOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	bool PNTStaticInstanceDraw::IsOwnShadowActive() const {
+		return pImpl->m_OwnShadowActive;
+	}
+	void PNTStaticInstanceDraw::SetOwnShadowActive(bool b) {
+		pImpl->m_OwnShadowActive = b;
+	}
+
+
+	void PNTStaticInstanceDraw::OnDraw() {
+		MapMatrixBuffer();
+		if (GetOwnShadowActive()) {
+			DrawStaticInstance<VSPNTStaticInstanceShadow, PSPNTStaticShadow>(true, true);
+		}
+		else {
+			DrawStaticInstance<VSPNTStaticInstance, PSPNTStatic>(true, false);
+		}
+	}
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct PNTStaticModelDraw::Impl;
@@ -2168,7 +2469,6 @@ namespace basecross {
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct PNTBoneModelDraw::Impl {
-//		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
 		bool m_OwnShadowActive;
 		bool m_ModelDiffusePriority;
 		bool m_ModelEmissivePriority;
@@ -2204,17 +2504,6 @@ namespace basecross {
 
 	}
 
-	//shared_ptr<MeshResource> PNTBoneModelDraw::GetMeshResource() const {
-	//	//メッシュがなければリターン
-	//	if (pImpl->m_MeshResource.expired()) {
-	//		throw BaseException(
-	//			L"メッシュが設定されてません",
-	//			L"if (pImpl->m_MeshResource.expired())",
-	//			L"PNTStaticModelDraw::GetMeshResource()"
-	//		);
-	//	}
-	//	return pImpl->m_MeshResource.lock();
-	//}
 
 	void PNTBoneModelDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
 		if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0) {

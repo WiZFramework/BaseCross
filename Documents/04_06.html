@@ -1,0 +1,170 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０６．インスタンス描画</h3>
+　この項では<b>インスタンス描画</b>について説明します。<br />
+　<b>インスタンス描画</b>とは<b>一度の描画で複数のオブジェクトを描画する</b>方法で、ワールド行列だけが違う大量のオブジェクトを同時に描画することを可能にするテクニックです。<br />
+　<b>BaseCross</b>では<b>シンプルなシェーダセット</b>おいてのみ<b>インスタンス描画</b>が可能です。（リアルシェーダセットでは現時点では対応してません）。<br />
+　<b>FullSample406</b>を実行すると以下のような画面が現れます。<br />
+　このサンプルは<b>リリースモード</b>で実行してください。
+<p>&nbsp;</p>
+<img src="img/0406a.png" width="80%"/>
+<p>図0406a</p>
+　実行すると、ステージ上には大量のボックスが回転しています。プレイヤーを動かすとそれぞれと衝突判定をして、上に乗ることができます。上に乗ると親子関係になり、ボックスの回転に合わせてプレイヤーが台の上で回転します。<br />
+　<b>インスタンス描画</b>を実装するために<b>PNTStaticInstanceDraw描画コンポーネント</b>を使用しています。<br />
+　この<b>○○StaticInstanceDraw</b>は<b>PNT（位置、法線、テクスチャ）</b>のほかに<b>PC（位置、カラー）、PT（位置、テクスチャ）、PC（位置、カラー）</b>があり、それぞれの頂点フォーマットに対応したものになります。<br />
+　<b>インスタンス描画コンポーネント</b>の実装方法はいくつかありますが、このサンプルでは<b>描画するためだけのゲームオブジェクト</b>を作成し、<b>衝突判定や親子関係など（シャドウマップも）</b>はそれぞれのオブジェクトが行います。<br />
+　衝突判定をしないのであればもっと最適化ができると思います。<br />
+<br />
+<h4>描画を行うオブジェクト</h4>
+　まず<b>インスタンス描画をする</b>オブジェクトですが<b>Character.h/cpp</b>に<b>RollingBoxGroupクラス</b>があります。<br />
+　このクラスでは<b>PNTStaticInstanceDraw描画コンポーネント</b>を実装します。以下は<b>RollingBoxGroup::OnCreate()関数</b>です。<div class="box1">
+<pre>
+void RollingBoxGroup::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
+    Quaternion Qt;
+    Qt.Identity();
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(Vector3(0, 0, 0));
+    //影をつける(自己影用のシェーダを使うための理由)
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;PNTStaticInstanceDraw>();
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetTextureResource(L"SKY_TX");
+    <span class="red">//毎ターン毎に行列をクリアする
+    PtrDraw->SetAutoClearMatrixVec(true);</span>
+}
+</pre>
+</div>
+　<b>インスタンス描画</b>のメカニズムは<b>ワールド行列</b>を<b>コンスタントバッファ</b>とは別のスロットに入れてパイプラインを形成することです。具体的には<b>○○StaticInstanceDraw</b>は内部に<b>ワールド行列の配列</b>を持ち、をの配列をスロットに流します。<br />
+　クリエイト時のワールド行列のままで良ければ<b>赤くなっている部分</b>のフラグは必要ありません。<br />
+<br />
+<h4>おのおののオブジェクト</h4>
+　続いて、<b>RollingBoxクラス</b>ですが、以下は<b>RollingBox::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void RollingBox::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetRotation(m_Rotation);
+    PtrTransform->SetPosition(m_Position);
+
+    //衝突判定
+    auto PtrObb = AddComponent&lt;CollisionObb>();
+    PtrObb->SetFixed(true);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    <span class="red">auto GroupPtr = GetStage()->GetSharedGameObject&lt;RollingBoxGroup>(L"RollingBoxGroup");
+    auto DrawPtr = GroupPtr->GetComponent&lt;PNTStaticInstanceDraw>();
+    DrawPtr->AddMatrix(PtrTransform->GetWorldMatrix());</span>
+
+    AddTag(L"MoveBox");
+
+}
+</pre>
+</div>
+　見てわかるとおりこちらは<b>描画コンポーネント</b>は実装されていません。赤くなっているところはグループオブジェクトを取り出して、その<b>PNTStaticInstanceDrawコンポーネント</b>に自分の行列を追加しています。<br />
+　また<b>AddTag(L"MoveBox");</b>によりプレイヤーが上に乗ったときに<b>親子関係</b>を設定できるようにしています。<br />
+<br />
+<h4>更新処理</h4>
+　更新処理は<b>RollingBoxクラス</b>のみ記述があります。
+<div class="box1">
+<pre>
+void RollingBox::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+
+    auto PtrTransform = GetComponent&lt;Transform>();
+    auto Qt = PtrTransform->GetQuaternion();
+    Quaternion QtSpan(Vector3(0, 1, 0), ElapsedTime * m_RotParam);
+    Qt *= QtSpan;
+    PtrTransform->SetQuaternion(Qt);
+    auto GroupPtr = GetStage()->GetSharedGameObject&lt;RollingBoxGroup>(L"RollingBoxGroup");
+    auto DrawPtr = GroupPtr->GetComponent&lt;PNTStaticInstanceDraw>();
+    DrawPtr->AddMatrix(PtrTransform->GetWorldMatrix());
+}
+</pre>
+</div>
+　ここでは回転させて結果の行列をグループオブジェクトに渡しています。<br />
+<br/>
+<h4>ステージでのオブジェクトの追加</h4>
+　最後に配置方法ですが、<b>GameStage.cpp</b>の<b>GameStage::CreateRollingBox()</b>で配置します。
+
+
+
+
+<div class="box1">
+<pre>
+void GameStage::CreateRollingBox() {
+    auto GroupPtr = AddGameObject&lt;RollingBoxGroup>();
+    //シェアオブジェクトに設定
+    SetSharedGameObject(L"RollingBoxGroup", GroupPtr);
+    Vector3 Scale(1.25f, 0.5f, 1.25f);
+    Vector3 Rot(0.0f, 0.0f, 0.0f);
+    Vector3 Pos;
+
+    //配列の初期化
+    vector&lt; vector&lt;Vector3> > Vec;
+    //奥側のオブジェクト
+    for (int x = -20; x &lt; 20; x+= 2) {
+        for (int z = 5; z &lt; 20; z+= 2) {
+            Pos = Vector3((float)x, 0.25f, (float)z);
+            vector&lt;Vector3> temp = { Scale, Rot, Pos };
+            Vec.push_back(temp);
+        }
+    }
+    //手前側のオブジェクト
+    for (int x = -20; x &lt; 20; x += 2) {
+        for (int z = -5; z > -20; z -= 2) {
+            Pos = Vector3((float)x, 0.25f, (float)z);
+            vector&lt;Vector3> temp = { Scale, Rot, Pos };
+            Vec.push_back(temp);
+        }
+    }
+    //オブジェクトの作成
+    float RotParam = 1.0f;
+    for (auto v : Vec) {
+        //乱数で回転係数を0.5から1.5の間に設定
+        RotParam = Util::RandZeroToOne(true) + 0.5f;
+        AddGameObject&lt;RollingBox>(v[0], v[1], v[2], RotParam);
+    }
+}
+</pre>
+</div>
+　ここではまず<b>グループオブジェクト</b>を作成し、そのあと大量の<b>RollingBoxクラス</b>を作成しています。乱数により回転速度にばらつきを設けています。<br />
+<br />
+　このようにシンプルシェーダのみという制限付きではありますが<b>インスタンス描画</b>により描画速度は劇的に速くなります。リアルシェーダの場合は、ライティングに<b>ワールド行列以外</b>も必要とするので、なかなかこの手法は使えませんが、シェーダでライティングを細かく記述するなど、独自の手法を使えば可能と思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="04_07.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -665,6 +665,103 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
+	/// 位置と色と行列を持つ入力レイアウトの定義
+	//--------------------------------------------------------------------------------------
+	const D3D11_INPUT_ELEMENT_DESC VertexPositionColorMatrixLayout[] =
+	{
+		{ "SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR",       0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "MATRIX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	/// 位置と色と行列をを持つ頂点の定義
+	//--------------------------------------------------------------------------------------
+	struct VertexPositionColorMatrix
+	{
+		VertexPositionColorMatrix()
+		{ }
+
+		VertexPositionColorMatrix(XMFLOAT3 const& pos, XMFLOAT4 const& col, XMFLOAT4X4 const& mat)
+			: position(pos),
+			color(col),
+			matrix(mat)
+		{ }
+
+		VertexPositionColorMatrix(FXMVECTOR pos, FXMVECTOR col, FXMMATRIX const& mat)
+			: position(pos),
+			color(col),
+			matrix(mat)
+		{
+		}
+
+		Vector3 position;
+		Color4 color;
+		Matrix4X4 matrix;
+
+		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
+			return VertexPositionColorMatrixLayout;
+		}
+		static UINT GetNumElements() {
+			return  ARRAYSIZE(VertexPositionColorMatrixLayout);
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	/// 位置とテクスチャと行列を持つ入力レイアウトの定義
+	//--------------------------------------------------------------------------------------
+	const D3D11_INPUT_ELEMENT_DESC VertexPositionTextureMatrixLayout[] =
+	{
+		{ "SV_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "MATRIX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "MATRIX", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+	};
+
+	//--------------------------------------------------------------------------------------
+	/// 位置とテクスチャと行列を持つ頂点の定義
+	//--------------------------------------------------------------------------------------
+	struct  VertexPositionTextureMatrix
+	{
+		VertexPositionTextureMatrix()
+		{ }
+
+		VertexPositionTextureMatrix(XMFLOAT3 const& pos, XMFLOAT2 const& tex,
+			XMFLOAT4X4 const& mat)
+			: position(pos),
+			textureCoordinate(tex),
+			matrix(mat)
+		{ }
+
+		VertexPositionTextureMatrix(FXMVECTOR pos, FXMVECTOR tex,
+			FXMMATRIX const& mat)
+			: position(pos),
+			textureCoordinate(tex),
+			matrix(mat)
+		{
+		}
+
+		Vector3 position;
+		Vector2 textureCoordinate;
+		Matrix4X4 matrix;
+
+		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
+			return VertexPositionTextureMatrixLayout;
+		}
+		static UINT GetNumElements() {
+			return  ARRAYSIZE(VertexPositionTextureMatrixLayout);
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
 	/// 位置と色とテクスチャと行列を持つ入力レイアウトの定義
 	//--------------------------------------------------------------------------------------
 	const D3D11_INPUT_ELEMENT_DESC VertexPositionColorTextureMatrixLayout[] =
@@ -716,7 +813,6 @@ namespace basecross{
 			return  ARRAYSIZE(VertexPositionColorTextureMatrixLayout);
 		}
 	};
-
 
 
 	//--------------------------------------------------------------------------------------

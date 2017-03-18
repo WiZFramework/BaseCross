@@ -3,15 +3,6 @@
 #include "INCParameters.hlsli"
 
 
-struct VSPCTInstanceInput
-{
-	float4 position : SV_POSITION;
-	float4 color : COLOR;
-	float2 tex : TEXCOORD0;
-	float4x4 mat : MATRIX;          // インスタンスごとに設定される行列
-	uint InstanceId           : SV_InstanceID;   // インスタンスＩＤ
-};
-
 
 PSPCTInput main(VSPCTInstanceInput input)
 {
@@ -29,4 +20,5 @@ PSPCTInput main(VSPCTInstanceInput input)
 	result.color = input.color;
 	result.tex = input.tex;
 	return result;
+
 }

@@ -2,14 +2,6 @@
 #include "INCStructs.hlsli"
 #include "INCParameters.hlsli"
 
-struct VSPNTInstanceInput
-{
-	float4 position : SV_Position;
-	float3 norm : NORMAL;
-	float2 tex : TEXCOORD0;
-	float4x4 mat : MATRIX;          // インスタンスごとに設定される行列
-	uint InstanceId           : SV_InstanceID;   // インスタンスＩＤ
-};
 
 
 PSPNTInput main(VSPNTInstanceInput input)

@@ -154,8 +154,12 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCStatic.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTInstance.hlsl">
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCStaticInstance.hlsl">
       <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTStaticInstance.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <FileType>Document</FileType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTSprite.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -169,10 +173,14 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTBoneShadow.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTInstance.hlsl">
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticInstance.hlsl">
       <ShaderType>Vertex</ShaderType>
+      <FileType>Document</FileType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStatic.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticInstanceShadow.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticShadow.hlsl">
@@ -182,6 +190,9 @@
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPTStatic.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPTStaticInstance.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSShadowmap.hlsl">

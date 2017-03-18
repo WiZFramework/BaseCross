@@ -59,9 +59,6 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTStatic.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTInstance.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPCTSprite.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -176,9 +173,6 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcVSPNTnTStaticPLShadow.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTInstance.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcVSPNTnTBonePL.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -195,6 +189,21 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\BcPSPCStatic.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticInstance.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPNTStaticInstanceShadow.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCTStaticInstance.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPTStaticInstance.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\VSPCStaticInstance.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

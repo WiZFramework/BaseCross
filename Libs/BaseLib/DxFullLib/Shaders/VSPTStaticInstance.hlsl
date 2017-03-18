@@ -1,18 +1,18 @@
 //--------------------------------------------------------------------------------------
-// File: VSPTStatic.hlsl
+// File: VSPTStaticInstance.hlsl
 //
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
 #include "INCParameters.hlsli"
 
-PSPTInput main(VSPTInput input)
+PSPTInput main(VSPTInstanceInput input)
 {
 	PSPTInput result;
 	//頂点の位置を変換
 	float4 pos = float4(input.position.xyz, 1.0f);
 	//ワールド変換
-	pos = mul(pos, World);
+	pos = mul(pos, input.mat);
 	//ビュー変換
 	pos = mul(pos, View);
 	//射影変換

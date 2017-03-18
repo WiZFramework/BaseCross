@@ -143,9 +143,19 @@ namespace basecross {
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticShadow, VertexPositionNormalTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow2)
-	///PNTBoneShadow
+	///PNTBone
 	DECLARE_DX11_VERTEX_SHADER(VSPNTBone, VertexPositionNormalTextureSkinning)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTBoneShadow, VertexPositionNormalTextureSkinning)
+	//PCStaticInstance
+	DECLARE_DX11_VERTEX_SHADER(VSPCStaticInstance, VertexPositionColorMatrix)
+	//PTStaticInstance
+	DECLARE_DX11_VERTEX_SHADER(VSPTStaticInstance, VertexPositionTextureMatrix)
+	//PCTStaticInstance
+	DECLARE_DX11_VERTEX_SHADER(VSPCTStaticInstance, VertexPositionColorTextureMatrix)
+	///PNTStaticInstance
+	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticInstance, VertexPositionNormalTextureMatrix)
+	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticInstanceShadow, VertexPositionNormalTextureMatrix)
+
 
 	class GameObject;
 
@@ -1126,6 +1136,246 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	インスタンス描画コンポーネントの親
+	//--------------------------------------------------------------------------------------
+	class StaticInstanceDraw : public StaticBaseDraw {
+	protected:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行列バッファの作成
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void CreateMatrixBuffer();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行列バッファのマップ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void MapMatrixBuffer();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit StaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~StaticInstanceDraw();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行列の上限を得る
+		@return	行列の上限を
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t GetMaxInstance() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	行列の上限を変更する
+		@param[in]	NewSize		新しい上限
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ResizeMaxInstance(size_t NewSize);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	同時描画の行列を追加する
+		@param[in]	NewMatVec		新しい行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AddMatrix(const Matrix4X4& NewMat);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	同時描画の行列を完全に更新する
+		@param[in]	NewMatVec		新しい行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateMultiMatrix(const vector<Matrix4X4>& NewMatVec);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	同時描画の行列の配列を取得する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		vector<Matrix4X4>& GetMatrixVec() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	同時描画の行列をクリアする
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ClearMatrixVec();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画後行列配列を自動クリアするかどうか
+		@return	クリアするはtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsAutoClearMatrixVec() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画後行列配列を自動クリアするかどうかを設定
+		@param[in]	b	描画後行列配列を自動クリアするかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetAutoClearMatrixVec(bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　行列のバッファを取得する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11Buffer>& GetMatrixBuffer() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スタティックメッシュのインスタンス描画
+		@tparam[in]	T_VShader	使用する頂点シェーダ
+		@tparam[in]	T_PShader	使用するピクセルシェーダ
+		@param[in]	TextureUse	テクスチャを使用するかどうか
+		@param[in]	ShadoUuse	影を描画するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T_VShader, typename T_PShader>
+		void DrawStaticInstance(bool TextureUse, bool ShadoUuse){
+			auto PtrStage = GetGameObject()->GetStage();
+			if (!PtrStage) {
+				return;
+			}
+			//メッシュがなければ描画しない
+			auto MeshRes = GetMeshResource();
+			if (!MeshRes) {
+				throw BaseException(
+					L"メッシュが作成されていません",
+					L"if (!MeshRes)",
+					L"StaticInstanceDraw::DrawStaticInstance()"
+				);
+			}
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+			auto RenderState = Dev->GetRenderState();
+			//コンスタントバッファの準備
+			SimpleConstants Cb;
+			SetConstants(Cb, ShadoUuse);
+			if (TextureUse) {
+				//テクスチャ
+				auto shTex = GetTextureResource();
+				if (shTex) {
+					Cb.ActiveFlg.x = 1;
+					pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
+					//サンプラーは設定に任せる
+					SetDeviceSamplerState();
+				}
+				else {
+					Cb.ActiveFlg.x = 0;
+				}
+			}
+
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &Cb, 0, 0);
+
+			//ストライドとオフセット
+			//形状の頂点バッファと行列バッファを設定
+			UINT stride[2] = { MeshRes->GetNumStride(), sizeof(Matrix4X4) };
+			UINT offset[2] = { 0, 0 };
+			ID3D11Buffer* pBuf[2] = { MeshRes->GetVertexBuffer().Get(), GetMatrixBuffer().Get() };
+			//頂点バッファのセット
+			pD3D11DeviceContext->IASetVertexBuffers(0, 2, pBuf, stride, offset);
+			//インデックスバッファのセット
+			pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+			//描画方法（3角形）
+			pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+			if (ShadoUuse) {
+				//シェーダの設定
+				if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+					//シャドウマップがあれば自己影防止用のピクセルシェーダ
+					pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+					pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow2::GetPtr()->GetShader(), nullptr, 0);
+				}
+				else {
+					pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+					pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow::GetPtr()->GetShader(), nullptr, 0);
+				}
+				//シャドウマップのレンダラーターゲット
+				auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+				ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
+				pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
+				//シャドウマップサンプラー
+				ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+				pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
+			}
+			else {
+				//シェーダの設定
+				pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
+				pD3D11DeviceContext->PSSetShader(T_PShader::GetPtr()->GetShader(), nullptr, 0);
+			}
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(T_VShader::GetPtr()->GetInputLayout());
+			//デプスステンシルステートは設定に任せる
+			SetDeviceDepthStencilState();
+			//透明処理なら
+			if (GetGameObject()->GetAlphaActive()) {
+				//ブレンドステート
+				//透明処理
+				if (GetBlendState() == BlendState::Additive) {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+				}
+				else {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				}
+				//ラスタライザステート(裏描画)
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+				//描画
+				pD3D11DeviceContext->DrawIndexedInstanced(MeshRes->GetNumIndicis(), GetMatrixVec().size(), 0, 0, 0);
+				//ラスタライザステート（表描画）
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexedInstanced(MeshRes->GetNumIndicis(), GetMatrixVec().size(), 0, 0, 0);
+			}
+			else {
+				//透明処理しない
+				//ブレンドステートは設定に任せる
+				SetDeviceBlendState();
+				//ラスタライザステートは設定に任せる
+				SetDeviceRasterizerState();
+				//描画
+				pD3D11DeviceContext->DrawIndexedInstanced(MeshRes->GetNumIndicis(), GetMatrixVec().size(), 0, 0, 0);
+			}
+			//後始末
+			Dev->InitializeStates();
+			//自動行列クリアなら
+			if (IsAutoClearMatrixVec()) {
+				//行列配列のクリア
+				ClearMatrixVec();
+			}
+		}
+
+
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	PCStatic描画コンポーネント
@@ -1172,6 +1422,53 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+
+	//--------------------------------------------------------------------------------------
+	///	PCStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PCStaticInstanceDraw : public StaticInstanceDraw {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PCStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PCStaticInstanceDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 	//--------------------------------------------------------------------------------------
 	///	PTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
@@ -1216,6 +1513,52 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	PTStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PTStaticInstanceDraw : public StaticInstanceDraw {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PTStaticInstanceDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1262,6 +1605,52 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	PCTStaticInstance描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PCTStaticInstanceDraw : public StaticInstanceDraw {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PCTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PCTStaticInstanceDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	PNTStatic描画コンポーネント
@@ -1330,6 +1719,76 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PNTStaticインスタンス描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PNTStaticInstanceDraw : public StaticInstanceDraw {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PNTStaticInstanceDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PNTStaticInstanceDraw();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか得る
+		@return	影を描画すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsOwnShadowActive() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	影を描画するかどうか設定する
+		@param[in]	b		影を描画するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetOwnShadowActive(bool b);
+		//操作
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnCreate処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnUpdate処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OnDraw処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	//	class PNTStaticModelDraw : public PNTStaticDraw;

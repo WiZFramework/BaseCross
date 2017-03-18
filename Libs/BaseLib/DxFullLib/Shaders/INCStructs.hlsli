@@ -2,11 +2,22 @@
 // File: INCStructs.hlsi
 //
 //--------------------------------------------------------------------------------------
+struct VSPCInstanceInput
+{
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+	// インスタンスごとに設定される行列
+	float4x4 mat : MATRIX;
+	// インスタンスＩＤ
+	uint InstanceId : SV_InstanceID;
+};
+
 struct VSPCInput
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 };
+
 
 struct PSPCInput
 {
@@ -19,6 +30,19 @@ struct VSPTInput
 	float4 position : SV_POSITION;
 	float2 tex : TEXCOORD;
 };
+
+struct VSPTInstanceInput
+{
+	float4 position : SV_POSITION;
+	float2 tex : TEXCOORD0;
+	// インスタンスごとに設定される行列
+	float4x4 mat : MATRIX;
+	// インスタンスＩＤ
+	uint InstanceId : SV_InstanceID;
+};
+
+
+
 
 struct PSPTInput
 {
@@ -65,6 +89,19 @@ struct VSPCTInput
 };
 
 
+struct VSPCTInstanceInput
+{
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+	float2 tex : TEXCOORD0;
+	// インスタンスごとに設定される行列
+	float4x4 mat : MATRIX;
+	// インスタンスＩＤ
+	uint InstanceId : SV_InstanceID;
+};
+
+
+
 struct PSPCTInput
 {
 	float4 position : SV_POSITION;
@@ -80,6 +117,16 @@ struct VSPNTInput
 	float2 tex : TEXCOORD;
 };
 
+struct VSPNTInstanceInput
+{
+	float4 position : SV_Position;
+	float3 norm : NORMAL;
+	float2 tex : TEXCOORD0;
+	// インスタンスごとに設定される行列
+	float4x4 mat : MATRIX;
+	// インスタンスＩＤ
+	uint InstanceId  : SV_InstanceID;
+};
 
 
 struct VSPNTBoneInput

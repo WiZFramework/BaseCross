@@ -243,6 +243,12 @@ namespace basecross {
 		if (ParPtr) {
 			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
 			SetPos -= ParWorldPos;
+			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().QtInMatrix();
+			ParQt.Inverse();
+			Matrix4X4 ParQtMat;
+			ParQtMat.RotationQuaternion(ParQt);
+			SetPos.Transform(ParQtMat);
+
 		}
 		SetPosition(SetPos);
 	}
@@ -252,6 +258,11 @@ namespace basecross {
 		if (ParPtr) {
 			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
 			SetPos -= ParWorldPos;
+			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().QtInMatrix();
+			ParQt.Inverse();
+			Matrix4X4 ParQtMat;
+			ParQtMat.RotationQuaternion(ParQt);
+			SetPos.Transform(ParQtMat);
 		}
 		ResetPosition(SetPos);
 	}
@@ -319,12 +330,15 @@ namespace basecross {
 		if (Obj) {
 			pImpl->m_Parent = Obj;
 			auto ParWorld = Obj->GetComponent<Transform>()->GetWorldMatrix();
+			ParWorld.ScaleIdentity();
 			auto PosSpan = GetPosition() - ParWorld.PosInMatrixSt();
-			auto ParInv = ParWorld;
-			ParInv.ScaleIdentity();
-			Vector4 Temp;
-			ParInv.Inverse(Temp);
-			Matrix4X4 Mat = GetWorldMatrix() * ParInv;
+			auto QtSpan = ParWorld.QtInMatrix();
+			QtSpan.Inverse();
+			Matrix4X4 ParQtMat;
+			ParQtMat.RotationQuaternion(QtSpan);
+			PosSpan.Transform(ParQtMat);
+
+			Matrix4X4 Mat = GetWorldMatrix() * ParWorld;
 			Vector3 Scale, Pos;
 			Quaternion Qt;
 			Mat.Decompose(Scale, Qt, Pos);
@@ -333,6 +347,7 @@ namespace basecross {
 			SetPosition(PosSpan);
 			SetToBefore();
 			Obj->GetComponent<Transform>()->AddChild(GetGameObject());
+
 		}
 		else {
 			//nullptr‚ª“n‚³‚ê‚½
