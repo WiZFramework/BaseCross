@@ -1,0 +1,457 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０７．ジオメトリシェーダによる描画</h3>
+<br />
+<h4>ジオメトリシェーダとは</h4>
+　<b>BaseCross</b>には、<b>頂点シェーダ、ピクセルシェーダ</b>のほかに<b>ジオメトリシェーダと計算シェーダ</b>用のクラスを作成できる仕組みが用意されています。<br />
+　このほかに<b>DirectX11が持ってるシェーダ</b>には<b>ハルシェーダとドメインシェーダ</b>がありますが、こちら用にはクラスが用意されてません。ですので<b>ハルシェーダとドメインシェーダ</b>の実装は不可能ではありませんが、0からシェーダへのアクセスクラスを作る必要があります。<br />
+　<b>ジオメトリシェーダと計算シェーダ</b>は、クラスが用意されていますが、<b>OnDraw()に直結する</b>のは<b>ジオメトリシェーダ</b>です。<b>計算シェーダ</b>は、計算処理をCPUで行うのではなく、GPUに計算させる手法で、扱いが別になります。<br />
+<br />
+　というわけで、この項では<b>ジオメトリシェーダ</b>のサンプルの紹介をするわけですが、では<b>ジオメトリシェーダ</b>とは何か、と簡単に説明します。<br />
+　これまでのサンプルで、頂点処理は<b>頂点シェーダ</b>ピクセル処理は<b>ピクセルシェーダ</b>が行い、それぞれどのような内容を記述すべきかが見えてきたと思います。このセットは単位を<b>頂点、もしくはピクセル</b>で扱うことで、細かな制御が可能になります。<br />
+　しかし、時には、<b>描画プリミティブ単位</b>で考えたいことがあります。<b>描画プリミティブ単位</b>とは<b>三角形</b>とか<b>線</b>とか<b>点</b>です。<br />
+　<b>DirectX11</b>は、描画するときに、渡した頂点バッファを、<b>どのようなプリミティブ単位で描画すべきか</b>を指定します。一般的な３Ｄや２Ｄであれば、<b>三角形単位</b>、です。<br />
+　ところが<b>頂点シェーダが扱うのは点単位のみ</b>です。すると、シェーダを記述する際、いまどの頂点に対する計算を行おうとしているのか、あるいは、現在の頂点は、三角形のどの位置にあるものなのかわかりません。（インデックスは持ってこれるのですが、ここでほしいのは、三角形の中のどの頂点かということです）<br />
+　<b>ジオメトリシェーダ</b>はこの不満に答えてくれます。そして、これこそ<b>ジオメトリシェーダの機能</b>なのですが、シェーダ内で<b>頂点を増やすことができる</b>のです。<br />
+　このことにより、たとえば、レーシングゲームなどで、同じシーンを複数のカメラで表示することもあると思います。<br />
+　このとき、メインのプレイヤーのワールド行列等情報と、他のビューのカメラ情報があれば、同時に複数のビューに記述することが可能です。<br />
+　また、１つの三角形を細かい三角形に分割することにより、１つのオブジェクトをバラバラにすることも可能です。<br />
+　そのほか、アイディア次第では、表現方法が大幅に増えます。<br />
+　なお<b>ジオメトリシェーダ</b>は、<b>頂点シェーダとピクセルシェーダの間</b>に実装されます。<br />
+<br/>
+<h4>ジオメトリシェーダの実装</h4>
+　では<b>FullSample4071ディレクトリ</b>のソリューションを開き、リビルド、実行してみましょう。以下の画面が現れます。
+<p>&nbsp;</p>
+<img src="img/0407a.png" width="80%"/>
+<p>図0407a</p>
+<p>&nbsp;</p>
+　この画面は、<b>FullSample4071</b>の画面です。ここでは、<b>ジオメトリックシェーダ</b>を使って、３つ描画していいます。<br />
+　今回は1回（センターのオブジェクトの描画）時に、<b>3つのワールド行列</b>を渡します。そして、そのワールド行列の数だけ（つまり3つに）三角形を増やします。<br />
+　まず、シェーダーを記述します。<b>GameSourcesプロジェクト</b>の<b>ShaderSources</b>フィルタに記述し　ます。以下は<b>SimpleInc.hlsli</b>（ヘッダファイル）です。<br />
+<div class="box1">
+<pre>
+cbuffer SimpleConstantBuffer : register(b0)
+{
+    <span class="red">float4x4 World[3] : packoffset(c0);</span>
+    float4x4 View   : packoffset(c12);
+    float4x4 Projection : packoffset(c16);
+    float4 LightDir : packoffset(c20);
+    float4 Param : packoffset(c21);
+};
+
+
+struct VertexShaderInput
+{
+    float4 pos : SV_Position;
+    float3 norm : NORMAL;
+    float4 color : COLOR0;
+};
+
+typedef VertexShaderInput GeometryShaderInput;
+
+struct PixelShaderInput
+{
+    float4 pos : SV_POSITION;
+    float3 norm : NORMAL;
+    float4 color : COLOR0;
+};
+</pre>
+</div>
+　ここではコンスタントバッファ（シェーダ側）、頂点定義などが宣言されています。<br />
+　赤くなっているところは注意点です。ワールド行列が３つ入力されます。<br />
+<br />
+　続いて、頂点シェーダです。<b>VSSimpleBase.hlsl</b>です。
+<div class="box1">
+<pre>
+#include "SimpleInc.hlsli"
+
+GeometryShaderInput main(VertexShaderInput input)
+{
+    //ジオメトリシェーダーに渡す変数
+    //入力をそのまま出力する
+    GeometryShaderInput vertexShaderOutput
+        = (GeometryShaderInput)input;
+    return vertexShaderOutput;
+}
+</pre>
+</div>
+　このように、そのまま<b>ジオメトリシェーダ</b>に渡しています。<br />
+<br />
+　続いて、<b>ジオメトリシェーダ</b>です。<b>GSSimpleBase.hlsl</b>となります。
+<div class="box1">
+<pre>
+#include "SimpleInc.hlsli"
+
+<span class="red">[maxvertexcount(9)]
+void main(
+    triangle GeometryShaderInput input[3],
+    inout TriangleStream&lt; PixelShaderInput > output
+)</span>
+{
+    for (uint count = 0; count &lt; 3; count++){
+        for (uint i = 0; i &lt; 3; i++)
+        {
+            PixelShaderInput element;
+            //頂点の位置を変換
+            float4 pos = float4(input[i].pos.xyz, 1.0f);
+            float4 Col;
+            if (pos.y > 0){
+                switch (count){
+                case 0:
+                    Col = float4(1.0f, 0.0f, 0.0f, 0.0f);
+                    break;
+                case 1:
+                    Col = float4(0.0f, 1.0f, 0.0f, 0.0f);
+                    break;
+                case 2:
+                    Col = float4(0.0f, 0.0f, 1.0f, 0.0f);
+                    break;
+                default:
+                    Col = float4(1.0f, 1.0f, 1.0f, 1.0f);
+                    break;
+                }
+            }
+            else if (pos.y &lt; 0){
+                switch (count){
+                case 0:
+                    Col = float4(0.0f, 1.0f, 0.0f, 0.0f);
+                    break;
+                case 1:
+                    Col = float4(0.0f, 0.0f, 1.0f, 0.0f);
+                    break;
+                case 2:
+                    Col = float4(1.0f, 0.0f, 0.0f, 0.0f);
+                    break;
+                default:
+                    Col = float4(1.0f, 1.0f, 1.0f, 1.0f);
+                    break;
+                }
+            }
+            else{
+                Col = float4(1.0f, 1.0f, 1.0f, 1.0f);
+            }
+            //ワールド変換
+            pos = mul(pos, World[count]);
+            //ビュー変換
+            pos = mul(pos, View);
+            //射影変換
+            pos = mul(pos, Projection);
+            //ピクセルシェーダに渡す変数に設定
+            element.pos = pos;
+            //ライティング用に法線をワールド変換して設定
+            element.norm = mul(input[i].norm, (float3x3)World[count]);
+            //頂点色を設定
+            element.color = Col;
+            <span class="red">//頂点を追加
+            output.Append(element);</span>
+        }
+        <span class="red">//一つの三角形をストリームに送る
+        output.RestartStrip();</span>
+    }
+}
+</pre>
+</div>
+　コードの全般は、左右のオブジェクトの色を変更する処理です。注意点は赤くなっているところです。 
+<div class="box1">
+<pre>
+<span class="red">[maxvertexcount(9)]
+void main(
+    triangle GeometryShaderInput input[3],
+    inout TriangleStream&lt; PixelShaderInput > output
+)</span>
+</pre>
+</div>
+　は<b>main()</b>に渡す変数の宣言ですが、<b>[maxvertexcount(9)]</b>というのは作成する頂点の最大数です。ここでは、<b>3つの頂点（つまり三角形）から3つの三角形</b>を作りますので<b>9</b>になります。<br/>
+　<b>triangle GeometryShaderInput input[3]</b>というのは、まさに入力される三角形の頂点データです。<br />
+　<b>inout TriangleStream< PixelShaderInput > output</b>はピクセルシェーダに渡す変数です。構造体の型を記述しておきます。
+　内容的には、1つの三角形を元に3つの三角形を作成して、ピクセルシェーダに渡すわけですが、1つの頂点ができた段階で
+<div class="box1">
+<pre>
+    <span class="red">//頂点を追加
+    output.Append(element);</span>
+</pre>
+</div>
+　のように頂点を出力に送ります。<br />
+　また、1つの三角形分の頂点を送った段階で、
+<div class="box1">
+<pre>
+    <span class="red">//一つの三角形をストリームに送る
+    output.RestartStrip();</span>
+</pre>
+</div>
+　のように、いったん締めます。そうして3個の三角形をoutputに送ります。<br />
+<br />
+　ピクセルシェーダについては、特別な記述はありませんので省略します。<br />
+<br />
+<h4>シェーダクラスの実装</h4>
+　前項までで説明しましたように、この後、C++側とのインターフェイスとして<b>コンスタントバッファ構造体とシェーダクラス</b>を作成します。<b>ProjectShader.h/cpp</b>に記述します。以下はヘッダ部ですが
+<div class="box1">
+<pre>
+//カスタムシャドウマップ用コンスタントバッファ構造体
+struct CustomShadowmapConstantBuffer
+{
+    XMMATRIX mWorld[3];
+    XMMATRIX mView;
+    XMMATRIX mProj;
+    CustomShadowmapConstantBuffer() {
+        memset(this, 0, sizeof(CustomShadowmapConstantBuffer));
+    };
+};
+//シェーダ宣言（マクロ使用）
+DECLARE_DX11_CONSTANT_BUFFER(CBCustomShadowmap, CustomShadowmapConstantBuffer)
+DECLARE_DX11_VERTEX_SHADER(VSCustomShadowmap, VertexPositionNormalColor)
+<span class="red">DECLARE_DX11_GEOMETRY_SHADER(GSCustomShadowmap)</span>
+//カスタム描画コンスタントバッファ構造体
+struct CustomDrawConstantBuffer
+{
+    Matrix4X4 World[3];
+    Matrix4X4 View;
+    Matrix4X4 Projection;
+    Vector4 LightDir;
+    Vector4 Param;  //汎用パラメータ
+    CustomDrawConstantBuffer() {
+        memset(this, 0, sizeof(CustomDrawConstantBuffer));
+    };
+};
+//シェーダ宣言（マクロ使用）
+DECLARE_DX11_CONSTANT_BUFFER(CBCustomDraw, CustomDrawConstantBuffer)
+DECLARE_DX11_VERTEX_SHADER(VSCustomDraw, VertexPositionNormalColor)
+<span class="red">DECLARE_DX11_GEOMETRY_SHADER(GSCustomDraw)</span>
+DECLARE_DX11_PIXEL_SHADER(PSCustomDraw)
+</pre>
+</div>
+　ここにはシャドウマップ用のも記述がありますが、説明は本体部分とします。赤くなっている部分が<b>ジオメトリシェーダ用クラス</b>のマクロです。以下は実体部です。
+<div class="box1">
+<pre>
+//シェーダ定義（マクロ使用）
+IMPLEMENT_DX11_CONSTANT_BUFFER(CBCustomShadowmap)
+IMPLEMENT_DX11_VERTEX_SHADER(VSCustomShadowmap, 
+    App::GetApp()->GetShadersPath() + L"VSCustomShadowmap.cso")
+<span class="red">IMPLEMENT_DX11_GEOMETRY_SHADER(GSCustomShadowmap, 
+    App::GetApp()->GetShadersPath() + L"GSCustomShadowmap.cso")</span>
+
+IMPLEMENT_DX11_CONSTANT_BUFFER(CBCustomDraw)
+IMPLEMENT_DX11_VERTEX_SHADER(VSCustomDraw, 
+    App::GetApp()->GetShadersPath() + L"VSSimpleBase.cso")
+<span class="red">IMPLEMENT_DX11_GEOMETRY_SHADER(GSCustomDraw, 
+    App::GetApp()->GetShadersPath() + L"GSSimpleBase.cso")</span>
+IMPLEMENT_DX11_PIXEL_SHADER(PSCustomDraw, 
+    App::App::GetApp()->GetShadersPath() + L"PSSimpleBase.cso")
+</pre>
+</div>
+　このようにシェーダクラスを作成します。<br />
+<br />
+<h4>描画コンポーネントの作成</h4>
+　この項では<b>描画コンポーネント作成</b>のサンプルも兼ねております。ですので<b>OnDraw()関数</b>に記述するのではなく<b>描画コンポーネント</b>をオブジェクトに実装します。<br />
+　ここで作成する<b>コンポーネント</b>は<b>シャドウマップ用</b>と<b>オブジェクト描画用</b>です。説明は<b>オブジェクト描画用</b>のみ行います。<br />
+　以下は<b>Character.h</b>にあります、<b>CustomPNCStaticDrawコンポーネント</b>のヘッダ部です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  ジオメトリシェーダを使った独自の描画コンポーネント
+//--------------------------------------------------------------------------------------
+class CustomPNCStaticDraw : public <span class="red">StaticBaseDraw</span> {
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  GameObjectPtr   ゲームオブジェクト
+    */
+    //--------------------------------------------------------------------------------------
+    explicit CustomPNCStaticDraw(const shared_ptr&lt;GameObject>& GameObjectPtr);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~CustomPNCStaticDraw() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  OnCreate処理
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate()override {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  OnUpdate処理（空関数）
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate()override {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  OnDraw処理
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDraw()override;
+};
+</pre>
+</div>
+　親クラスとなっています<b>StaticBaseDraw</b>は<b>DrawComponent</b>の派生クラスとなっています。<br />
+　<b>DrawComponent</b>の派生クラス（子や孫でも可）として継承クラスを作ることで<b>描画コンポーネント</b>になります。<br />
+　以下は実体部です。<b>Character.cpp</b>に記述があります。
+<div class="box1">
+<pre>
+void CustomPNCStaticDraw::OnDraw() {
+    auto PtrGameObject = GetGameObject();
+    //メッシュがなければ描画しない
+    auto MeshRes = GetMeshResource();
+    if (!MeshRes) {
+        throw BaseException(
+            L"メッシュが作成されていません",
+            L"if (!MeshRes)",
+            L"CustomPNCStaticDraw::OnDraw()"
+        );
+    }
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderState = Dev->GetRenderState();
+
+    auto PtrT = PtrGameObject->GetComponent&lt;Transform>();
+    //カメラを得る
+    auto PtrCamera = PtrGameObject->OnGetDrawCamera();
+    //カメラの取得
+    Matrix4X4 View, Proj, WorldViewProj;
+    View = PtrCamera->GetViewMatrix();
+    Proj = PtrCamera->GetProjMatrix();
+
+    //コンスタントバッファの設定
+    CustomDrawConstantBuffer cb1;
+    //行列の設定(転置する)
+    cb1.World[0] = Matrix4X4EX::Transpose(PtrT->GetWorldMatrix());
+    Matrix4X4 Left = Matrix4X4EX::Translation(-5.0f, 0, 0);
+    Left = PtrT->GetWorldMatrix() * Left;
+    cb1.World[1] = Matrix4X4EX::Transpose(Left);
+    Matrix4X4 Right = Matrix4X4EX::Translation(5.0f, 0, 0);
+    Right = PtrT->GetWorldMatrix() * Right;
+    cb1.World[2] = Matrix4X4EX::Transpose(Right);
+    cb1.View = Matrix4X4EX::Transpose(View);
+    cb1.Projection = Matrix4X4EX::Transpose(Proj);
+    //ライトの設定
+    auto PtrLight = PtrGameObject->OnGetDrawLight();
+    cb1.LightDir = PtrLight.m_Directional;
+    cb1.LightDir.w = 1.0f;
+
+    //コンスタントバッファの更新
+    pID3D11DeviceContext->UpdateSubresource(CBCustomDraw::GetPtr()->GetBuffer(),
+         0, nullptr, &cb1, 0, 0);
+    //ストライドとオフセット
+    UINT stride = MeshRes->GetNumStride();
+    UINT offset = 0;
+    //頂点バッファの設定
+    pID3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    //インデックスバッファのセット
+    pID3D11DeviceContext->IASetIndexBuffer(
+        MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+    //描画方法（3角形）
+    pID3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //ステータスのポインタ
+    //テクスチャを取得
+    ID3D11ShaderResourceView* pNull[1] = { 0 };
+    ID3D11SamplerState* pNullSR[1] = { 0 };
+    //半透明処理
+    pID3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+    //デプスステンシルは使用する
+    pID3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+    //シェーダの設定
+    pID3D11DeviceContext->VSSetShader(VSCustomDraw::GetPtr()->GetShader(), nullptr, 0);
+    <span class="red">pID3D11DeviceContext->GSSetShader(GSCustomDraw::GetPtr()->GetShader(), nullptr, 0);</span>
+    pID3D11DeviceContext->PSSetShader(PSCustomDraw::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pID3D11DeviceContext->IASetInputLayout(VSCustomDraw::GetPtr()->GetInputLayout());
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBCustomDraw::GetPtr()->GetBuffer();
+    pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    <span class="red">pID3D11DeviceContext->GSSetConstantBuffers(0, 1, &pConstantBuffer);</span>
+    pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+
+    //レンダリングステート
+    pID3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+    //描画
+    pID3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+    //レンダリングステート
+    pID3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+    //描画
+    pID3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+    //後始末
+    Dev->InitializeStates();
+}
+</pre>
+</div>
+　赤くなっているところが<b>ジオメトリシェーダ</b>に関連する部分です。<br />
+<br />
+<h4>描画コンポーネントのオブジェクトへの実装</h4>
+　このように<b>描画コンポーネント</b>を作成すればほかのコンポーネントのように利用できます。またこのようにしておくとほかのオブジェクトでも、汎用的に使用できるようになります。以下は、コンポーネントの実装です。<b>CustomDrawOctahedron::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void CustomDrawOctahedron::OnCreate() {
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(m_StartScale);
+    Ptr->SetPosition(m_StartPos);
+    Ptr->SetRotation(m_StartRotation);
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    //正8面体
+    MeshUtill::CreateOctahedron(1.0f, vertices, indices);
+    for (size_t i = 0; i &lt; vertices.size(); i++) {
+        VertexPositionNormalColor new_v;
+        new_v.position = vertices[i].position;
+        new_v.normal = vertices[i].normal;
+        new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+        m_BackupVertices.push_back(new_v);
+    }
+    <span class="red">auto PtrDraw = AddComponent&lt;CustomPNCStaticDraw>();
+    PtrDraw->CreateOriginalMesh(m_BackupVertices, indices);
+    PtrDraw->SetOriginalMeshUse(true);</span>
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;CustomShadowmap>();
+    ShadowPtr->SetMeshResource(PtrDraw->GetMeshResource());
+    //透明処理（描画順制御のため）
+    SetAlphaActive(true);
+}
+</pre>
+</div>
+　このように実装します。<br />
+<br />
+<h4>ジオメトリシェーダによる３角形の分割</h4>
+　続く<b>FullSample4072</b>は<b>3角形の分割</b>のサンプルです。<br />
+　こちらは<b>描画コンポーネント</b>は作成していません。<b>FullSample4072</b>のソリューションを開くと以下の画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0407b.png" width="80%"/>
+<p>図0407b</p>
+<p>&nbsp;</p>
+　このシェーダはマイクロソフト社のジオメトリシェーダのサンプルを引用したものです。各三角形を分割して4つの三角形を作成したいます。<br />
+　詳細はコードを参照ください。<br />
+　今項はジオメトリシェーダの使い方を説明しました。<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_06.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

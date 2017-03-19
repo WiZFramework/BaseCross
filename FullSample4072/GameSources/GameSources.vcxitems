@@ -32,14 +32,17 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSTest.hlsl">
-      <ShaderType>Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSTest.hlsl">
-      <ShaderType>Vertex</ShaderType>
-    </FxCompile>
+    <None Include="$(MSBuildThisFileDirectory)ShaderSources\BallHeader.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ShaderSources\INCTest.hlsli" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\GSBall.hlsl">
+      <ShaderType>Geometry</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSBall.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSBall.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
 </Project>

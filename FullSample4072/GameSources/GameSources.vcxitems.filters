@@ -8,7 +8,7 @@
       <UniqueIdentifier>{96692d2a-8790-41a9-bfac-6c5662d4ad61}</UniqueIdentifier>
     </Filter>
     <Filter Include="ShaderSources">
-      <UniqueIdentifier>{eadd991a-3689-4d49-a87c-f45563efcef8}</UniqueIdentifier>
+      <UniqueIdentifier>{f937dc20-5457-4d12-b16d-15cc9d563e84}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -58,16 +58,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSTest.hlsl">
-      <Filter>ShaderSources</Filter>
-    </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSTest.hlsl">
-      <Filter>ShaderSources</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ShaderSources\INCTest.hlsli">
+    <None Include="$(MSBuildThisFileDirectory)ShaderSources\BallHeader.hlsli">
       <Filter>ShaderSources</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\GSBall.hlsl">
+      <Filter>ShaderSources</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSBall.hlsl">
+      <Filter>ShaderSources</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSBall.hlsl">
+      <Filter>ShaderSources</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

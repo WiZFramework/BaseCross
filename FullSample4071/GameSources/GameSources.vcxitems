@@ -32,14 +32,24 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSTest.hlsl">
-      <ShaderType>Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSTest.hlsl">
-      <ShaderType>Vertex</ShaderType>
-    </FxCompile>
+    <None Include="$(MSBuildThisFileDirectory)ShaderSources\CustomShadowmapInc.hlsli" />
+    <None Include="$(MSBuildThisFileDirectory)ShaderSources\SimpleInc.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ShaderSources\INCTest.hlsli" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\GSCustomShadowmap.hlsl">
+      <ShaderType>Geometry</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\GSSimpleBase.hlsl">
+      <ShaderType>Geometry</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\PSSimpleBase.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSCustomShadowmap.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ShaderSources\VSSimpleBase.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
 </Project>
