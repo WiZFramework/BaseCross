@@ -19,7 +19,6 @@ public:
 	CString m_FileName;
 
 
-
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
 
@@ -34,4 +33,7 @@ public:
 	CString m_PosY;
 	CString m_PosZ;
 	BOOL m_IsReadStatic;
+	BOOL m_WithTangent;
+	CString m_NormalmapFullFileName;
+	afx_msg void OnBnClickedButtonFiledialogNormalmapOpen();
 };

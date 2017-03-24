@@ -111,9 +111,10 @@ namespace basecross {
 		@param FbxSceneResourcePtr	FBXシーンリソース
 		@param pFbxMesh	FBXメッシュリソース
 		@param NeedStatic	スキンメッシュでもスタティックメッシュにするかどうか
+		@param WithTangent	タンジェントを読むかどうか
 		*/
 		//--------------------------------------------------------------------------------------
-		FbxMeshResource2(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic);
+		FbxMeshResource2(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic, bool WithTangent);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -153,6 +154,20 @@ namespace basecross {
 
 		//--------------------------------------------------------------------------------------
 		/*!
+		@breaf 頂点とインデックスとマテリアルを取り出す(タンジェント付き)
+		@param[out] vertices	頂点配列
+		@param[out] indices	インデックス配列
+		@param[out] materials	マテリアル配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetSkinVerticesIndicesMaterialsWithTangent(vector<VertexPositionNormalTangentTextureSkinning>& vertices,
+			vector<uint16_t>& indices, vector<MaterialEx>& materials,
+			vector<Bone>& Bones, map< string, UINT >& mapBoneList);
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@breaf スタティック呼び出し<br/>
 		FBXメッシュからデータを読み出す
 		@param FbxSceneResourcePtr	FBXシーンリソース
@@ -161,7 +176,8 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		static shared_ptr<FbxMeshResource2> CreateFbxMeshResource(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic = false);
+		static shared_ptr<FbxMeshResource2> CreateFbxMeshResource(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic = false,
+			bool WithTangent = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@breaf 初期化
@@ -271,10 +287,11 @@ namespace basecross {
 		@param FileName	FBXファイル名
 		@param SceneName	シーン名
 		@param NeedStatic	static構築をするかどうか
+		@param WithTangent	タンジェントを読み込むかどうか
 		*/
 		//--------------------------------------------------------------------------------------
 		FbxSceneResource(const wstring& DataDir,
-			const wstring& FileName, const string& SceneName, bool NeedStatic);
+			const wstring& FileName, const string& SceneName, bool NeedStatic,bool WithTangent);
 		//初期化
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -315,11 +332,12 @@ namespace basecross {
 		@param FileName		ファイル名
 		@param SceneName	シーン名
 		@param NeedStati	staticメッシュとして構築するかどうか
+		@param WithTangent	タンジェントを読み込むかどうか
 		@return　FBXシーンリソース
 		*/
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<FbxSceneResource> CreateFbxScene(const wstring& DataDir,
-			const wstring& FileName, const string& SceneName = "", bool NeedStatic = false);
+			const wstring& FileName, const string& SceneName = "", bool NeedStatic = false,bool WithTangent = false);
 		//アクセサ
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -375,6 +393,197 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	BcFbxPNTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
+	//--------------------------------------------------------------------------------------
+	class BcFbxPNTBoneModelDraw : public BcPNTStaticModelDraw {
+	protected:
+		//ボーン行列をリソースから読み込む
+		void SetBoneVec();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit BcFbxPNTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~BcFbxPNTBoneModelDraw();
+		//アクセサ
+		//ボーン行列をリソースから読み込む
+		void GetBoneVec(vector< Bone >& Bones);
+		//各オブジェクトごとにボーンを所持しておくポインタ
+		const vector< Bone >& GetVecLocalFbxBones() const;
+		const vector< Bone >* GetVecLocalFbxBonesPtr() const;
+
+		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
+		void SetMeshResource(const wstring& MeshKey);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@breaf アニメーションを設定する（すでにその定義があれば、差し替える）
+		@param　Name	アニメーション名
+		@param　StartFrame,	スタート位置
+		@param　FrameLength	長さ
+		@param　Loop,			ループするかどうか
+		@param　FramesParSecond １秒あたりのフレーム数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AddAnimation(const char* Name, UINT StartFrame, UINT FrameLength, bool Loop,
+			float FramesParSecond = 30.0f);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@breaf アニメーションデータを得る。無ければ例外
+		@return	アニメーションデータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const AnimationData& GetAnimationData(const string& AnimeName) const;
+
+		//カレントアニメーション
+		const string& GetCurrentAnimation() const;
+		void SetCurrentAnimation(const string& AnemationName, float StartTime = 0.0f);
+		//現在のアニメーションが終了しているかどうか
+		bool IsTargetAnimeEnd() const;
+
+		//指定したIDのボーンの現在の行列を取得する
+		void GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+
+		//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
+		void GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列を得る
+		@return	ローカルボーン行列配列の先頭ポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+
+		float GetCurrentTime() const;
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションを進める
+		@param[in]	ElapsedTime	経過時間
+		@return	アニメーションが終了すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool UpdateAnimation(float ElapsedTime);
+		//操作
+		virtual void OnCreate()override;
+		virtual void OnDraw()override;
+
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	BcFbxPNTnTBoneModelDraw描画コンポーネント（ボーンモデル描画用）タンジェント付き
+	//--------------------------------------------------------------------------------------
+	class BcFbxPNTnTBoneModelDraw : public BcPNTnTStaticModelDraw {
+	protected:
+		//ボーン行列をリソースから読み込む
+		void SetBoneVec();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit BcFbxPNTnTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~BcFbxPNTnTBoneModelDraw();
+		//アクセサ
+		//ボーン行列をリソースから読み込む
+		void GetBoneVec(vector< Bone >& Bones);
+		//各オブジェクトごとにボーンを所持しておくポインタ
+		const vector< Bone >& GetVecLocalFbxBones() const;
+		const vector< Bone >* GetVecLocalFbxBonesPtr() const;
+
+		virtual void SetMeshResource(const shared_ptr<MeshResource>& MeshRes)override;
+		void SetMeshResource(const wstring& MeshKey);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@breaf アニメーションを設定する（すでにその定義があれば、差し替える）
+		@param　Name	アニメーション名
+		@param　StartFrame,	スタート位置
+		@param　FrameLength	長さ
+		@param　Loop,			ループするかどうか
+		@param　FramesParSecond １秒あたりのフレーム数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AddAnimation(const char* Name, UINT StartFrame, UINT FrameLength, bool Loop,
+			float FramesParSecond = 30.0f);
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@breaf アニメーションデータを得る。無ければ例外
+		@return	アニメーションデータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const AnimationData& GetAnimationData(const string& AnimeName) const;
+
+		//カレントアニメーション
+		const string& GetCurrentAnimation() const;
+		void SetCurrentAnimation(const string& AnemationName, float StartTime = 0.0f);
+		//現在のアニメーションが終了しているかどうか
+		bool IsTargetAnimeEnd() const;
+
+		//指定したIDのボーンの現在の行列を取得する
+		void GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+
+		//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
+		void GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列を得る
+		@return	ローカルボーン行列配列の先頭ポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+
+		float GetCurrentTime() const;
+
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションを進める
+		@param[in]	ElapsedTime	経過時間
+		@return	アニメーションが終了すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool UpdateAnimation(float ElapsedTime);
+		//操作
+		virtual void OnCreate()override;
+		virtual void OnDraw()override;
+
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+
+#ifdef test
 	//--------------------------------------------------------------------------------------
 	//	class BasicFbxPNTBoneDraw : public PNTStaticModelDraw;
 	//	用途: BasicFbxPNTBoneDraw描画コンポーネント
@@ -459,7 +668,7 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
-
+#endif
 
 	//--------------------------------------------------------------------------------------
 	//	class FbxMeshObject : public GameObject;
@@ -475,6 +684,8 @@ namespace basecross {
 		float m_CharaLocalScale;
 		Vector3 m_CharaLocalPosition;
 		bool m_IsReadStaticMesh;
+		bool m_WithTangent;
+
 		//アニメーション実行中かどうか
 		bool m_IsAnimeRun;
 
@@ -482,7 +693,7 @@ namespace basecross {
 		FbxMeshObject(const shared_ptr<Stage>& StagePtr);
 		virtual ~FbxMeshObject() {}
 		void ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
-			bool IsReadStatic);
+			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName);
 
 		void ClearFbxMesh();
 

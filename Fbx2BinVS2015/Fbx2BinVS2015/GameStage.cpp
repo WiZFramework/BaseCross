@@ -29,14 +29,12 @@ namespace basecross {
 	void GameStage::CreateViewLight() {
 		auto PtrView = CreateView<SingleView>();
 		//ビューのカメラの設定
-		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
+		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>(10.0f);
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
-		//シングルライトの作成
-		auto PtrSingleLight = CreateLight<SingleLight>();
-		//ライトの設定
-		PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
 	}
 
 
@@ -93,10 +91,10 @@ namespace basecross {
 	}
 
 	void GameStage::ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vector3& Position,
-		bool IsReadStatic) {
+		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName) {
 		try {
 			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
-			PtrFbxObj->ResetFbxMesh(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic);
+			PtrFbxObj->ResetFbxMesh(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic, WithTangent, NormalFileName);
 		}
 		catch (...) {
 			throw;

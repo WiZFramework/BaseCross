@@ -49,7 +49,8 @@ CMainFrame::CMainFrame()
 	m_MeshFilename = L"";
 	//スタティックとして読み込む
 	m_IsReadStatic = FALSE;
-
+	//タンジェントは読み込まない
+	m_WithTangent = FALSE;
 	m_IsNowScale = TRUE;
 
 	//以下アニメーション関係
@@ -166,6 +167,8 @@ void CMainFrame::OnOpenFbxFile()
 		m_MeshPosY = FbxOpenDialog.m_PosY;
 		m_MeshPosZ = FbxOpenDialog.m_PosZ;
 		m_IsReadStatic = FbxOpenDialog.m_IsReadStatic;
+		m_WithTangent = FbxOpenDialog.m_WithTangent;
+		m_NormalmapFullFileName = FbxOpenDialog.m_NormalmapFullFileName;
 
 		wstring ModDIr;
 		App::GetApp()->GetModuleDirectory(ModDIr);
@@ -187,7 +190,8 @@ void CMainFrame::OnOpenFbxFile()
 				(float)_wtof(m_MeshPosZ)
 				);
 			try{
-				App::GetApp()->GetScene<Scene>()->ReadFbxFile(Dir, m_MeshFilename, 0, Scale, Pos, m_IsReadStatic == TRUE);
+				App::GetApp()->GetScene<Scene>()->ReadFbxFile(Dir, m_MeshFilename, 0, Scale, Pos, m_IsReadStatic == TRUE,
+					m_WithTangent == TRUE, m_NormalmapFullFileName);
 			}
 			catch (...) {
 				AfxMessageBox(L"FBXファイルの読み込みに失敗しました。");

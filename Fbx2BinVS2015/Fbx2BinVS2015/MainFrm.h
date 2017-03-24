@@ -13,6 +13,11 @@ class CMainFrame : public CFrameWnd
 	CString m_MeshPosY;
 	CString m_MeshPosZ;
 	BOOL m_IsReadStatic;
+	BOOL m_WithTangent;
+	//タンジェント使用時の法線マップファイル
+	wstring m_NormalmapFullFileName;
+
+
 	//メッシュのフルパスディレクトリ（最後に/はつかない）
 	wstring m_MeshDir;
 	//メッシュのファイル名

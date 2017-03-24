@@ -1,0 +1,71 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>５．FBXモデル変換ツール（Fbx2BinVS2015）</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>５０１．Fbx2BinVS2015のセットアップ</h3>
+　<b>AUTODESK社</b>の<b>FBXフォーマット</b>は広く普及している<b>モデルデータのフォーマット</b>です。<br />
+　多くの<b>３Ｄグラフィックソフト</b>もこの形式の出力に対応しており、またその内部のデータの取得も<b>FBXSDK</b>という形で公開されており、C++プログラムからの利用も、非常に便利です。<br />
+　しかし、<b>FBXSDK</b>は非常に大きいので、ゲームそのもののの開発環境に同居させるのは若干無理があります。<br />
+　そのため、<b>BaseCross</b>では<b>独自のグラフィックフォーマット</b>を定義し、そのデータを使ってゲーム内に配置する仕組みになっています。<br />
+　この章で説明する<b>Fbx2BinVS2015</b>はFBX形式から独自の形式<b>拡張子.bmf</b>に変換するツールです。ゲームではこの<b>.bmfファイル</b>をステージ内などに配置します。<br />
+<br />
+<h4>.bmfファイルについて</h4>
+　<b>.bmfファイル</b>は<b>BaseCrossのみで通用する</b>データ形式です。というより、はっきり言って拡張子もどうでもよいといえばどうでもよく、<b>データ変換ツール</b>と<b>ゲーム側</b>で整合性さえ取れてれば<b>.dat</b>などでも問題ありません。<br />
+　また、その細かな形式も<b>確定されたもの</b>ではなく、プログラムで自由に改変することができます。ようは、FBXデータをゲームで使用するデータに<b>データ変換</b>できればいいのです。<br />
+　デフォルトの<b>データ形式</b>については、別の項で説明します。
+<br />
+<h4>Fbx2BinVS2015のセットアップ</h4>
+　<b>Fbx2BinVS2015</b>は、BaseCrossの<b>Fbx2BinVS2015</b>ディレクトリに入っています。ほかのゲームと違ってそのまま起動しても動きません。以下の環境、また、FBXSDKのセットアップを行う必要があります。
+<div class="box1">
+<pre>
+＊MFC（VS2015に付属のマイクロソフト社のクラスライブラリ）のセットアップ
+＊FBX_SDKのセットアップ
+</pre>
+</div>
+<br />
+<h4>MFCのセットアップ</h4>
+　<b>MFC</b>というのは<b>Microsoft Foundation Class</b>といい、<b>VisualC++のライブラリ</b>です。内容的には<b>WindowsAPI</b>に直結する機能がクラス化されており、<b>VisualStdio2015Comunity</b>に標準でついています。<br />
+　<b>MFC</b>を使うと簡単に<b>メニュー</b>や<b>ダイアログ</b>、そして<b>ボタン</b>や<b>入力フィールド</b>などのコントロールを簡単に実装できるので、<b>Fbx2BinVS2015</b>のようなデータ変換ツールを作成するのには非常に便利です。<br />
+　<b>MFC</b>をセットアップするには<b>VisualStdio2015の管理ツール</b>を使って<b>VisualC++</b>グループの中の<b>Microsoft Foundation Class</b>をセットアップします。その際、バージョンに整合性がないと失敗することもありますので、<b>VisualStdio2015</b>を最新の状態にしてからセットアップしましょう。<br />
+<br />
+<h4>FBX_SDK</h4>
+　<b>FBX_SDK</b>は<b>AUTODESK</b>社の、<b>FBX_SDK</b>のページからダウンロードします。<br />
+　そして<b>VisualStdio2015用</b>のパッケージをダウンロード（セットアップ）できます。<b>FBX_SDK</b>のサイトのトップからたどると最新のパッケージのページにたどり着きます。<br />
+　<b>2017年3月の時点</b>で、<b>FBX SDK 2017.1</b>というバージョンがダウンロードできますので、それをセットアップしてください。<br />
+　<b>FBX_SDK</b>をセットアップしますと、デフォルトで<b>C:\Program Files\Autodesk\FBX\FBX SDK\2017.0.1</b>というディレクトリができ、その中に<b>include</b>と<b>lib</b>というディレクトリが作成されます。<br />
+　その２つのディレクトリ内のファイルを<b>BaseCross</b>の<b>Fbx2BinVS2015</b>の中の<b>FbxLibs</b>内にコピーして使用するわけですが、<b>include</b>については、そのままディレクトリ内を丸ごとコピーしてもらっていいのですが<b>lib</b>のほうは、<b>FBX_SDK</b>側の、<b>lib\vs2015\x86\debug</b>の内容を<b>Fbx2BinVS2015</b>側の<b>FbxLibs\lib\Debug</b>内へ、<b>lib\vs2015\x86\release</b>の内容を<b>Fbx2BinVS2015</b>側の<b>FbxLibs\lib\Release</b>内にコピーしてください。（全体で400メガ以上あります）<br />
+<br />
+　これらの環境をセットアップすれば、<b>Fbx2BinVS2015</b>のソリューションを開くことができるようになります。<br />
+<br />
+<h4>Fbx2BinVS2015の起動画面</h4>
+　ビルド後、起動して以下のような画面が出れば成功です。
+<p>&nbsp;</p>
+<img src="img/0501a.png" width="80%"/>
+<p>図0501a</p>
+<p>&nbsp;</p>
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="05_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

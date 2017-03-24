@@ -1,0 +1,455 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>５．FBXモデル変換ツール（Fbx2BinVS2015）</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>５０４．【.bmfファイル】のデータ構造</h3>
+　この項では<b>Fbx2BinVS2015</b>が作成する<b>データ構造</b>についての説明です。<br />
+　まず初めにお断りしたいのは、このデータ構造が<b>確定的なものではない</b>ということです。<br />
+　<b>.bmf</b>という拡張子は<b>バイナリモデルファイル</b>を略した（英語化）したものですが、全然確定したものではありません。<br />
+　これは<b>責任逃れ</b>のために述べているのではなく、<b>ファイルフォーマット</b>というのは<b>各自あるいは各チーム</b>が考えるものだということです。<br />
+　ですから<b>.bmf</b>は、1つの可能性（方法）を提案しているもので、これがベストであるわけでもなく、むしろ、<b>FBXからの独自フォーマットへの変換及び実装</b>は、どんどん新しく定義してほしいということです。<br />
+　そのことを前提にこの項の説明を行いたいと思います。<br />
+<br />
+<h3>バイナリファイルとは</h3>
+　ここで<b>バイナリファイル</b>について少し説明します。<br />
+　コンピュータのデータ（プログラムもそうですが）は、基本帝に<b>バイト単位</b>で考えられます。<br />
+　1バイトは8ビットであり、ここには<b>0x00から0xFF</b>までの<b>256個のデータ</b>を収めることができます。<br />
+　この中の番号に、人間に直接伝えられる<b>文字</b>を割り当てたのが<b>アスキーコード</b>をはじめとする<b>文字コード</b>です。<br />
+　<b>アスキーコード</b>は<b>1バイト文字</b>で。記号を含めても<b>0x00から0xFF</b>までの番号をすべて使用しているわけではありません。日本語などの<b>マルチバイト文字</b>を含めてもすべてのコードを使用しません。<br />
+　<b>バイナリファイル</b>は<b>文字コード以外</b>のデータも扱える（いうなら<b>0x00から0xFF</b>のどのコードも使用する可能性がある）データ形式です。ですから、<b>文字コードのみ使用される</b>データを<b>テキストデータ</b>と称しますが、<b>バイナリデータ</b>は<b>テキストデータを含むすべてのデータ</b>を指します。<br />
+　さてそのことを前提に<b>3.141592</b>のいう数値をデータ化する場合を考えてみましょう。<b>テキスト形式</b>で考えれば、この中には記号を含め<b>8文字</b>あります。すべてアスキーコードないですので<b>8バイト</b>です。しかし、バイナリで案がえれば<b>float型</b>であれば<b>32ビット（つまり4バイト）</b>ですから、半分の大きさで済みます（浮動小数点なので誤差もありますが）。つまり<b>テキスト形式</b>であればいったん文字に変換した文字データで考えますが、<b>バイナリ</b>では直接データにするので、その分効率が良くなります。<br />
+　ただ、64ビット環境であれば<b>3.141592</b>はテキストと同じ<b>8バイト</b>使用しますので大きさは一緒ですが、その分精度も15桁くらいになります（floatの精度は7桁くらいです）。ここではややこしいので<b>float型</b>で考えます。<br />
+<br />
+<h4>ブロックヘッダ</h4>
+　３Ｄモデルのデータは、いろんな内容を含める必要があります。<b>頂点データ、インデックスデータ、マテリアル</b>などです。<b>アニメーション</b>を形成する<b>ボーン行列の配列</b>も必要です。そういう<b>違ったパターン</b>のデータを一つのバイナリファイルに収めるにはどうしたらいいでしょうか？<br />
+　すめてのモデルファイルのサイズが同じであれば、<b>先頭から何バイトは頂点、次はインデックス・・・</b>のようにできますが、そんなはずはありません。頂点データが1メガ続く場合もあれば、50キロくらいの場合もあります。そのような<b>サイズの違った複数のブロック</b>を管理する手法として<b>ブロックヘッダ</b>という考え方があります。<br />
+　ブロックヘッダは<b>データ形式とバイト数</b>を管理する小さな構造体です。それは、<b>そのヘッダの直後から、ヘッダで指定したデータが、ヘッダに記載されているバイト数続く</b>という意味になります。<br />
+　図解すると以下のようになります。
+<p>&nbsp;</p>
+<img src="img/0504a.png" width="40%"/>
+<p>図0504a</p>
+<p>&nbsp;</p>
+　<b>ブロックデータ</b>をコード化したものは以下のようになります。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ブロックタイプ定義（モデルメッシュ読み込み用）
+//--------------------------------------------------------------------------------------
+enum class BlockType {
+    Vertex, ///&lt; 頂点
+    Index,  ///&lt; インデックス
+    Material,   ///&lt; マテリアル
+    MaterialCount,  ///&lt; マテリアル数
+    SkinedVertex,   ///&lt; スキン頂点
+    BoneCount,  ///&lt; ボーン数
+    AnimeMatrix,    ///&lt; アニメーション行列
+    VertexWithTangent,  ///&lt; タンジェント付き頂点
+    SkinedVertexWithTangent,    ///&lt; スキンタンジェント付き頂点
+    End = 100   ///&lt; 終了
+};
+
+//--------------------------------------------------------------------------------------
+/// ブロックヘッダ構造体
+//--------------------------------------------------------------------------------------
+struct BlockHeader {
+    BlockType m_Type;   ///&lt; ブロックタイプ
+    UINT m_Size;    ///&lt; バイト数
+};
+</pre>
+</div>
+　<b>BlockHeader構造体</b>は<b>enum class BlockType</b>のメンバと<b>バイト数</b>で形成されています。<b>enum class</b>は数値ですから、<b>数値とサイズ</b>の<b>8バイト</b>のデータです。このあと、ヘッダでしたいされたタイプのデータが指定したサイズ続きます。<br />
+<br />
+<h4>データの保存</h4>
+　以上を踏まえて、データの保存を考えてみます。<br />
+　以下はスタティックメッシュの保存部分ですが、
+<div class="box1">
+<pre>
+void FbxMeshObject::SaveStaticBinFile(const wstring& Dir, const wstring& FileName, 
+    size_t MeshIndex, float Scale) {
+    try {
+        string header("BDV1.0");
+        if (header.size() &lt; 16) {
+            header.resize(16, '\0');
+        }
+        vector&lt;VertexPositionNormalTexture> vertices;
+        vector&lt;VertexPositionNormalTangentTexture> vertices_withtan;
+
+        vector&lt;uint16_t> indices;
+        vector&lt;MaterialEx> materials;
+        vector&lt; shared_ptr&lt;TextureResource> > textures;
+        auto PtrDraw = GetComponent&lt;BcPNTStaticModelDraw>(false);
+        auto PtrTanDraw = GetComponent&lt;BcPNTnTStaticModelDraw>(false);
+        shared_ptr&lt;FbxMeshResource2> Mesh;
+        if (m_WithTangent) {
+            Mesh = dynamic_pointer_cast&lt;FbxMeshResource2>(PtrTanDraw->GetMeshResource());
+            Mesh->GetStaticVerticesIndicesMaterialsWithTangent(vertices_withtan,
+                 indices, materials);
+            for (auto& v : vertices_withtan) {
+                v.position *= Scale;
+            }
+        }
+        else {
+            Mesh = dynamic_pointer_cast&lt;FbxMeshResource2>(PtrDraw->GetMeshResource());
+            Mesh->GetStaticVerticesIndicesMaterials(vertices, indices, materials);
+            for (auto& v : vertices) {
+                v.position *= Scale;
+            }
+        }
+
+        wstring filename = Dir + FileName;
+
+        <span class="red">ofstream ofs(filename, ios::out | ios::binary);
+        ofs.write(header.c_str(), 16);
+        //頂点の保存
+        BlockHeader VerTexHeader;
+        if (m_WithTangent) {
+            VerTexHeader.m_Type = BlockType::VertexWithTangent;
+            VerTexHeader.m_Size = 
+            (UINT)vertices_withtan.size() * sizeof(VertexPositionNormalTangentTexture);
+            ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+            ofs.write((const char*)&vertices_withtan.front(), VerTexHeader.m_Size);
+        }
+        else {
+            VerTexHeader.m_Type = BlockType::Vertex;
+            VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTexture);
+            ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+            ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+        }
+        //インデックスの保存
+        BlockHeader IndexHeader;
+        IndexHeader.m_Type = BlockType::Index;
+        IndexHeader.m_Size = (UINT)indices.size() * sizeof(uint16_t);
+        ofs.write((const char*)&IndexHeader, sizeof(BlockHeader));
+        ofs.write((const char*)&indices.front(), IndexHeader.m_Size);
+        //マテリアルの保存
+        //マテリアル数のヘッダの保存
+        BlockHeader MaterialCountHeader;
+        MaterialCountHeader.m_Type = BlockType::MaterialCount;
+        MaterialCountHeader.m_Size = (UINT)materials.size();
+        ofs.write((const char*)&MaterialCountHeader, sizeof(BlockHeader));
+        //マテリアル本体の保存
+        wchar_t Drivebuff[_MAX_DRIVE];
+        wchar_t Dirbuff[_MAX_DIR];
+        wchar_t FileNamebuff[_MAX_FNAME];
+        wchar_t Extbuff[_MAX_EXT];
+        BlockHeader MaterialHeader;
+        MaterialHeader.m_Type = BlockType::Material;
+        for (auto mat : materials) {
+            wstring TextureFileName = mat.m_TextureResource->GetTextureFileName();
+            ::ZeroMemory(Drivebuff, sizeof(Drivebuff));
+            ::ZeroMemory(Dirbuff, sizeof(Dirbuff));
+            ::ZeroMemory(FileNamebuff, sizeof(FileNamebuff));
+            ::ZeroMemory(Extbuff, sizeof(Extbuff));
+            //モジュール名から、各ブロックに分ける
+            _wsplitpath_s(TextureFileName.c_str(),
+                Drivebuff, _MAX_DRIVE,
+                Dirbuff, _MAX_DIR,
+                FileNamebuff, _MAX_FNAME,
+                Extbuff, _MAX_EXT);
+            TextureFileName = FileNamebuff;
+            TextureFileName += Extbuff;
+
+            SaveMaterialEx SaveMat;
+            SaveMat.m_StartIndex = mat.m_StartIndex;
+            SaveMat.m_IndexCount = mat.m_IndexCount;
+            SaveMat.m_Diffuse = mat.m_Diffuse;
+            SaveMat.m_Specular = mat.m_Specular;
+            SaveMat.m_Ambient = mat.m_Ambient;
+            SaveMat.m_Emissive = mat.m_Emissive;
+            UINT TextureStrSize = (TextureFileName.size() + 1) * sizeof(wchar_t);
+            MaterialHeader.m_Size = sizeof(SaveMaterialEx) + TextureStrSize;
+            ofs.write((const char*)&MaterialHeader, sizeof(BlockHeader));
+            ofs.write((const char*)&SaveMat, sizeof(SaveMaterialEx));
+            ofs.write((const char*)TextureFileName.c_str(), TextureStrSize);
+
+        }
+        //End(ヘッダのみ)
+        BlockHeader EndHeader;
+        EndHeader.m_Type = BlockType::End;
+        EndHeader.m_Size = 0;
+        ofs.write((const char*)&EndHeader, sizeof(BlockHeader));
+        ofs.close();</span>
+
+    }
+    catch (...) {
+        throw;
+    }
+
+}
+</pre>
+</div>
+　赤くなっているところが<b>ファイルの保存</b>を行っているところです。<br />
+　最初の
+<div class="box1">
+<pre>
+    ofs.write(header.c_str(), 16);
+</pre>
+</div>
+　は<b>ファイルヘッダ</b>です。関数の先頭で
+<div class="box1">
+<pre>
+    string header("BDV1.0");
+    if (header.size() &lt; 16) {
+        header.resize(16, '\0');
+    }
+</pre>
+</div>
+　のように設定されています。<b>ファイルヘッダ</b>はこのファイルが間違いなく<b>BaseCrossで使用するデータか</b>を表すものです。拡張子だけでファイルを特定するのは危険です。世の中にはいろんなデータがありますから。<br />
+　ここでは<b>"BDV1.0"</b>という文字列が入り、その後に<b>0</b>が合わせて16バイト分あります。<br />
+　続くデータは<b>ブロックヘッダ</b>です。
+<div class="box1">
+<pre>
+    //頂点の保存
+    BlockHeader VerTexHeader;
+    if (m_WithTangent) {
+        VerTexHeader.m_Type = BlockType::VertexWithTangent;
+        VerTexHeader.m_Size = 
+        (UINT)vertices_withtan.size() * sizeof(VertexPositionNormalTangentTexture);
+        ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+        ofs.write((const char*)&vertices_withtan.front(), VerTexHeader.m_Size);
+    }
+    else {
+        VerTexHeader.m_Type = BlockType::Vertex;
+        VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTexture);
+        ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+        ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+    }
+</pre>
+</div>
+　頂点用のブロックヘッダを定義し、<b>タンジェントが含まれるかどうか</b>で<b>BlockType::VertexWithTangent</b>もしくは<b>BlockType::Vertex</b>を保存しています。<br />
+　続いてはインデックスです。こちらは<b>タンジェントが含まれるかどうか</b>で違いはありませんので
+<div class="box1">
+<pre>
+    //インデックスの保存
+    BlockHeader IndexHeader;
+    IndexHeader.m_Type = BlockType::Index;
+    IndexHeader.m_Size = (UINT)indices.size() * sizeof(uint16_t);
+    ofs.write((const char*)&IndexHeader, sizeof(BlockHeader));
+    ofs.write((const char*)&indices.front(), IndexHeader.m_Size);
+</pre>
+</div>
+　のように書けます。このように、<b>マテリアル</b>も保存し、最後に
+<div class="box1">
+<pre>
+    //End(ヘッダのみ)
+    BlockHeader EndHeader;
+    EndHeader.m_Type = BlockType::End;
+    EndHeader.m_Size = 0;
+    ofs.write((const char*)&EndHeader, sizeof(BlockHeader));
+    ofs.close();</span>
+</pre>
+</div>
+　でデータの終了を表します。<br />
+<br />
+<h4>データの読み込み</h4>
+　<b>Fbx2BinVS2015</b>は<b>データを書きだす</b>だけです。読み込みは<b>ゲーム側</b>になります。<br />
+　以下は<b>スタティックモデル</b>を<b>メッシュリソース</b>に読み込むコードです。
+<div class="box1">
+<pre>
+void MeshResource::ReadBaseData(const wstring& BinDataDir, const wstring& BinDataFile,
+    vector&lt;VertexPositionNormalTexture>& vertices,
+     vector&lt;VertexPositionNormalTangentTexture>& vertices_withtan,
+    vector&lt;uint16_t>& indices, vector&lt;MaterialEx>& materials) {
+    vertices.clear();
+    vertices_withtan.clear();
+    indices.clear();
+    materials.clear();
+    wstring DataFile = BinDataDir + BinDataFile;
+    BinaryReader Reader(DataFile);
+    //ヘッダの読み込み
+    auto pHeader = Reader.ReadArray&lt;char>(16);
+    string str = pHeader;
+    if (str != "BDV1.0") {
+        throw BaseException(
+            L"データ形式が違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+    //頂点の読み込み
+    auto blockHeader = Reader.Read&lt;BlockHeader>();
+    if (!(blockHeader.m_Type == BlockType::Vertex 
+        || blockHeader.m_Type == BlockType::VertexWithTangent)) {
+        throw BaseException(
+            L"頂点のヘッダが違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+    if (blockHeader.m_Type == BlockType::Vertex) {
+        auto VerTexSize 
+        = blockHeader.m_Size / sizeof(VertexPositionNormalTexturePOD);
+        auto pVertex 
+        = Reader.ReadArray&lt;VertexPositionNormalTexturePOD>((size_t)VerTexSize);
+        for (UINT i = 0; i &lt; VerTexSize; i++) {
+            VertexPositionNormalTexture v;
+            v.position.x = pVertex[i].position[0];
+            v.position.y = pVertex[i].position[1];
+            v.position.z = pVertex[i].position[2];
+            v.normal.x = pVertex[i].normal[0];
+            v.normal.y = pVertex[i].normal[1];
+            v.normal.z = pVertex[i].normal[2];
+            v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+            v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+            vertices.push_back(v);
+        }
+    }
+    else if (blockHeader.m_Type == BlockType::VertexWithTangent) {
+        auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTangentTexturePOD);
+        auto pVertex 
+        = Reader.ReadArray&lt;VertexPositionNormalTangentTexturePOD>((size_t)VerTexSize);
+        for (UINT i = 0; i &lt; VerTexSize; i++) {
+            VertexPositionNormalTangentTexture v;
+            v.position.x = pVertex[i].position[0];
+            v.position.y = pVertex[i].position[1];
+            v.position.z = pVertex[i].position[2];
+            v.normal.x = pVertex[i].normal[0];
+            v.normal.y = pVertex[i].normal[1];
+            v.normal.z = pVertex[i].normal[2];
+            v.tangent.x = pVertex[i].tangent[0];
+            v.tangent.y = pVertex[i].tangent[1];
+            v.tangent.z = pVertex[i].tangent[2];
+            v.tangent.w = pVertex[i].tangent[3];
+            v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+            v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+            vertices_withtan.push_back(v);
+        }
+    }
+    else {
+        throw BaseException(
+            L"頂点の型が違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+
+    //インデックスの読み込み
+    blockHeader = Reader.Read&lt;BlockHeader>();
+    if (blockHeader.m_Type != BlockType::Index) {
+        throw BaseException(
+            L"インデックスのヘッダが違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+
+    auto IndexSize = blockHeader.m_Size / sizeof(uint16_t);
+    auto pIndex = Reader.ReadArray&lt;uint16_t>((size_t)IndexSize);
+    for (UINT i = 0; i &lt; IndexSize; i++) {
+        indices.push_back(pIndex[i]);
+    }
+
+    //マテリアルの読み込み
+    //マテリアル数の読み込み
+    blockHeader = Reader.Read&lt;BlockHeader>();
+    if (blockHeader.m_Type != BlockType::MaterialCount) {
+        throw BaseException(
+            L"マテリアル数のヘッダが違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+    UINT MaterialCount = blockHeader.m_Size;
+    for (UINT i = 0; i &lt; MaterialCount; i++) {
+        //テクスチャファイル名が可変長なので注意。
+        blockHeader = Reader.Read&lt;BlockHeader>();
+        if (blockHeader.m_Type != BlockType::Material) {
+            throw BaseException(
+                L"マテリアルのヘッダが違います",
+                DataFile,
+                L"MeshResource::ReadBaseData()"
+            );
+        }
+        UINT TextureFileNameSize = blockHeader.m_Size - sizeof(MaterialExPOD);
+        auto rMaterial = Reader.Read&lt;MaterialExPOD>();
+        MaterialEx ToM;
+        //!開始インデックス
+        ToM.m_StartIndex = rMaterial.m_StartIndex;
+        //!描画インデックスカウント
+        ToM.m_IndexCount = rMaterial.m_IndexCount;
+        //! デフィーズ（物体の色）
+        ToM.m_Diffuse.x = rMaterial.m_Diffuse[0];
+        ToM.m_Diffuse.y = rMaterial.m_Diffuse[1];
+        ToM.m_Diffuse.z = rMaterial.m_Diffuse[2];
+        ToM.m_Diffuse.w = rMaterial.m_Diffuse[3];
+        //! スペキュラー（反射光）
+        ToM.m_Specular.x = rMaterial.m_Specular[0];
+        ToM.m_Specular.y = rMaterial.m_Specular[1];
+        ToM.m_Specular.z = rMaterial.m_Specular[2];
+        ToM.m_Specular.w = rMaterial.m_Specular[3];
+        //! アンビエント（環境色）
+        ToM.m_Ambient.x = rMaterial.m_Ambient[0];
+        ToM.m_Ambient.y = rMaterial.m_Ambient[1];
+        ToM.m_Ambient.z = rMaterial.m_Ambient[2];
+        ToM.m_Ambient.w = rMaterial.m_Ambient[3];
+        //! エミッシブ（放射光）
+        ToM.m_Emissive.x = rMaterial.m_Emissive[0];
+        ToM.m_Emissive.y = rMaterial.m_Emissive[1];
+        ToM.m_Emissive.z = rMaterial.m_Emissive[2];
+        ToM.m_Emissive.w = rMaterial.m_Emissive[3];
+        auto pTexture = Reader.ReadArray&lt;wchar_t>(TextureFileNameSize / sizeof(wchar_t));
+        wstring TextureFileStr = pTexture;
+        TextureFileStr = BinDataDir + TextureFileStr;
+        ToM.m_TextureResource = ObjectFactory::Create&lt;TextureResource>(TextureFileStr);
+        materials.push_back(ToM);
+    }
+
+    //Endの読み込み
+    blockHeader = Reader.Read&lt;BlockHeader>();
+    if (blockHeader.m_Type != BlockType::End) {
+        throw BaseException(
+            L"Endヘッダが違います",
+            DataFile,
+            L"MeshResource::ReadBaseData()"
+        );
+    }
+}
+</pre>
+</div>
+　順を追っていけば理解できると思いますが、1点<b>VertexPositionNormalTexturePOD</b>のように<b>なんとかPOD</b>という型が出てきます。<br />
+　これは<b>C++基本型と互換の取れた構造体</b>という意味で、ファイル内は<b>floatやintなどC++で定義されている型</b>で読み込んだほうが間違いがないために、いったん<b>なんとかPOD</b>読み込んでから<b>VertexPositionNormalTexture型など</b>に変換します。<br />
+　以下は<b>VertexPositionNormalTexturePOD</b>ですが
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// VertexPositionNormalTexture読み込み用構造体
+//--------------------------------------------------------------------------------------
+struct VertexPositionNormalTexturePOD {
+    float position[3];  ///< 位置情報
+    float normal[3];    ///< 法線
+    float textureCoordinate[2]; ///< テクスチャUV
+};
+</pre>
+</div>
+　のように<b>float型のみ</b>で構成される構造体となっています。この構造体にいったん読んだ後<b>VertexPositionNormalTexture型</b>に変換しているのがわかると思います。<br />
+<br />
+　以上、いくつかの項目に分けて<b>Fbx2BinVS2015</b>を説明してきました。<b>Fbx2BinVS2015</b>のような<b>データ作成ツール</b>と<b>ゲーム本体</b>は密接にかかわりあってるのがわかると思います。<br />
+　と同時に、この関係を維持すれば<b>オリジナルなデータ形式</b>をどんどん作成できるのがわかったと思います。<br />
+　ぜひ、<b>Fbx2BinVS2015</b>をカスタマイズ、あるいは<b>0からデータ変換ツールを作成</b>し、ゲームに配置してみましょう。きっとかなり勉強になると思います。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="05_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

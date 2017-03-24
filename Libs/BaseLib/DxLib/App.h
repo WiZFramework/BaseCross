@@ -146,6 +146,17 @@ namespace basecross {
 		float normal[3];	///< 法線
 		float textureCoordinate[2];	///< テクスチャUV
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	VertexPositionNormalTangentTexture読み込み用構造体
+	//--------------------------------------------------------------------------------------
+	struct VertexPositionNormalTangentTexturePOD {
+		float position[3];	///< 位置情報
+		float normal[3];	///< 法線
+		float tangent[4];	///< タンジェント
+		float textureCoordinate[2];	///< テクスチャUV
+	};
+
 	//--------------------------------------------------------------------------------------
 	///	VertexPositionNormalTextureSkinning読み込み用構造体
 	//--------------------------------------------------------------------------------------
@@ -157,6 +168,17 @@ namespace basecross {
 		float weights[4];	///< 各ボーンのウエイト
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	VertexPositionNormalTangentTextureSkinning読み込み用構造体
+	//--------------------------------------------------------------------------------------
+	struct VertexPositionNormalTangentTextureSkinningPOD {
+		float position[3];	///< 位置情報
+		float normal[3];	///< 法線
+		float tangent[4];	///< タンジェント
+		float textureCoordinate[2];	///< テクスチャUV
+		uint32_t indices[4];	///< ボーンのインデックス
+		float weights[4];	///< 各ボーンのウエイト
+	};
 
 
 	//--------------------------------------------------------------------------------------
@@ -215,9 +237,11 @@ namespace basecross {
 		Index,	///< インデックス
 		Material,	///< マテリアル
 		MaterialCount,	///< マテリアル数
-		SkinedVertex,	///< スキンぐぎゅれつ
+		SkinedVertex,	///< スキン頂点
 		BoneCount,	///< ボーン数
 		AnimeMatrix,	///< アニメーション行列
+		VertexWithTangent,	///< タンジェント付き頂点
+		SkinedVertexWithTangent,	///< スキンタンジェント付き頂点
 		End = 100	///< 終了
 	};
 

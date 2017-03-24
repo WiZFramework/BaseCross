@@ -36,12 +36,15 @@ namespace basecross {
 		map< string, UINT > m_mapBoneList;
 		//スキンメッシュでも強制的にスタティックで読むかどうか
 		bool m_NeedStatic;
-		Impl(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic) :
+		bool m_WithTangent;
+
+		Impl(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic,bool WithTangent) :
 			m_FbxSceneResource(FbxSceneResourcePtr),
 			m_FbxSkin(nullptr),
 			m_timePeriod(0),
 			m_FbxMesh(pFbxMesh),
-			m_NeedStatic(NeedStatic)
+			m_NeedStatic(NeedStatic),
+			m_WithTangent(WithTangent)
 		{}
 		~Impl() {
 		}
@@ -49,9 +52,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	FBXメッシュリソース(MeshResource派生版)
 	//--------------------------------------------------------------------------------------
-	FbxMeshResource2::FbxMeshResource2(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic):
+	FbxMeshResource2::FbxMeshResource2(shared_ptr<FbxSceneResource> FbxSceneResourcePtr, FbxMesh* pFbxMesh, bool NeedStatic,
+		bool WithTangent):
 		MeshResource(),
-		pImpl(new Impl(FbxSceneResourcePtr, pFbxMesh, NeedStatic))
+		pImpl(new Impl(FbxSceneResourcePtr, pFbxMesh, NeedStatic, WithTangent))
 	{}
 	FbxMeshResource2::~FbxMeshResource2() {}
 
@@ -105,7 +109,8 @@ namespace basecross {
 			FbxPropertyT<FbxDouble3>	color;
 			color = pPhong->Ambient;
 			//アンビエントは使用しない
-			material.m_Ambient = Color4(0.5f, 0.5f, 0.5f, 1.0f);
+			material.m_Ambient = Color4(0,0,0,0);
+//			material.m_Ambient = Color4(0.5f, 0.5f, 0.5f, 1.0f);
 			//			material.m_Ambient = Color4((float)color.Get()[ 0 ], (float)color.Get()[ 1 ], (float)color.Get()[ 2 ], 1.0f);
 			color = pPhong->Diffuse;
 			//デフィーズはテクスチャを使うのでフル
@@ -115,7 +120,8 @@ namespace basecross {
 			color = pPhong->Emissive;
 			//エミッシブはDirectXTKデフォルト
 			//material.m_Emissive = Color4(0.05333332f,0.09882354f,0.1819608f,1.0f);
-			material.m_Emissive = Color4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
+			material.m_Emissive = Color4(0,0,0,0);
+//			material.m_Emissive = Color4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
 
 			//マテリアルに関連付けられているテクスチャを読み込む
 			const FbxProperty	fbxProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
@@ -256,6 +262,7 @@ namespace basecross {
 		pImpl->m_FbxMesh->GetUVSetNames(sUVSetNames);
 		FbxString sUVSetName = sUVSetNames.GetStringAt(0);
 		bool bUnmapped = true;
+		auto TanPtr = pImpl->m_FbxMesh->GetLayer(0)->GetTangents();
 		//頂点座標・法線・テクスチャ座標の取得
 		for (DWORD i = 0; i < dwNumPolygons; i++) {
 			//ポリゴンのサイズを得る（通常３）
@@ -271,6 +278,16 @@ namespace basecross {
 				pImpl->m_FbxMesh->GetPolygonVertexNormal(i, j, vNormal);
 				//UV値を得る
 				pImpl->m_FbxMesh->GetPolygonVertexUV(i, j, sUVSetName, vUV, bUnmapped);
+
+
+				Vector4 Tan(0,0,0,0);
+				if (TanPtr) {
+					Tan.x = (float)TanPtr->GetDirectArray().GetAt(iIndex)[0];
+					Tan.y = (float)TanPtr->GetDirectArray().GetAt(iIndex)[1];
+					Tan.z = (float)TanPtr->GetDirectArray().GetAt(iIndex)[2];
+					Tan.w = (float)TanPtr->GetDirectArray().GetAt(iIndex)[3];
+				}
+
 				vertices[iIndex] =
 					VertexPositionNormalTangentTexture(
 						//頂点の設定
@@ -281,7 +298,7 @@ namespace basecross {
 						//XMFLOAT3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//タンジェントの設定
-						XMFLOAT4(0,0,0,0),
+						Tan,
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
 						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
@@ -325,18 +342,34 @@ namespace basecross {
 			pImpl->m_FbxName = pImpl->m_FbxMesh->GetName();
 		}
 		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionNormalTangentTexture> vertices_withtan;
 		vector<uint16_t> indices;
-		GetStaticVerticesIndicesMaterials(vertices, indices,GetMaterialExVec());
+		if (pImpl->m_WithTangent) {
+			GetStaticVerticesIndicesMaterialsWithTangent(vertices_withtan, indices, GetMaterialExVec());
+		}
+		else {
+			GetStaticVerticesIndicesMaterials(vertices, indices, GetMaterialExVec());
+		}
 		//配列をもとに頂点とインデックスを作成
 		ComPtr<ID3D11Buffer> VertexBuffer;	//頂点バッファ
 		ComPtr<ID3D11Buffer> IndexBuffer;	//インデックスバッファ
-		MeshResource::CreateVertexBuffer(VertexBuffer, vertices);
+		if (pImpl->m_WithTangent) {
+			MeshResource::CreateVertexBuffer(VertexBuffer, vertices_withtan);
+		}
+		else {
+			MeshResource::CreateVertexBuffer(VertexBuffer, vertices);
+		}
 		MeshResource::CreateIndexBuffer(IndexBuffer, indices);
 		SetVertexBuffer(VertexBuffer);
 		SetIndexBuffer(IndexBuffer);
 		SetNumVertices(vertices.size());
 		SetNumIndicis(indices.size());
-		SetVertexType<VertexPositionNormalTexture>();
+		if (pImpl->m_WithTangent) {
+			SetVertexType<VertexPositionNormalTangentTexture>();
+		}
+		else {
+			SetVertexType<VertexPositionNormalTexture>();
+		}
 	}
 
 	void FbxMeshResource2::GetSkinVerticesIndicesMaterials(vector<VertexPositionNormalTextureSkinning>& vertices,
@@ -511,31 +544,237 @@ namespace basecross {
 		}
 	}
 
+	void FbxMeshResource2::GetSkinVerticesIndicesMaterialsWithTangent(vector<VertexPositionNormalTangentTextureSkinning>& vertices,
+		vector<uint16_t>& indices, vector<MaterialEx>& materials,
+		vector<Bone>& Bones, map< string, UINT >& mapBoneList) {
+		vertices.clear();
+		indices.clear();
+		materials.clear();
+		Bones.clear();
+		mapBoneList.clear();
+		GetMaterialVec(materials);
+		auto MaterialCount = materials.size();
+		UINT NumVertices = 0;
+		//メッシュ単体の読み込み
+		DWORD dwNumPolygons = 0;	//ポリゴン数
+									//頂点がない	
+		if ((NumVertices = pImpl->m_FbxMesh->GetControlPointsCount()) <= 0) {
+			//失敗した
+			throw BaseException(L"Fbxに頂点がありません",
+				L"m_pFbxMesh->GetControlPointsCount() <= 0",
+				L"FbxMeshResource::GetSkinVerticesIndicesMaterials()");
+		}
+		//ポリゴン数の取得
+		dwNumPolygons = pImpl->m_FbxMesh->GetPolygonCount();
+
+		//頂点を作成するための配列
+		vertices.resize(NumVertices);
+		FbxStringList sUVSetNames;
+		pImpl->m_FbxMesh->GetUVSetNames(sUVSetNames);
+		FbxString sUVSetName = sUVSetNames.GetStringAt(0);
+		bool bUnmapped = true;
+		auto TanPtr = pImpl->m_FbxMesh->GetLayer(0)->GetTangents();
+		//頂点座標・法線・テクスチャ座標の取得
+		for (DWORD i = 0; i < dwNumPolygons; i++) {
+			//ポリゴンのサイズを得る（通常３）
+			const DWORD dwPolygonSize = pImpl->m_FbxMesh->GetPolygonSize(i);
+			for (DWORD j = 0; j < dwPolygonSize; j++) {
+				const int	iIndex = pImpl->m_FbxMesh->GetPolygonVertex(i, j);
+				FbxVector4	vPos, vNormal;
+				FbxVector2	vUV;
+				//Fbxから頂点を得る
+				vPos = pImpl->m_FbxMesh->GetControlPointAt(iIndex);
+				//法線を得る
+				pImpl->m_FbxMesh->GetPolygonVertexNormal(i, j, vNormal);
+				//UV値を得る
+				pImpl->m_FbxMesh->GetPolygonVertexUV(i, j, sUVSetName, vUV, bUnmapped);
+				uint32_t temp[4] = { 0, 0, 0, 0 };
+				float tempf[4] = { 0, 0, 0, 0 };
+
+				Vector4 Tan(0, 0, 0, 0);
+				if (TanPtr) {
+					Tan.x = (float)TanPtr->GetDirectArray().GetAt(iIndex)[0];
+					Tan.y = (float)TanPtr->GetDirectArray().GetAt(iIndex)[1];
+					Tan.z = (float)TanPtr->GetDirectArray().GetAt(iIndex)[2];
+					Tan.w = (float)TanPtr->GetDirectArray().GetAt(iIndex)[3];
+				}
+
+				vertices[iIndex] =
+					VertexPositionNormalTangentTextureSkinning(
+						//頂点の設定
+						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
+						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						//法線の設定
+						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
+						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						//タンジェントの設定
+						Tan,
+						//UV値の設定
+						//Vの値が、1.0から引いた値になる
+						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1])),
+						//ブレンドインデックスはとりあえず0
+						temp,
+						//ブレンドウエイトはとりあえず0
+						tempf
+					);
+			}
+		}
+
+		//ブレンドウェイトとブレンドインデックスの読み込み
+		const int	iNumCluster = pImpl->m_FbxSkin->GetClusterCount();
+		// 変換した FbxSkin から クラスター(ボーン)の数を取得する
+
+		for (int i = 0; i < iNumCluster; i++) {
+			int		iNumBlendIndices = pImpl->m_FbxSkin->GetCluster(i)->GetControlPointIndicesCount();	// i 番目のクラスターに影響を受ける頂点の数を取得する
+			int*	piBlendIndices = pImpl->m_FbxSkin->GetCluster(i)->GetControlPointIndices();		// i 番目のクラスターに影響を受ける頂点の番号を配列で取得する
+			double*	pdBlendWeights = pImpl->m_FbxSkin->GetCluster(i)->GetControlPointWeights();		// i 番目のクラスターに影響を受ける頂点に対応した重みデータを配列で取得する
+
+			for (int j = 0; j < iNumBlendIndices; j++) {
+				int	idx = piBlendIndices[j];
+
+				//頂点に登録する４つのブレンドウェイトのうち、最少の値をもつ要素を検索する（DirectX9の固定シェーダでは４つのボーンからしかブレンドできない）
+				int	iMinIndex = 0;
+				for (int k = 0; k < 4 - 1; k++) {
+					for (int l = k + 1; l < 4; l++) {
+						if (vertices[idx].weights[k] < vertices[idx].weights[l]) {
+							iMinIndex = k;
+						}
+						else {
+							iMinIndex = l;
+							k = l;
+							break;
+						}
+					}
+				}
+				//すでに登録されている中で最小のブレンドウェイトよりも大きい値を持つデータを登録する
+				if (static_cast< float >(pdBlendWeights[j]) > vertices[idx].weights[iMinIndex]) {
+					vertices[idx].indices[iMinIndex] = static_cast< BYTE >(i);
+					vertices[idx].weights[iMinIndex] = static_cast< float >(pdBlendWeights[j]);
+				}
+			}
+		}
+		//ウエイトのチェック
+		//各頂点ごとにウェイトを足して1.0fにならないとスキンがうまくできない
+		for (size_t i = 0; i < vertices.size(); i++) {
+			float f = vertices[i].weights[0] + vertices[i].weights[1] + vertices[i].weights[2] + vertices[i].weights[3];
+			if (f > 0 && f < 1.0f) {
+				float k = 1.0f / f;
+				vertices[i].weights[0] *= k;
+				vertices[i].weights[1] *= k;
+				vertices[i].weights[2] *= k;
+				vertices[i].weights[3] *= k;
+			}
+		}
+
+		//基準タイマーの設定
+		FbxGlobalSettings&	globalTimeSettings = pImpl->m_FbxMesh->GetScene()->GetGlobalSettings();
+		FbxTime::EMode timeMode = globalTimeSettings.GetTimeMode();
+		pImpl->m_timePeriod.SetTime(0, 0, 0, 1, 0, timeMode);
+
+		//インデックスバッファの作成
+		//マテリアルのポインタを取得する
+		const FbxLayerElementMaterial*	fbxMaterial = pImpl->m_FbxMesh->GetLayer(0)->GetMaterials();
+		DWORD dwIndexCount = 0;
+		for (DWORD i = 0; i < MaterialCount; i++) {
+			//頂点インデックスを最適化する(同じマテリアルを使用するポリゴンをまとめて描画できるように並べ、
+			//描画時にマテリアルの切り替え回数を減らす)
+			for (DWORD j = 0; j < dwNumPolygons; j++) {
+				DWORD	dwMaterialId = fbxMaterial->GetIndexArray().GetAt(j);
+				if (dwMaterialId == i) {
+					int iPolygonSize = pImpl->m_FbxMesh->GetPolygonSize(j);
+					for (int k = 0; k < iPolygonSize; k++) {
+						indices.push_back(static_cast< uint16_t >(pImpl->m_FbxMesh->GetPolygonVertex(j, 2 - k)));
+						materials[i].m_IndexCount++;
+					}
+				}
+			}
+		}
+		//マテリアル配列にスタート地点を設定
+		UINT StarIndex = 0;
+		for (DWORD i = 0; i < materials.size(); i++) {
+			materials[i].m_StartIndex = StarIndex;
+			StarIndex += materials[i].m_IndexCount;
+		}
+
+		//ボーン数を得る
+		auto NumBones = (UINT)pImpl->m_FbxSkin->GetClusterCount();
+		for (UINT i = 0; i < NumBones; i++) {
+			Bone	bone;
+
+			FbxAMatrix	mBindPose, mCurrentPose;
+			pImpl->m_FbxSkin->GetCluster(i)->GetTransformLinkMatrix(mBindPose);
+			mCurrentPose = pImpl->m_FbxSkin->GetCluster(i)->GetLink()->EvaluateGlobalTransform(pImpl->m_timePeriod * 0);
+
+			for (int r = 0; r < 4; r++) {
+				for (int c = 0; c < 4; c++) {
+					bone.m_BindPose(r, c) = static_cast< float >(mBindPose.Get(r, c));
+					bone.m_CurrentPose(r, c) = static_cast< float >(mCurrentPose.Get(r, c));
+				}
+			}
+
+			Matrix4X4	mMirror, mBindInverse;
+			mMirror.Identity();
+			mMirror(2, 2) = -1.0f;
+
+			bone.m_BindPose *= mMirror;
+			bone.m_CurrentPose *= mMirror;
+			Vector4 temp4;
+			mBindInverse = Matrix4X4EX::Inverse(&temp4, bone.m_BindPose);
+			bone.m_ConbinedPose = mBindInverse * bone.m_CurrentPose;
+
+			Bones.push_back(bone);
+			//マップの登録
+			mapBoneList[pImpl->m_FbxSkin->GetCluster(i)->GetName()] = i;
+		}
+	}
+
+
+
 	void FbxMeshResource2::CreateInstanceFromSkinFbx() {
 		//このFBXに名前があればそれを保持
 		if (pImpl->m_FbxMesh->GetName()) {
 			pImpl->m_FbxName = pImpl->m_FbxMesh->GetName();
 		}
 		vector<VertexPositionNormalTextureSkinning> vertices;
+		vector<VertexPositionNormalTangentTextureSkinning> vertices_withtan;
 		vector<uint16_t> indices;
-		GetSkinVerticesIndicesMaterials(vertices, indices, GetMaterialExVec(),
-			pImpl->m_vecBones,pImpl->m_mapBoneList);
+		if (pImpl->m_WithTangent) {
+			GetSkinVerticesIndicesMaterialsWithTangent(vertices_withtan, indices, GetMaterialExVec(),
+				pImpl->m_vecBones, pImpl->m_mapBoneList);
+
+		}
+		else {
+			GetSkinVerticesIndicesMaterials(vertices, indices, GetMaterialExVec(),
+				pImpl->m_vecBones, pImpl->m_mapBoneList);
+		}
 
 		//配列をもとに頂点とインデックスを作成
 		ComPtr<ID3D11Buffer> VertexBuffer;	//頂点バッファ
 		ComPtr<ID3D11Buffer> IndexBuffer;	//インデックスバッファ
-		MeshResource::CreateVertexBuffer(VertexBuffer, vertices);
+		if (pImpl->m_WithTangent) {
+			MeshResource::CreateVertexBuffer(VertexBuffer, vertices_withtan);
+		}
+		else {
+			MeshResource::CreateVertexBuffer(VertexBuffer, vertices);
+		}
+
 		MeshResource::CreateIndexBuffer(IndexBuffer, indices);
 		SetVertexBuffer(VertexBuffer);
 		SetIndexBuffer(IndexBuffer);
 		SetNumVertices(vertices.size());
 		SetNumIndicis(indices.size());
-		SetVertexType<VertexPositionNormalTextureSkinning>();
+		if (pImpl->m_WithTangent) {
+			SetVertexType<VertexPositionNormalTangentTextureSkinning>();
+		}
+		else {
+			SetVertexType<VertexPositionNormalTextureSkinning>();
+		}
+
 
 	}
 	shared_ptr<FbxMeshResource2> FbxMeshResource2::CreateFbxMeshResource(shared_ptr<FbxSceneResource> FbxSceneResourcePtr,
-		FbxMesh* pFbxMesh, bool NeedStatic) {
-		return ObjectFactory::Create<FbxMeshResource2>(FbxSceneResourcePtr, pFbxMesh, NeedStatic);
+		FbxMesh* pFbxMesh, bool NeedStatic,bool WithTangent) {
+		return ObjectFactory::Create<FbxMeshResource2>(FbxSceneResourcePtr, pFbxMesh, NeedStatic, WithTangent);
 	}
 
 	bool FbxMeshResource2::IsSkining() const {
@@ -622,14 +861,17 @@ namespace basecross {
 		shared_ptr<FbxScene> m_FbxScene;
 		//強制的にstaticで読むかどうか
 		bool m_NeedStatic;
+		//タンジェントを読むか
+		bool m_WithTangent;
 		//単一のFBXメッシュの配列
 		vector< shared_ptr<FbxMeshResource2> > m_FbxMeshResourceVec;
 		Impl(const wstring& DataDir,
-			const wstring& FileName, const string& SceneName, bool  NeedStatic):
+			const wstring& FileName, const string& SceneName, bool  NeedStatic,bool WithTangent):
 			m_DataDir(DataDir),
 			m_FileName(FileName),
 			m_FbxSceneName(SceneName),
-			m_NeedStatic(NeedStatic)
+			m_NeedStatic(NeedStatic),
+			m_WithTangent(WithTangent)
 		{}
 		~Impl() {}
 
@@ -640,9 +882,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FbxSceneResource::FbxSceneResource(const wstring& DataDir,
-		const wstring& FileName, const string& SceneName, bool NeedStatic):
+		const wstring& FileName, const string& SceneName, bool NeedStatic, bool WithTangent):
 		BaseResource(),
-		pImpl(new Impl(DataDir, FileName, SceneName, NeedStatic))
+		pImpl(new Impl(DataDir, FileName, SceneName, NeedStatic, WithTangent))
 	{
 		try {
 			if (FileName == L"") {
@@ -676,9 +918,9 @@ namespace basecross {
 
 	//static構築
 	shared_ptr<FbxSceneResource> FbxSceneResource::CreateFbxScene(const wstring& DataDir,
-		const wstring& FileName, const string& SceneName, bool NeedStatic) {
+		const wstring& FileName, const string& SceneName, bool NeedStatic, bool WithTangent) {
 		try {
-			return ObjectFactory::Create<FbxSceneResource>(DataDir, FileName, SceneName, NeedStatic);
+			return ObjectFactory::Create<FbxSceneResource>(DataDir, FileName, SceneName, NeedStatic, WithTangent);
 		}
 		catch (...) {
 			throw;
@@ -713,7 +955,8 @@ namespace basecross {
 					v[i] = mGlobal.MultNormalize(v[i]);
 				}
 				//Fbxメッシュの配列に登録
-				auto FbxMeshPtr = FbxMeshResource2::CreateFbxMeshResource(GetThis<FbxSceneResource>(), pFbxMesh, pImpl->m_NeedStatic);
+				auto FbxMeshPtr = FbxMeshResource2::CreateFbxMeshResource(GetThis<FbxSceneResource>(), pFbxMesh, pImpl->m_NeedStatic,
+					pImpl->m_WithTangent);
 				pImpl->m_FbxMeshResourceVec.push_back(
 					FbxMeshPtr
 				);
@@ -797,6 +1040,931 @@ namespace basecross {
 	vector< shared_ptr<FbxMeshResource2> >& FbxSceneResource::GetFbxMeshResourceVec() const {
 		return pImpl->m_FbxMeshResourceVec;
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	BcFbxPNTBoneModelDraw::Impl
+	//--------------------------------------------------------------------------------------
+	struct BcFbxPNTBoneModelDraw::Impl {
+		string m_sCurrentAnimationName;	//現在処理対象になっているアニメーションの名前
+		float m_CurrentTime;			//アニメーションの現在の経過時間（秒）
+		bool m_IsAnimeEnd;				//現在のアニメーションが終了したかどうか
+		vector< Bone > m_vecLocalBones;	//各オブジェクトごとにボーンを所持しておく
+										//シェーダに渡すボーン行列
+		vector<Matrix4X4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
+
+												//アニメーションを名前で照会するする際に使用するインデックステーブル
+		map< string, AnimationData > m_AnimationMap;
+		Impl() :
+			m_sCurrentAnimationName(""),
+			m_CurrentTime(0),
+			m_IsAnimeEnd(false)
+		{}
+		~Impl() {}
+	};
+	//--------------------------------------------------------------------------------------
+	///	BcFbxPNTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
+	//--------------------------------------------------------------------------------------
+
+	BcFbxPNTBoneModelDraw::BcFbxPNTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		BcPNTStaticModelDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+	BcFbxPNTBoneModelDraw::~BcFbxPNTBoneModelDraw() {}
+
+	//ボーン行列をリソースから読み込む
+	void BcFbxPNTBoneModelDraw::SetBoneVec() {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->GetNumBones() > 0) {
+			//ローカルボーンのオリジナルからのコピー
+			pImpl->m_vecLocalBones.resize(PtrMeshResource->GetBonesVec().size());
+			pImpl->m_vecLocalBones = PtrMeshResource->GetBonesVec();
+
+			pImpl->m_LocalBonesMatrix.resize(PtrMeshResource->GetNumBones());
+		}
+		else {
+			throw BaseException(
+				L"ボーンが見つかりません",
+				L"if (PtrMeshResource->GetNumBones() <= 0)",
+				L"BcFbxPNTBoneModelDraw::SetBoneVec()"
+			);
+		}
+	}
+	void BcFbxPNTBoneModelDraw::GetBoneVec(vector< Bone >& Bones) {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->GetNumBones() > 0) {
+			//ローカルボーンのオリジナルからのコピー
+			Bones.resize(PtrMeshResource->GetBonesVec().size());
+			Bones = PtrMeshResource->GetBonesVec();
+		}
+		else {
+			throw BaseException(
+				L"ボーンが見つかりません",
+				L"if (PtrMeshResource->GetNumBones() <= 0)",
+				L"BcFbxPNTBoneModelDraw::GetBoneVec()"
+			);
+		}
+	}
+
+
+	//アクセサ
+	//各オブジェクトごとのボーン
+	const vector< Bone >& BcFbxPNTBoneModelDraw::GetVecLocalFbxBones() const {
+		return pImpl->m_vecLocalBones;
+	}
+	const vector< Bone >* BcFbxPNTBoneModelDraw::GetVecLocalFbxBonesPtr() const {
+		return &pImpl->m_vecLocalBones;
+	}
+
+	const vector< Matrix4X4 >* BcFbxPNTBoneModelDraw::GetVecLocalBonesPtr() const {
+		return &pImpl->m_LocalBonesMatrix;
+	}
+
+	void BcFbxPNTBoneModelDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
+		if (!MeshRes->IsSkining()) {
+			throw BaseException(
+				L"メッシュがボーンメッシュではありません",
+				L"if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0)",
+				L"BcPNTBoneModelDraw::SetMeshResource()"
+			);
+
+		}
+		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		//ボーンがあれば読み込む
+		SetBoneVec();
+	}
+
+	void BcFbxPNTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
+		BcFbxPNTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
+	}
+
+
+
+	void BcFbxPNTBoneModelDraw::AddAnimation(const char* Name, UINT StartFrame, UINT FrameLength, bool Loop,
+		float FramesParSecond) {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->IsSkining()) {
+			map< string, AnimationData >::iterator it
+				= pImpl->m_AnimationMap.find(Name);
+			if (it != pImpl->m_AnimationMap.end()) {
+				//指定の名前が見つかった
+				//そのデータに差し替え
+				it->second.m_StartSample = StartFrame;
+				it->second.m_SampleLength = FrameLength;
+				it->second.m_SamplesParSecond = FramesParSecond;
+				it->second.m_IsLoop = Loop;
+			}
+			else {
+				//見つからない
+				//アニメーション定義の追加
+				pImpl->m_AnimationMap[Name] = AnimationData(StartFrame, FrameLength,
+					Loop, FramesParSecond);
+			}
+		}
+	}
+	const AnimationData& BcFbxPNTBoneModelDraw::GetAnimationData(const string& AnimeName) const {
+		auto it = pImpl->m_AnimationMap.find(AnimeName);
+		if (it != pImpl->m_AnimationMap.end()) {
+			return it->second;
+		}
+		else {
+			throw BaseMBException(
+				"指定のアニメーションが見つかりません",
+				AnimeName,
+				"AnimationData& BcFbxPNTBoneModelDraw::GetAnimationData()");
+		}
+	}
+
+
+	const string& BcFbxPNTBoneModelDraw::GetCurrentAnimation() const {
+		return pImpl->m_sCurrentAnimationName;
+	}
+	void BcFbxPNTBoneModelDraw::SetCurrentAnimation(const string& AnemationName, float StartTime) {
+		//指定のアニメーションがあるかどうかチェック
+		//無ければ例外が出る
+		AnimationData animData = GetAnimationData(AnemationName);
+		pImpl->m_sCurrentAnimationName = AnemationName;
+		pImpl->m_CurrentTime = StartTime;
+		pImpl->m_IsAnimeEnd = false;
+	}
+
+	float BcFbxPNTBoneModelDraw::GetCurrentTime() const {
+		return pImpl->m_CurrentTime;
+	}
+
+
+	//現在のアニメーションが終了しているかどうか
+	bool BcFbxPNTBoneModelDraw::IsTargetAnimeEnd() const {
+		return pImpl->m_IsAnimeEnd;
+	}
+
+	//指定したIDのボーンの現在の行列を取得する
+	void BcFbxPNTBoneModelDraw::GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+		auto PtrGameObject = GetGameObject();
+		auto PtrT = PtrGameObject->GetComponent<Transform>();
+		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
+		if (pImpl->m_vecLocalBones.size() <= BoneId) {
+			throw BaseException(
+				L"ボーンIDが範囲外です",
+				L"if (pImpl->m_vecLocalBones.size() <= BoneId)",
+				L"BcFbxPNTBoneModelDraw::GetBoneMatrix()"
+			);
+		}
+		Matrix = pImpl->m_vecLocalBones[BoneId].m_CurrentPose * MeshMatrix;
+	}
+
+	//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
+	void BcFbxPNTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+		auto PtrGameObject = GetGameObject();
+		auto PtrT = PtrGameObject->GetComponent<Transform>();
+		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix();
+		if (pImpl->m_vecLocalBones.size() <= BoneId) {
+			throw BaseException(
+				L"ボーンIDが範囲外です",
+				L"if (pImpl->m_vecLocalBones.size() <= BoneId)",
+				L"BcFbxPNTBoneModelDraw::GetLocalBoneMatrix()"
+			);
+		}
+		Matrix = pImpl->m_vecLocalBones[BoneId].m_CurrentPose * MeshMatrix;
+	}
+
+	void BcFbxPNTBoneModelDraw::OnCreate() {
+		SetLightingEnabled(true);
+		//マルチライトの設定
+		for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+			SetLightEnabled(i, true);
+		}
+	}
+
+
+	bool BcFbxPNTBoneModelDraw::UpdateAnimation(float ElapsedTime) {
+		//メッシュリソースの取得
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		//ボーンが登録されていたらボーンを探す
+		if (PtrMeshResource->IsSkining()) {
+			if (!pImpl->m_IsAnimeEnd) {
+				pImpl->m_CurrentTime += ElapsedTime;
+			}
+			//アニメーションデータの取得
+			//チェックするだけなのでテンポラリでよい
+			AnimationData animData = GetAnimationData(pImpl->m_sCurrentAnimationName);
+			//ボーンを現在の時間に更新する
+			//戻り値は終了してるかどうか
+			pImpl->m_IsAnimeEnd = PtrMeshResource->GenerateCurrentPose(pImpl->m_vecLocalBones, animData, pImpl->m_CurrentTime);
+			if (animData.m_IsLoop) {
+				float TotalTime = (float)animData.m_SampleLength / (float)animData.m_SamplesParSecond;
+				if (TotalTime <= pImpl->m_CurrentTime) {
+					pImpl->m_CurrentTime = 0.0f;
+				}
+			}
+			//シャドウマップ用の行列にコピー
+			size_t BoneSz = pImpl->m_vecLocalBones.size();
+			UINT cb_count = 0;
+			for (size_t b = 0; b < BoneSz; b++) {
+				pImpl->m_LocalBonesMatrix[b] = pImpl->m_vecLocalBones[b].m_ConbinedPose;
+			}
+			return pImpl->m_IsAnimeEnd;
+		}
+		return false;
+	}
+
+	void BcFbxPNTBoneModelDraw::OnDraw() {
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュがなければ描画しない
+		auto MeshRes = GetMeshResource();
+		if (!MeshRes) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!MeshRes)",
+				L"BcFbxPNTBoneModelDraw::OnDraw()"
+			);
+		}
+
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+		auto RenderState = Dev->GetRenderState();
+		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+
+
+		//ライトを得る
+		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
+		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
+		if (PtrMultiLight) {
+			//マルチライトだった
+			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+				if (IsLightEnabled(i)) {
+					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
+					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
+					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
+				}
+			}
+		}
+		else {
+			//そうではない
+			auto LightPtr = GetGameObject()->OnGetDrawLight();
+			SetLightEnabled(0, true);
+			SetLightDirection(0, LightPtr.m_Directional);
+			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
+			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
+			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
+				SetLightEnabled(i, false);
+			}
+		}
+		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
+
+		//シェーダの設定
+		if (IsPerPixelLighting()) {
+			//ピクセルライティング
+			if (IsOwnShadowActive()) {
+				//影付き
+				if (IsBiasedNormals()) {
+					//バイアス付き
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLBnShadow::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLBnShadow::GetPtr()->GetInputLayout());
+				}
+				else {
+					//バイアス無し
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLShadow::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLShadow::GetPtr()->GetInputLayout());
+				}
+				pD3D11DeviceContext->PSSetShader(BcPSPNTPLShadow::GetPtr()->GetShader(), nullptr, 0);
+			}
+			else {
+				//影無し
+				if (IsBiasedNormals()) {
+					//バイアス付き
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLBn::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLBn::GetPtr()->GetInputLayout());
+				}
+				else {
+					//バイアス無し
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePL::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePL::GetPtr()->GetInputLayout());
+				}
+				pD3D11DeviceContext->PSSetShader(BcPSPNTPL::GetPtr()->GetShader(), nullptr, 0);
+			}
+		}
+		else {
+			//頂点ライティング
+			if (IsOwnShadowActive()) {
+				//影付き
+				if (IsBiasedNormals()) {
+					//バイアス付き
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLBnShadow::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLBnShadow::GetPtr()->GetInputLayout());
+				}
+				else {
+					//バイアス無し
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLShadow::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLShadow::GetPtr()->GetInputLayout());
+				}
+				pD3D11DeviceContext->PSSetShader(BcPSPNTVLShadow::GetPtr()->GetShader(), nullptr, 0);
+			}
+			else {
+				//影無し
+				if (IsBiasedNormals()) {
+					//バイアス付き
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLBn::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLBn::GetPtr()->GetInputLayout());
+				}
+				else {
+					//バイアス無し
+					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVL::GetPtr()->GetShader(), nullptr, 0);
+					//インプットレイアウトの設定
+					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVL::GetPtr()->GetInputLayout());
+				}
+				pD3D11DeviceContext->PSSetShader(BcPSPNTVL::GetPtr()->GetShader(), nullptr, 0);
+			}
+		}
+		//影とサンプラー
+		if (IsOwnShadowActive()) {
+			//シャドウマップのレンダラーターゲット
+			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
+			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
+			//シャドウマップサンプラー
+			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
+		}
+		//ストライドとオフセット
+		UINT stride = MeshRes->GetNumStride();
+		UINT offset = 0;
+		//頂点バッファのセット
+		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+		//インデックスバッファのセット
+		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+		//描画方法（3角形）
+		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//デプスステンシルステートは設定に任せる
+		SetDeviceDepthStencilState();
+
+		//コンスタントバッファの設定
+		BasicConstants BcCb;
+		ZeroMemory(&BcCb, sizeof(BcCb));
+		if (IsOwnShadowActive()) {
+			SetConstants(BcCb, true);
+		}
+		else {
+			SetConstants(BcCb);
+		}
+
+		//これよりマテリアルごとの描画
+		auto& MatVec = MeshRes->GetMaterialExVec();
+		for (auto& m : MatVec) {
+			if (m.m_TextureResource && IsModelTextureEnabled()) {
+				//テクスチャがありテクスチャが有効である
+				BcCb.activeFlg.y = 1;
+			}
+			else {
+				//テクスチャがない
+				BcCb.activeFlg.y = 0;
+			}
+			if (IsModelDiffusePriority()) {
+				BcCb.diffuseColor = m.m_Diffuse;
+			}
+			if (IsModelEmissivePriority()) {
+				Color4 Em4 = m.m_Emissive;
+				Em4.w = 0.0f;
+				BcCb.emissiveColor = Em4;
+			}
+			//ボーンの設定
+			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
+			UINT cb_count = 0;
+			for (size_t b = 0; b < BoneSz; b++) {
+				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
+				mat.Transpose();
+				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
+				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+				cb_count += 3;
+			}
+
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//テクスチャとサンプラー
+			if (m.m_TextureResource) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
+				//サンプラーは設定に任せる
+				SetDeviceSamplerState();
+			}
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
+			//透明処理なら
+			if (GetGameObject()->GetAlphaActive()) {
+				//ブレンドステート
+				//透明処理
+				if (GetBlendState() == BlendState::Additive) {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+				}
+				else {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				}
+				//ラスタライザステート(裏描画)
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+				//ラスタライザステート（表描画）
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+			}
+			else {
+				//透明処理しない
+				//ブレンドステートは設定に任せる
+				SetDeviceBlendState();
+				//ラスタライザステートは設定に任せる
+				SetDeviceRasterizerState();
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+			}
+		}
+		//後始末
+		Dev->InitializeStates();
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	BcFbxPNTnTBoneModelDraw::Impl
+	//--------------------------------------------------------------------------------------
+	struct BcFbxPNTnTBoneModelDraw::Impl {
+		string m_sCurrentAnimationName;	//現在処理対象になっているアニメーションの名前
+		float m_CurrentTime;			//アニメーションの現在の経過時間（秒）
+		bool m_IsAnimeEnd;				//現在のアニメーションが終了したかどうか
+		vector< Bone > m_vecLocalBones;	//各オブジェクトごとにボーンを所持しておく
+										//シェーダに渡すボーン行列
+		vector<Matrix4X4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
+
+												//アニメーションを名前で照会するする際に使用するインデックステーブル
+		map< string, AnimationData > m_AnimationMap;
+		Impl() :
+			m_sCurrentAnimationName(""),
+			m_CurrentTime(0),
+			m_IsAnimeEnd(false)
+		{}
+		~Impl() {}
+	};
+	//--------------------------------------------------------------------------------------
+	///	BcFbxPNTnTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
+	//--------------------------------------------------------------------------------------
+
+	BcFbxPNTnTBoneModelDraw::BcFbxPNTnTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		BcPNTnTStaticModelDraw(GameObjectPtr),
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
+	}
+	BcFbxPNTnTBoneModelDraw::~BcFbxPNTnTBoneModelDraw() {}
+
+	//ボーン行列をリソースから読み込む
+	void BcFbxPNTnTBoneModelDraw::SetBoneVec() {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->GetNumBones() > 0) {
+			//ローカルボーンのオリジナルからのコピー
+			pImpl->m_vecLocalBones.resize(PtrMeshResource->GetBonesVec().size());
+			pImpl->m_vecLocalBones = PtrMeshResource->GetBonesVec();
+
+			pImpl->m_LocalBonesMatrix.resize(PtrMeshResource->GetNumBones());
+		}
+		else {
+			throw BaseException(
+				L"ボーンが見つかりません",
+				L"if (PtrMeshResource->GetNumBones() <= 0)",
+				L"BcFbxPNTnTBoneModelDraw::SetBoneVec()"
+			);
+		}
+	}
+	void BcFbxPNTnTBoneModelDraw::GetBoneVec(vector< Bone >& Bones) {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->GetNumBones() > 0) {
+			//ローカルボーンのオリジナルからのコピー
+			Bones.resize(PtrMeshResource->GetBonesVec().size());
+			Bones = PtrMeshResource->GetBonesVec();
+		}
+		else {
+			throw BaseException(
+				L"ボーンが見つかりません",
+				L"if (PtrMeshResource->GetNumBones() <= 0)",
+				L"BcFbxPNTnTBoneModelDraw::GetBoneVec()"
+			);
+		}
+	}
+
+
+	//アクセサ
+	//各オブジェクトごとのボーン
+	const vector< Bone >& BcFbxPNTnTBoneModelDraw::GetVecLocalFbxBones() const {
+		return pImpl->m_vecLocalBones;
+	}
+	const vector< Bone >* BcFbxPNTnTBoneModelDraw::GetVecLocalFbxBonesPtr() const {
+		return &pImpl->m_vecLocalBones;
+	}
+
+	const vector< Matrix4X4 >* BcFbxPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
+		return &pImpl->m_LocalBonesMatrix;
+	}
+
+	void BcFbxPNTnTBoneModelDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
+		if (!MeshRes->IsSkining()) {
+			throw BaseException(
+				L"メッシュがボーンメッシュではありません",
+				L"if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0)",
+				L"BcFbxPNTnTBoneModelDraw::SetMeshResource()"
+			);
+
+		}
+		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		//ボーンがあれば読み込む
+		SetBoneVec();
+	}
+
+	void BcFbxPNTnTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
+		BcFbxPNTnTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
+	}
+
+
+
+	void BcFbxPNTnTBoneModelDraw::AddAnimation(const char* Name, UINT StartFrame, UINT FrameLength, bool Loop,
+		float FramesParSecond) {
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		if (PtrMeshResource->IsSkining()) {
+			map< string, AnimationData >::iterator it
+				= pImpl->m_AnimationMap.find(Name);
+			if (it != pImpl->m_AnimationMap.end()) {
+				//指定の名前が見つかった
+				//そのデータに差し替え
+				it->second.m_StartSample = StartFrame;
+				it->second.m_SampleLength = FrameLength;
+				it->second.m_SamplesParSecond = FramesParSecond;
+				it->second.m_IsLoop = Loop;
+			}
+			else {
+				//見つからない
+				//アニメーション定義の追加
+				pImpl->m_AnimationMap[Name] = AnimationData(StartFrame, FrameLength,
+					Loop, FramesParSecond);
+			}
+		}
+	}
+	const AnimationData& BcFbxPNTnTBoneModelDraw::GetAnimationData(const string& AnimeName) const {
+		auto it = pImpl->m_AnimationMap.find(AnimeName);
+		if (it != pImpl->m_AnimationMap.end()) {
+			return it->second;
+		}
+		else {
+			throw BaseMBException(
+				"指定のアニメーションが見つかりません",
+				AnimeName,
+				"AnimationData& BcFbxPNTBoneModelDraw::GetAnimationData()");
+		}
+	}
+
+
+	const string& BcFbxPNTnTBoneModelDraw::GetCurrentAnimation() const {
+		return pImpl->m_sCurrentAnimationName;
+	}
+	void BcFbxPNTnTBoneModelDraw::SetCurrentAnimation(const string& AnemationName, float StartTime) {
+		//指定のアニメーションがあるかどうかチェック
+		//無ければ例外が出る
+		AnimationData animData = GetAnimationData(AnemationName);
+		pImpl->m_sCurrentAnimationName = AnemationName;
+		pImpl->m_CurrentTime = StartTime;
+		pImpl->m_IsAnimeEnd = false;
+	}
+
+	float BcFbxPNTnTBoneModelDraw::GetCurrentTime() const {
+		return pImpl->m_CurrentTime;
+	}
+
+
+	//現在のアニメーションが終了しているかどうか
+	bool BcFbxPNTnTBoneModelDraw::IsTargetAnimeEnd() const {
+		return pImpl->m_IsAnimeEnd;
+	}
+
+	//指定したIDのボーンの現在の行列を取得する
+	void BcFbxPNTnTBoneModelDraw::GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+		auto PtrGameObject = GetGameObject();
+		auto PtrT = PtrGameObject->GetComponent<Transform>();
+		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
+		if (pImpl->m_vecLocalBones.size() <= BoneId) {
+			throw BaseException(
+				L"ボーンIDが範囲外です",
+				L"if (pImpl->m_vecLocalBones.size() <= BoneId)",
+				L"BcFbxPNTnTBoneModelDraw::GetBoneMatrix()"
+			);
+		}
+		Matrix = pImpl->m_vecLocalBones[BoneId].m_CurrentPose * MeshMatrix;
+	}
+
+	//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
+	void BcFbxPNTnTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+		auto PtrGameObject = GetGameObject();
+		auto PtrT = PtrGameObject->GetComponent<Transform>();
+		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix();
+		if (pImpl->m_vecLocalBones.size() <= BoneId) {
+			throw BaseException(
+				L"ボーンIDが範囲外です",
+				L"if (pImpl->m_vecLocalBones.size() <= BoneId)",
+				L"BcFbxPNTBoneModelDraw::GetLocalBoneMatrix()"
+			);
+		}
+		Matrix = pImpl->m_vecLocalBones[BoneId].m_CurrentPose * MeshMatrix;
+	}
+
+	void BcFbxPNTnTBoneModelDraw::OnCreate() {
+		SetLightingEnabled(true);
+		//マルチライトの設定
+		for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+			SetLightEnabled(i, true);
+		}
+	}
+
+
+	bool BcFbxPNTnTBoneModelDraw::UpdateAnimation(float ElapsedTime) {
+		//メッシュリソースの取得
+		auto PtrMeshResource = dynamic_pointer_cast<FbxMeshResource2>(GetMeshResource());
+		//ボーンが登録されていたらボーンを探す
+		if (PtrMeshResource->IsSkining()) {
+			if (!pImpl->m_IsAnimeEnd) {
+				pImpl->m_CurrentTime += ElapsedTime;
+			}
+			//アニメーションデータの取得
+			//チェックするだけなのでテンポラリでよい
+			AnimationData animData = GetAnimationData(pImpl->m_sCurrentAnimationName);
+			//ボーンを現在の時間に更新する
+			//戻り値は終了してるかどうか
+			pImpl->m_IsAnimeEnd = PtrMeshResource->GenerateCurrentPose(pImpl->m_vecLocalBones, animData, pImpl->m_CurrentTime);
+			if (animData.m_IsLoop) {
+				float TotalTime = (float)animData.m_SampleLength / (float)animData.m_SamplesParSecond;
+				if (TotalTime <= pImpl->m_CurrentTime) {
+					pImpl->m_CurrentTime = 0.0f;
+				}
+			}
+			//シャドウマップ用の行列にコピー
+			size_t BoneSz = pImpl->m_vecLocalBones.size();
+			UINT cb_count = 0;
+			for (size_t b = 0; b < BoneSz; b++) {
+				pImpl->m_LocalBonesMatrix[b] = pImpl->m_vecLocalBones[b].m_ConbinedPose;
+			}
+			return pImpl->m_IsAnimeEnd;
+		}
+		return false;
+	}
+
+	void BcFbxPNTnTBoneModelDraw::OnDraw() {
+		auto PtrStage = GetGameObject()->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュがなければ描画しない
+		auto MeshRes = GetMeshResource();
+		if (!MeshRes) {
+			throw BaseException(
+				L"メッシュが作成されていません",
+				L"if (!MeshRes)",
+				L"BcPNTnTBoneModelDraw::OnDraw()"
+			);
+		}
+		auto shNormalTex = GetNormalMapTextureResource();
+		if (!shNormalTex) {
+			throw BaseException(
+				L"法線マップのテクスチャがありません",
+				L"if (!shNormalTex)",
+				L"BcPNTnTBoneModelDraw::OnDraw()"
+			);
+		}
+
+
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+		auto RenderState = Dev->GetRenderState();
+		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+
+
+		//ライトを得る
+		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
+		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
+		if (PtrMultiLight) {
+			//マルチライトだった
+			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+				if (IsLightEnabled(i)) {
+					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
+					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
+					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
+				}
+			}
+		}
+		else {
+			//そうではない
+			auto LightPtr = GetGameObject()->OnGetDrawLight();
+			SetLightEnabled(0, true);
+			SetLightDirection(0, LightPtr.m_Directional);
+			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
+			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
+			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
+				SetLightEnabled(i, false);
+			}
+		}
+		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
+
+		//シェーダの設定
+		//ピクセルライティングのみ
+		if (IsOwnShadowActive()) {
+			//影付き
+			//バイアス無しのみ
+			pD3D11DeviceContext->VSSetShader(BcVSPNTnTBonePLShadow::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTBonePLShadow::GetPtr()->GetInputLayout());
+			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPLShadow::GetPtr()->GetShader(), nullptr, 0);
+		}
+		else {
+			//影無し
+			//バイアス無しのみ
+			pD3D11DeviceContext->VSSetShader(BcVSPNTnTBonePL::GetPtr()->GetShader(), nullptr, 0);
+			//インプットレイアウトの設定
+			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTBonePL::GetPtr()->GetInputLayout());
+			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
+		}
+
+		//影とサンプラー
+		if (IsOwnShadowActive()) {
+			//シャドウマップのレンダラーターゲット
+			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
+			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
+			//シャドウマップサンプラー
+			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
+		}
+
+		//ストライドとオフセット
+		UINT stride = MeshRes->GetNumStride();
+		UINT offset = 0;
+		//頂点バッファのセット
+		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+		//インデックスバッファのセット
+		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+		//描画方法（3角形）
+		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//デプスステンシルステートは設定に任せる
+		SetDeviceDepthStencilState();
+
+		//コンスタントバッファの設定
+		BasicConstants BcCb;
+		ZeroMemory(&BcCb, sizeof(BcCb));
+		if (IsOwnShadowActive()) {
+			SetConstants(BcCb, true);
+		}
+		else {
+			SetConstants(BcCb);
+		}
+
+		//これよりマテリアルごとの描画
+		auto& MatVec = MeshRes->GetMaterialExVec();
+		for (auto& m : MatVec) {
+			if (m.m_TextureResource && IsModelTextureEnabled()) {
+				//テクスチャがありテクスチャが有効である
+				BcCb.activeFlg.y = 1;
+			}
+			else {
+				//テクスチャがない
+				BcCb.activeFlg.y = 0;
+			}
+			if (IsModelDiffusePriority()) {
+				BcCb.diffuseColor = m.m_Diffuse;
+			}
+			if (IsModelEmissivePriority()) {
+				Color4 Em4 = m.m_Emissive;
+				Em4.w = 0.0f;
+				BcCb.emissiveColor = Em4;
+			}
+			//ボーンの設定
+			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
+			UINT cb_count = 0;
+			for (size_t b = 0; b < BoneSz; b++) {
+				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
+				mat.Transpose();
+				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
+				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+				cb_count += 3;
+			}
+
+			//コンスタントバッファの更新
+			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
+			//コンスタントバッファの設定
+			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pNullConstantBuffer = nullptr;
+			//頂点シェーダに渡す
+			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+			//ピクセルシェーダに渡す
+			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+
+
+			//テクスチャとサンプラー
+			//影付き無しでセットする位置が違う
+			if (IsOwnShadowActive()) {
+				if (m.m_TextureResource) {
+					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
+					//サンプラーは設定に任せる
+					SetDeviceSamplerState();
+				}
+				else {
+					//シェーダーリソースもクリア
+					//影は描画するので全部はクリアしない
+					pD3D11DeviceContext->PSSetShaderResources(0, 1, pNull);
+					//サンプラーもクリア
+					pD3D11DeviceContext->PSSetSamplers(0, 1, pNullSR);
+				}
+				//法線マップ
+				//２番目に入れる
+				pD3D11DeviceContext->PSSetShaderResources(2, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
+			}
+			else {
+				if (m.m_TextureResource) {
+					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
+					//サンプラーは設定に任せる
+					SetDeviceSamplerState();
+				}
+				else {
+					//シェーダーリソースもクリア
+					pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+					//サンプラーもクリア
+					pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+				}
+				//法線マップ
+				//1番目に入れる
+				pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
+			}
+			//透明処理なら
+			if (GetGameObject()->GetAlphaActive()) {
+				//ブレンドステート
+				//透明処理
+				if (GetBlendState() == BlendState::Additive) {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+				}
+				else {
+					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				}
+				//ラスタライザステート(裏描画)
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+				//ラスタライザステート（表描画）
+				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+			}
+			else {
+				//透明処理しない
+				//ブレンドステートは設定に任せる
+				SetDeviceBlendState();
+				//ラスタライザステートは設定に任せる
+				SetDeviceRasterizerState();
+				//描画
+				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
+			}
+		}
+		//後始末
+		Dev->InitializeStates();
+	}
+
+
+
+
+#ifdef test
 
 	//--------------------------------------------------------------------------------------
 	//	struct BasicFbxPNTBoneDraw::Impl;
@@ -1215,7 +2383,7 @@ namespace basecross {
 	}
 
 
-
+#endif
 
 	//--------------------------------------------------------------------------------------
 	//	class FbxMeshObject : public GameObject;
@@ -1231,6 +2399,7 @@ namespace basecross {
 		m_CharaLocalScale(1.0f),
 		m_CharaLocalPosition(0,0,0),
 		m_IsReadStaticMesh(false),
+		m_WithTangent(false),
 		m_IsAnimeRun(false)
 	{}
 	void FbxMeshObject::OnCreate() {
@@ -1245,17 +2414,28 @@ namespace basecross {
 		PtrString->SetText(L"");
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
+		SetAlphaActive(true);
+
 
 	}
 
 	void FbxMeshObject::OnUpdate() {
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
 		if (PtrBoneDraw && m_IsAnimeRun) {
 			if (PtrBoneDraw->IsTargetAnimeEnd()) {
 				m_IsAnimeRun = false;
 			}
 			else {
 				PtrBoneDraw->UpdateAnimation(App::GetApp()->GetElapsedTime());
+			}
+		}
+		else if (PtrTanBoneDraw && m_IsAnimeRun) {
+			if (PtrTanBoneDraw->IsTargetAnimeEnd()) {
+				m_IsAnimeRun = false;
+			}
+			else {
+				PtrTanBoneDraw->UpdateAnimation(App::GetApp()->GetElapsedTime());
 			}
 		}
 	}
@@ -1268,7 +2448,8 @@ namespace basecross {
 		FPS += L"\n";
 		wstring CurrentTime = L"";
 		wstring AnimeRun = L"";
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
 		if (PtrBoneDraw) {
 			CurrentTime += Util::FloatToWStr(PtrBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
 			if (m_IsAnimeRun) {
@@ -1278,6 +2459,16 @@ namespace basecross {
 				AnimeRun = L"ANIME: STOP\n";
 			}
 		}
+		else if (PtrTanBoneDraw) {
+			CurrentTime += Util::FloatToWStr(PtrTanBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
+			if (m_IsAnimeRun) {
+				AnimeRun = L"ANIME: RUN\n";
+			}
+			else {
+				AnimeRun = L"ANIME: STOP\n";
+			}
+		}
+
 		wstring str = FPS + CurrentTime + AnimeRun;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
@@ -1302,7 +2493,7 @@ namespace basecross {
 	}
 
 	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
-		bool IsReadStatic) {
+		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName) {
 		try {
 			if (m_FbxMeshResName != L"") {
 				App::GetApp()->UnRegisterResource<FbxMeshResource2>(m_FbxMeshResName);
@@ -1320,13 +2511,14 @@ namespace basecross {
 			m_CharaLocalScale = Scale;
 			m_CharaLocalPosition = Position;
 			m_IsReadStaticMesh = IsReadStatic;
+			m_WithTangent = WithTangent;
 
 			shared_ptr<FbxSceneResource> PtrFbxScene;
 			if (App::GetApp()->CheckResource<FbxSceneResource>(m_FbxResName)) {
 				PtrFbxScene = App::GetApp()->GetResource<FbxSceneResource>(m_FbxResName);
 			}
 			else {
-				PtrFbxScene = FbxSceneResource::CreateFbxScene(DirName, FbxName,"", m_IsReadStaticMesh);
+				PtrFbxScene = FbxSceneResource::CreateFbxScene(DirName, FbxName,"", m_IsReadStaticMesh, m_WithTangent);
 				App::GetApp()->RegisterResource(m_FbxResName, PtrFbxScene);
 			}
 
@@ -1347,18 +2539,48 @@ namespace basecross {
 			auto ShadowPtr = AddComponent<Shadowmap>();
 			ShadowPtr->SetMeshResource(PtrFbxMesh);
 
+			RemoveComponent<BcPNTStaticModelDraw>();
+			RemoveComponent<BcPNTnTStaticModelDraw>();
+			RemoveComponent<BcFbxPNTBoneModelDraw>();
+			RemoveComponent<BcFbxPNTnTBoneModelDraw>();
 
 			if (PtrFbxMesh->IsSkining()) {
-				RemoveComponent<PNTStaticModelDraw>();
-				auto PtrDraw = AddComponent<BasicFbxPNTBoneDraw>();
-				PtrDraw->SetMeshResource(PtrFbxMesh);
-				PtrDraw->AddAnimation("start", 0, 1, true, 30);
-				PtrDraw->SetCurrentAnimation("start");
+				if (WithTangent) {
+					if (App::GetApp()->CheckResource<TextureResource>(L"NORMAL_TX")) {
+						App::GetApp()->UnRegisterResource<TextureResource>(L"NORMAL_TX");
+					}
+					App::GetApp()->RegisterTexture(L"NORMAL_TX", NormalFileName);
+					auto PtrDraw = AddComponent<BcFbxPNTnTBoneModelDraw>();
+					PtrDraw->SetFogEnabled(true);
+					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
+					PtrDraw->AddAnimation("start", 0, 1, true, 30);
+					PtrDraw->SetCurrentAnimation("start");
+				}
+				else {
+					auto PtrDraw = AddComponent<BcFbxPNTBoneModelDraw>();
+					PtrDraw->SetFogEnabled(true);
+					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->AddAnimation("start", 0, 1, true, 30);
+					PtrDraw->SetCurrentAnimation("start");
+				}
 			}
 			else {
-				RemoveComponent<BasicFbxPNTBoneDraw>();
-				auto PtrDraw = AddComponent<PNTStaticModelDraw>();
-				PtrDraw->SetMeshResource(PtrFbxMesh);
+				if (WithTangent) {
+					if (App::GetApp()->CheckResource<TextureResource>(L"NORMAL_TX")) {
+						App::GetApp()->UnRegisterResource<TextureResource>(L"NORMAL_TX");
+					}
+					App::GetApp()->RegisterTexture(L"NORMAL_TX", NormalFileName);
+					auto PtrDraw = AddComponent<BcPNTnTStaticModelDraw>();
+					PtrDraw->SetFogEnabled(true);
+					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
+				}
+				else {
+					auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
+					PtrDraw->SetFogEnabled(true);
+					PtrDraw->SetMeshResource(PtrFbxMesh);
+				}
 			}
 		}
 		catch (...) {
@@ -1367,28 +2589,48 @@ namespace basecross {
 	}
 
 	bool FbxMeshObject::CheckSkinMesh() {
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
 		if (PtrBoneDraw) {
 			auto FbxMeshPtr = PtrBoneDraw->GetMeshResource();
 			if (FbxMeshPtr->IsSkining()) {
 				return true;
 			}
 		}
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
+		if (PtrTanBoneDraw) {
+			auto FbxMeshPtr = PtrTanBoneDraw->GetMeshResource();
+			if (FbxMeshPtr->IsSkining()) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 
 	bool FbxMeshObject::CheckMesh() {
-		auto PtrDraw = GetComponent<PNTStaticModelDraw>(false);
+		auto PtrDraw = GetComponent<BcPNTStaticModelDraw>(false);
 		if (PtrDraw && PtrDraw->GetMeshResource()) {
 			return true;
 		}
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
+		auto PtrTanDraw = GetComponent<BcPNTnTStaticModelDraw>(false);
+		if (PtrTanDraw && PtrTanDraw->GetMeshResource()) {
+			return true;
+		}
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
 		if (PtrBoneDraw) {
 			auto FbxMeshPtr = PtrBoneDraw->GetMeshResource();
 			if (FbxMeshPtr->IsSkining()) {
 				return true;
 			}
 		}
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
+		if (PtrTanBoneDraw) {
+			auto FbxMeshPtr = PtrTanBoneDraw->GetMeshResource();
+			if (FbxMeshPtr->IsSkining()) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 
@@ -1397,7 +2639,8 @@ namespace basecross {
 	void FbxMeshObject::MoveFbxMesh(UINT FrameRate, UINT StartTime, UINT EndTime, bool IsLoop) {
 
 		m_IsAnimeRun = false;
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
 		if (PtrBoneDraw) {
 			auto FbxMeshPtr = PtrBoneDraw->GetMeshResource();
 			if (!FbxMeshPtr) {
@@ -1409,6 +2652,18 @@ namespace basecross {
 			PtrBoneDraw->SetCurrentAnimation("run");
 			m_IsAnimeRun = true;
 		}
+		else if (PtrTanBoneDraw) {
+			auto FbxMeshPtr = PtrTanBoneDraw->GetMeshResource();
+			if (!FbxMeshPtr) {
+				AfxMessageBox(L"FbxMeshが読み込まれてません。");
+				return;
+			}
+			UINT FrameLength = (EndTime - StartTime) * FrameRate;
+			PtrTanBoneDraw->AddAnimation("run", StartTime, FrameLength, IsLoop, (float)FrameRate);
+			PtrTanBoneDraw->SetCurrentAnimation("run");
+			m_IsAnimeRun = true;
+		}
+
 		else {
 			AfxMessageBox(L"読み込んだメッシュはスキンメッシュではありません。");
 		}
@@ -1417,8 +2672,9 @@ namespace basecross {
 
 	void FbxMeshObject::AnimePoseStart() {
 
-		auto PtrBoneDraw = GetComponent<BasicFbxPNTBoneDraw>(false);
-		if (PtrBoneDraw) {
+		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
+		if (PtrBoneDraw || PtrTanBoneDraw) {
 			if (m_IsAnimeRun) {
 				m_IsAnimeRun = false;
 			}
@@ -1438,14 +2694,27 @@ namespace basecross {
 				header.resize(16, '\0');
 			}
 			vector<VertexPositionNormalTexture> vertices;
+			vector<VertexPositionNormalTangentTexture> vertices_withtan;
+
 			vector<uint16_t> indices;
 			vector<MaterialEx> materials;
 			vector< shared_ptr<TextureResource> > textures;
-			auto PtrDraw = GetComponent<PNTStaticModelDraw>();
-			auto Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrDraw->GetMeshResource());
-			Mesh->GetStaticVerticesIndicesMaterials(vertices, indices,materials);
-			for (auto& v : vertices) {
-				v.position *= Scale;
+			auto PtrDraw = GetComponent<BcPNTStaticModelDraw>(false);
+			auto PtrTanDraw = GetComponent<BcPNTnTStaticModelDraw>(false);
+			shared_ptr<FbxMeshResource2> Mesh;
+			if (m_WithTangent) {
+				Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrTanDraw->GetMeshResource());
+				Mesh->GetStaticVerticesIndicesMaterialsWithTangent(vertices_withtan, indices, materials);
+				for (auto& v : vertices_withtan) {
+					v.position *= Scale;
+				}
+			}
+			else {
+				Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrDraw->GetMeshResource());
+				Mesh->GetStaticVerticesIndicesMaterials(vertices, indices, materials);
+				for (auto& v : vertices) {
+					v.position *= Scale;
+				}
 			}
 
 			wstring filename = Dir + FileName;
@@ -1454,10 +2723,18 @@ namespace basecross {
 			ofs.write(header.c_str(), 16);
 			//頂点の保存
 			BlockHeader VerTexHeader;
-			VerTexHeader.m_Type = BlockType::Vertex;
-			VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTexture);
-			ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
-			ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+			if (m_WithTangent) {
+				VerTexHeader.m_Type = BlockType::VertexWithTangent;
+				VerTexHeader.m_Size = (UINT)vertices_withtan.size() * sizeof(VertexPositionNormalTangentTexture);
+				ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+				ofs.write((const char*)&vertices_withtan.front(), VerTexHeader.m_Size);
+			}
+			else {
+				VerTexHeader.m_Type = BlockType::Vertex;
+				VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTexture);
+				ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+				ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+			}
 			//インデックスの保存
 			BlockHeader IndexHeader;
 			IndexHeader.m_Type = BlockType::Index;
@@ -1513,10 +2790,6 @@ namespace basecross {
 			ofs.write((const char*)&EndHeader, sizeof(BlockHeader));
 			ofs.close();
 
-
-
-
-
 		}
 		catch (...) {
 			throw;
@@ -1533,19 +2806,28 @@ namespace basecross {
 				header.resize(16, '\0');
 			}
 			vector<VertexPositionNormalTextureSkinning> vertices;
+			vector<VertexPositionNormalTangentTextureSkinning> vertices_withtan;
 			vector<uint16_t> indices;
 			vector<MaterialEx> materials;
 			vector<Bone> bones;
 			map< string, UINT > mapBoneList;
-			auto PtrDraw = GetComponent<BasicFbxPNTBoneDraw>();
-			auto Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrDraw->GetMeshResource());
+			auto PtrDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+			auto PtrTanDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
 
-			Mesh->GetSkinVerticesIndicesMaterials(vertices, indices, materials,
-				bones, mapBoneList);
-
-
-			for (auto& v : vertices) {
-				v.position *= Scale;
+			shared_ptr<FbxMeshResource2> Mesh;
+			if (m_WithTangent) {
+				Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrTanDraw->GetMeshResource());
+				Mesh->GetSkinVerticesIndicesMaterialsWithTangent(vertices_withtan, indices, materials, bones, mapBoneList);
+				for (auto& v : vertices_withtan) {
+					v.position *= Scale;
+				}
+			}
+			else {
+				Mesh = dynamic_pointer_cast<FbxMeshResource2>(PtrDraw->GetMeshResource());
+				Mesh->GetSkinVerticesIndicesMaterials(vertices, indices, materials, bones, mapBoneList);
+				for (auto& v : vertices) {
+					v.position *= Scale;
+				}
 			}
 
 			vector<Matrix4X4> animematrix;
@@ -1561,20 +2843,41 @@ namespace basecross {
 			float SampleSpan = 1.0f / (float)FrameParSec;
 
 			//アニメデータを得る
-			PtrDraw->AddAnimation("save_run", (UINT)start, (UINT)(end - start), true,(float) FrameParSec);
-			PtrDraw->SetCurrentAnimation("save_run");
-			AnimationData animData = PtrDraw->GetAnimationData("save_run");
+			if (m_WithTangent) {
+				PtrTanDraw->AddAnimation("save_run", (UINT)start, (UINT)(end - start), true, (float)FrameParSec);
+				PtrTanDraw->SetCurrentAnimation("save_run");
+				AnimationData animData = PtrTanDraw->GetAnimationData("save_run");
 
-			for (float f = (float)Start; f < (float)End; f += SampleSpan) {
-				Mesh->GenerateCurrentPose(AnimeBones, animData, f);
-				for (auto b : AnimeBones) {
-					Matrix4X4 Mat = b.m_ConbinedPose;
-					Mat._41 *= Scale;
-					Mat._42 *= Scale;
-					Mat._43 *= Scale;
-					animematrix.push_back(Mat);
+				for (float f = (float)Start; f < (float)End; f += SampleSpan) {
+					Mesh->GenerateCurrentPose(AnimeBones, animData, f);
+					for (auto b : AnimeBones) {
+						Matrix4X4 Mat = b.m_ConbinedPose;
+						Mat._41 *= Scale;
+						Mat._42 *= Scale;
+						Mat._43 *= Scale;
+						animematrix.push_back(Mat);
+					}
 				}
 			}
+			else {
+				PtrDraw->AddAnimation("save_run", (UINT)start, (UINT)(end - start), true, (float)FrameParSec);
+				PtrDraw->SetCurrentAnimation("save_run");
+				AnimationData animData = PtrDraw->GetAnimationData("save_run");
+
+				for (float f = (float)Start; f < (float)End; f += SampleSpan) {
+					Mesh->GenerateCurrentPose(AnimeBones, animData, f);
+					for (auto b : AnimeBones) {
+						Matrix4X4 Mat = b.m_ConbinedPose;
+						Mat._41 *= Scale;
+						Mat._42 *= Scale;
+						Mat._43 *= Scale;
+						animematrix.push_back(Mat);
+					}
+				}
+			}
+
+
+
 
 
 			wstring filename = Dir + FileName;
@@ -1582,10 +2885,18 @@ namespace basecross {
 			ofs.write(header.c_str(), 16);
 			//頂点の保存
 			BlockHeader VerTexHeader;
-			VerTexHeader.m_Type = BlockType::SkinedVertex;
-			VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTextureSkinning);
-			ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
-			ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+			if (m_WithTangent) {
+				VerTexHeader.m_Type = BlockType::SkinedVertexWithTangent;
+				VerTexHeader.m_Size = (UINT)vertices_withtan.size() * sizeof(VertexPositionNormalTangentTextureSkinning);
+				ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+				ofs.write((const char*)&vertices_withtan.front(), VerTexHeader.m_Size);
+			}
+			else {
+				VerTexHeader.m_Type = BlockType::SkinedVertex;
+				VerTexHeader.m_Size = (UINT)vertices.size() * sizeof(VertexPositionNormalTextureSkinning);
+				ofs.write((const char*)&VerTexHeader, sizeof(BlockHeader));
+				ofs.write((const char*)&vertices.front(), VerTexHeader.m_Size);
+			}
 			//インデックスの保存
 			BlockHeader IndexHeader;
 			IndexHeader.m_Type = BlockType::Index;

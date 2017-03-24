@@ -512,7 +512,8 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static void ReadBaseData(const wstring& BinDataDir, const wstring& BinDataFile,
-			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices, vector<MaterialEx>& materials);
+			vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
+			vector<uint16_t>& indices, vector<MaterialEx>& materials);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュデータの読み込み（ボーンメッシュ）
@@ -528,7 +529,8 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static void ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
-			vector<VertexPositionNormalTextureSkinning>& vertices, vector<uint16_t>& indices, vector<MaterialEx>& materials,
+			vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
+			vector<uint16_t>& indices, vector<MaterialEx>& materials,
 			vector<Matrix4X4>& bonematrix, UINT& BoneCount, UINT& SampleCount);
 		//--------------------------------------------------------------------------------------
 		/*!

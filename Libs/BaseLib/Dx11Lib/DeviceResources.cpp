@@ -367,8 +367,10 @@ namespace basecross {
 	}
 
 	void MeshResource::ReadBaseData(const wstring& BinDataDir, const wstring& BinDataFile,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices, vector<MaterialEx>& materials) {
+		vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
+		vector<uint16_t>& indices, vector<MaterialEx>& materials) {
 		vertices.clear();
+		vertices_withtan.clear();
 		indices.clear();
 		materials.clear();
 		wstring DataFile = BinDataDir + BinDataFile;
@@ -385,26 +387,55 @@ namespace basecross {
 		}
 		//頂点の読み込み
 		auto blockHeader = Reader.Read<BlockHeader>();
-		if (blockHeader.m_Type != BlockType::Vertex) {
+		if (!(blockHeader.m_Type == BlockType::Vertex || blockHeader.m_Type == BlockType::VertexWithTangent)) {
 			throw BaseException(
 				L"頂点のヘッダが違います",
 				DataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
-		auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTexturePOD);
-		auto pVertex = Reader.ReadArray<VertexPositionNormalTexturePOD>((size_t)VerTexSize);
-		for (UINT i = 0; i < VerTexSize; i++) {
-			VertexPositionNormalTexture v;
-			v.position.x = pVertex[i].position[0];
-			v.position.y = pVertex[i].position[1];
-			v.position.z = pVertex[i].position[2];
-			v.normal.x = pVertex[i].normal[0];
-			v.normal.y = pVertex[i].normal[1];
-			v.normal.z = pVertex[i].normal[2];
-			v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
-			v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
-			vertices.push_back(v);
+		if (blockHeader.m_Type == BlockType::Vertex) {
+			auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTexturePOD);
+			auto pVertex = Reader.ReadArray<VertexPositionNormalTexturePOD>((size_t)VerTexSize);
+			for (UINT i = 0; i < VerTexSize; i++) {
+				VertexPositionNormalTexture v;
+				v.position.x = pVertex[i].position[0];
+				v.position.y = pVertex[i].position[1];
+				v.position.z = pVertex[i].position[2];
+				v.normal.x = pVertex[i].normal[0];
+				v.normal.y = pVertex[i].normal[1];
+				v.normal.z = pVertex[i].normal[2];
+				v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+				v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+				vertices.push_back(v);
+			}
+		}
+		else if (blockHeader.m_Type == BlockType::VertexWithTangent) {
+			auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTangentTexturePOD);
+			auto pVertex = Reader.ReadArray<VertexPositionNormalTangentTexturePOD>((size_t)VerTexSize);
+			for (UINT i = 0; i < VerTexSize; i++) {
+				VertexPositionNormalTangentTexture v;
+				v.position.x = pVertex[i].position[0];
+				v.position.y = pVertex[i].position[1];
+				v.position.z = pVertex[i].position[2];
+				v.normal.x = pVertex[i].normal[0];
+				v.normal.y = pVertex[i].normal[1];
+				v.normal.z = pVertex[i].normal[2];
+				v.tangent.x = pVertex[i].tangent[0];
+				v.tangent.y = pVertex[i].tangent[1];
+				v.tangent.z = pVertex[i].tangent[2];
+				v.tangent.w = pVertex[i].tangent[3];
+				v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+				v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+				vertices_withtan.push_back(v);
+			}
+		}
+		else {
+			throw BaseException(
+				L"頂点の型が違います",
+				DataFile,
+				L"MeshResource::ReadBaseData()"
+			);
 		}
 
 		//インデックスの読み込み
@@ -489,10 +520,14 @@ namespace basecross {
 		}
 	}
 
+
+
 	void MeshResource::ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
-		vector<VertexPositionNormalTextureSkinning>& vertices, vector<uint16_t>& indices, vector<MaterialEx>& materials,
+		vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
+		vector<uint16_t>& indices, vector<MaterialEx>& materials,
 		vector<Matrix4X4>& bonematrix, UINT& BoneCount, UINT& SampleCount) {
 		vertices.clear();
+		vertices_withtan.clear();
 		indices.clear();
 		materials.clear();
 		bonematrix.clear();
@@ -511,31 +546,60 @@ namespace basecross {
 		}
 		//頂点の読み込み
 		auto blockHeader = Reader.Read<BlockHeader>();
-		if (blockHeader.m_Type != BlockType::SkinedVertex) {
+		if (!(blockHeader.m_Type == BlockType::SkinedVertex || blockHeader.m_Type == BlockType::SkinedVertexWithTangent)) {
 			throw BaseException(
 				L"頂点(スキン処理)のヘッダが違います",
 				DataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
-		auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTextureSkinningPOD);
-		auto pVertex = Reader.ReadArray<VertexPositionNormalTextureSkinningPOD>((size_t)VerTexSize);
-		for (UINT i = 0; i < VerTexSize; i++) {
-			VertexPositionNormalTextureSkinning v;
-			v.position.x = pVertex[i].position[0];
-			v.position.y = pVertex[i].position[1];
-			v.position.z = pVertex[i].position[2];
-			v.normal.x = pVertex[i].normal[0];
-			v.normal.y = pVertex[i].normal[1];
-			v.normal.z = pVertex[i].normal[2];
-			v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
-			v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
-			for (int j = 0; j < 4; j++) {
-				v.indices[j] = pVertex[i].indices[j];
-				v.weights[j] = pVertex[i].weights[j];
+		if (blockHeader.m_Type == BlockType::SkinedVertex) {
+			auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTextureSkinningPOD);
+			auto pVertex = Reader.ReadArray<VertexPositionNormalTextureSkinningPOD>((size_t)VerTexSize);
+			for (UINT i = 0; i < VerTexSize; i++) {
+				VertexPositionNormalTextureSkinning v;
+				v.position.x = pVertex[i].position[0];
+				v.position.y = pVertex[i].position[1];
+				v.position.z = pVertex[i].position[2];
+				v.normal.x = pVertex[i].normal[0];
+				v.normal.y = pVertex[i].normal[1];
+				v.normal.z = pVertex[i].normal[2];
+				v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+				v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+				for (int j = 0; j < 4; j++) {
+					v.indices[j] = pVertex[i].indices[j];
+					v.weights[j] = pVertex[i].weights[j];
+				}
+				vertices.push_back(v);
 			}
-			vertices.push_back(v);
 		}
+		else if (blockHeader.m_Type == BlockType::SkinedVertexWithTangent) {
+			auto VerTexSize = blockHeader.m_Size / sizeof(VertexPositionNormalTangentTextureSkinningPOD);
+			auto pVertex = Reader.ReadArray<VertexPositionNormalTangentTextureSkinningPOD>((size_t)VerTexSize);
+			for (UINT i = 0; i < VerTexSize; i++) {
+				VertexPositionNormalTangentTextureSkinning v;
+				v.position.x = pVertex[i].position[0];
+				v.position.y = pVertex[i].position[1];
+				v.position.z = pVertex[i].position[2];
+				v.normal.x = pVertex[i].normal[0];
+				v.normal.y = pVertex[i].normal[1];
+				v.normal.z = pVertex[i].normal[2];
+				v.tangent.x = pVertex[i].tangent[0];
+				v.tangent.y = pVertex[i].tangent[1];
+				v.tangent.z = pVertex[i].tangent[2];
+				v.tangent.w = pVertex[i].tangent[3];
+				v.textureCoordinate.x = pVertex[i].textureCoordinate[0];
+				v.textureCoordinate.y = pVertex[i].textureCoordinate[1];
+				for (int j = 0; j < 4; j++) {
+					v.indices[j] = pVertex[i].indices[j];
+					v.weights[j] = pVertex[i].weights[j];
+				}
+				vertices_withtan.push_back(v);
+			}
+
+		}
+
+
 
 		//インデックスの読み込み
 		blockHeader = Reader.Read<BlockHeader>();
@@ -661,11 +725,13 @@ namespace basecross {
 		try {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
+			//タンジェント付きにコンバートする配列(ダミー)
+			vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
 			//インデックスを作成するための配列
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
-			ReadBaseData(BinDataDir, BinDataFile, vertices, indices, Materials);
+			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 			Ptr->m_MaterialExVec.clear();
 			for (auto& v : Materials) {
@@ -688,20 +754,22 @@ namespace basecross {
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
-			ReadBaseData(BinDataDir, BinDataFile, vertices, indices, Materials);
+			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,indices, Materials);
+			if (vertices.size() > 0) {
+				//binデータにはタンジェントは入ってなかった
+				new_pntnt_vertices.clear();
+				for (size_t i = 0; i < vertices.size(); i++) {
+					VertexPositionNormalTangentTexture new_pntnt_v;
 
-			new_pntnt_vertices.clear();
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionNormalTangentTexture new_pntnt_v;
-
-				new_pntnt_v.position = vertices[i].position;
-				new_pntnt_v.normal = vertices[i].normal;
-				new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
-				Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
-				new_pntnt_v.tangent = XMFLOAT4(0,0,0,0);
-				new_pntnt_vertices.push_back(new_pntnt_v);
+					new_pntnt_v.position = vertices[i].position;
+					new_pntnt_v.normal = vertices[i].normal;
+					new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+					Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+					new_pntnt_v.tangent = XMFLOAT4(0, 0, 0, 0);
+					new_pntnt_vertices.push_back(new_pntnt_v);
+				}
+				MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			}
-			MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTexture>(new_pntnt_vertices, indices, AccessWrite);
 			Ptr->m_MaterialExVec.clear();
 			for (auto& v : Materials) {
@@ -721,6 +789,8 @@ namespace basecross {
 		try {
 			//頂点配列
 			vector<VertexPositionNormalTextureSkinning> vertices;
+			//タンジェント付きにコンバートする配列(ダミー)
+			vector<VertexPositionNormalTangentTextureSkinning> new_pntnt_vertices;
 			//インデックスを作成するための配列
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
@@ -731,7 +801,8 @@ namespace basecross {
 			UINT BoneCount;
 			//サンプル数
 			UINT SampleCount;
-			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, indices, Materials,
+			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
+				indices, Materials,
 				SampleMatrices, BoneCount, SampleCount);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTextureSkinning>(vertices, indices, AccessWrite);
 			Ptr->m_MaterialExVec.clear();
@@ -771,27 +842,26 @@ namespace basecross {
 			UINT BoneCount;
 			//サンプル数
 			UINT SampleCount;
-			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, indices, Materials,
+			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
+				indices, Materials,
 				SampleMatrices, BoneCount, SampleCount);
-
-			new_pntnt_vertices.clear();
-			for (size_t i = 0; i < vertices.size(); i++) {
-				VertexPositionNormalTangentTextureSkinning new_pntnt_v;
-
-				new_pntnt_v.position = vertices[i].position;
-				new_pntnt_v.normal = vertices[i].normal;
-				new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
-				Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
-				new_pntnt_v.tangent = XMFLOAT4(0, 0, 0, 0);
-				for (size_t j = 0; j < 4; j++) {
-					new_pntnt_v.indices[j] = vertices[i].indices[j];
-					new_pntnt_v.weights[j] = vertices[i].weights[j];
+			if (vertices.size() > 0) {
+				//計算で法線を入れる
+				new_pntnt_vertices.clear();
+				for (size_t i = 0; i < vertices.size(); i++) {
+					VertexPositionNormalTangentTextureSkinning new_pntnt_v;
+					new_pntnt_v.position = vertices[i].position;
+					new_pntnt_v.normal = vertices[i].normal;
+					new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
+					new_pntnt_v.tangent = XMFLOAT4(0, 0, 0, 0);
+					for (size_t j = 0; j < 4; j++) {
+						new_pntnt_v.indices[j] = vertices[i].indices[j];
+						new_pntnt_v.weights[j] = vertices[i].weights[j];
+					}
+					new_pntnt_vertices.push_back(new_pntnt_v);
 				}
-				new_pntnt_vertices.push_back(new_pntnt_v);
+				MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			}
-			MeshUtill::SetNormalTangent(new_pntnt_vertices);
-
-
 
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTextureSkinning>(new_pntnt_vertices, indices, AccessWrite);
 			Ptr->m_MaterialExVec.clear();

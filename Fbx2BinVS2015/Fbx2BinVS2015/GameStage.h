@@ -30,7 +30,7 @@ namespace basecross {
 		virtual void OnCreate()override;
 
 		void ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vector3& Position,
-			bool IsReadStatic);
+			bool IsReadStatic,bool WithTangent, const wstring& NormalFileName);
 
 		void SaveStaticBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale);
 		void SaveSkinBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale,
