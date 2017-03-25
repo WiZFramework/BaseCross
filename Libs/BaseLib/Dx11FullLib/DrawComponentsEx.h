@@ -198,6 +198,28 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetConstants(BasicConstants& BcCb, bool shadowUse = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャとサンプラーの設定（タンジェント無し）
+		@param[in]	pD3D11DeviceContext	デバイスコンテキスト
+		@param[in]	TexRes	テクスチャリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureAndSampler(ID3D11DeviceContext2* pD3D11DeviceContext, const shared_ptr<TextureResource>& TexRes);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャとサンプラーの設定（タンジェントつき）
+		@param[in]	pD3D11DeviceContext	デバイスコンテキスト
+		@param[in]	IsOwnShadow	自己影が有効かどうか
+		@param[in]	TexRes	テクスチャリソース
+		@param[in]	NormalTexRes	法線マップテクスチャリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureAndSamplerWithTangent(ID3D11DeviceContext2* pD3D11DeviceContext,bool IsOwnShadow,
+			const shared_ptr<TextureResource>& TexRes,
+			const shared_ptr<TextureResource>& NormalTexRes);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -447,6 +469,13 @@ namespace basecross {
 		void SetPerPixelLighting(bool value);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	ライティングパラメータを設定する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetLightingParamaters();
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	法線にバイアスをかけるかどうか
 		@return	する場合はtrue
 		*/
@@ -640,8 +669,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetFogColor(const Color4& col);
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ライティングなしのスタティックメッシュの描画
@@ -756,8 +783,6 @@ namespace basecross {
 			//後始末
 			Dev->InitializeStates();
 		}
-
-
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -901,7 +926,6 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
-
 
 
 	//--------------------------------------------------------------------------------------

@@ -39,7 +39,6 @@ namespace basecross {
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStatic, App::GetApp()->GetShadersPath() + L"VSPTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPTStatic, App::GetApp()->GetShadersPath() + L"PSPTStatic.cso")
 	//PCTStatic
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTInstance, App::GetApp()->GetShadersPath() + L"VSPCTInstance.cso")
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPCTStatic, App::GetApp()->GetShadersPath() + L"VSPCTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPCTStatic, App::GetApp()->GetShadersPath() + L"PSPCTStatic.cso")
 	//PNTStatic
@@ -639,10 +638,10 @@ namespace basecross {
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		//シェーダの設定
-		pD3D11DeviceContext->VSSetShader(VSPCTInstance::GetPtr()->GetShader(), nullptr, 0);
+		pD3D11DeviceContext->VSSetShader(VSPCTStaticInstance::GetPtr()->GetShader(), nullptr, 0);
 		pD3D11DeviceContext->PSSetShader(PSPCTStatic::GetPtr()->GetShader(), nullptr, 0);
 		//インプットレイアウトの設定
-		pD3D11DeviceContext->IASetInputLayout(VSPCTInstance::GetPtr()->GetInputLayout());
+		pD3D11DeviceContext->IASetInputLayout(VSPCTStaticInstance::GetPtr()->GetInputLayout());
 
 		//ブレンドステート
 		if (pImpl->m_Addtype) {

@@ -351,6 +351,35 @@ namespace basecross {
 		pImpl->m_PreferPerPixelLighting = value;
 	}
 
+	void BcStaticBaseDraw::SetLightingParamaters() {
+		//ライトを得る
+		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
+		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
+		if (PtrMultiLight) {
+			//マルチライトだった
+			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+				if (IsLightEnabled(i)) {
+					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
+					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
+					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
+				}
+			}
+		}
+		else {
+			//そうではない
+			auto LightPtr = GetGameObject()->OnGetDrawLight();
+			SetLightEnabled(0, true);
+			SetLightDirection(0, LightPtr.m_Directional);
+			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
+			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
+			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
+				SetLightEnabled(i, false);
+			}
+		}
+		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
+	}
+
+
 	bool BcStaticBaseDraw::GetBiasedNormals() const {
 		return pImpl->m_BiasedNormals;
 	}
@@ -598,6 +627,68 @@ namespace basecross {
 		}
 	}
 
+	void BcStaticBaseDraw::SetTextureAndSampler(ID3D11DeviceContext2* pD3D11DeviceContext, const shared_ptr<TextureResource>& TexRes) {
+		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+		//テクスチャとサンプラー
+		if (TexRes) {
+			pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
+			//サンプラーは設定に任せる
+			SetDeviceSamplerState();
+		}
+		else {
+			//シェーダーリソースもクリア
+			pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+			//サンプラーもクリア
+			pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+		}
+	}
+
+	void BcStaticBaseDraw::SetTextureAndSamplerWithTangent(ID3D11DeviceContext2* pD3D11DeviceContext, bool IsOwnShadow,
+		const shared_ptr<TextureResource>& TexRes,
+		const shared_ptr<TextureResource>& NormalTexRes) {
+		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
+		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+		//テクスチャとサンプラー
+		//影付き無しでセットする位置が違う
+		if (IsOwnShadow) {
+			if (TexRes) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
+				//サンプラーは設定に任せる
+				SetDeviceSamplerState();
+			}
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
+			//法線マップ
+			//２番目に入れる
+			pD3D11DeviceContext->PSSetShaderResources(2, 1, NormalTexRes->GetShaderResourceView().GetAddressOf());
+		}
+		else {
+			if (TexRes) {
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
+				//サンプラーは設定に任せる
+				SetDeviceSamplerState();
+			}
+			else {
+				//シェーダーリソースもクリア
+				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
+				//サンプラーもクリア
+				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+			}
+			//法線マップ
+			//1番目に入れる
+			pD3D11DeviceContext->PSSetShaderResources(1, 1, NormalTexRes->GetShaderResourceView().GetAddressOf());
+		}
+
+
+	}
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	BcPCStaticDraw::Impl
@@ -696,11 +787,6 @@ namespace basecross {
 		DrawStaticNoLight<BcVSPCTStatic, BcPSPTStatic>();
 	}
 
-
-
-
-
-
 	//--------------------------------------------------------------------------------------
 	//	BcPNTStaticDraw::Impl
 	//--------------------------------------------------------------------------------------
@@ -764,37 +850,13 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
+		//ライトを設定
+		SetLightingParamaters();
 		//コンスタントバッファの設定
 		BasicConstants BcCb;
 		ZeroMemory(&BcCb, sizeof(BcCb));
 		if (IsOwnShadowActive()) {
-			SetConstants(BcCb,true);
+			SetConstants(BcCb, true);
 		}
 		else {
 			SetConstants(BcCb);
@@ -890,17 +952,7 @@ namespace basecross {
 		}
 
 		//テクスチャとサンプラー
-		if (shTex) {
-			pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
-			//サンプラーは設定に任せる
-			SetDeviceSamplerState();
-		}
-		else {
-			//シェーダーリソースもクリア
-			pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-			//サンプラーもクリア
-			pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-		}
+		SetTextureAndSampler(pD3D11DeviceContext, shTex);
 
 		//影とサンプラー
 		if (IsOwnShadowActive()) {
@@ -956,7 +1008,6 @@ namespace basecross {
 		Dev->InitializeStates();
 
 	}
-
 
 	//--------------------------------------------------------------------------------------
 	//	BcPNTStaticModelDraw::Impl
@@ -1047,40 +1098,25 @@ namespace basecross {
 				L"BcPNTStaticModelDraw::OnDraw()"
 			);
 		}
+		//ライトを設定
+		SetLightingParamaters();
+		//コンスタントバッファの設定
+		BasicConstants BcCb;
+		ZeroMemory(&BcCb, sizeof(BcCb));
+		if (IsOwnShadowActive()) {
+			SetConstants(BcCb, true);
+		}
+		else {
+			SetConstants(BcCb);
+		}
+
+
 
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-
-
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
 		//シェーダの設定
 		if (IsPerPixelLighting()) {
 			//ピクセルライティング
@@ -1173,17 +1209,6 @@ namespace basecross {
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		//デプスステンシルステートは設定に任せる
 		SetDeviceDepthStencilState();
-
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
 		//これよりマテリアルごとの描画
 		auto& MatVec = MeshRes->GetMaterialExVec();
 		for (auto& m : MatVec) {
@@ -1213,17 +1238,7 @@ namespace basecross {
 			//ピクセルシェーダに渡す
 			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 			//テクスチャとサンプラー
-			if (m.m_TextureResource) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
+			SetTextureAndSampler(pD3D11DeviceContext, m.m_TextureResource);
 			//透明処理なら
 			if (GetGameObject()->GetAlphaActive()) {
 				//ブレンドステート
@@ -1515,40 +1530,36 @@ namespace basecross {
 				L"BcPNTStaticModelDraw::OnDraw()"
 			);
 		}
+		//ライトを設定
+		SetLightingParamaters();
+		//コンスタントバッファの設定
+		BasicConstants BcCb;
+		ZeroMemory(&BcCb, sizeof(BcCb));
+		if (IsOwnShadowActive()) {
+			SetConstants(BcCb, true);
+		}
+		else {
+			SetConstants(BcCb);
+		}
+
+		//ボーンの設定
+		size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
+		UINT cb_count = 0;
+		for (size_t b = 0; b < BoneSz; b++) {
+			Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
+			mat.Transpose();
+			BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
+			BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+			BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+			cb_count += 3;
+		}
+
 
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-
-
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
 		//シェーダの設定
 		if (IsPerPixelLighting()) {
 			//ピクセルライティング
@@ -1642,16 +1653,6 @@ namespace basecross {
 		//デプスステンシルステートは設定に任せる
 		SetDeviceDepthStencilState();
 
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
 		//これよりマテリアルごとの描画
 		auto& MatVec = MeshRes->GetMaterialExVec();
 		for (auto& m : MatVec) {
@@ -1671,18 +1672,6 @@ namespace basecross {
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
-			//ボーンの設定
-			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
-			UINT cb_count = 0;
-			for (size_t b = 0; b < BoneSz; b++) {
-				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-				mat.Transpose();
-				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
-				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-				cb_count += 3;
-			}
-
 			//コンスタントバッファの更新
 			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
 			//コンスタントバッファの設定
@@ -1693,17 +1682,7 @@ namespace basecross {
 			//ピクセルシェーダに渡す
 			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 			//テクスチャとサンプラー
-			if (m.m_TextureResource) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
+			SetTextureAndSampler(pD3D11DeviceContext, m.m_TextureResource);
 			//透明処理なら
 			if (GetGameObject()->GetAlphaActive()) {
 				//ブレンドステート
@@ -1793,6 +1772,7 @@ namespace basecross {
 	}
 
 
+
 	void BcPNTnTStaticDraw::OnCreate() {
 		SetLightingEnabled(true);
 		//マルチライトの設定
@@ -1831,32 +1811,8 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
+		//ライトを設定
+		SetLightingParamaters();
 		//コンスタントバッファの設定
 		BasicConstants BcCb;
 		ZeroMemory(&BcCb, sizeof(BcCb));
@@ -1902,43 +1858,8 @@ namespace basecross {
 			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPL::GetPtr()->GetInputLayout());
 			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
 		}
-
 		//テクスチャとサンプラー
-		//影付き無しでセットする位置が違う
-		if (IsOwnShadowActive()) {
-			if (shTex) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
-			//法線マップ
-			//２番目に入れる
-			pD3D11DeviceContext->PSSetShaderResources(2, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-		}
-		else {
-			if (shTex) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
-			//法線マップ
-			//1番目に入れる
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-		}
-
-
+		SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), shTex, shNormalTex);
 		//影とサンプラー
 		if (IsOwnShadowActive()) {
 			//シャドウマップのレンダラーターゲット
@@ -1995,7 +1916,6 @@ namespace basecross {
 		Dev->InitializeStates();
 
 	}
-
 
 
 	//--------------------------------------------------------------------------------------
@@ -2102,34 +2022,8 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-
-
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
+		//ライトを設定
+		SetLightingParamaters();
 		//シェーダの設定
 		//ピクセルライティングのみ
 		if (IsOwnShadowActive()) {
@@ -2210,43 +2104,8 @@ namespace basecross {
 			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
 			//ピクセルシェーダに渡す
 			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-
-
 			//テクスチャとサンプラー
-			//影付き無しでセットする位置が違う
-			if (IsOwnShadowActive()) {
-				if (m.m_TextureResource) {
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-					//サンプラーは設定に任せる
-					SetDeviceSamplerState();
-				}
-				else {
-					//シェーダーリソースもクリア
-					//影は描画するので全部はクリアしない
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, pNull);
-					//サンプラーもクリア
-					pD3D11DeviceContext->PSSetSamplers(0, 1, pNullSR);
-				}
-				//法線マップ
-				//２番目に入れる
-				pD3D11DeviceContext->PSSetShaderResources(2, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-			}
-			else {
-				if (m.m_TextureResource) {
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-					//サンプラーは設定に任せる
-					SetDeviceSamplerState();
-				}
-				else {
-					//シェーダーリソースもクリア
-					pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-					//サンプラーもクリア
-					pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-				}
-				//法線マップ
-				//1番目に入れる
-				pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-			}
+			SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), m.m_TextureResource, shNormalTex);
 			//透明処理なら
 			if (GetGameObject()->GetAlphaActive()) {
 				//ブレンドステート
@@ -2376,8 +2235,6 @@ namespace basecross {
 			//1つしか登録がなかったら、カレントアニメは該当アニメとなる
 			ChangeCurrentAnimation(Name, 0);
 		}
-
-
 	}
 
 	void BcPNTnTBoneModelDraw::ChangeCurrentAnimation(const wstring& AnemationName, float StartTime) {
@@ -2554,34 +2411,8 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
 		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-
-
-		//ライトを得る
-		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
-		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
-		if (PtrMultiLight) {
-			//マルチライトだった
-			for (int i = 0; i < GetMaxDirectionalLights(); i++) {
-				if (IsLightEnabled(i)) {
-					SetLightDirection(i, PtrMultiLight->GetLight(i).m_Directional);
-					SetLightDiffuseColor(i, PtrMultiLight->GetLight(i).m_DiffuseColor);
-					SetLightSpecularColor(i, PtrMultiLight->GetLight(i).m_SpecularColor);
-				}
-			}
-		}
-		else {
-			//そうではない
-			auto LightPtr = GetGameObject()->OnGetDrawLight();
-			SetLightEnabled(0, true);
-			SetLightDirection(0, LightPtr.m_Directional);
-			SetLightDiffuseColor(0, LightPtr.m_DiffuseColor);
-			SetLightSpecularColor(0, LightPtr.m_SpecularColor);
-			for (int i = 1; i < GetMaxDirectionalLights(); i++) {
-				SetLightEnabled(i, false);
-			}
-		}
-		SetAmbientLightColor(PtrLightObj->GetAmbientLightColor());
-
+		//ライトを設定
+		SetLightingParamaters();
 		//シェーダの設定
 		//ピクセルライティングのみ
 		if (IsOwnShadowActive()) {
@@ -2674,43 +2505,8 @@ namespace basecross {
 			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
 			//ピクセルシェーダに渡す
 			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-
-
 			//テクスチャとサンプラー
-			//影付き無しでセットする位置が違う
-			if (IsOwnShadowActive()) {
-				if (m.m_TextureResource) {
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-					//サンプラーは設定に任せる
-					SetDeviceSamplerState();
-				}
-				else {
-					//シェーダーリソースもクリア
-					//影は描画するので全部はクリアしない
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, pNull);
-					//サンプラーもクリア
-					pD3D11DeviceContext->PSSetSamplers(0, 1, pNullSR);
-				}
-				//法線マップ
-				//２番目に入れる
-				pD3D11DeviceContext->PSSetShaderResources(2, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-			}
-			else {
-				if (m.m_TextureResource) {
-					pD3D11DeviceContext->PSSetShaderResources(0, 1, m.m_TextureResource->GetShaderResourceView().GetAddressOf());
-					//サンプラーは設定に任せる
-					SetDeviceSamplerState();
-				}
-				else {
-					//シェーダーリソースもクリア
-					pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-					//サンプラーもクリア
-					pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-				}
-				//法線マップ
-				//1番目に入れる
-				pD3D11DeviceContext->PSSetShaderResources(1, 1, shNormalTex->GetShaderResourceView().GetAddressOf());
-			}
+			SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), m.m_TextureResource, shNormalTex);
 			//透明処理なら
 			if (GetGameObject()->GetAlphaActive()) {
 				//ブレンドステート

@@ -133,7 +133,6 @@ namespace basecross {
 	DECLARE_DX11_VERTEX_SHADER(VSPTStatic, VertexPositionTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPTStatic)
 	///PCTStatic
-	DECLARE_DX11_VERTEX_SHADER(VSPCTInstance, VertexPositionColorTextureMatrix)
 	DECLARE_DX11_VERTEX_SHADER(VSPCTStatic, VertexPositionColorTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPCTStatic)
 	///PNTStatic
