@@ -1001,6 +1001,10 @@ namespace basecross {
 	//アクセサ
 	shared_ptr<AudioResource> MultiAudioObject::AddAudioResource(const wstring& ResKey) {
 		try {
+			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+				return nullptr;
+			}
+
 			if (ResKey == L"") {
 				throw BaseException(
 					L"オーディオリソース名が空白です",
@@ -1041,6 +1045,9 @@ namespace basecross {
 		}
 	}
 	void MultiAudioObject::RemoveAudioResource(const wstring& ResKey) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (ResKey == L"") {
 			throw BaseException(
 				L"オーディオリソース名が空白です",
@@ -1053,6 +1060,9 @@ namespace basecross {
 
 
 	shared_ptr<AudioResource> MultiAudioObject::GetAudioResource(const wstring& ResKey, bool ExceptionActive) const {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return nullptr;
+		}
 		if (ResKey == L"") {
 			if (ExceptionActive) {
 				throw BaseException(
@@ -1099,6 +1109,9 @@ namespace basecross {
 	}
 
 	void MultiAudioObject::Start(const wstring& ResKey, const XAUDIO2_BUFFER& Buffer, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(
@@ -1111,6 +1124,9 @@ namespace basecross {
 	}
 
 	void MultiAudioObject::Start(const wstring& ResKey, size_t LoopCount, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(
@@ -1136,6 +1152,9 @@ namespace basecross {
 		pImpl->Start(pItem, buffer, Volume);
 	}
 	void MultiAudioObject::Stop(const wstring& ResKey) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(

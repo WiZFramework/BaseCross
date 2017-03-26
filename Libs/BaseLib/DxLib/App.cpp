@@ -13,12 +13,14 @@ namespace basecross {
 	//	用途: Implクラス
 	//--------------------------------------------------------------------------------------
 	struct AudioManager::Impl {
+		HWND m_hWnd;
 		bool m_audioAvailable;
 		ComPtr<IXAudio2>    m_musicEngine;
 		ComPtr<IXAudio2>    m_soundEffectEngine;
 		IXAudio2MasteringVoice* m_musicMasteringVoice;
 		IXAudio2MasteringVoice* m_soundEffectMasteringVoice;
-		Impl() :
+		Impl(HWND hWnd) :
+			m_hWnd(hWnd),
 			m_audioAvailable{ false },
 			m_musicMasteringVoice(nullptr),
 			m_soundEffectMasteringVoice(nullptr)
@@ -31,8 +33,8 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	class AudioManager;
 	//--------------------------------------------------------------------------------------
-	AudioManager::AudioManager() :
-		pImpl(new Impl)
+	AudioManager::AudioManager(HWND hWnd) :
+		pImpl(new Impl(hWnd))
 	{
 	}
 	AudioManager::~AudioManager() {
@@ -46,16 +48,20 @@ namespace basecross {
 		}
 	}
 
+	void AudioManager::AudioUnAvailableMassage() {
+		MessageBox(pImpl->m_hWnd, L"オーディオが取得できなかったので、音声なしで実行します", L"警告", MB_OK);
+	}
+
+
 	void AudioManager::CreateDeviceIndependentResources()
 	{
 		UINT32 flags = 0;
-
-		ThrowIfFailed(
-			XAudio2Create(&pImpl->m_musicEngine, flags),
-			L"音楽用オーディオエンジンの初期化に失敗しました",
-			L"XAudio2Create(&m_musicEngine, flags)",
-			L"AudioManager::CreateDeviceIndependentResources()"
-		);
+		HRESULT hr = XAudio2Create(&pImpl->m_musicEngine, flags);
+		if (FAILED(hr)) {
+			pImpl->m_audioAvailable = false;
+			AudioUnAvailableMassage();
+			return;
+		}
 
 #if defined(_DEBUG)
 		XAUDIO2_DEBUG_CONFIGURATION debugConfiguration = { 0 };
@@ -63,34 +69,30 @@ namespace basecross {
 		debugConfiguration.TraceMask = XAUDIO2_LOG_ERRORS;
 		pImpl->m_musicEngine->SetDebugConfiguration(&debugConfiguration);
 #endif
-		HRESULT hr = pImpl->m_musicEngine->CreateMasteringVoice(&pImpl->m_musicMasteringVoice);
+		hr = pImpl->m_musicEngine->CreateMasteringVoice(&pImpl->m_musicMasteringVoice);
 		if (FAILED(hr))
 		{
-			throw BaseException(
-				L"音楽のマスタリングボイスの初期化に失敗しました",
-				L"m_musicEngine->CreateMasteringVoice(&m_musicMasteringVoice)",
-				L"AudioManager::CreateDeviceIndependentResources()"
-			);
-			// Unable to create an audio device
 			pImpl->m_audioAvailable = false;
+			AudioUnAvailableMassage();
 			return;
 		}
 
-		ThrowIfFailed(
-			XAudio2Create(&pImpl->m_soundEffectEngine, flags),
-			L"サウンド用オーディオエンジンの初期化に失敗しました",
-			L"XAudio2Create(&m_soundEffectEngine, flags)",
-			L"AudioManager::CreateDeviceIndependentResources()"
-		);
+		hr = XAudio2Create(&pImpl->m_soundEffectEngine, flags);
+		if (FAILED(hr)) {
+			pImpl->m_audioAvailable = false;
+			AudioUnAvailableMassage();
+			return;
+		}
 #if defined(_DEBUG)
 		pImpl->m_soundEffectEngine->SetDebugConfiguration(&debugConfiguration);
 #endif
-		ThrowIfFailed(
-			pImpl->m_soundEffectEngine->CreateMasteringVoice(&pImpl->m_soundEffectMasteringVoice),
-			L"サウンド用マスタリングボイスの初期化に失敗しました",
-			L"m_soundEffectEngine->CreateMasteringVoice(&m_soundEffectMasteringVoice)",
-			L"AudioManager::CreateDeviceIndependentResources()"
-		);
+
+		hr = pImpl->m_soundEffectEngine->CreateMasteringVoice(&pImpl->m_soundEffectMasteringVoice);
+		if (FAILED(hr)) {
+			pImpl->m_audioAvailable = false;
+			AudioUnAvailableMassage();
+			return;
+		}
 		pImpl->m_audioAvailable = true;
 	}
 
@@ -132,6 +134,11 @@ namespace basecross {
 		}
 	}
 
+	bool AudioManager::IsAudioAvailable()const {
+		return pImpl->m_audioAvailable;
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct AudioResource::Impl;
@@ -160,6 +167,10 @@ namespace basecross {
 		pImpl(new Impl(FileName))
 	{
 		try {
+			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+				//マネージャが無効ならリターン
+				return;
+			}
 
 			ThrowIfFailed(
 				MFStartup(MF_VERSION),
@@ -661,11 +672,12 @@ namespace basecross {
 			m_App.reset();
 		}
 	}
+
 	// オーディオマネージャの取得
 	unique_ptr<AudioManager>& App::GetAudioManager() {
 		try {
 			if (m_AudioManager.get() == 0) {
-				m_AudioManager.reset(new AudioManager);
+				m_AudioManager.reset(new AudioManager(m_hWnd));
 				m_AudioManager->CreateDeviceIndependentResources();
 
 			}

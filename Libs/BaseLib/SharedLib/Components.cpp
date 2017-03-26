@@ -474,6 +474,9 @@ namespace basecross {
 		pImpl(new Impl(ResKey))
 	{
 		try {
+			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+				return;
+			}
 			auto MusicRes = App::GetApp()->GetResource<AudioResource>(ResKey);
 			pImpl->m_AudioResource = MusicRes;
 			auto Engine = App::GetApp()->GetAudioManager()->GetMusicEngine();
@@ -493,6 +496,9 @@ namespace basecross {
 	}
 
 	shared_ptr<AudioResource> PlayMusic::GetAudioResource() const {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return nullptr;
+		}
 		if (pImpl->m_AudioResource.expired()) {
 			throw BaseException(
 				L"オーディオリソースが有効ではありません",
@@ -505,6 +511,9 @@ namespace basecross {
 
 
 	void PlayMusic::Start(size_t LoopCount, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -526,6 +535,9 @@ namespace basecross {
 	}
 
 	void PlayMusic::Start(const XAUDIO2_BUFFER& Buffer, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -573,6 +585,9 @@ namespace basecross {
 
 
 	void PlayMusic::Stop() {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -623,6 +638,9 @@ namespace basecross {
 		pImpl(new Impl(ResKey))
 	{
 		try {
+			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+				return;
+			}
 			auto SoundRes = App::GetApp()->GetResource<AudioResource>(ResKey);
 			pImpl->m_AudioResource = SoundRes;
 			auto Engine = App::GetApp()->GetAudioManager()->GetSoundEffectEngine();
@@ -642,6 +660,9 @@ namespace basecross {
 	}
 
 	shared_ptr<AudioResource> SoundEffect::GetAudioResource() const {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return nullptr;
+		}
 		if (pImpl->m_AudioResource.expired()) {
 			throw BaseException(
 				L"オーディオリソースが有効ではありません",
@@ -654,6 +675,9 @@ namespace basecross {
 
 
 	void SoundEffect::Start(size_t LoopCount, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -675,6 +699,9 @@ namespace basecross {
 	}
 
 	void SoundEffect::Start(const XAUDIO2_BUFFER& Buffer, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -722,6 +749,9 @@ namespace basecross {
 
 
 	void SoundEffect::Stop() {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (!pImpl->m_pSourceVoice) {
 			return;
 		}
@@ -859,6 +889,9 @@ namespace basecross {
 	//アクセサ
 	shared_ptr<AudioResource> MultiSoundEffect::AddAudioResource(const wstring& ResKey) {
 		try {
+			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+				return nullptr;
+			}
 			if (ResKey == L"") {
 				throw BaseException(
 					L"オーディオリソース名が空白です",
@@ -898,6 +931,9 @@ namespace basecross {
 		}
 	}
 	void MultiSoundEffect::RemoveAudioResource(const wstring& ResKey) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		if (ResKey == L"") {
 			throw BaseException(
 				L"オーディオリソース名が空白です",
@@ -910,6 +946,9 @@ namespace basecross {
 
 
 	shared_ptr<AudioResource> MultiSoundEffect::GetAudioResource(const wstring& ResKey, bool ExceptionActive) const {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return nullptr;
+		}
 		if (ResKey == L"") {
 			if (ExceptionActive) {
 				throw BaseException(
@@ -956,6 +995,9 @@ namespace basecross {
 	}
 
 	void MultiSoundEffect::Start(const wstring& ResKey, const XAUDIO2_BUFFER& Buffer, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(
@@ -968,6 +1010,9 @@ namespace basecross {
 	}
 
 	void MultiSoundEffect::Start(const wstring& ResKey, size_t LoopCount, float Volume) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(
@@ -993,6 +1038,9 @@ namespace basecross {
 		pImpl->Start(pItem, buffer, Volume);
 	}
 	void MultiSoundEffect::Stop(const wstring& ResKey) {
+		if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			return;
+		}
 		auto pItem = pImpl->GetItem(ResKey);
 		if (!pItem) {
 			throw BaseException(
