@@ -1976,7 +1976,8 @@ namespace basecross {
 		m_CharaLocalPosition(0,0,0),
 		m_IsReadStaticMesh(false),
 		m_WithTangent(false),
-		m_IsAnimeRun(false)
+		m_IsAnimeRun(false),
+		m_TextureWrap(false)
 	{}
 	void FbxMeshObject::OnCreate() {
 		//初期位置などの設定
@@ -2069,7 +2070,7 @@ namespace basecross {
 	}
 
 	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
-		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName) {
+		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
 			if (m_FbxMeshResName != L"") {
 				App::GetApp()->UnRegisterResource<FbxMeshResource2>(m_FbxMeshResName);
@@ -2088,6 +2089,7 @@ namespace basecross {
 			m_CharaLocalPosition = Position;
 			m_IsReadStaticMesh = IsReadStatic;
 			m_WithTangent = WithTangent;
+			m_TextureWrap = TextureWrap;
 
 			shared_ptr<FbxSceneResource> PtrFbxScene;
 			if (App::GetApp()->CheckResource<FbxSceneResource>(m_FbxResName)) {
@@ -2132,6 +2134,12 @@ namespace basecross {
 					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
 					PtrDraw->AddAnimation("start", 0, 1, true, 30);
 					PtrDraw->SetCurrentAnimation("start");
+					if (m_TextureWrap) {
+						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+					}
+					else {
+						PtrDraw->SetSamplerState(SamplerState::LinearClamp);
+					}
 				}
 				else {
 					auto PtrDraw = AddComponent<BcFbxPNTBoneModelDraw>();
@@ -2139,6 +2147,12 @@ namespace basecross {
 					PtrDraw->SetMeshResource(PtrFbxMesh);
 					PtrDraw->AddAnimation("start", 0, 1, true, 30);
 					PtrDraw->SetCurrentAnimation("start");
+					if (m_TextureWrap) {
+						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+					}
+					else {
+						PtrDraw->SetSamplerState(SamplerState::LinearClamp);
+					}
 				}
 			}
 			else {
@@ -2151,11 +2165,23 @@ namespace basecross {
 					PtrDraw->SetFogEnabled(true);
 					PtrDraw->SetMeshResource(PtrFbxMesh);
 					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
+					if (m_TextureWrap) {
+						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+					}
+					else {
+						PtrDraw->SetSamplerState(SamplerState::LinearClamp);
+					}
 				}
 				else {
 					auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
 					PtrDraw->SetFogEnabled(true);
 					PtrDraw->SetMeshResource(PtrFbxMesh);
+					if (m_TextureWrap) {
+						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+					}
+					else {
+						PtrDraw->SetSamplerState(SamplerState::LinearClamp);
+					}
 				}
 			}
 		}
@@ -2331,20 +2357,24 @@ namespace basecross {
 			BlockHeader MaterialHeader;
 			MaterialHeader.m_Type = BlockType::Material;
 			for (auto mat : materials) {
-				wstring TextureFileName = mat.m_TextureResource->GetTextureFileName();
-				::ZeroMemory(Drivebuff, sizeof(Drivebuff));
-				::ZeroMemory(Dirbuff, sizeof(Dirbuff));
-				::ZeroMemory(FileNamebuff, sizeof(FileNamebuff));
-				::ZeroMemory(Extbuff, sizeof(Extbuff));
-				//モジュール名から、各ブロックに分ける
-				_wsplitpath_s(TextureFileName.c_str(),
-					Drivebuff, _MAX_DRIVE,
-					Dirbuff, _MAX_DIR,
-					FileNamebuff, _MAX_FNAME,
-					Extbuff, _MAX_EXT);
-				TextureFileName = FileNamebuff;
-				TextureFileName += Extbuff;
-
+				wstring TextureFileName;
+				if (mat.m_TextureResource) {
+					TextureFileName = mat.m_TextureResource->GetTextureFileName();
+					if (TextureFileName != L"") {
+						::ZeroMemory(Drivebuff, sizeof(Drivebuff));
+						::ZeroMemory(Dirbuff, sizeof(Dirbuff));
+						::ZeroMemory(FileNamebuff, sizeof(FileNamebuff));
+						::ZeroMemory(Extbuff, sizeof(Extbuff));
+						//モジュール名から、各ブロックに分ける
+						_wsplitpath_s(TextureFileName.c_str(),
+							Drivebuff, _MAX_DRIVE,
+							Dirbuff, _MAX_DIR,
+							FileNamebuff, _MAX_FNAME,
+							Extbuff, _MAX_EXT);
+						TextureFileName = FileNamebuff;
+						TextureFileName += Extbuff;
+					}
+				}
 				SaveMaterialEx SaveMat;
 				SaveMat.m_StartIndex = mat.m_StartIndex;
 				SaveMat.m_IndexCount = mat.m_IndexCount;
@@ -2493,20 +2523,24 @@ namespace basecross {
 			BlockHeader MaterialHeader;
 			MaterialHeader.m_Type = BlockType::Material;
 			for (auto mat : materials) {
-				wstring TextureFileName = mat.m_TextureResource->GetTextureFileName();
-				::ZeroMemory(Drivebuff, sizeof(Drivebuff));
-				::ZeroMemory(Dirbuff, sizeof(Dirbuff));
-				::ZeroMemory(FileNamebuff, sizeof(FileNamebuff));
-				::ZeroMemory(Extbuff, sizeof(Extbuff));
-				//モジュール名から、各ブロックに分ける
-				_wsplitpath_s(TextureFileName.c_str(),
-					Drivebuff, _MAX_DRIVE,
-					Dirbuff, _MAX_DIR,
-					FileNamebuff, _MAX_FNAME,
-					Extbuff, _MAX_EXT);
-				TextureFileName = FileNamebuff;
-				TextureFileName += Extbuff;
-
+				wstring TextureFileName;
+				if (mat.m_TextureResource) {
+					TextureFileName = mat.m_TextureResource->GetTextureFileName();
+					if (TextureFileName != L"") {
+						::ZeroMemory(Drivebuff, sizeof(Drivebuff));
+						::ZeroMemory(Dirbuff, sizeof(Dirbuff));
+						::ZeroMemory(FileNamebuff, sizeof(FileNamebuff));
+						::ZeroMemory(Extbuff, sizeof(Extbuff));
+						//モジュール名から、各ブロックに分ける
+						_wsplitpath_s(TextureFileName.c_str(),
+							Drivebuff, _MAX_DRIVE,
+							Dirbuff, _MAX_DIR,
+							FileNamebuff, _MAX_FNAME,
+							Extbuff, _MAX_EXT);
+						TextureFileName = FileNamebuff;
+						TextureFileName += Extbuff;
+					}
+				}
 				SaveMaterialEx SaveMat;
 				SaveMat.m_StartIndex = mat.m_StartIndex;
 				SaveMat.m_IndexCount = mat.m_IndexCount;

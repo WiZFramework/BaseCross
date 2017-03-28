@@ -21,6 +21,7 @@ CFbxOpenDialog::CFbxOpenDialog(CWnd* pParent /*=NULL*/)
 	, m_IsReadStatic(FALSE)
 	, m_WithTangent(FALSE)
 	, m_NormalmapFullFileName(_T(""))
+	, m_TextureWrap(FALSE)
 {
 
 }
@@ -44,6 +45,7 @@ void CFbxOpenDialog::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_CHECK_READ_STATICMESH, m_IsReadStatic);
 	DDX_Check(pDX, IDC_CHECK_READ_TANGENT, m_WithTangent);
 	DDX_Text(pDX, IDC_STATIC_OPEN_NORMAL_FILENAME, m_NormalmapFullFileName);
+	DDX_Check(pDX, IDC_CHECK_READ_TEXTURE_WRAP, m_TextureWrap);
 }
 
 

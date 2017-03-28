@@ -598,6 +598,8 @@ namespace basecross {
 		Vector3 m_CharaLocalPosition;
 		bool m_IsReadStaticMesh;
 		bool m_WithTangent;
+		//テクスチャをラッピング処理するかどうか
+		BOOL m_TextureWrap;
 
 		//アニメーション実行中かどうか
 		bool m_IsAnimeRun;
@@ -606,7 +608,7 @@ namespace basecross {
 		FbxMeshObject(const shared_ptr<Stage>& StagePtr);
 		virtual ~FbxMeshObject() {}
 		void ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
-			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName);
+			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap);
 
 		void ClearFbxMesh();
 

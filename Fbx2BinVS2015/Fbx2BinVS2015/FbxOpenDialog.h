@@ -36,4 +36,5 @@ public:
 	BOOL m_WithTangent;
 	CString m_NormalmapFullFileName;
 	afx_msg void OnBnClickedButtonFiledialogNormalmapOpen();
+	BOOL m_TextureWrap;
 };

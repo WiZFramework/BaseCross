@@ -16,6 +16,8 @@ class CMainFrame : public CFrameWnd
 	BOOL m_WithTangent;
 	//タンジェント使用時の法線マップファイル
 	wstring m_NormalmapFullFileName;
+	//テクスチャをラッピング処理するかどうか
+	BOOL m_TextureWrap;
 
 
 	//メッシュのフルパスディレクトリ（最後に/はつかない）

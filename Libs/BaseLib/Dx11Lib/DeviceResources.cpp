@@ -504,8 +504,14 @@ namespace basecross {
 			ToM.m_Emissive.w = rMaterial.m_Emissive[3];
 			auto pTexture = Reader.ReadArray<wchar_t>(TextureFileNameSize / sizeof(wchar_t));
 			wstring TextureFileStr = pTexture;
-			TextureFileStr = BinDataDir + TextureFileStr;
-			ToM.m_TextureResource = ObjectFactory::Create<TextureResource>(TextureFileStr);
+			if (TextureFileStr != L"") {
+				TextureFileStr = BinDataDir + TextureFileStr;
+				ToM.m_TextureResource = ObjectFactory::Create<TextureResource>(TextureFileStr);
+
+			}
+			else {
+				ToM.m_TextureResource = nullptr;
+			}
 			materials.push_back(ToM);
 		}
 
@@ -667,8 +673,13 @@ namespace basecross {
 			ToM.m_Emissive.w = rMaterial.m_Emissive[3];
 			auto pTexture = Reader.ReadArray<wchar_t>(TextureFileNameSize / sizeof(wchar_t));
 			wstring TextureFileStr = pTexture;
-			TextureFileStr = BinDataDir + TextureFileStr;
-			ToM.m_TextureResource = ObjectFactory::Create<TextureResource>(TextureFileStr);
+			if (TextureFileStr != L"") {
+				TextureFileStr = BinDataDir + TextureFileStr;
+				ToM.m_TextureResource = ObjectFactory::Create<TextureResource>(TextureFileStr);
+			}
+			else {
+				ToM.m_TextureResource = nullptr;
+			}
 			materials.push_back(ToM);
 		}
 

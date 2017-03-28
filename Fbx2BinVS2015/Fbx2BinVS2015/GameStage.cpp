@@ -91,10 +91,10 @@ namespace basecross {
 	}
 
 	void GameStage::ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vector3& Position,
-		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName) {
+		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
 			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
-			PtrFbxObj->ResetFbxMesh(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic, WithTangent, NormalFileName);
+			PtrFbxObj->ResetFbxMesh(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic, WithTangent, NormalFileName, TextureWrap);
 		}
 		catch (...) {
 			throw;

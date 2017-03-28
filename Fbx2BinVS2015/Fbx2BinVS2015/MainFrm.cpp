@@ -53,6 +53,8 @@ CMainFrame::CMainFrame()
 	m_WithTangent = FALSE;
 	m_IsNowScale = TRUE;
 
+	m_TextureWrap = FALSE;
+
 	//以下アニメーション関係
 	//フレームレート
 	m_FrameRate = 10;
@@ -169,6 +171,7 @@ void CMainFrame::OnOpenFbxFile()
 		m_IsReadStatic = FbxOpenDialog.m_IsReadStatic;
 		m_WithTangent = FbxOpenDialog.m_WithTangent;
 		m_NormalmapFullFileName = FbxOpenDialog.m_NormalmapFullFileName;
+		m_TextureWrap = FbxOpenDialog.m_TextureWrap;
 
 		wstring ModDIr;
 		App::GetApp()->GetModuleDirectory(ModDIr);
@@ -191,7 +194,7 @@ void CMainFrame::OnOpenFbxFile()
 				);
 			try{
 				App::GetApp()->GetScene<Scene>()->ReadFbxFile(Dir, m_MeshFilename, 0, Scale, Pos, m_IsReadStatic == TRUE,
-					m_WithTangent == TRUE, m_NormalmapFullFileName);
+					m_WithTangent == TRUE, m_NormalmapFullFileName, m_TextureWrap == TRUE);
 			}
 			catch (...) {
 				AfxMessageBox(L"FBXファイルの読み込みに失敗しました。");
