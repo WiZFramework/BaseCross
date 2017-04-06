@@ -1,0 +1,392 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>６．データの読み込み</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>６０２．XMLからのデータの読み込み</h3>
+<h4>XMLとは何か</h4>
+　<b>XML形式</b>とは、インターネットで広く使用されているテキスト文書の仕様であり、<b>DOM（ドキュメントオブジェクトモデル）</b>によって読み書きされます。<br />
+　<b>HTML形式</b>とも似ていますが、<b>HTML形式</b>が、主に<b>デザインやコントロールや画像などのオブジェクト</b>を記述する形式の仕様であるのに対して、<b>XML形式</b>は<b>データそのもの</b>を記述します。<br />
+　<b>HTML形式</b>と<b>XML形式</b>の違いを述べることで、<b>XML形式</b>の説明を始めます。<br />
+　まず、<b>HTML形式</b>です。以下は内容の抜粋ですが
+<div class="box1">
+<pre>
+&lt;p>
+テスト文書&lt;br />
+&lt;input type="text" name="name" value="" />&lt;br />
+&lt;a href="hogehoge.html">ほげ&lt;/a>&lt;br />
+&lt;img src="hoge.png" />
+&lt;/p>
+</pre>
+</div>
+　ここでは、<b>pタグ</b>という<b>ブロック</b>で囲まれて、中に、<b>テスト文書</b>というテキストがあります。ほかに、改行をあらわす<b>brタグ</b>、入力フィールドをあらわす<b>inputタグ</b>、リンクをあらわす<b>aタグ</b>、そして画像をあらわす<b>imgタグ</b>があります。<br />
+　これらのタグ（<b>&lt;と>で囲まれたブロック</b>）は、上記の例を見ると明らかのように、<b>用途がはっきり</b>しています。つまり、ブラウザはこれらのタグの指定に合わせて、リンクを作成したり、入力フィールドを作成したりします。<br />
+　意味のないタグやブラウザが理解できないタグを記述すると、ブラウザは無視します。<br />
+<br />
+　それに対して、<b>XML形式</b>の例は以下のようになります。<b>HTML形式</b>形式同様、抜粋ですが
+<div class="box1">
+<pre>
+&lt;data>
+    &lt;item id="1">テスト1&lt;/item>
+    &lt;item id="2">テスト2&lt;/item>
+    &lt;item id="3">テスト3&lt;/item>
+    &lt;item id="4">テスト4&lt;/item>
+&lt;/data>
+</pre>
+</div>
+　<b>タグ</b>や<b>アトリビュート（id="1"のような記述）</b>、そして<b>タグ内のテキスト</b>で構成されていれば、<b>タグ名は何でもよい（ただし日本語はおすすめしない）</b>のが<b>XML形式</b>です。<br />
+　そして必ず<b>矛盾のないツリー構造</b>になってないといけません。（開始タグには、それに対応する終了タグが必要）<br />
+　そういう意味では、<b>HTMLはXMLの一部</b>と考えられますが、実はそうでもありません。なぜなら<b>HTMLは場合によっては終了タグがなくてもよい</b>記述ができます。<br />
+　例外的な記述として
+<div class="box1">
+<pre>
+&lt;data>
+    &lt;item id="1" />
+&lt;/data>
+</pre>
+</div>
+　という記述が認められています（HTMLのinputタグのような記述）。内部テキストを持たないタグに対して、このような記述が可能です。これは以下と同じ意味になります。
+<div class="box1">
+<pre>
+&lt;data>
+    &lt;item id="1">&lt;/item>
+&lt;/data>
+</pre>
+</div>
+<br />
+<h4>XMLヘッダ</h4>
+　上記のXML説明で<b>抜粋ですが</b>と断ったのは、ここに<b>XMLヘッダ</b>というのが入って、完全な<b>XML形式</b>となります。以下はヘッダも含めた記述です。
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="utf-8" ?>
+&lt;data>
+    &lt;item id="1">テスト1&lt;/item>
+    &lt;item id="2">テスト2&lt;/item>
+    &lt;item id="3">テスト3&lt;/item>
+    &lt;item id="4">テスト4&lt;/item>
+&lt;/data>
+</pre>
+</div>
+　これで、<b>BaseCrossから読み込める</b>ようになります。<b>encoding="utf-8"</b>とあるように、通常XMLファイルは、<b>UTF-8</b>で記述します。Shift-JISで記述する場合は、
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="Shift-JIS" ?>
+&lt;data>
+    &lt;item id="1">テスト1&lt;/item>
+    &lt;item id="2">テスト2&lt;/item>
+    &lt;item id="3">テスト3&lt;/item>
+    &lt;item id="4">テスト4&lt;/item>
+&lt;/data>
+</pre>
+</div>
+　のように記述します。どちらのエンコードで記述しても、読みこんだあとは<b>wstring</b>で扱えるようになります。<br />
+　このほかに、ヘッダには
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+</pre>
+</div>
+　のように、<b>スタンドアローンかどうか</b>を加えることもありますが、これは、<b>外部参照</b>をしてるかしてないかの宣言です。<b>standalone="yes"</b>となっていて外部参照していると読み込みエラーになります。<br />
+　外部参照は、仕様的には使えないこともないですが、この説明の範疇を超えますので、省略します。<br/>
+<br/>
+<h4>XmlDocReaderクラス</h4>
+　今項のサンプルの実行イメージは前項のCSV読み込みのものとと同じです。使用する敵クラスなども同じクラスを使用しています。<br />
+　今項で使用するXMLは以下のようになっています。<b>mediaディレクトリ</b>に<b>GameStage.xml</b>として保存されています。
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="utf-8" ?>
+&lt;GameStage>
+    &lt;GameObjects>
+        &lt;TilingFixedBox>
+            &lt;Scale>40,1,1&lt;/Scale>
+            &lt;Rot>0,0,0&lt;/Rot>
+            &lt;Pos>0,0.5,19.5&lt;/Pos>
+        &lt;/TilingFixedBox>
+        &lt;TilingFixedBox>
+            &lt;Scale>40,1,1&lt;/Scale>
+            &lt;Rot>0,0,0&lt;/Rot>
+            &lt;Pos>0,0.5,-19.5&lt;/Pos>
+        &lt;/TilingFixedBox>
+        &lt;TilingFixedBox>
+            &lt;Scale>40,1,1&lt;/Scale>
+            &lt;Rot>0,XM_PIDIV2,0&lt;/Rot>
+            &lt;Pos>19.5,0.5,0&lt;/Pos>
+        &lt;/TilingFixedBox>
+        &lt;TilingFixedBox>
+            &lt;Scale>40,1,1&lt;/Scale>
+            &lt;Rot>0,XM_PIDIV2,0&lt;/Rot>
+            &lt;Pos>-19.5,0.5,0&lt;/Pos>
+        &lt;/TilingFixedBox>
+        &lt;TilingPlate>
+            &lt;Scale>40,40,1&lt;/Scale>
+            &lt;Rot>XM_PIDIV2,0,0&lt;/Rot>
+            &lt;Pos>0,0,0&lt;/Pos>
+        &lt;/TilingPlate>
+    &lt;/GameObjects>
+    &lt;CellMap>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,2,0,0,0,0,1,0,0,0,0,0,0,0,0,0,A,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0&lt;/CellMap>
+&lt;/GameStage>
+</pre>
+</div>
+　このようにCSVでは2つのファイルに分かれていたデータが1つのファイルに収まっています。気を付けたいのは<b>&lt;CellMap>タグ</b>の部分です。余分な改行が入り込まないようにしています。<br />
+<br />
+　前項の<b>Csv読み込み</b>には<b>CsvFileクラス</b>があったように、BaseCrossでは、<b>XMLの読み込み</b>に<b>XmlDocReaderクラス</b>があります。もし<b>XMLの保存</b>をしたければ<b>XmlDocクラス</b>を使用します。<b>XmlDocReaderクラス</b>は<b>読み込み専用</b>のクラスです。<br />
+　<b>XmlDocReaderクラス</b>は<b>コンストラクタ</b>で<b>XMLファイル名、またはXMLが記述されているwstring型のメモリ</b>を渡す必要があります。ですので、今回は<b>GamaStage内のインスタンス</b>には、ポインタを使います。<b>GameStage.h</b>に、以下のように記述します。
+<div class="box1">
+<pre>
+class GameStage : public Stage {
+    //XMLリーダー
+    unique_ptr&lt;XmlDocReader> m_XmlDocReader;
+    //以下略
+};
+</pre>
+</div>
+　このように準備しておいて、<b>GameStage::OnCreate()</b>で以下のように記述します。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        wstring DataDir;
+        App::GetApp()->GetDataDirectory(DataDir);
+        //XMLの読み込み
+        <span class="red">m_XmlDocReader.reset(new XmlDocReader(DataDir + L"GameStage.xml"));</span>
+        //中略
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　このように準備しておけば、各オブジェクトの構築時にXMLから取得できるようになります。<br />
+　まず<b>Enemyの読み込み</b>ですが、<b>GameStage::CreateEnemy()関数</b>に記述されています。
+<div class="box1">
+<pre>
+//敵の作成
+void GameStage::CreateEnemy() {
+    //オブジェクトのグループを作成する
+    auto Group = CreateSharedObjectGroup(L"EnemyGroup");
+    //セルマップのノードを取得
+    <span class="red">auto CellmapNode = m_XmlDocReader->GetSelectSingleNode(L"GameStage/CellMap");</span>
+    if (!CellmapNode) {
+        throw BaseException(
+            L"GameStage/CellMapが見つかりません",
+            L"if (!CellmapNode)",
+            L"GameStage::CreateEnemy()"
+        );
+    }
+    //内容の文字列を取得
+    wstring MapStr = XmlDocReader::GetText(CellmapNode);
+    vector&lt;wstring> LineVec;
+    //最初に<b>改行</b>をデリミタとした文字列の配列にする
+    Util::WStrToTokenVector(LineVec, MapStr, L'\n');
+    for (size_t i = 0; i &lt; LineVec.size();i++) {
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Util::WStrToTokenVector(Tokens, LineVec[i], L',');
+        for (size_t j = 0; j &lt; Tokens.size(); j++) {
+            //XとZの位置を計算
+            float XPos = (float)((int)j - 19);
+            float ZPos = (float)(19 - (int)i);
+            if (Tokens[j] == L"1") {
+                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+            }
+            else if (Tokens[j] == L"2") {
+                AddGameObject&lt;Enemy2>(Vector3(XPos, 0.25f, ZPos));
+            }
+            else if (Tokens[j] == L"3") {
+                AddGameObject&lt;Enemy3>(Vector3(XPos, 0.25f, ZPos));
+            }
+        }
+    }
+}
+</pre>
+</div>
+　まず最初に、
+<div class="box1">
+<pre>
+    //セルマップのノードを取得
+    <span class="red">auto CellmapNode = m_XmlDocReader->GetSelectSingleNode(L"GameStage/CellMap");</span>
+</pre>
+</div>
+　のように、<b>CellMapタグ</b>の<b>ノード</b>を取得します。XMLは<b>タグ</b>を使った入れ子構造になっています。それぞれのタグは内部的には<b>ノード</b>と表現されまず。<br />
+　<b>ノード</b>を検索するには<b>L"GameStage/CellMap"</b>のように<b>/</b>で区切って階層を指定します。ディレクトリ階層のような感じです。<b>GetSelectSingleNode()関数</b>は<b>1つのノード</b>という意味です。複数のノードを指定することもできます（後ほど出てきます）。<br />
+　<b>CellMapタグ</b>の<b>ノード</b>が取得できたら、
+<div class="box1">
+<pre>
+    //内容の文字列を取得
+    wstring MapStr = XmlDocReader::GetText(CellmapNode);
+</pre>
+</div>
+　でその中身の文字列を取得します。ここでは<b>スタティック関数</b>を利用します。取り出したノードの情報にアクセスするのには<b>m_XmlDocReaderインスタンス</b>は必要がありません。また後述しますが<b>サブノード</b>を取得する場合も<b>スタティック関数</b>を使用します。<br />
+　これで<b>MapStr</b>にはすべてのマップデータが入ります。<br />
+　この後、
+<div class="box1">
+<pre>
+    vector&lt;wstring> LineVec;
+    //最初に<b>改行</b>をデリミタとした文字列の配列にする
+    Util::WStrToTokenVector(LineVec, MapStr, L'\n');
+</pre>
+</div>
+　という形で<b>改行</b>をデリミタにして文字列の配列に分割します。これで<b>LineVec</b>には行の文字列の配列が作成されます。<br />
+　この後の操作は<b>CSVの読み込み</b>と同じです。<b>1行</b>を<b>,</b>をデリミタにして分割して、各セルの内容をスキャンします。<br />
+<br />
+　続いて、<b>プレート及びボックス</b>ですが、<b>ボックス</b>のほうを紹介します。こちらは<b>GameStage::CreateFixedBox()関数</b>に記述されています。<br />
+<div class="box1">
+<pre>
+//ボックスの作成
+void GameStage::CreateFixedBox() {
+    <span class="red">auto BoxNodes = m_XmlDocReader->GetSelectNodes(L"GameStage/GameObjects/TilingFixedBox");</span>
+    if (!BoxNodes) {
+        throw BaseException(
+            L"GameStage/GameObjects/TilingFixedBoxが見つかりません",
+            L"if (!BoxNodes)",
+            L"GameStage::CreateFixedBox()"
+        );
+    }
+    long CountNode = XmlDocReader::GetLength(BoxNodes);
+    for (long i = 0; i &lt; CountNode; i++) {
+        <span class="red">auto Node = XmlDocReader::GetItem(BoxNodes, i);
+        auto ScaleNode = XmlDocReader::GetSelectSingleNode(Node, L"Scale");
+        auto RotNode = XmlDocReader::GetSelectSingleNode(Node, L"Rot");
+        auto PosNode = XmlDocReader::GetSelectSingleNode(Node,L"Pos");</span>
+        wstring ScaleStr = XmlDocReader::GetText(ScaleNode);
+        wstring RotStr = XmlDocReader::GetText(RotNode);
+        wstring PosStr = XmlDocReader::GetText(PosNode);
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Util::WStrToTokenVector(Tokens, ScaleStr, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        Vector3 Scale(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+        <span class="red">Tokens.clear();</span>
+        Util::WStrToTokenVector(Tokens, RotStr, L',');
+        Vector3 Rot;
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
+        Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
+        Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
+        <span class="red">Tokens.clear();</span>
+        Util::WStrToTokenVector(Tokens, PosStr, L',');
+        Vector3 Pos(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+        //各値がそろったのでオブジェクト作成
+        AddGameObject&lt;TilingFixedBox>(Scale, Rot, Pos, 1.0f, 1.0f);
+    }
+}
+</pre>
+</div>
+　まず
+<div class="box1">
+<pre>
+    <span class="red">auto BoxNodes = m_XmlDocReader->GetSelectNodes(L"GameStage/GameObjects/TilingFixedBox");</span>
+</pre>
+</div>
+　と、<b>TilingFixedBox</b>の<b>ノード</b>を取り出します。XMLを見ればわかる通り、このノードは<b>複数</b>存在します。ですので<b>GetSelectNodes()関数</b>を使用します。<br />
+　こうして取得したノードは複数ですので、スキャンする場合は何らかのループの機能が必要です。ですので
+<div class="box1">
+<pre>
+    long CountNode = XmlDocReader::GetLength(BoxNodes);
+    for (long i = 0; i &lt; CountNode; i++) {
+</pre>
+</div>
+　のように、取得したノード数を<b>CountNode</b>に取り出し、その数だけループします。あとは
+<div class="box1">
+<pre>
+    for (long i = 0; i &lt; CountNode; i++) {
+        <span class="red">auto Node = XmlDocReader::GetItem(BoxNodes, i);
+        auto ScaleNode = XmlDocReader::GetSelectSingleNode(Node, L"Scale");
+        auto RotNode = XmlDocReader::GetSelectSingleNode(Node, L"Rot");
+        auto PosNode = XmlDocReader::GetSelectSingleNode(Node,L"Pos");</span>
+        wstring ScaleStr = XmlDocReader::GetText(ScaleNode);
+        wstring RotStr = XmlDocReader::GetText(RotNode);
+        wstring PosStr = XmlDocReader::GetText(PosNode);
+</pre>
+</div>
+　のように、サブノード（取得したノードからの相対ノード）を取得して、各データにアクセスします。<br />
+　赤くなっているところのように、サブノードの取得は<b>XmlDocReader::GetItem(BoxNodes, i);</b>や<b>XmlDocReader::GetSelectSingleNode(Node, L"Scale");</b>のように、<b>スタティック関数</b>を使用します。一度ルートからのノードを取得した後は<b>m_XmlDocReaderインスタンス</b>は必要ありません。<br />
+　この後は<b>CSV場合</b>と同様、<b>スケール、回転、移動</b>を取り出しオブジェクトを構築します。この際注意したいのは、
+<div class="box1">
+<pre>
+        <span class="red">Tokens.clear();</span>
+        Util::WStrToTokenVector(Tokens, PosStr, L',');
+</pre>
+</div>
+　のように<b>Util::WStrToTokenVector()関数</b>を呼び出す前に<b>Tokens配列</b>をクリアしています。これは<b>Tokens配列</b>を使いまわしするために必要な処理です。<b>Util::WStrToTokenVector()関数</b>は、渡された配列に<b>追加</b>するので、クリア処理が必要になります。<br />
+<br />
+　今項では<b>XMLデータ</b>を読み込んで表示するサンプルを紹介しました。前項の<b>CSVから読み込む</b>場合と比べてみてください。<br />
+　XMLを使用するメリットは<b>複雑なデータに対処できる</b>ということです。例えば、前項のCSVでは<b>セルマップデータ</b>として扱う場合と<b>1行1オブジェクト</b>で扱う場合で、ファイルを分けていました。1つのファイルで作成できないことはないですが、処理が複雑になります。<br />
+　しかし、XMLを使えば複雑なデータ処理に耐えうるファイルを<b>1つのファイル</b>で作成することも可能です。<br />
+　ちなみにBaseCrossでも対応をとっている<b>SpriteStdioのデータ</b>も<b>XML形式</b>になっています。<b>部位に分かれたキャラクター</b>を<b>動的にアニメーションする</b>という複雑な形式なので、<b>XMLを使う</b>のは、実に理に合った構造と思います。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="06_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

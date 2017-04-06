@@ -1,0 +1,431 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>６．データの読み込み</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>６０１．CSVからのデータの読み込み</h3>
+　ゲーム制作前半であれば、配置されるオブジェクトの初期位置やオブジェクトのタイプはソースに即値（いわゆるマジックナンバー）を記述して作成してもいいのですが、制作後半にはマジックナンバーはできるだけ排除しなければいけません。<br />
+　また複数のマップだけが違うステージを作成する場合も、マップごとにステージを定義していたのでは拡張性が失われます。<br />
+　ですので、何らかの形で<b>ステージをデータ化</b>することで、各ステージはそのデータを読み込んでステージを構築するようにします。<br />
+　<b>ステージをデータ化</b>の方法はいくつかありますが、まず、一番単純でわかりやすい<b>CSVデータ</b>を読み込む方法を説明します。<br/>
+　<b>CSVデータ</b>はエクセルなどの表計算ソフトでも作成することが可能で、テキストファイルなので扱いやすいです。
+<br />
+<h4>CsvFileクラス</h4>
+　<b>FullSample601</b>を実行してみましょう。以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0601a.png" width="80%"/>
+<p>図0601a</p>
+<p>&nbsp;</p>
+　このステージは<b>CSVファイル</b>から読み込んで構成しています（プレイヤー以外）。<br />
+　<b>CSVファイル</b>は<b>CsvFileクラス</b>を使って読み込みます。データを読み込む方法は大きく2つの方法があります。<br />
+<br />
+<h4>Csvをマップで読み込む</h4>
+　まず、直感的な方法がこの方法です。ステージのマップと同じイメージの<b>マス目</b>のようなCSVファイルを作成し、それを読み込む方法です。以下のようなCSVファイルを作成します。
+<div class="box1">
+<pre>
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,2,0,0,0,0,1,0,0,0,0,0,0,0,0,0,A,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</pre>
+</div>
+<br />
+　<b>0</b>が並んでいますが、ところどころに<b>1</b>とか<b>2</b>や<b>3</b>とかがあります。このCSVは、全体がステージのマップを表し、<b>1</b>は敵1、<b>2</b>は敵2、<b>3</b>は敵3を表します。<b>A</b>はプレイヤーを表し、このサンプルではプレイヤーはデータからは読み込みません。<br />
+　上記のCSVファイルは<b>media</b>ディレクトリに<b>GameStageA.csv</b>がありますので見てみましょう。<br />
+<br />
+　さて、このようにマップ化されたCSVを読み込むのは、まず、<b>CsvFileクラス</b>を準備します。<br />
+　<b>GameStage</b>のヘッダ部に以下の記述があります。
+<div class="box1">
+<pre>
+class GameStage : public Stage {
+    //CSVファイルそのA
+    CsvFile m_GameStageCsvA;
+    //CSVファイルそのB
+    CsvFile m_GameStageCsvB;
+    //以下略
+};
+</pre>
+</div>
+　<b>CsvFileクラス</b>が2つあります。これらの初期化を<b>OnCreate()関数</b>で行います。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        wstring DataDir;
+        App::GetApp()->GetDataDirectory(DataDir);
+        ////CSVファイルそのAの読み込み
+        m_GameStageCsvA.SetFileName(DataDir + L"GameStageA.csv");
+        m_GameStageCsvA.ReadCsv();
+        ////CSVファイルそのBの読み込み
+        m_GameStageCsvB.SetFileName(DataDir + L"GameStageB.csv");
+        m_GameStageCsvB.ReadCsv();
+        //中略
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　これで、<b>m_GameStageCsvA</b>に<b>GameStageA.csv</b>の内容がセットされました。<b>m_GameStageCsvB</b>についてはのちほど説明します。<br />
+　このようにして読み込んだCSVは<b>Enemy</b>の展開用のものです。ですから<b>GameStage::CreateEnemy()</b>で反映させます。
+<div class="box1">
+<pre>
+//敵の作成
+void GameStage::CreateEnemy() {
+    //オブジェクトのグループを作成する
+    auto Group = CreateSharedObjectGroup(L"EnemyGroup");
+    //CSVの全体の配列
+    //CSVからすべての行を抜き出す
+    <span class="red">auto& LineVec = m_GameStageCsvA.GetCsvVec();</span>
+    for (size_t i = 0; i &lt; LineVec.size();i++) {
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        <span class="red">Util::WStrToTokenVector(Tokens, LineVec[i], L',');</span>
+        for (size_t j = 0; j &lt; Tokens.size(); j++) {
+            //XとZの位置を計算
+            float XPos = (float)((int)j - 19);
+            float ZPos = (float)(19 - (int)i);
+            if (Tokens[j] == L"1") {
+                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+            }
+            else if (Tokens[j] == L"2") {
+                AddGameObject&lt;Enemy2>(Vector3(XPos, 0.25f, ZPos));
+
+            }
+            else if (Tokens[j] == L"3") {
+                AddGameObject&lt;Enemy3>(Vector3(XPos, 0.25f, ZPos));
+
+            }
+        }
+    }
+}
+</pre>
+</div>
+　<b>CsvFileクラス</b>はデータを<b>行単位</b>で扱います。このことは<b>すごく重要</b>なので覚えておきましょう。<br />
+　上記の
+<div class="box1">
+<pre>
+    //CSVの全体の配列
+    //CSVからすべての行を抜き出す
+    <span class="red">auto& LineVec = m_GameStageCsvA.GetCsvVec();</span>
+</pre>
+</div>
+　はコメントのように<b>データをすべて読む</b>関数です。この操作により<b>LineVec</b>には<b>行の配列</b>が代入されます。<br />
+　続く
+<div class="box1">
+<pre>
+    for (size_t i = 0; i &lt; LineVec.size();i++) {
+</pre>
+</div>
+　では、それを各行に分けます。そして
+<div class="box1">
+<pre>
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        <span class="red">Util::WStrToTokenVector(Tokens, LineVec[i], L',');</span>
+</pre>
+</div>
+　で各行を<b>列</b>に分けます。<b>Util::WStrToTokenVector()関数</b>は、文字列を指定した<b>デリミタ（区切り文字）</b>によってわけその配列を作成します。<br />
+　各列の配列は<b>Tokens</b>にセットされますので、下の階層のループで
+<div class="box1">
+<pre>
+        for (size_t j = 0; j &lt; Tokens.size(); j++) {
+</pre>
+</div>
+　とスキャンします。その中には<b>0</b>か<b>1</b>か<b>2</b>か<b>3</b>もしくは<b>A</b>が入ってます。<br/>
+　<b>A</b>はプレイヤーの位置ですから無視するとして、<b>1</b>か<b>2</b>か<b>3</b>の場合は、その位置に敵を配置します。
+<div class="box1">
+<pre>
+            //XとZの位置を計算
+            float XPos = (float)((int)j - 19);
+            float ZPos = (float)(19 - (int)i);
+</pre>
+</div>
+　はマップ上の位置を計算（調整）しているところで、その後以下のように
+<div class="box1">
+<pre>
+            if (Tokens[j] == L"1") {
+                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+            }
+</pre>
+</div>
+　と、数字によってエネミーのタイプを選んで構築します。<br />
+<br/>
+<h4>Csvを行の抽出で読み込む</h4>
+　さて、マップ上のセルに収まるオブジェクトの場合は、これでいいのですがセルをまたぐオブジェクトの場合は、このデータ形式では厄介です。例えば以下のようなCSVの場合です
+<div class="box1">
+<pre>
+4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4
+...以下省略
+</pre>
+</div>
+　ここで<b>4</b>は、壁を表します。しかしこのデータ構造では<b>40個の壁</b>が横に並んでしまいます。<br />
+　これではコストが膨大になります。<br />
+　もちろん<b>同じ数字が続いたら同じオブジェクトが続くとする</b>という形で読み込むことは可能です。その場合<b>読み込みながら最適化する</b>というのが必要になり、それもまた厄介です。<br />
+　そこで登場するのが<b>行の抽出での読み込み</b>です。<br />
+　<b>CsvFileクラス</b>には<b>行を抽出する関数</b>である<b>GetSelect()関数</b>及び<b>GetSelect2()関数</b>があります。<br />
+　まず、<b>GameStageB.csv</b>は以下のようなCSV構造になってます。
+<div class="box1">
+<pre>
+Name,Scale,,,Rot,,,Pos,,
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0
+TilingPlate,40,40,1,XM_PIDIV2,0,0,0,0,0
+</pre>
+</div>
+　ここには<b>1行で1つのオブジェクト</b>の定義が記載されています。<br />
+　<b>TilingFixedBox</b>は<b>壁</b>です。<b>TilingPlate</b>は<b>プレート</b>です。<b>CsvFileクラス</b>はこれらを別々に抽出することが可能になってます。<br />
+　まず<b>TilingFixedBox</b>から説明します。<b>GameStage::CreateFixedBox()関数</b>を見てください。
+<div class="box1">
+<pre>
+//ボックスの作成
+void GameStage::CreateFixedBox() {
+    //CSVの行単位の配列
+    vector&lt;wstring> LineVec;
+    //0番目のカラムがL"TilingFixedBox"である行を抜き出す
+    <span class="red">m_GameStageCsvB.GetSelect(LineVec, 0, L"TilingFixedBox");</span>
+    for (auto& v : LineVec) {
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Util::WStrToTokenVector(Tokens, v, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        Vector3 Scale(
+            (float)_wtof(Tokens[1].c_str()), 
+            (float)_wtof(Tokens[2].c_str()), 
+            (float)_wtof(Tokens[3].c_str())
+        );
+        Vector3 Rot;
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
+        Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
+        Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
+        Vector3 Pos(
+            (float)_wtof(Tokens[7].c_str()),
+            (float)_wtof(Tokens[8].c_str()),
+            (float)_wtof(Tokens[9].c_str())
+        );
+        //各値がそろったのでオブジェクト作成
+        AddGameObject&lt;TilingFixedBox>(Scale, Rot, Pos, 1.0f, 1.0f);
+    }
+}
+</pre>
+</div>
+　ここでまずポイントとなるのは
+<div class="box1">
+<pre>
+    //CSVの行単位の配列
+    vector&lt;wstring> LineVec;
+    //0番目のカラムがL"TilingFixedBox"である行を抜き出す
+    <span class="red">m_GameStageCsvB.GetSelect(LineVec, 0, L"TilingFixedBox");</span>
+</pre>
+</div>
+　です。<b>m_GameStageCsvB</b>は<b>CsvFileクラス</b>のインスタンスです。あらかじめ<b>GameStageB.csv</b>の内容が読み込まれています。これを<b>GetSelect()関数</b>で<b>行の抽出</b>を行います。最初の引数の<b>LineVec</b>は抽出された行の配列が返される文字列の配列です。2番目の<b>0</b>が<b>0番目のカラム（列）</b>という意味です。3番目の引数<b> L"TilingFixedBox"</b>は指定したカラムが<b>この文字列だったら</b>とおいう意味です。<br />
+　ですから上記の抽出条件は<b>0番目のカラムがL"TilingFixedBox"である行を抽出しなさい</b>という意味です。<br />
+　こうすると、LineVecには
+<div class="box1">
+<pre>
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0
+</pre>
+</div>
+　だけが抽出されます。<br />
+　それぞれの行には<b>名前</b>のあとに<b>スケーリング、回転、位置</b>が3つのカラムを使用してセットされています。回転に関しては、<b>２分のパイ</b>を表す<b>XM_PIDIV2</b>が入っている可能性があります。これらを加味して、各値を読み込みます。
+<div class="box1">
+<pre>
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Util::WStrToTokenVector(Tokens, v, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        Vector3 Scale(
+            (float)_wtof(Tokens[1].c_str()), 
+            (float)_wtof(Tokens[2].c_str()), 
+            (float)_wtof(Tokens[3].c_str())
+        );
+        Vector3 Rot;
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
+        Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
+        Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
+        Vector3 Pos(
+            (float)_wtof(Tokens[7].c_str()),
+            (float)_wtof(Tokens[8].c_str()),
+            (float)_wtof(Tokens[9].c_str())
+        );
+        //各値がそろったのでオブジェクト作成
+        AddGameObject&lt;TilingFixedBox>(Scale, Rot, Pos, 1.0f, 1.0f);
+</pre>
+</div>
+　で、TilingFixedBoxに渡す変数をセットして、オブジェクトを配置します。<br />
+<br />
+　このように<b>CsvFile::GetSelect()関数</b>を使うことで複数のタイプのオブジェクトが定義されているCSVファイルから特定の行を抽出することが可能です。<br />
+　また<b>CsvFile::GetSelect()関数</b>には多重定義されたもう一つの関数があり、こちらは<b>関数へのポインタ</b>を<b>コールバック関数</b>として渡します。これは<b>X番目のカラムが○〇〇である行を抽出しなさい</b>という抽出方法では特定できない場合にプログラマが抽出方法を定義できます。渡す関数へのポインタは
+<div class="box1">
+<pre>
+    void GetSelect(vector&lt; wstring >& RetVec,<span class="red">bool (Func)(const wstring&)</span>);
+</pre>
+</div>
+　となってるように<b>wstringを受け取ってbool値を返す関数</b>です。staticな関数を別に定義してその関数を渡します。<br/>
+　そしてもう一つ<b>CsvFile::GetSelect2()テンプレート関数</b>があります。こちらは<b>ラムダ式</b>を渡せる関数ですので、関数を別に記述しなくても抽出ロジックを記述できます。<br/>
+<br />
+　さて、このようにして<b>TilingFixedBox</b>を抽出しましたが、おなじCSVに入っている<b>TilingPlate</b>の同様の方法で抽出します。<br />
+　<b>GameStage::CreatePlate()関数</b>に記述がありますので各自読んでみましょう。<br />
+<br />
+　このように、<b>CsvFileクラス</b>は<b>セル化されたマップの読み込み</b>の他にもいろんな使い方ができます。<br />
+　この手法は<b>データベース操作</b>を経験した人には、<b>なんとなくSQL文のSELECTに似ている</b>と思うかもしれません。<b>SQL文のSELECT</b>ほど多機能ではありませんが、その縮小版と考えていいと思います。<br />
+　また<b>CSVの保存</b>も可能ですので、たとえば<b>プレイヤーが到達した場所</b>とか<b>レベル、最高得点</b>なども保存できます。<br/>
+<br/>
+<h4>タイリングするオブジェクト</h4>
+　さて、このサンプルでは<b>TilingPlate</b>と<b>TilingFixedBox</b>が実装されています。<br />
+　CSVとは直接関係ありませんが、少し説明します。<br />
+　<b>タイリング処理（テクスチャをタイル状に並べる処理）</b>は、<b>L"DEFAULT_CUBE"</b>のような、リソース化されたメッシュは使えません。頂点のUV値を変更する必要があるからですが、そのため上記クラスは独自のメッシュを作成して使用しています。以下、<b>TilingFixedBox</b>の<b>OnCreate()関数</b>ですが、
+<div class="box1">
+<pre>
+//初期化
+void TilingFixedBox::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(m_Scale);
+    PtrTrans->SetRotation(m_Rotation);
+    PtrTrans->SetPosition(m_Position);
+    auto Coll = AddComponent&lt;CollisionObb>();
+    Coll->SetFixed(true);
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    MeshUtill::CreateCube(1.0f, vertices, indices);
+    float UCount = m_Scale.x / m_UPic;
+    float VCount = m_Scale.y / m_VPic;
+    for (size_t i = 0; i &lt; vertices.size(); i++) {
+        if (vertices[i].textureCoordinate.x >= 1.0f) {
+            vertices[i].textureCoordinate.x = UCount;
+        }
+        if (vertices[i].textureCoordinate.y >= 1.0f) {
+            vertices[i].textureCoordinate.y = VCount;
+        }
+    }
+    //描画コンポーネントの追加
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画コンポーネントに形状（メッシュ）を設定
+    <span class="red">PtrDraw->CreateOriginalMesh(vertices, indices);
+    PtrDraw->SetOriginalMeshUse(true);</span>
+    PtrDraw->SetFogEnabled(true);
+    //自分に影が映りこむようにする
+    PtrDraw->SetOwnShadowActive(true);
+    //描画コンポーネントテクスチャの設定
+    PtrDraw->SetTextureResource(L"WALL_TX");
+    //タイリング設定
+    PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+}
+</pre>
+</div>
+　上記の中でまずしなければいけないのはオリジナルメッシュの作成準備です。
+<div class="box1">
+<pre>
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    MeshUtill::CreateCube(1.0f, vertices, indices);
+    float UCount = m_Scale.x / m_UPic;
+    float VCount = m_Scale.y / m_VPic;
+    for (size_t i = 0; i &lt; vertices.size(); i++) {
+        if (vertices[i].textureCoordinate.x >= 1.0f) {
+            vertices[i].textureCoordinate.x = UCount;
+        }
+        if (vertices[i].textureCoordinate.y >= 1.0f) {
+            vertices[i].textureCoordinate.y = VCount;
+        }
+    }
+</pre>
+</div>
+　のように<b>Cubeを作成</b>したあと、タイリングのための変数（コンストラクタであらかじめ渡されている値）にUV値を書き換えます。<br />
+　その後、<b>DrawコンポーネントのCreateOriginalMesh()関数</b>でオリジナルメッシュを作成し、オリジナルメッシュを使うフラグをtrueにします。
+<div class="box1">
+<pre>
+    //描画コンポーネントの追加
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画コンポーネントに形状（メッシュ）を設定
+    <span class="red">PtrDraw->CreateOriginalMesh(vertices, indices);
+    PtrDraw->SetOriginalMeshUse(true);</span>
+</pre>
+</div>
+　これでタイリングされたオブジェクトがメッシュになります。また、
+<div class="box1">
+<pre>
+    //タイリング設定
+    PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+</pre>
+</div>
+　でサンプラーの設定を<b>SamplerState::LinearWrap</b>にするのを忘れないで記述しましょう。
+<br />
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="06_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
