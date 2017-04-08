@@ -1,0 +1,179 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>６．データの読み込み</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>６０４．オブジェクトビルダーを使ったデータの読み込み（XML版）</h3>
+<h4>XMLによるゲームオブジェクトビルダー</h4>
+　前項では<b>CSVによるゲームオブジェクトビルダー</b>を紹介しました。今項ではその<b>XML版</b>を紹介します。<b>FullSample604</b>を実行してみてください。実行画面は前項と同じになります。<br />
+　まず、XMLですが<b>mediaディレクトリ</b>に<b>GameStage1.xml</b>というXMLファイルがあります。その中身は以下です。
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="utf-8" ?>
+&lt;GameStage>
+    &lt;GameObject Type="TilingPlate" Scale="40,40,1" 
+        Rot="XM_PIDIV2,0,0" Pos="0,0,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,0,0" Pos="0,0.5,19.5" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,0,0" Pos="0,0.5,-19.5" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,XM_PIDIV2,0" Pos="19.5,0.5,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,XM_PIDIV2,0" Pos="-19.5,0.5,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="Enemy1" Pos="-10,0.25,0"  />
+    &lt;GameObject Type="Enemy1" Pos="10,0.25,0"  />
+    &lt;GameObject Type="Enemy1" Pos="0,0.25,-10"  />
+    &lt;GameObject Type="Enemy1" Pos="0,0.25,10"  />
+    &lt;GameObject Type="Enemy2" Pos="-15,0.25,0"  />
+    &lt;GameObject Type="Enemy2" Pos="15,0.25,0"  />
+    &lt;GameObject Type="Enemy2" Pos="0,0.25,-15"  />
+    &lt;GameObject Type="Enemy2" Pos="0,0.25,15"  />
+    &lt;GameObject Type="Enemy3" Pos="10,0.25,10"  />
+&lt;/GameStage>
+</pre>
+</div>
+　このドキュメントの表示スペースの関係で、何か所か改行してますが、実際のXMLファイルは改行してません。<br />
+　XMLを見てみると<b>&lt;GameObject>タグ</b>が複数作成されています。これが<b>1つのゲームオブジェクト</b>を表す<b>ノード</b>になります。<br />
+　そして、<b>&lt;GameObject>タグ</b>にある<b>Type="TilingPlate"</b>という記述が<b>クラス名</b>を表します。タグの囲みの中にある<b>hoge="huga"</b>のような記述を<b>アトリビュート</b>といいます。<br />
+<br />
+　さて、このようになっている<b>XMLファイル</b>から、ステージにオブジェクトを配置するわけですが、前項のCSV版と同様の機能がある、<b>ゲームオブジェクトXMLビルダー</b>を使用します。使用方法は、前項とあまり変わりません。<b>GameStage::OnCreate()関数</b>に記述があります。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        //ビューとライトの作成
+        CreateViewLight();
+        //オブジェクトのグループを作成する
+        auto Group = CreateSharedObjectGroup(L"EnemyGroup");
+        //ゲームオブジェクトビルダー
+        <span class="red">GameObjecttXMLBuilder Builder;
+        //ゲームオブジェクトの登録
+        Builder.Register&lt;TilingPlate>(L"TilingPlate");
+        Builder.Register&lt;TilingFixedBox>(L"TilingFixedBox");
+        Builder.Register&lt;Enemy1>(L"Enemy1");
+        Builder.Register&lt;Enemy2>(L"Enemy2");
+        Builder.Register&lt;Enemy3>(L"Enemy3");</span>
+        wstring DataDir;
+        App::GetApp()->GetDataDirectory(DataDir);
+        //XMLからゲームオブジェクトの構築
+        wstring XMLStr = DataDir + L"GameStage";
+        XMLStr += Util::IntToWStr(m_StageNum);
+        XMLStr += L".xml";
+        <span class="red">Builder.Build(GetThis&lt;Stage>(), XMLStr, L"GameStage/GameObject");</span>
+        //プレーヤーの作成
+        CreatePlayer();
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　赤くなっているのが<b>ビルダー</b>関連です。XML用には<b>GameObjecttXMLBuilderクラス</b>を使用します。<br />
+　インスタンスを定義したら、前項のように
+<div class="box1">
+<pre>
+        <span class="red">Builder.Register&lt;TilingPlate>(L"TilingPlate");</span>
+</pre>
+</div>
+　と<b>クラス名</b>と<b>クラス名の文字列</b>を対で登録します。<br />
+　登録が済んだら<b>XMLファイル名</b>を作成し、<b>ゲームオブジェクトへのパス</b>と一緒に<b>Build()関数</b>に渡します。
+<div class="box1">
+<pre>
+        <span class="red">Builder.Build(GetThis&lt;Stage>(), XMLStr, L"GameStage/GameObject");</span>
+</pre>
+</div>
+　こんな感じです。<b>ゲームオブジェクトへのパス</b>は<b>XMLのパス</b>です。XMLはノードが入れ子状態になっているので、<b>ディレクトリのパス</b>のように考えられます。<b>L"GameStage/GameObject"</b>というのは<b>GameStage配下のGameObject</b>という意味です。<br />
+　<b>XMLパス</b>が<b>ディレクトリのパス</b>と違うところは<b>同じノード名を複数作れる</b>ところにあります。つまり<b>L"GameStage/GameObject"</b>に該当するノードは<b>複数ある</b>ことになります。<br />
+　<b>GameObjecttXMLBuilderクラス</b>は指定されたパスを抽出して該当するノードをすべて読み取ります。そして、その<b>Typeアトリビュート</b>に該当するクラスを構築して、コンストラクタにその<b>ノード</b>を渡します。<br />
+　ですから、<b>CSVのビルダー</b>は<b>1行のCSV</b>を渡すのに対して、<b>XMLのビルダー</b>は<b>1つのノード</b>を渡します。XMLのノードは<b>子ノード</b>を作成することもできますから、当然、<b>CSVより複雑なデータ</b>を渡すことも可能です。しかし、このサンプルでは前項との比較が目的ですので、XMLの構造も単純になってます。<br />
+<br />
+<h4>XMLのノードを受け取るコンストラクタ</h4>
+　では<b>XMLのノードを受け取るコンストラクタ</b>を実際に見てみましょう。例として、<b>TilingPlateクラス</b>のコンストラクタを紹介します。
+<div class="box1">
+<pre>
+TilingPlate::TilingPlate(const shared_ptr&lt;Stage>& StagePtr, IXMLDOMNodePtr pNode):
+    GameObject(StagePtr)
+{
+    try {
+        <span class="red">auto ScaleStr = XmlDocReader::GetAttribute(pNode, L"Scale");
+        auto RotStr = XmlDocReader::GetAttribute(pNode, L"Rot");
+        auto PosStr = XmlDocReader::GetAttribute(pNode, L"Pos");
+        auto UPicStr = XmlDocReader::GetAttribute(pNode, L"UPic");
+        auto VPicStr = XmlDocReader::GetAttribute(pNode, L"VPic");</span>
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, ScaleStr, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        m_Scale = Vector3(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, RotStr, L',');
+        Vector3 Rot;
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
+        Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
+        Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
+        //プレートの回転の引数はクオータニオンになっているので変換
+        m_Qt.RotationRollPitchYawFromVector(Rot);
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, PosStr, L',');
+        m_Position = Vector3(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+        m_UPic = (float)_wtof(UPicStr.c_str());
+        m_VPic = (float)_wtof(VPicStr.c_str());
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　まず、渡された<b>ノード</b>を使って、<b>L"Scale"</b>や<b>L"Rot"</b>と指定がある<b>アトリビュート</b>を取得します。
+<div class="box1">
+<pre>
+        <span class="red">auto ScaleStr = XmlDocReader::GetAttribute(pNode, L"Scale");</span>
+</pre>
+</div>
+　というのは、XML上は、<b>Scale="40,40,1"</b>のようになっているアトリビュートです。この<b>40,40,1</b>という文字列が<b>wstring型</b>に変換されて取得できます。（ScaleStrはwstring型です）<br />
+　このように文字列を取得したら、後は<b>トークン</b>に分割して各値をメンバ変数<b>m_Scaleなど</b>に代入してます。<b>トークン分割</b>して、<b>分割された文字列からfloat型への変換</b>までの過程は、これまでのものと変わりません。<br />
+　このように<b>XMLからゲームオブジェクトを作成する</b>ことが<b>GameObjecttXMLBuilderクラス</b>を使うことで比較的簡単に行うことができます。前項の<b>CSV版</b>と比べてみましょう。<br />
+<br/>
+　さて、では、<b>データの読み込み</b>をどのように設計したらいいのでしょうか？<br />
+　これは<b>ゲームによる</b>としか言いようがありません。例えばステージ上に<b>セルをまたぐオブジェクト</b>がないのであれば<b>FullSample601</b>のようなCSVのセルマップや<b>FullSample602</b>の<b>XMLによるセルマップ読み込み</b>がいいでしょう。しかし、オブジェクトが<b>体力や知力や攻撃力</b>などの複雑なパラメータを持っているのであれば、CSVだと、1行がとんでもなく長いものになってしまいます。そういう場合は構造的に扱える<b>XML形式</b>がいいと思います。<br />
+　また、ゲーム中に<b>パラメータの保存</b>が行われる場合も、<b>XML形式</b>で保存する（この場合は<b>XmlDocクラス</b>を使って保存する）のが安全でしょう。CSVも保存可能ですが、単純なCSVであれば保存もいいですが、複雑なデータをCSVで保存するのは不具合のもとになります。CSVはどうしても<b>1列ずれただけで大変なことになる</b>データ形式ですから。<br />
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="06_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

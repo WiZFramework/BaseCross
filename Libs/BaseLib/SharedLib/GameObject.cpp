@@ -2139,5 +2139,127 @@ namespace basecross {
 	}
 
 
+
+	//--------------------------------------------------------------------------------------
+	//	struct GameObjecttCSVBuilder::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct GameObjecttCSVBuilder::Impl {
+		map<wstring, shared_ptr<GameObjectCreatorBaseCSV> > m_CreatorMap;
+		Impl()
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	ゲームオブジェクトビルダーCSV
+	//--------------------------------------------------------------------------------------
+
+	GameObjecttCSVBuilder::GameObjecttCSVBuilder() :
+		pImpl(new Impl())
+	{
+
+	}
+	GameObjecttCSVBuilder::~GameObjecttCSVBuilder() {}
+
+	map<wstring, shared_ptr<GameObjectCreatorBaseCSV>>& GameObjecttCSVBuilder::GetCreatorMap() const {
+		return pImpl->m_CreatorMap;
+	}
+
+	shared_ptr<GameObject> GameObjecttCSVBuilder::CreateFromCSV(const wstring& ClsName, const shared_ptr<Stage>& StagePtr, const wstring& Line) {
+		auto it = pImpl->m_CreatorMap.find(ClsName);
+		if (it == pImpl->m_CreatorMap.end()) {
+			return nullptr;
+		}
+		else {
+			auto ptr = (*it).second->Create(StagePtr, Line);
+			return ptr;
+		}
+	}
+
+	void GameObjecttCSVBuilder::Build(const shared_ptr<Stage>& StagePtr, const wstring& CSVFileName) {
+		try {
+			//CSVファイル
+			CsvFile GameStageCsv(CSVFileName);
+			GameStageCsv.ReadCsv();
+			//CSVの全体の配列
+			//CSVからすべての行を抜き出す
+			auto& LineVec = GameStageCsv.GetCsvVec();
+			for (auto& v : LineVec) {
+				//トークン（カラム）の配列
+				vector<wstring> Tokens;
+				Util::WStrToTokenVector(Tokens,v, L',');
+				CreateFromCSV(Tokens[0], StagePtr, v);
+			}
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+
+	//--------------------------------------------------------------------------------------
+	//	struct GameObjecttXMLBuilder::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct GameObjecttXMLBuilder::Impl {
+		map<wstring, shared_ptr<GameObjectCreatorBaseXML> > m_CreatorMap;
+		Impl()
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	ゲームオブジェクトビルダーXML
+	//--------------------------------------------------------------------------------------
+
+	GameObjecttXMLBuilder::GameObjecttXMLBuilder() :
+		pImpl(new Impl())
+	{
+
+	}
+	GameObjecttXMLBuilder::~GameObjecttXMLBuilder() {}
+
+	map<wstring, shared_ptr<GameObjectCreatorBaseXML>>& GameObjecttXMLBuilder::GetCreatorMap() const {
+		return pImpl->m_CreatorMap;
+	}
+
+	shared_ptr<GameObject>  GameObjecttXMLBuilder::CreateFromXML(const wstring& ClsName, const shared_ptr<Stage>& StagePtr, IXMLDOMNodePtr pNode) {
+		auto it = pImpl->m_CreatorMap.find(ClsName);
+		if (it == pImpl->m_CreatorMap.end()) {
+			return nullptr;
+		}
+		else {
+			auto ptr = (*it).second->Create(StagePtr, pNode);
+			return ptr;
+		}
+	}
+
+	void GameObjecttXMLBuilder::Build(const shared_ptr<Stage>& StagePtr, const wstring& XMLFileName, const wstring& GameObjectsPath) {
+		try {
+			//XMLリーダー
+			XmlDocReader Reader(XMLFileName);
+			auto Nodes = Reader.GetSelectNodes(GameObjectsPath.c_str());
+			long CountNode = XmlDocReader::GetLength(Nodes);
+			for (long i = 0; i < CountNode; i++) {
+				auto Node = XmlDocReader::GetItem(Nodes, i);
+				auto TypeStr = XmlDocReader::GetAttribute(Node, L"Type");
+				CreateFromXML(TypeStr, StagePtr, Node);
+			}
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
+
+
+
+
+
+
 }
 //end basecross
