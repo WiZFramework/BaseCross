@@ -1,0 +1,227 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系コンポーネント</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０７．オブジェクト境界での処理</h3>
+　この項では、<b>オブジェクト境界での引っかかり</b>をなくすための処理の一例です。<br />
+　他にも方法はあると思いますので、各自試してください。<br />
+<br />
+　まず<b>FullSample307</b>を実行してみましょう。以下のような画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0307a.png" width="80%"/>
+<p>図0307a</p>
+　手前と奥のほうで、固定ボックスが２つづつ（合計４つ）並んでいます。プレイヤーを動かし、手前の２つ並んでいるボックスに乗ってみます。そしてボックス上で移動すると、２つのボックスの境界のあたりで、<b>引っかかる</b>感覚があると思います。<br />
+　これらのボックスは<b>自動衝突判定</b>がついているわけですが、プレイヤーには<b>常に下向きの重力</b>がかかっているために境界で引っかかってしまいます。<br />
+　可能であれば、プレートや、周りを囲んでいる壁のように<b>タイリング処理</b>をして、１つのオブジェクトとして作成するといいのですが、どうしてもそうはいかない場合があります。<br />
+<br />
+　では、奥に２つ並んでいるボックスに乗ってみましょう。こちらは<b>オブジェクト境界での引っかかり</b>がないと思います。つまり<b>奥の２つ</b>のような処理をすればいいことがわかります。<br />
+<br />
+<h4>ボックス側の処理</h4>
+　まずボックスの処理ですが、このサンプルは<b>FullSample604</b>にあるように<b>XMLからデータを読み込んで</b>います。以下がそのXMLです。
+<div class="box1">
+<pre>
+&lt;?xml version="1.0" encoding="utf-8" ?>
+&lt;GameStage>
+    &lt;GameObject Type="TilingPlate" Scale="40,40,1" 
+        Rot="XM_PIDIV2,0,0" Pos="0,0,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,0,0" Pos="0,0.5,19.5" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,0,0" Pos="0,0.5,-19.5" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,XM_PIDIV2,0" Pos="19.5,0.5,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="TilingFixedBox" Scale="40,1,1" 
+        Rot="0,XM_PIDIV2,0" Pos="-19.5,0.5,0" UPic="1.0" VPic="1.0" />
+    &lt;GameObject Type="FrameBox" Scale="5.0f, 0.5f, 2.0f" 
+        Rot="0,0,0" Pos="-2.5,0.25,5.0"  AddTag="false" />
+    &lt;GameObject Type="FrameBox" Scale="5.0f, 0.5f, 2.0f" 
+        Rot="0,0,0" Pos="2.5,0.25,5.0" AddTag="false" />
+    &lt;GameObject Type="FrameBox" Scale="5.0f, 0.5f, 2.0f" 
+        Rot="0,0,0" Pos="-2.5,0.25,10.0"  AddTag="true" />
+    &lt;GameObject Type="FrameBox" Scale="5.0f, 0.5f, 2.0f" 
+        Rot="0,0,0" Pos="2.5,0.25,10.0" AddTag="true" />
+&lt;/GameStage>
+</pre>
+</div>
+　これらのボックスは<b>FrameBox</b>というクラスですが、XMLには<b>AddTag="true"</b>もしくは<b>AddTag="false"</b>のアトリビュートがついています。<b>AddTag="true"</b>となっているのが<b>境界の処理</b>を行っているオブジェクトです。<br />
+　ではコンストラクタを見てみましょう。<b>Charactor.cpp</b>にある<b>FrameBoxのコンストラクタ</b>です。
+<div class="box1">
+<pre>
+FrameBox::FrameBox(const shared_ptr&lt;Stage>& StagePtr, IXMLDOMNodePtr pNode) :
+    GameObject(StagePtr)
+{
+    try {
+        auto ScaleStr = XmlDocReader::GetAttribute(pNode, L"Scale");
+        auto RotStr = XmlDocReader::GetAttribute(pNode, L"Rot");
+        auto PosStr = XmlDocReader::GetAttribute(pNode, L"Pos");
+        <span class="red">auto AddTagStr = XmlDocReader::GetAttribute(pNode, L"AddTag");</span>
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, ScaleStr, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        m_Scale = Vector3(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, RotStr, L',');
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        m_Rotation.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
+        m_Rotation.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
+        m_Rotation.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
+        Tokens.clear();
+        Util::WStrToTokenVector(Tokens, PosStr, L',');
+        m_Position = Vector3(
+            (float)_wtof(Tokens[0].c_str()),
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str())
+        );
+
+        <span class="red">if (AddTagStr == L"true") {
+            AddTag(L"FrameBox");
+        }</span>
+    }
+    catch (...) {
+        throw;
+    }
+
+}
+</pre>
+</div>
+　XMLからのデータ読み込みについては<b>FullSample604</b>のサンプル及びドキュメントを参照いてください。<br />
+　さて、<b>FrameBoxのコンストラクタ</b>には<b>XMLのノード</b>が渡されます。上記したように<b>AddTagアトリビュート</b>が<b>true</b>もしくは<b>false</b>が入っていますので、<b>trueの場合は、AddTag(L"FrameBox");処理</b>を行います。<br />
+　奥の２つが<b>true</b>になっています。ボックス側の処理は以上です。<br />
+<br />
+<h4>プレイヤー側の処理</h4>
+　そして、プレイヤー側では、１つフラグを設けます。<b>Player.h</b>にあります。
+<div class="box1">
+<pre>
+class Player : public GameObject {
+    //中略
+    //FrameBoxに乗っているかどうか
+    <span class="red">bool m_IsOnFrameBox;</span>
+public:
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  フレームボックスに乗ってるかどうか
+    @return フレームボックスに乗ってればtrue
+    */
+    //--------------------------------------------------------------------------------------
+    <span class="red">bool IsOnFrameBox()const {
+        return m_IsOnFrameBox;
+    }</span>
+    //中略
+};
+</pre>
+</div>
+　このように<b>m_IsOnFrameBoxメンバ</b>を設けて<b>Getアクセサ</b>を記述します。<b>m_IsOnFrameBoxメンバ</b>はコンストラクタで、初期値<b>false</b>に設定されます<br />
+　あとはプレイヤーの処理に以下のような処理を追加します。まず<b>Player::OnCollision()関数</b>です。
+<div class="box1">
+<pre>
+//衝突検知時
+void Player::OnCollision(vector&lt;shared_ptr&lt;GameObject>>& OtherVec) {
+    //プレイヤーが何かに当たった
+    if (GetStateMachine()->GetCurrentState() == PlayerJumpState::Instance()) {
+        //現在がジャンプステートならPlayerDefaultに設定
+        GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
+    }
+    <span class="red">for (auto& v : OtherVec) {
+        if (v->FindTag(L"FrameBox")) {
+            auto PtrSrcColl = GetComponent&lt;CollisionSphere>();
+            auto PtrDestColl = v->GetComponent&lt;CollisionObb>();
+            Vector3 RetVec;
+            PtrSrcColl->GetHitNormal(PtrDestColl, RetVec);
+            RetVec.Normalize();
+            if (RetVec.AngleBetweenVectors(Vector3(0, -1.0f, 0)) &lt;= 0.01f) {
+                GetComponent&lt;Collision>()->SetIsHitAction(IsHitAction::None);
+                m_IsOnFrameBox = true;
+                return;
+            }
+        }
+    }</span>
+}
+</pre>
+</div>
+　続いて<b>Player::OnUpdate2()</b>です。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    //文字列の表示
+    DrawStrings();
+    <span class="red">if (m_IsOnFrameBox && GetComponent&lt;Collision>()->GetHitObjectVec().empty()) {
+        GetComponent&lt;Collision>()->SetIsHitAction(IsHitAction::Auto);
+        m_IsOnFrameBox = false;
+    }</span>
+}
+</pre>
+</div>
+　最後に<b>各ステートのExecute()関数</b>です。
+<div class="box1">
+<pre>
+//
+void PlayerDefaultState::Execute(const shared_ptr&lt;Player>& Obj) {
+    auto PtrBehavior = Obj->GetBehavior&lt;PlayerBehavior>();
+    PtrBehavior->MovePlayer();
+    <span class="red">if (!Obj->IsOnFrameBox()) {
+        auto PtrGrav = Obj->GetBehavior&lt;Gravity>();
+        PtrGrav->Execute();
+    }</span>
+}
+//
+void PlayerJumpState::Execute(const shared_ptr&lt;Player>& Obj) {
+    //ジャンプ中も方向変更可能
+    auto PtrBehavior = Obj->GetBehavior&lt;PlayerBehavior>();
+    PtrBehavior->MovePlayer();
+    <span class="red">if (!Obj->IsOnFrameBox()) {
+        auto PtrGrav = Obj->GetBehavior&lt;Gravity>();
+        PtrGrav->Execute();
+    }</span>
+}
+</pre>
+</div>
+　これで一応<b>引っかかり</b>が無くなります。<br />
+　ポイントとしては
+<div class="box1">
+<pre>
+１、つながっているオブジェクトを特定する（AddTagで処理）
+２、コリジョンのSetIsHitAction(IsHitAction::None)の設定と復帰のタイミングを考える
+３、重力のPtrGrav->Execute()を実行するタイミングを考える
+</pre>
+</div>
+　の３点です。ただ、各ゲームのプレイヤーがサンプルと同じような動きをするわけではないので、あくまで一例と考えてください。<br />
+　また、<b>つながっている</b>としても、サンプルのプレートや壁のような処理が可能であれば、わざわざオブジェクトをつなげる意味はありません。<b>タイリング処理で可能かどうか</b>はよく考えましょう。タイリング処理のほうがコストも少ないです。<br />
+　このサンプルではボックスは動きません。動くオブジェクトの場合は、親子関係を加味するなど、もう少し別の処理も必要でしょう。<br />
+<br />
+　実はこの<b>引っかからない処理</b>は以前のフレームワーク（<b>DxBase2016</b>）ではフレームワーク側で自動的に行っていました。しかし<b>BaseCross</b>で外した理由は、<b>重力がコンポーネントではなくBehavior（行動）になった</b>からです。<br />
+　<b>重力を追加するかどうか</b>は、結構微妙な問題です。細かく<b>重力をかけたりかけなかったり</b>できたほうが良いと考え<b>コンポーネントからBehaviorへの修正</b>を行いました。ですから<b>BaseCross</b>のほうが、以前のフレームワーくより<b>自由度</b>は高いと思われます。（そのぶんゲームプログラマが自分で記述しなければならない、ということですが・・・）
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_06.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
