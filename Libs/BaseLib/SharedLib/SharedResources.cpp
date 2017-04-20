@@ -269,6 +269,9 @@ namespace basecross {
 		pImpl(new Impl())
 	{
 		pImpl->m_ArmLen = ArmLen;
+		auto Eye = GetEye();
+		Eye.y = pImpl->m_ArmLen;
+		SetEye(Eye);
 	}
 
 	LookAtCamera::~LookAtCamera() {}

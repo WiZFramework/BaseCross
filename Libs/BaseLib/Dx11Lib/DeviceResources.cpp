@@ -2638,44 +2638,6 @@ namespace basecross {
 	struct ShaderResource::Impl {
 		Impl() {}
 		~Impl() {}
-		//ミューテックス
-		std::mutex Mutex;
-		//コンスタントバッファアクセッサ
-		ID3D11Buffer* GetConstantBufferBase(UINT BuffSize, ComPtr<ID3D11Buffer>& Buffer) {
-			return Util::DemandCreate(Buffer, Mutex, [&](ID3D11Buffer** pResult)
-			{
-				ShaderResource::CreateConstantBuffer(BuffSize, pResult);
-			});
-		}
-		//頂点シェーダアクセッサ
-		ID3D11VertexShader* GetVertexShaderBase(const wstring& Filename, ComPtr<ID3D11VertexShader>& VSPtr) {
-			//ラムダ式利用
-			return Util::DemandCreate(VSPtr, Mutex, [&](ID3D11VertexShader** pResult)
-			{
-				std::unique_ptr<uint8_t[]> data;
-				//シェーダの読み込み
-				size_t cso_sz = 0;
-				ShaderResource::ReadBinaryFile(Filename, data, cso_sz);
-				ShaderResource::CreateVertexShader(data, cso_sz, pResult);
-			});
-		}
-		//インプットレイアウトアクセッサ
-		ID3D11InputLayout* GetInputLayoutBase2(const wstring& Filename, ComPtr<ID3D11InputLayout>& ILPtr,
-			const D3D11_INPUT_ELEMENT_DESC* pElem, UINT NumElements) {
-			return Util::DemandCreate(ILPtr, Mutex, [&](ID3D11InputLayout** pResult)
-			{
-				std::unique_ptr<uint8_t[]> data;
-				//シェーダの読み込み
-				size_t cso_sz = 0;
-				ShaderResource::ReadBinaryFile(Filename, data, cso_sz);
-				ShaderResource::CreateInputLayout(
-					data,
-					cso_sz,
-					pElem,
-					NumElements,
-					pResult);
-			});
-		}
 	};
 	ShaderResource::ShaderResource() :pImpl(new Impl()) {}
 	ShaderResource::~ShaderResource() {}
@@ -2943,24 +2905,6 @@ namespace basecross {
 			throw;
 		}
 	}
-
-
-	//コンスタントバッファアクセッサ
-	ID3D11Buffer* ShaderResource::GetConstantBufferBase(UINT BuffSize, ComPtr<ID3D11Buffer>& Buffer) {
-		return pImpl->GetConstantBufferBase(BuffSize, Buffer);
-	}
-	//頂点シェーダアクセッサ
-	ID3D11VertexShader* ShaderResource::GetVertexShaderBase(const wstring& Filename, ComPtr<ID3D11VertexShader>& VSPtr) {
-		return pImpl->GetVertexShaderBase(Filename, VSPtr);
-	}
-	//インプットレイアウトアクセッサ
-	ID3D11InputLayout* ShaderResource::GetInputLayoutBase2(const wstring& Filename, ComPtr<ID3D11InputLayout>& ILPtr,
-		const D3D11_INPUT_ELEMENT_DESC* pElem, UINT NumElements) {
-		return pImpl->GetInputLayoutBase2(Filename, ILPtr, pElem, NumElements);
-	}
-
-
-
 
 }
 //end basecross

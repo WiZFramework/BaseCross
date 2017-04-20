@@ -568,7 +568,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateBoneModelMesh(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（ボーンメッシュ）
@@ -760,33 +759,102 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct SoundItem {
 		weak_ptr<AudioResource> m_AudioResource;
-//		ComPtr<IXAudio2SourceVoice> m_SourceVoice;
 		IXAudio2SourceVoice* m_SourceVoice;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		SoundItem() :
 			m_SourceVoice(nullptr)
 		{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		~SoundItem() {
 		}
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	マルチオーディオ
-	// ＊コンポーネントではないのでシーンに持たせることができる
+	///	マルチオーディオ
+	/// ＊コンポーネントではないのでシーンに持たせることができる
 	//--------------------------------------------------------------------------------------
 	class MultiAudioObject : public ObjectInterface {
 	public:
 		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		MultiAudioObject();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~MultiAudioObject();
 		//アクセサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオリソースを取得する
+		@return	オーディオリソース
+		*/
+		//--------------------------------------------------------------------------------------
 		shared_ptr<AudioResource> GetAudioResource(const wstring& ResKey, bool ExceptionActive = true) const;
 		//操作
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオリソースを追加する
+		@param[in]	ResKey リソース名
+		@return	追加されたオーディオリソース
+		*/
+		//--------------------------------------------------------------------------------------
 		shared_ptr<AudioResource> AddAudioResource(const wstring& ResKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオリソースを削除する
+		@param[in]	ResKey リソース名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void RemoveAudioResource(const wstring& ResKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオ再生を開始する
+		@param[in]	ResKey リソース名
+		@param[in]	Buffer バッファ
+		@param[in]	Volume ボリューム
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Start(const wstring& ResKey, const XAUDIO2_BUFFER& Buffer, float Volume = 1.0f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオ再生を開始する
+		@param[in]	ResKey リソース名
+		@param[in]	LoopCount ループ回数
+		@param[in]	Volume ボリューム
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Start(const wstring& ResKey, size_t LoopCount = 0, float Volume = 1.0f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オーディオをストップする
+		@param[in]	ResKey リソース名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Stop(const wstring& ResKey);
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化処理（空関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual void OnCreate() override {}
 	private:
 		// pImplイディオム
@@ -839,25 +907,6 @@ namespace basecross {
 		AnisotropicWrap,
 		AnisotropicClamp,
 		ComparisonLinear,
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	パイプライン定義
-	//--------------------------------------------------------------------------------------
-	struct PipeLineDesc {
-		//--------------------------------------------------------------------------------------
-		//	ブレンドステート
-		//--------------------------------------------------------------------------------------
-		BlendState m_BlendState;
-		//--------------------------------------------------------------------------------------
-		//	デプスステンシルステート
-		//--------------------------------------------------------------------------------------
-		DepthStencilState m_DepthStencilState;
-		//--------------------------------------------------------------------------------------
-		//	ラスタライザステート
-		//--------------------------------------------------------------------------------------
-		RasterizerState m_RasterizerState;
 	};
 
 	class DefaultRenderTarget;
@@ -1467,87 +1516,174 @@ namespace basecross {
 	///	シェーダ関連リソースのインターフェイス
 	//--------------------------------------------------------------------------------------
 	class ShaderResource {
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
 	protected:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトコンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		ShaderResource();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトデストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~ShaderResource();
 	public:
 		static const int m_LightMax{ 3 };
 		//--------------------------------------------------------------------------------------
-		//	static void ReadBinaryFile(
-		//		const wstring& fileName,		//ファイル名
-		//		unique_ptr<uint8_t[]>& Data,	//バイナリデータの戻り
-		//		size_t& CsoSz					//サイズの戻り
-		//	);
-		//	用途: バイナリファイルを読み込む
+		/*!
+		@brief	バイナリファイルを読み込む
+		@param[in]	fileName	ファイル名
+		@param[out]	Data	バイナリデータの戻り
+		@param[out]	CsoSz	サイズの戻り
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void ReadBinaryFile(const wstring& fileName, unique_ptr<uint8_t[]>& Data, size_t& CsoSz);
 		//--------------------------------------------------------------------------------------
-		//	static void CreateVertexShader(
-		//		unique_ptr<uint8_t[]>& Data,	//バイナリデータ
-		//		size_t CsoSz,					//サイズ
-		//		ID3D11VertexShader** pResult			//受け取るシェーダ
-		//	);
-		//	用途: バイナリデータから頂点シェーダを作成する
+		/*!
+		@brief	バイナリデータから頂点シェーダを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[out]	pResult	受け取るシェーダ
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateVertexShader(unique_ptr<uint8_t[]>& Data, size_t CsoSz, ID3D11VertexShader** pResult);
 		//--------------------------------------------------------------------------------------
-		//	static void CreateInputLayout(
-		//		unique_ptr<uint8_t[]>& Data,	//頂点シェーダのバイナリデータ
-		//		size_t CsoSz,					//サイズ
-		//		const D3D11_INPUT_ELEMENT_DESC* pElement,	//頂点定義
-		//		UINT NumElement,							//頂点定義の数
-		//		ID3D11InputLayout** pResult			//受け取るレイアウト
-		//	);
-		//	用途: バイナリデータからインプットレイアウトを作成する
+		/*!
+		@brief	バイナリデータからインプットレイアウトを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[in]	pElement	頂点定義
+		@param[in]	NumElement	頂点定義の数
+		@param[out]	pResult	受け取るレイアウト
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateInputLayout(unique_ptr<uint8_t[]>& Data, size_t CsoSz,
 			const D3D11_INPUT_ELEMENT_DESC* pElement, UINT NumElement, ID3D11InputLayout** pResult);
 		//--------------------------------------------------------------------------------------
-		//	static void CreatePixelShader(
-		//		unique_ptr<uint8_t[]>& Data,	//バイナリデータ
-		//		size_t CsoSz,					//サイズ
-		//		ID3D11PixelShader** pResult			//受け取るシェーダ
-		//	);
-		//	用途: バイナリデータからピクセルシェーダを作成する
+		/*!
+		@brief	バイナリデータからピクセルシェーダを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[out]	pResult	受け取るシェーダ
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreatePixelShader(unique_ptr<uint8_t[]>& Data, size_t CsoSz, ID3D11PixelShader** pResult);
 		//--------------------------------------------------------------------------------------
-		//	static void CreateGeometryShader(
-		//		unique_ptr<uint8_t[]>& Data,	//バイナリデータ
-		//		size_t CsoSz,					//サイズ
-		//		ID3D11GeometryShader** pResult			//受け取るシェーダ
-		//	);
-		//	用途: バイナリデータからジオメトリシェーダを作成する
+		/*!
+		@brief	バイナリデータからジオメトリシェーダを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[out]	pResult	受け取るシェーダ
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateGeometryShader(unique_ptr<uint8_t[]>& Data, size_t CsoSz, ID3D11GeometryShader** pResult);
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	バイナリデータからジオメトリシェーダを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[in]	SOEntries	定義されたエントリの配列
+		@param[in]	Stride	1個のストライドサイズ
+		@param[in]	NumStride	ストライド数
+		@param[out]	pResult	受け取るシェーダ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		static void CreateGeometryShader(unique_ptr<uint8_t[]>& Data, size_t CsoSz,
 			const vector<D3D11_SO_DECLARATION_ENTRY>& SOEntries, UINT Stride, UINT NumStride, ID3D11GeometryShader** pResult);
-
 		//--------------------------------------------------------------------------------------
-		//	static void CreateComputeShader(
-		//		unique_ptr<uint8_t[]>& Data,	//バイナリデータ
-		//		size_t CsoSz,					//サイズ
-		//		ID3D11ComputeShader** pResult			//受け取るシェーダ
-		//	);
-		//	用途: バイナリデータからコンピュートシェーダを作成する
+		/*!
+		@brief	バイナリデータからコンピュートシェーダを作成する
+		@param[in]	Data	バイナリデータ
+		@param[in]	CsoSz	サイズ
+		@param[out]	pResult	受け取るシェーダ
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateComputeShader(unique_ptr<uint8_t[]>& Data, size_t CsoSz, ID3D11ComputeShader** pResult);
 		//--------------------------------------------------------------------------------------
-		//	static void CreateConstantBuffer(
-		//		UINT BuffSize,					//サイズ
-		//		ID3D11Buffer** pResult			//受け取るシェーダ
-		//	);
-		//	用途: コンスタントバッファを作成する
+		/*!
+		@brief	コンスタントバッファを作成する
+		@param[in]	BuffSize	サイズ
+		@param[out]	pResult	受け取るコンスタントバッファ
+		@return	なし
+		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateConstantBuffer(UINT BuffSize, ID3D11Buffer** pResult);
 	protected:
 		//ミューテックス
 		std::mutex MutexBase;
-		//ピクセルシェーダアクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点シェーダアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[out]	VSPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
+		ID3D11VertexShader* GetVertexShaderBase(const wstring& Filename, ComPtr<ID3D11VertexShader>& VSPtr) {
+			return Util::DemandCreate(VSPtr, MutexBase, [&](ID3D11VertexShader** pResult)
+			{
+				std::unique_ptr<uint8_t[]> data;
+				//シェーダの読み込み
+				size_t cso_sz = 0;
+				ShaderResource::ReadBinaryFile(Filename, data, cso_sz);
+				ShaderResource::CreateVertexShader(data, cso_sz, pResult);
+			});
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インプットレイアウトアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[out]	ILPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
+		ID3D11InputLayout* GetInputLayoutBase(const wstring& Filename, ComPtr<ID3D11InputLayout>& ILPtr,
+			const D3D11_INPUT_ELEMENT_DESC* pElem, UINT NumElements) {
+			return Util::DemandCreate(ILPtr, MutexBase, [&](ID3D11InputLayout** pResult)
+			{
+				std::unique_ptr<uint8_t[]> data;
+				//シェーダの読み込み
+				size_t cso_sz = 0;
+				ShaderResource::ReadBinaryFile(Filename, data, cso_sz);
+				ShaderResource::CreateInputLayout(
+					data,
+					cso_sz,
+					pElem,
+					NumElements,
+					pResult);
+			});
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンスタントバッファアクセッサ
+		@param[in]	BuffSize	サイズ
+		@param[out]	Buffer	検証するバッファ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
+		ID3D11Buffer* GetConstantBufferBase(UINT BuffSize, ComPtr<ID3D11Buffer>& Buffer) {
+			return Util::DemandCreate(Buffer, MutexBase, [&](ID3D11Buffer** pResult)
+			{
+				ShaderResource::CreateConstantBuffer(BuffSize, pResult);
+			});
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ピクセルシェーダアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[out]	PSPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11PixelShader* GetPixelShaderBase(const wstring& Filename, ComPtr<ID3D11PixelShader>& PSPtr) {
 			return Util::DemandCreate(PSPtr, MutexBase, [&](ID3D11PixelShader** pResult)
 			{
@@ -1558,8 +1694,14 @@ namespace basecross {
 				ShaderResource::CreatePixelShader(data, cso_sz, pResult);
 			});
 		}
-
-		//ジオメトリシェーダアクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジオメトリシェーダアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[out]	GSPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11GeometryShader* GetGeometryShaderBase(const wstring& Filename, ComPtr<ID3D11GeometryShader>& GSPtr) {
 			return Util::DemandCreate(GSPtr, MutexBase, [&](ID3D11GeometryShader** pResult)
 			{
@@ -1570,8 +1712,17 @@ namespace basecross {
 				ShaderResource::CreateGeometryShader(data, cso_sz, pResult);
 			});
 		}
-
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジオメトリシェーダアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[in]	SOEntries	エントリの配列
+		@param[in]	Stride	ストライド
+		@param[in]	NumStride	ストライド数
+		@param[out]	GSPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11GeometryShader* GetGeometryShaderBase(const wstring& Filename,
 			const vector<D3D11_SO_DECLARATION_ENTRY>& SOEntries,
 			UINT Stride, UINT NumStride,
@@ -1585,8 +1736,14 @@ namespace basecross {
 				ShaderResource::CreateGeometryShader(data, cso_sz, SOEntries, Stride, NumStride, pResult);
 			});
 		}
-
-		//コンピュートシェーダアクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンピュートシェーダアクセッサ
+		@param[in]	Filename	ファイル名
+		@param[out]	CSPtr	検証するシェーダ（COM）
+		@return	シェーダインターフェイス
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11ComputeShader* GetComputeShaderBase(const wstring& Filename, ComPtr<ID3D11ComputeShader>& CSPtr) {
 			return Util::DemandCreate(CSPtr, MutexBase, [&](ID3D11ComputeShader** pResult)
 			{
@@ -1597,15 +1754,10 @@ namespace basecross {
 				ShaderResource::CreateComputeShader(data, cso_sz, pResult);
 			});
 		}
-
-		//頂点シェーダアクセッサ
-		ID3D11VertexShader* GetVertexShaderBase(const wstring& Filename, ComPtr<ID3D11VertexShader>& VSPtr);
-		//インプットレイアウトアクセッサ
-		ID3D11InputLayout* GetInputLayoutBase2(const wstring& Filename, ComPtr<ID3D11InputLayout>& ILPtr,
-			const D3D11_INPUT_ELEMENT_DESC* pElem, UINT NumElements);
-		//コンスタントバッファアクセッサ
-		ID3D11Buffer* GetConstantBufferBase(UINT BuffSize, ComPtr<ID3D11Buffer>& Buffer);
 	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
 		//コピー禁止
 		ShaderResource(const ShaderResource&) = delete;
 		ShaderResource& operator=(const ShaderResource&) = delete;
@@ -1615,9 +1767,7 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	template<typename ShaderType, typename ConstantType>
-	//	class ConstantBuffer : public ShaderResource;
-	//	用途: コンスタントバッファ
+	///	コンスタントバッファ(シングルトン)
 	//--------------------------------------------------------------------------------------
 	template<typename ShaderType, typename ConstantType>
 	class ConstantBuffer : public ShaderResource {
@@ -1635,14 +1785,28 @@ namespace basecross {
 		virtual ~ConstantBuffer() {}
 		static unique_ptr<ShaderType, Deleter> m_Ptr;
 		//コピー禁止
-		ConstantBuffer<ShaderType, ConstantType>(ConstantBuffer const&);
-		ConstantBuffer<ShaderType, ConstantType>& operator=(ConstantBuffer<ShaderType, ConstantType> const&);
+		ConstantBuffer<ShaderType, ConstantType>(ConstantBuffer const&) = delete;
+		ConstantBuffer<ShaderType, ConstantType>& operator=(ConstantBuffer<ShaderType, ConstantType> const&) = delete;
+		//ムーブ禁止
+		ConstantBuffer(const ConstantBuffer&&) = delete;
+		ConstantBuffer& operator=(const ConstantBuffer&&) = delete;
 	public:
 		//公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンスタントバッファを得る
+		@return	コンスタントバッファ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11Buffer* GetBuffer() {
 			return GetConstantBufferBase(sizeof(ConstantType), m_Buffer);
 		}
-		//インスタンス取得
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスを得る
+		@return	クラスのインスタンス
+		*/
+		//--------------------------------------------------------------------------------------
 		static unique_ptr<ShaderType, Deleter>& GetPtr() {
 			if (!m_Ptr) {
 				m_Ptr.reset(new ShaderType());
@@ -1653,23 +1817,40 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	template<typename ConstantType>
-	//	class CBuffer : public ShaderResource;
-	//	用途: コンスタントバッファ
+	///	コンスタントバッファ
 	//--------------------------------------------------------------------------------------
 	template<typename ConstantType>
 	class CBuffer : public ShaderResource {
 		ComPtr<ID3D11Buffer> m_Buffer;
 		//コピー禁止
-		CBuffer(CBuffer const&);
-		CBuffer& operator=(CBuffer<ConstantType> const&);
+		CBuffer(CBuffer const&) = delete;
+		CBuffer& operator=(CBuffer<ConstantType> const&) = delete;
+		//ムーブ禁止
+		CBuffer(const CBuffer&&) = delete;
+		CBuffer& operator=(const CBuffer&&) = delete;
 	public:
 		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		CBuffer() : ShaderResource() {
 			GetConstantBufferBase(sizeof(ConstantType), m_Buffer);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~CBuffer() {}
 		//公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンスタントバッファを得る
+		@return	コンスタントバッファ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11Buffer* GetBuffer() {
 			return GetConstantBufferBase(sizeof(ConstantType), m_Buffer);
 		}
@@ -1678,8 +1859,7 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	class VertexShader : public ShaderResource;
-	//	用途: 頂点シェーダ
+	///	頂点シェーダ(シングルトン)
 	//--------------------------------------------------------------------------------------
 	template<typename ShaderType, typename VirtexType>
 	class VertexShader : public ShaderResource {
@@ -1699,15 +1879,30 @@ namespace basecross {
 		virtual ~VertexShader() {}
 		static unique_ptr<ShaderType, Deleter> m_Ptr;
 	public:
-		//頂点シェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点シェーダを得る
+		@return	頂点シェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11VertexShader* GetShader() {
 			return GetVertexShaderBase(m_Filename, m_VSPtr);
 		}
-		//インプットレイアウト公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インプットレイアウトを得る
+		@return	インプットレイアウト
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11InputLayout* GetInputLayout() {
-			return GetInputLayoutBase2(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
+			return GetInputLayoutBase(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
 		}
-		//インスタンス取得
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスを得る
+		@return	クラスのインスタンス
+		*/
+		//--------------------------------------------------------------------------------------
 		static unique_ptr<ShaderType, Deleter>& GetPtr() {
 			if (!m_Ptr) {
 				m_Ptr.reset(new ShaderType());
@@ -1717,9 +1912,7 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//template<typename VirtexType>
-	//	class VShader : public ShaderResource;
-	//	用途: シングルトン処理をしない頂点シェーダ（クライアントで直接使用できる）
+	///	頂点シェーダ
 	//--------------------------------------------------------------------------------------
 	template<typename VirtexType>
 	class VShader : public ShaderResource {
@@ -1727,33 +1920,64 @@ namespace basecross {
 		ComPtr<ID3D11VertexShader> m_VSPtr;
 		ComPtr<ID3D11InputLayout> m_ILPtr;
 	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		VShader() : ShaderResource(), m_Filename() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	Filename	ファイル名
+		*/
+		//--------------------------------------------------------------------------------------
 		VShader(const wstring& Filename) : ShaderResource(), m_Filename(Filename) {
 			GetVertexShaderBase(m_Filename, m_VSPtr);
-			GetInputLayoutBase2(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
+			GetInputLayoutBase(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~VShader() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	構築
+		@param[in]	Filename	ファイル名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Create(const wstring& Filename) {
 			m_Filename = Filename;
 			m_VSPtr = nullptr;
 			m_ILPtr = nullptr;
 			GetVertexShaderBase(m_Filename, m_VSPtr);
-			GetInputLayoutBase2(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
+			GetInputLayoutBase(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
 		}
-		//頂点シェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点シェーダを得る
+		@return	頂点シェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11VertexShader* GetShader() {
 			return GetVertexShaderBase(m_Filename, m_VSPtr);
 		}
-		//インプットレイアウト公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インプットレイアウトを得る
+		@return	インプットレイアウト
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11InputLayout* GetInputLayout() {
-			return GetInputLayoutBase2(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
+			return GetInputLayoutBase(m_Filename, m_ILPtr, VirtexType::GetVertexElement(), VirtexType::GetNumElements());
 		}
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	template<typename ShaderType>
-	//	class PixelShader : public ShaderResource;
-	//	用途: ピクセルシェーダ
+	///	ピクセルシェーダ(シングルトン)
 	//--------------------------------------------------------------------------------------
 	template<typename ShaderType>
 	class PixelShader : public ShaderResource {
@@ -1772,11 +1996,21 @@ namespace basecross {
 		virtual ~PixelShader() {}
 		static unique_ptr<ShaderType, Deleter> m_Ptr;
 	public:
-		//ピクセルシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ピクセルシェーダを得る
+		@return	ピクセルシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11PixelShader* GetShader() {
 			return GetPixelShaderBase(m_Filename, m_PSPtr);
 		}
-		//インスタンス取得
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスを得る
+		@return	クラスのインスタンス
+		*/
+		//--------------------------------------------------------------------------------------
 		static unique_ptr<ShaderType, Deleter>& GetPtr() {
 			if (!m_Ptr) {
 				m_Ptr.reset(new ShaderType());
@@ -1786,36 +2020,57 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class PShader : public ShaderResource;
-	//	用途: ピクセルシェーダ
+	///	ピクセルシェーダ
 	//--------------------------------------------------------------------------------------
 	class PShader : public ShaderResource {
 		wstring m_Filename;
 		ComPtr<ID3D11PixelShader> m_PSPtr;
 	public:
-		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		PShader() : ShaderResource(), m_Filename() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	Filename	ファイル名
+		*/
+		//--------------------------------------------------------------------------------------
 		PShader(const wstring& Filename) : ShaderResource(), m_Filename(Filename) {
 			GetPixelShaderBase(m_Filename, m_PSPtr);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~PShader() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	構築
+		@param[in]	Filename	ファイル名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Create(const wstring& Filename) {
 			m_Filename = Filename;
 			m_PSPtr = nullptr;
 			GetPixelShaderBase(m_Filename, m_PSPtr);
 		}
-		//ピクセルシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ピクセルシェーダを得る
+		@return	ピクセルシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11PixelShader* GetShader() {
 			return GetPixelShaderBase(m_Filename, m_PSPtr);
 		}
 	};
-
-
-
 	//--------------------------------------------------------------------------------------
-	//	template<typename ShaderType>
-	//	class GeometryShader : public ShaderResource;
-	//	用途: ジオメトリシェーダ
+	///	ジオメトリシェーダ(シングルトン)
 	//--------------------------------------------------------------------------------------
 	template<typename ShaderType>
 	class GeometryShader : public ShaderResource {
@@ -1836,7 +2091,16 @@ namespace basecross {
 		GeometryShader<ShaderType>(const wstring& Filename) : ShaderResource(), m_Filename(Filename) {}
 		virtual ~GeometryShader() {}
 		static unique_ptr<ShaderType, Deleter> m_Ptr;
-		//スロットエントリの登録
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スロットエントリの登録
+		@param[in]	SOEntries	エントリの配列
+		@param[in]	Stride	ストライド
+		@param[in]	NumStride	ストライド数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void SetSOEntries(const vector<D3D11_SO_DECLARATION_ENTRY>& SOEntries,
 			UINT Stride, UINT NumStride) {
 			m_SOEntries.clear();
@@ -1847,8 +2111,12 @@ namespace basecross {
 			m_Stride = Stride;
 			m_NumStride = NumStride;
 		}
-	public:
-		//ジオメトリシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジオメトリシェーダを得る
+		@return	ジオメトリシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11GeometryShader* GetShader() {
 			if (m_SOEntries.size() > 0) {
 				return GetGeometryShaderBase(m_Filename, m_SOEntries, m_Stride, m_NumStride, m_GSPtr);
@@ -1857,7 +2125,12 @@ namespace basecross {
 				return GetGeometryShaderBase(m_Filename, m_GSPtr);
 			}
 		}
-		//インスタンス取得
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスを得る
+		@return	クラスのインスタンス
+		*/
+		//--------------------------------------------------------------------------------------
 		static unique_ptr<ShaderType, Deleter>& GetPtr() {
 			if (!m_Ptr) {
 				m_Ptr.reset(new ShaderType());
@@ -1868,8 +2141,7 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	class GShader : public ShaderResource;
-	//	用途: ジオメトリシェーダ
+	///	ジオメトリシェーダ
 	//--------------------------------------------------------------------------------------
 	class GShader : public ShaderResource {
 		ComPtr<ID3D11GeometryShader> m_GSPtr;
@@ -1878,11 +2150,34 @@ namespace basecross {
 		UINT m_Stride;
 		UINT m_NumStride;
 	public:
-		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		GShader() : ShaderResource(), m_Filename() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	Filename	ファイル名
+		*/
+		//--------------------------------------------------------------------------------------
 		GShader(const wstring& Filename) : ShaderResource(), m_Filename(Filename) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~GShader() {}
-		//スロットエントリの登録
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スロットエントリの登録
+		@param[in]	SOEntries	エントリの配列
+		@param[in]	Stride	ストライド
+		@param[in]	NumStride	ストライド数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void SetSOEntries(const vector<D3D11_SO_DECLARATION_ENTRY>& SOEntries,
 			UINT Stride, UINT NumStride) {
 			m_SOEntries.clear();
@@ -1893,6 +2188,13 @@ namespace basecross {
 			m_Stride = Stride;
 			m_NumStride = NumStride;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	構築
+		@param[in]	Filename	ファイル名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Create(const wstring& Filename) {
 			m_Filename = Filename;
 			m_GSPtr = nullptr;
@@ -1903,7 +2205,12 @@ namespace basecross {
 				GetGeometryShaderBase(m_Filename, m_GSPtr);
 			}
 		}
-		//ジオメトリシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジオメトリシェーダを得る
+		@return	ジオメトリシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11GeometryShader* GetShader() {
 			if (m_SOEntries.size() > 0) {
 				return GetGeometryShaderBase(m_Filename, m_SOEntries, m_Stride, m_NumStride, m_GSPtr);
@@ -1916,9 +2223,7 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	template<typename ShaderType>
-	//	class ComputeShader : public ShaderResource;
-	//	用途: コンピュートシェーダ
+	///	コンピュートシェーダ(シングルトン)
 	//--------------------------------------------------------------------------------------
 	template<typename ShaderType>
 	class ComputeShader : public ShaderResource {
@@ -1937,11 +2242,21 @@ namespace basecross {
 		virtual ~ComputeShader() {}
 		static unique_ptr<ShaderType, Deleter> m_Ptr;
 	public:
-		//コンピュートシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンピュートシェーダを得る
+		@return	コンピュートシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11ComputeShader* GetShader() {
 			return GetComputeShaderBase(m_Filename, m_CSPtr);
 		}
-		//インスタンス取得
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスを得る
+		@return	クラスのインスタンス
+		*/
+		//--------------------------------------------------------------------------------------
 		static unique_ptr<ShaderType, Deleter>& GetPtr() {
 			if (!m_Ptr) {
 				m_Ptr.reset(new ShaderType());
@@ -1951,25 +2266,51 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class CShader : public ShaderResource;
-	//	用途: コンピュートシェーダ
+	///	コンピュートシェーダ
 	//--------------------------------------------------------------------------------------
 	class CShader : public ShaderResource {
 		wstring m_Filename;
 		ComPtr<ID3D11ComputeShader> m_CSPtr;
 	public:
-		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		CShader() : ShaderResource(), m_Filename() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	Filename	ファイル名
+		*/
+		//--------------------------------------------------------------------------------------
 		CShader(const wstring& Filename) : ShaderResource(), m_Filename(Filename) {
 			GetComputeShaderBase(m_Filename, m_CSPtr);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~CShader() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	構築
+		@param[in]	Filename	ファイル名
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void Create(const wstring& Filename) {
 			m_Filename = Filename;
 			m_CSPtr = nullptr;
 			GetComputeShaderBase(m_Filename, m_CSPtr);
 		}
-		//コンピュートシェーダ公開アクセッサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンピュートシェーダを得る
+		@return	コンピュートシェーダ
+		*/
+		//--------------------------------------------------------------------------------------
 		ID3D11ComputeShader* GetShader() {
 			return GetComputeShaderBase(m_Filename, m_CSPtr);
 		}

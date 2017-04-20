@@ -1790,8 +1790,7 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	class PNTStaticModelDraw : public PNTStaticDraw;
-	//	用途: PNTStaticModelDraw描画コンポーネント
+	///	PNTStaticModelDraw描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	class PNTStaticModelDraw : public PNTStaticDraw {
 		void DrawWithShadow();
