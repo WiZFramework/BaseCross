@@ -235,6 +235,11 @@ namespace basecross {
 		float m_RotSpeed;
 		//ズームスピード
 		float m_ZoomSpeed;
+		//左右スティック変更のモード
+		bool m_LRBaseMode;
+		//上下スティック変更のモード
+		bool m_UDBaseMode;
+
 
 		Impl() :
 			m_ToTargetLerp(1.0f),
@@ -247,7 +252,9 @@ namespace basecross {
 			m_MaxArm(20.0f),
 			m_MinArm(2.0f),
 			m_RotSpeed(1.0f),
-			m_ZoomSpeed(0.1f)
+			m_ZoomSpeed(0.1f),
+			m_LRBaseMode(true),
+			m_UDBaseMode(true)
 		{}
 		~Impl() {}
 	};
@@ -341,6 +348,30 @@ namespace basecross {
 		pImpl->m_TargetToAt = v;
 	}
 
+	bool LookAtCamera::GetLRBaseMode() const {
+		return pImpl->m_LRBaseMode;
+
+	}
+	bool LookAtCamera::IsLRBaseMode() const {
+		return pImpl->m_LRBaseMode;
+
+	}
+	void LookAtCamera::SetLRBaseMode(bool b) {
+		pImpl->m_LRBaseMode = b;
+	}
+	bool LookAtCamera::GetUDBaseMode() const {
+		return pImpl->m_UDBaseMode;
+
+	}
+	bool LookAtCamera::IsUDBaseMode() const {
+		return pImpl->m_UDBaseMode;
+	}
+	void LookAtCamera::SetUDBaseMode(bool b) {
+		pImpl->m_UDBaseMode = b;
+
+	}
+
+
 	void LookAtCamera::SetAt(const Vector3& At) {
 		Camera::SetAt(At);
 		Vector3 ArmVec = GetEye() - GetAt();
@@ -374,10 +405,20 @@ namespace basecross {
 		if (CntlVec[0].bConnected) {
 			//上下角度の変更
 			if (CntlVec[0].fThumbRY >= 0.1f || KeyData.m_bPushKeyTbl[VK_UP]) {
-				pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+				if (IsUDBaseMode()) {
+					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+				}
+				else {
+					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+				}
 			}
 			else if (CntlVec[0].fThumbRY <= -0.1f || KeyData.m_bPushKeyTbl[VK_DOWN]) {
-				pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+				if (IsUDBaseMode()) {
+					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+				}
+				else {
+					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+				}
 			}
 			if (pImpl->m_RadY > XM_PI * 4 / 9.0f) {
 				pImpl->m_RadY = XM_PI * 4 / 9.0f;
@@ -391,13 +432,29 @@ namespace basecross {
 			if (CntlVec[0].fThumbRX != 0 || KeyData.m_bPushKeyTbl[VK_LEFT] || KeyData.m_bPushKeyTbl[VK_RIGHT]) {
 				//回転スピードを反映
 				if (CntlVec[0].fThumbRX != 0) {
-					pImpl->m_RadXZ += -CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+					if (IsLRBaseMode()) {
+						pImpl->m_RadXZ += -CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+					}
+					else {
+						pImpl->m_RadXZ += CntlVec[0].fThumbRX * ElapsedTime * pImpl->m_RotSpeed;
+					}
 				}
 				else if (KeyData.m_bPushKeyTbl[VK_LEFT]) {
-					pImpl->m_RadXZ += ElapsedTime * pImpl->m_RotSpeed;
+					if (IsLRBaseMode()) {
+						pImpl->m_RadXZ += ElapsedTime * pImpl->m_RotSpeed;
+					}
+					else {
+						pImpl->m_RadXZ -= ElapsedTime * pImpl->m_RotSpeed;
+					}
 				}
 				else if (KeyData.m_bPushKeyTbl[VK_RIGHT]) {
-					pImpl->m_RadXZ -= ElapsedTime * pImpl->m_RotSpeed;
+					if (IsLRBaseMode()) {
+						pImpl->m_RadXZ -= ElapsedTime * pImpl->m_RotSpeed;
+					}
+					else {
+						pImpl->m_RadXZ += ElapsedTime * pImpl->m_RotSpeed;
+					}
+
 				}
 				if (abs(pImpl->m_RadXZ) >= XM_2PI) {
 					//1週回ったら0回転にする
