@@ -1762,88 +1762,88 @@ namespace basecross{
 		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		static bool OBB_OBB(const OBB& obb1, const OBB& obb2){
+		static bool OBB_OBB(const OBB& obb1, const OBB& obb2) {
 			const float EPSILON = 1.175494e-37f;
 			float R[3][3], AbsR[3][3];
-			for(int i = 0; i < 3; i++){
-				for(int j = 0; j < 3; j++){
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 3; j++) {
 					R[i][j] = Vector3EX::Dot(obb1.m_Rot[i], obb2.m_Rot[j]);
 					AbsR[i][j] = fabsf(R[i][j]) + EPSILON;
 				}
 			}
 			Vector3 t = obb2.m_Center - obb1.m_Center;
 			t = Vector3(Vector3EX::Dot(t, obb1.m_Rot[0]),
-							Vector3EX::Dot(t, obb1.m_Rot[1]),
-							Vector3EX::Dot(t, obb1.m_Rot[2]));
+				Vector3EX::Dot(t, obb1.m_Rot[1]),
+				Vector3EX::Dot(t, obb1.m_Rot[2]));
 			//é≤L=A0, L=A1, L=A2îªíË
 			float ra, rb;
-			for(int i = 0; i < 3; i++){
+			for (int i = 0; i < 3; i++) {
 				ra = obb1.m_Size[i];
 				rb = obb2.m_Size[0] * AbsR[i][0] + obb2.m_Size[1] * AbsR[i][1] + obb2.m_Size[2] * AbsR[i][2];
-				if(fabsf(t[i]) > ra + rb){
+				if (fabsf(t[i]) > ra + rb) {
 					return false;
 				}
 			}
 			//é≤L=B0, L=B1, L=B2îªíË
-			for(int i = 0; i < 3; i++){
+			for (int i = 0; i < 3; i++) {
 				ra = obb1.m_Size[0] * AbsR[0][i] + obb1.m_Size[1] * AbsR[1][i] + obb1.m_Size[2] * AbsR[2][i];
 				rb = obb2.m_Size[i];
-				if(fabsf(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb){
+				if (fabsf(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) {
 					return false;
 				}
 			}
 			//é≤L=A0 X B0îªíË
 			ra = obb1.m_Size[1] * AbsR[2][0] + obb1.m_Size[2] * AbsR[1][0];
 			rb = obb2.m_Size[1] * AbsR[0][2] + obb2.m_Size[2] * AbsR[0][1];
-			if(fabsf(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb){
+			if (fabsf(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A0 X B1îªíË
 			ra = obb1.m_Size[1] * AbsR[2][1] + obb1.m_Size[2] * AbsR[1][1];
 			rb = obb2.m_Size[0] * AbsR[0][2] + obb2.m_Size[2] * AbsR[0][0];
-			if(fabsf(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb){
+			if (fabsf(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A0 X B2îªíË
 			ra = obb1.m_Size[1] * AbsR[2][2] + obb1.m_Size[2] * AbsR[1][2];
 			rb = obb2.m_Size[0] * AbsR[0][1] + obb2.m_Size[1] * AbsR[0][0];
-			if(fabsf(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb){
+			if (fabsf(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A1 X B0îªíË
 			ra = obb1.m_Size[0] * AbsR[2][0] + obb1.m_Size[2] * AbsR[0][0];
 			rb = obb2.m_Size[1] * AbsR[1][2] + obb2.m_Size[2] * AbsR[1][1];
-			if(fabsf(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb){
+			if (fabsf(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A1 X B1îªíË
 			ra = obb1.m_Size[0] * AbsR[2][1] + obb1.m_Size[2] * AbsR[0][1];
 			rb = obb2.m_Size[0] * AbsR[1][2] + obb2.m_Size[2] * AbsR[1][0];
-			if(fabsf(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb){
+			if (fabsf(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A1 X B2îªíË
 			ra = obb1.m_Size[0] * AbsR[2][2] + obb1.m_Size[2] * AbsR[0][2];
 			rb = obb2.m_Size[0] * AbsR[1][1] + obb2.m_Size[1] * AbsR[1][0];
-			if(fabsf(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb){
+			if (fabsf(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A2 X B0îªíË
 			ra = obb1.m_Size[0] * AbsR[1][0] + obb1.m_Size[1] * AbsR[0][0];
 			rb = obb2.m_Size[1] * AbsR[2][2] + obb2.m_Size[2] * AbsR[2][1];
-			if(fabsf(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb){
+			if (fabsf(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A2 X B1îªíË
 			ra = obb1.m_Size[0] * AbsR[1][1] + obb1.m_Size[1] * AbsR[0][1];
 			rb = obb2.m_Size[0] * AbsR[2][2] + obb2.m_Size[2] * AbsR[2][0];
-			if(fabsf(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb){
+			if (fabsf(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) {
 				return false;
 			}
 			//é≤L=A2 X B2îªíË
 			ra = obb1.m_Size[0] * AbsR[1][2] + obb1.m_Size[1] * AbsR[0][2];
 			rb = obb2.m_Size[0] * AbsR[2][1] + obb2.m_Size[1] * AbsR[2][0];
-			if(fabsf(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb){
+			if (fabsf(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) {
 				return false;
 			}
 			return true;
@@ -2759,7 +2759,7 @@ namespace basecross{
 		static bool CollisionTestObbObbSub(const OBB& SrcObb, const Vector3& SrcVelocity,
 			const OBB& DestObb, float StartTime, float EndTime, float& HitTime){
 			const float m_EPSILON = 0.005f;
-			OBB SrcObb2;
+			OBB SrcObb2 = SrcObb;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcObb2.m_Center = SrcObb.m_Center + SrcVelocity * mid;
 			//OBBÇÃäeï”ÇÃí∑Ç≥ÇägëÂ

@@ -99,8 +99,6 @@ namespace basecross {
 		Matrix4X4 m_WorldMatrix;
 		//親オブジェクト
 		weak_ptr<GameObject> m_Parent;
-		//子供オブジェクトの配列
-		vector<weak_ptr<GameObject>> m_ChildVec;
 		Impl():
 			//スケールのみ初期化（他はデフォルト処理でよい）
 			m_BeforeScale(1.0f,1.0f,1.0f),
@@ -328,6 +326,7 @@ namespace basecross {
 			return;
 		}
 		if (Obj) {
+			ClearParent();
 			pImpl->m_Parent = Obj;
 			auto ParWorld = Obj->GetComponent<Transform>()->GetWorldMatrix();
 			ParWorld.ScaleIdentity();
@@ -346,7 +345,6 @@ namespace basecross {
 			SetQuaternion(Qt);
 			SetPosition(PosSpan);
 			SetToBefore();
-			Obj->GetComponent<Transform>()->AddChild(GetGameObject());
 
 		}
 		else {
@@ -356,61 +354,13 @@ namespace basecross {
 	}
 
 	void Transform::ClearParent() {
-		if (GetParent()) {
-			//今親がいる
+		if (auto ParPtr = GetParent()) {
 			auto Pos = GetWorldPosition();
 			SetPosition(Pos);
 			SetToBefore();
 		}
 		pImpl->m_Parent.reset();
 	}
-
-
-	vector<weak_ptr<GameObject>>& Transform::GetChildVec() {
-		return pImpl->m_ChildVec;
-	}
-	bool Transform::FindChild(const shared_ptr<GameObject>& Obj) {
-		for (auto& v : pImpl->m_ChildVec) {
-			auto shptr = v.lock();
-			if (shptr && shptr == Obj) {
-				return true;
-			}
-		}
-		return false;
-	}
-	void Transform::ClearChild(const shared_ptr<GameObject>& Obj) {
-		for (auto it = pImpl->m_ChildVec.begin(); it != pImpl->m_ChildVec.end(); ++it) {
-			auto shptr = (*it).lock();
-			if (shptr && shptr == Obj) {
-				auto PtrTrans = Obj->GetComponent<Transform>();
-				PtrTrans->ClearParent();
-				pImpl->m_ChildVec.erase(it);
-				break;
-			}
-		}
-	}
-	void Transform::AddChild(const shared_ptr<GameObject>& Obj) {
-		if (FindChild(Obj)) {
-			return;
-		}
-		pImpl->m_ChildVec.push_back(Obj);
-		auto PtrTrans = Obj->GetComponent<Transform>();
-		PtrTrans->SetParent(GetGameObject());
-	}
-	void Transform::ClearAllChild() {
-		for (auto& v : pImpl->m_ChildVec) {
-			auto shptr = v.lock();
-			if (shptr) {
-				auto PtrTrans = shptr->GetComponent<Transform>();
-				PtrTrans->ClearParent();
-			}
-		}
-		pImpl->m_ChildVec.clear();
-	}
-
-
-
-
 	Vector3 Transform::GetVelocity() const {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -418,8 +368,6 @@ namespace basecross {
 		Velocity /= ElapsedTime;
 		return Velocity;
 	}
-
-
 	void Transform::SetToBefore() {
 		if (pImpl->m_BeforeScale != pImpl->m_Scale) {
 			pImpl->m_BeforeChangeed = true;

@@ -14,6 +14,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct Collision::Impl {
 		bool m_Fixed;		//静止オブジェクトかどうか
+		float m_EscapeAdjustedValue;	//エスケープ処理の調整値
 
 		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
@@ -26,8 +27,11 @@ namespace basecross {
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
 		vector<shared_ptr<GameObject>> m_TempHitObjectVec;	//汎用ヒットしたオブジェクト
 
+
+
 		Impl() :
 			m_Fixed(false),
+			m_EscapeAdjustedValue(0.0f),
 			m_IsHitAction(IsHitAction::Auto)
 		{
 		}
@@ -54,6 +58,13 @@ namespace basecross {
 	void Collision::SetFixed(bool b) {
 		pImpl->m_Fixed = b;
 	}
+	float Collision::GetEscapeAdjustedValue() const {
+		return pImpl->m_EscapeAdjustedValue;
+	}
+	void Collision::SetEscapeAdjustedValue(float f) {
+		pImpl->m_EscapeAdjustedValue = f;
+	}
+
 
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
 		auto shptr = pImpl->m_ExcludeCollisionGroup.lock();
@@ -1375,7 +1386,6 @@ namespace basecross {
 			//Sphereの重なりがないなら終了
 			return;
 		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		Vector3 SrcVelocity = PtrTransform->GetVelocity();
