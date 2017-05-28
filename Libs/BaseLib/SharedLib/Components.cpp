@@ -1248,7 +1248,6 @@ namespace basecross {
 		Node.heuristic = pImpl->GetHeuristic(pImpl->m_BaseIndex, pImpl->m_TargetIndex);
 		Node.score = Node.cost + Node.heuristic;
 		if (Node.cost == -1) {
-			//Å‰‚ÌêŠ‚ªs‚¯‚È‚¢êŠ‚¾‚Á‚½
 			return false;
 		}
 		bool DirectHit = false;
