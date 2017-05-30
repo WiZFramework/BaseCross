@@ -298,6 +298,13 @@ namespace basecross{
 		PtrColl->SetIsHitAction(IsHitAction::Slide);
 //		PtrColl->SetDrawActive(true);
 
+		//MovetToアクションを実装（倒れた時対応）
+		auto PtrMove = AddComponent<MoveTo>();
+		//無効にしておく
+		PtrMove->SetUpdateActive(false);
+
+
+
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");

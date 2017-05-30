@@ -244,6 +244,10 @@ namespace basecross {
 					Qt *= SpanQt;
 					GetGameObject()->GetComponent<Transform>()->SetQuaternion(Qt);
 					if (m_DieRot >= XM_PIDIV2) {
+						auto MoveToPtr = GetGameObject()->GetComponent<MoveTo>();
+						MoveToPtr->SetUpdateActive(true);
+						MoveToPtr->SetParams(3.0f, GetGameObject()->GetStartPosition());
+						MoveToPtr->Run();
 						m_DieFlag = DieFlag::Die;
 					}
 					auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
@@ -271,6 +275,10 @@ namespace basecross {
 			case DieFlag::Die:
 				m_DieInterval += ElapsedTime;
 				if (m_DieInterval >= 5.0f) {
+					auto MoveToPtr = GetGameObject()->GetComponent<MoveTo>();
+					MoveToPtr->SetUpdateActive(false);
+					auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
+					PtrRigid->SetVelocityZero();
 					m_DieFlag = DieFlag::Up;
 				}
 				return false;

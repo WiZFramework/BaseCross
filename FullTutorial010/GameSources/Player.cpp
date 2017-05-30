@@ -17,7 +17,8 @@ namespace basecross{
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
 		m_MaxHP(100.0f),
-		m_HP(100.0f)
+		m_HP(100.0f),
+		m_StartPosition(0, 0.5f, -7.5f)
 	{}
 
 	//初期化
@@ -27,7 +28,7 @@ namespace basecross{
 		auto Ptr = GetComponent<Transform>();
 		Ptr->SetScale(0.5f, 0.5f, 0.5f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.5f, -7.5f);
+		Ptr->SetPosition(m_StartPosition);
 		AddTag(L"Player");
 
 		//Rigidbodyをつける
@@ -37,6 +38,13 @@ namespace basecross{
 		PtrCol->SetIsHitAction(IsHitAction::Slide);
 //		PtrCol->SetDrawActive(true);
 		PtrCol->AddExcludeCollisionTag(L"PlayerSword");
+
+		//MovetToアクションを実装（倒れた時対応）
+		auto PtrMove = AddComponent<MoveTo>();
+		//無効にしておく
+		PtrMove->SetUpdateActive(false);
+
+
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
