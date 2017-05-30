@@ -164,6 +164,21 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
+	///	剣を突くステート
+	//--------------------------------------------------------------------------------------
+	class PlayerSwordPokeState : public ObjState<Player>
+	{
+		PlayerSwordPokeState() {}
+	public:
+		//ステートのインスタンス取得
+		DECLARE_SINGLETON_INSTANCE(PlayerSwordPokeState)
+		virtual void Enter(const shared_ptr<Player>& Obj)override;
+		virtual void Execute(const shared_ptr<Player>& Obj)override;
+		virtual void Exit(const shared_ptr<Player>& Obj)override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	敵の剣に当たったステート
 	//--------------------------------------------------------------------------------------
 	class PlayerSwordHit : public ObjState<Player>

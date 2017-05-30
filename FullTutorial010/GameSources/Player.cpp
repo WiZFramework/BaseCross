@@ -154,13 +154,16 @@ namespace basecross{
 
 	//Xボタンハンドラ
 	void  Player::OnPushX() {
-		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
+		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()){
 			//通常ステートなら剣を振るステートに移行
 			GetStateMachine()->ChangeState(PlayerSwordState::Instance());
 		}
+		else if (GetStateMachine()->GetCurrentState() == PlayerJumpState::Instance()) {
+			//ジャンプステートなら剣を突くステートに移行
+			GetStateMachine()->ChangeState(PlayerSwordPokeState::Instance());
+		}
+
 	}
-
-
 
 	//文字列の表示
 	void Player::DrawStrings() {
@@ -267,6 +270,30 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	///	剣を突くステート
+	//--------------------------------------------------------------------------------------
+	IMPLEMENT_SINGLETON_INSTANCE(PlayerSwordPokeState)
+
+	void PlayerSwordPokeState::Enter(const shared_ptr<Player>& Obj) {
+		Obj->GetFightBehavior()->StartPokeSword();
+
+	}
+
+	void PlayerSwordPokeState::Execute(const shared_ptr<Player>& Obj) {
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		if (Obj->GetFightBehavior()->PokeSword()) {
+			//半周回転させたらデフォルトステートに移行
+			Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
+		}
+	}
+
+	void PlayerSwordPokeState::Exit(const shared_ptr<Player>& Obj) {
+		//何もしない
+	}
+
+
+	//--------------------------------------------------------------------------------------
 	///	敵の剣に当たったステート
 	//--------------------------------------------------------------------------------------
 	//ステートのインスタンス取得
@@ -277,6 +304,8 @@ namespace basecross{
 	}
 
 	void PlayerSwordHit::Execute(const shared_ptr<Player>& Obj) {
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
 		if (Obj->GetFightBehavior()->HitAfterdBehavior()) {
 			Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
 		}

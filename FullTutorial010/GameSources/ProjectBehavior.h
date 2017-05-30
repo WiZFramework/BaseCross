@@ -98,7 +98,6 @@ namespace basecross {
 			SwordTransPtr->SetPosition(Pos);
 			Quaternion Qt(Vector3(0, 1, 0), 0);
 			SwordTransPtr->SetQuaternion(Qt);
-			GetGameObject()->GetComponent<Transform>()->SetQuaternion(Qt);
 			//剣のコリジョンは無効にする
 			auto SowdCollPtr = SwordPtr->GetComponent<Collision>();
 			SowdCollPtr->SetUpdateActive(false);
@@ -160,6 +159,60 @@ namespace basecross {
 			//剣が取得できなければ常に「回転修了」
 			return true;
 		}
+		Vector3 m_PokeStart;
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剣を突く処理の開始
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void StartPokeSword() {
+			auto SwordPtr = m_SwordWeak.lock();
+			if (SwordPtr) {
+				auto SwordTransPtr = SwordPtr->GetComponent<Transform>();
+
+				m_PokeStart = SwordTransPtr->GetPosition();
+
+				Vector3 Pos(sin(0.0f) * 1.0f, 0.0f, cos(0.0f) * 1.0f);
+				SwordTransPtr->ResetPosition(Pos);
+				//剣のコリジョンを有効にする
+				auto SowdCollPtr = SwordPtr->GetComponent<Collision>();
+				SowdCollPtr->SetUpdateActive(true);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剣を突く
+		@return	一定距離突いたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool PokeSword() {
+			auto SwordPtr = m_SwordWeak.lock();
+			if (SwordPtr) {
+				auto SwordTransPtr = SwordPtr->GetComponent<Transform>();
+				float ElapsedTime = App::GetApp()->GetElapsedTime();
+				float PokeSpan = ElapsedTime * 5.0f;
+				Vector3 Pos = SwordTransPtr->GetPosition();
+				Pos.y -= PokeSpan;
+				SwordTransPtr->SetPosition(Pos);
+				if (Pos.y <= (m_PokeStart.y - 2.5f)) {
+					Pos = m_PokeStart;
+					SwordTransPtr->SetPosition(Pos);
+					//剣のコリジョンは無効にする
+					auto SowdCollPtr = SwordPtr->GetComponent<Collision>();
+					SowdCollPtr->SetUpdateActive(false);
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			//剣が取得できなければ常に「修了」
+			return true;
+		}
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	相手の剣に当たったときの相手の位置の設定
