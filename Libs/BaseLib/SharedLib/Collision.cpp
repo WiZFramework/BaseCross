@@ -245,9 +245,11 @@ namespace basecross {
 
 		//スライドする方向を計算
 		Vector3 Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
-		auto WorldPos = PtrTransform->GetWorldPosition() + Slide * AfterHitTime;
 		PtrTransform->SetToBefore();
-		PtrTransform->SetWorldPosition(WorldPos);
+		if (GetIsHitAction() != IsHitAction::Stop && GetIsHitAction() != IsHitAction::None) {
+			auto WorldPos = PtrTransform->GetWorldPosition() + Slide * AfterHitTime;
+			PtrTransform->SetWorldPosition(WorldPos);
+		}
 
 		bool horizontal = false;
 		if (GetGameObject()->FindBehavior<Gravity>()) {
@@ -295,6 +297,14 @@ namespace basecross {
 					auto Velo = PtrRigid->GetVelocity();
 					Velo += (HitNormal * ResultPower) / PtrRigid->GetMass();
 					PtrRigid->SetVelocity(Velo);
+				}
+				break;
+			case IsHitAction::Stop:
+				{
+					//速度は0にする
+					PtrRigid->SetVelocityZero();
+					//重力は0にする
+					PtrRigid->SetGravityVelocityZero();
 				}
 				break;
 			}
