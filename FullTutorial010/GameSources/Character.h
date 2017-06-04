@@ -14,6 +14,8 @@ namespace basecross{
 	class Sword : public GameObject {
 		Vector3 m_Scale;
 		wstring m_Tag;
+		//Œ•‚Ì‹­‚³
+		float m_Strength;
 	public:
 		//\’z‚Æ”jŠü
 		Sword(const shared_ptr<Stage>& StagePtr,
@@ -23,6 +25,17 @@ namespace basecross{
 		virtual ~Sword();
 		//‰Šú‰»
 		virtual void OnCreate() override;
+		//‹­‚³‚ğ“¾‚é
+		float GetStrength() const {
+			return m_Strength;
+		}
+		//‹­‚³‚ğİ’è‚·‚é
+		void SetStrength(float f) {
+			m_Strength = f;
+		}
+		//‘€ì
+		virtual void OnUpdate() override;
+
 	};
 
 	//--------------------------------------------------------------------------------------

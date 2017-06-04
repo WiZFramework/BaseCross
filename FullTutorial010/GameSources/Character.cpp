@@ -18,7 +18,8 @@ namespace basecross{
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
-		m_Tag(Tag)
+		m_Tag(Tag),
+		m_Strength(5.0f)
 	{
 	}
 
@@ -56,6 +57,16 @@ namespace basecross{
 			PtrDraw->SetTextureResource(L"RED_TX");
 		}
 	}
+
+	//操作
+	void Sword::OnUpdate() {
+		float Val = m_Strength / 100.0f * 2.0f;
+		Color4 Col = Color4(Val, Val, Val, 0);
+		//描画コンポーネントの設定
+		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
+		PtrDraw->SetEmissive(Col);
+	}
+
 
 	//構築と破棄
 	TilingPlate::TilingPlate(const shared_ptr<Stage>& StagePtr,
@@ -353,6 +364,8 @@ namespace basecross{
 		//敵が何かに当たった
 		for (auto&v : OtherVec) {
 			if (v->FindTag(L"PlayerSword")) {
+				//剣のポインタを取得
+				auto SwordPtr = dynamic_pointer_cast<Sword>(v);
 				//剣に当たった
 				auto DestColl = v->GetComponent<CollisionCapsule>();
 				//剣のコリジョンを一時的に無効にする
@@ -365,7 +378,7 @@ namespace basecross{
 					PtrSpark->InsertSpark(Pos1);
 				}
 				//HPを下げる
-				m_HP -= 5.0f;
+				m_HP -= SwordPtr->GetStrength();
 				if (m_HP <= 0.0f) {
 					m_HP = 0.0f;
 					//ファイアの放出
@@ -373,6 +386,13 @@ namespace basecross{
 					if (PtriFire) {
 						PtriFire->InsertFire(GetComponent<Transform>()->GetPosition());
 					}
+					//プレイヤーの剣の力を強くする
+					float PlayerSordPow = SwordPtr->GetStrength();
+					PlayerSordPow += 2.0f;
+					if (PlayerSordPow >= 90.0f) {
+						PlayerSordPow = 90.0f;
+					}
+					SwordPtr->SetStrength(PlayerSordPow);
 					//倒れる
 					GetStateMachine()->ChangeState(EnemyDieState::Instance());
 				}
