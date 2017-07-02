@@ -1,0 +1,282 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル(Dx12版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>００９．立方体の描画(Dx12版)</h3>
+　このサンプルは<b>SimplSample009</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0009a.png" width="80%"/>
+<p>図0009a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/bfpB2HRiexc?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　今項から<b>３Ｄの描画</b>になります。手始めに<b>VertexPositionColor型</b>の頂点を持つ立方体の描画です。<br />
+　まず<b>頂点バッファを自作する</b>処理からやってみます。立法や球体など、基本的な形状はライブラリを使って作成することができます。ですが、今項では、自作する方法の説明から始めます。
+<br />
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionColor型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　初期化しなければならない<b>Dx12リソース</b>はこれまでのスプライトと同じです。ですが初期化の仕方（呼び出す関数など）が若干違います。<br />
+　今項は初めての３Ｄなので、少し詳しく説明します。<br />
+<br />
+<h4>■頂点作成■</h4>
+　<b>頂点バッファとインデックスバッファ</b>は<b>CubeObject::CreateBuffers()関数</b>で初期化します。
+<div class="box1">
+<pre>
+void CubeObject::CreateBuffers() {
+    float HelfSize = 0.5f;
+    vector&lt;VertexPositionColor> vertices = {
+        { VertexPositionColor(Vector3(-HelfSize, HelfSize, -HelfSize), 
+            Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, HelfSize, -HelfSize), 
+            Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, -HelfSize), 
+            Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, -HelfSize, -HelfSize), 
+            Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, HelfSize, HelfSize), 
+            Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(-HelfSize, HelfSize, HelfSize), 
+            Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(HelfSize, -HelfSize, HelfSize), 
+            Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, HelfSize), 
+            Color4(1.0f, 0.0f, 1.0f, 1.0f)) }
+    };
+    vector&lt;uint16_t> indices = {
+        0, 1, 2,
+        1, 3, 2,
+        1, 4, 3,
+        4, 6, 3,
+        4, 5, 6,
+        5, 7, 6,
+        5, 0, 7,
+        0, 2, 7,
+        5, 4, 0,
+        4, 1, 0,
+        6, 7, 3,
+        7, 2, 3
+    };
+    //メッシュの作成（変更できない）
+    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+}
+</pre>
+</div>
+　ここではまず、<b>VertexPositionColor型の配列</b>である<b>vertices</b>を作成します。立方体ですので、頂点数は８つです。頂点にカラー要素をもち、グラデーションするようにします。<br />
+　位置情報は、立方体の中心が原点に来るように作成します。これを、描画時には<b>ワールド、ビュー、射影行列</b>を反映させて、画面上に表示します。また作成時のサイズですが、１辺が1.0fになるように作成します。<br />
+　頂点の配列を作成したら、<b>インデックスの配列</b>を作成します。<b>uint16_t型（符号なし16ビット整数）</b>の番号の配列です。この番号は、各頂点を使って<b>時計回りの三角形</b>が作れるように、<b>頂点配列の各頂点のインデックス（添え字）</b>を配列にします。たとえば、インデックス配列の最初に<b>0, 1, 2</b>と記述がありますが、これは頂点配列の<b>0番目, 1番目, 2番目</b>の頂点で三角形を作る、という意味になります。このようにして、頂点配列の各頂点を使って、12個の三角形を作成します。立方体は面が6つですから、各面を作成するのに三角形2つ必要なので、12個の三角形ということです。<br />
+　ただこの方法で作成できるのは<b>ライティング</b>を行わないからで、<b>ライティング</b>を行うためには<b>法線</b>という要素も頂点に必要になるので、もう少し複雑になります。
+
+
+<h4>■ルートシグネチャ作成■</h4>
+　<b>ルートシグネチャ</b>は<b>CubeObject::CreateRootSignature()関数</b>で初期化します。コンスタントバッファのみのルートシグネチャで問題ありません。<br />
+<br />
+<h4>■デスクプリタヒープ作成■</h4>
+　<b>CubeObject::CreateDescriptorHeap()関数</b>で初期化します。こちらも<b>コンスタントバッファのみ</b>で問題ありません。<br />
+<br />
+<h4>■コンスタントバッファ作成■</h4>
+　<b>CubeObject::CreateConstantBuffer()関数</b>で初期化します。2次元スプライトと違うところは、コンスタントバッファに渡す行列です。今回使用するコンスタントバッファのC++側構造体は以下です。<br />
+<div class="box1">
+<pre>
+struct StaticConstantBuffer
+{
+    Matrix4X4 World;
+    Matrix4X4 View;
+    Matrix4X4 Projection;
+    Color4 Emissive;
+    StaticConstantBuffer() {
+        memset(this, 0, sizeof(StaticConstantBuffer));
+    };
+};
+</pre>
+</div>
+　ここでは<b>World、View、Projection</b>と、3つの行列があります。これは、<b>ワールド行列、ビュー行列、射影行列</b>ですが、この３つで、３Ｄオブジェクトをデバイス座標に座標変換することができます。<br />
+　その座標変換はシェーダで行っているわけですが、<b>VSPCStatic.hlsl</b>という、今回使用する<b>頂点シェーダ</b>を見てみると
+<div class="box1">
+<pre>
+PSPCInput main(VSPCInput input)
+{
+    PSPCInput result;
+    <span class="red">//頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);</span>
+    //ピクセルシェーダに渡す変数に設定
+    result.position = pos;
+    result.color = input.color;
+    return result;
+}
+</pre>
+</div>
+　上記、赤くなっているところのように、シェーダに渡された位置情報を、<b>ワールド行列、ビュー行列、射影行列</b>を順番に掛け算し、ピクセルシェーダに渡しているのがわかります。<br />
+<br />
+<h4>■パイプラインステート作成■</h4>
+　<b>CubeObject::CreatePipelineState()関数</b>で行ってます。ここでは
+<div class="box1">
+<pre>
+void CubeObject::CreatePipelineState() {
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+    m_PipelineState = <span class="red">PipelineState::CreateDefault3D</span>&lt;VertexPositionColor, 
+        VSPCStatic, PSPCStatic>(m_RootSignature, PineLineDesc);
+}
+</pre>
+</div>
+　ここで呼び出している<b>PipelineState::CreateDefault3D()テンプレート関数</b>は、以下のような内容です。
+<div class="box1">
+<pre>
+template&lt;typename Vertex, typename VS, typename PS>
+static inline ComPtr&lt;ID3D12PipelineState> 
+CreateDefault3D(const ComPtr&lt;ID3D12RootSignature>& rootSignature, 
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC& RetDesc) {
+
+    CD3DX12_RASTERIZER_DESC rasterizerStateDesc(D3D12_DEFAULT);
+    //裏面カリング
+    rasterizerStateDesc.CullMode = D3D12_CULL_MODE_NONE;
+
+    ZeroMemory(&RetDesc, sizeof(RetDesc));
+    RetDesc.InputLayout = { Vertex::GetVertexElement(), Vertex::GetNumElements() };
+    RetDesc.pRootSignature = rootSignature.Get();
+    RetDesc.VS =
+    {
+        reinterpret_cast&lt;UINT8*>(VS::GetPtr()->GetShaderComPtr()->GetBufferPointer()),
+        VS::GetPtr()->GetShaderComPtr()->GetBufferSize()
+    };
+    RetDesc.PS =
+    {
+        reinterpret_cast&lt;UINT8*>(PS::GetPtr()->GetShaderComPtr()->GetBufferPointer()),
+        PS::GetPtr()->GetShaderComPtr()->GetBufferSize()
+    };
+    RetDesc.RasterizerState = rasterizerStateDesc;
+    RetDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    <span class="red">RetDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);</span>
+    RetDesc.SampleMask = UINT_MAX;
+    RetDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    RetDesc.NumRenderTargets = 1;
+    RetDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    RetDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    RetDesc.SampleDesc.Count = 1;
+    return CreateDirect(RetDesc);
+}
+</pre>
+</div>
+　２Ｄ用のパイプラインステートとの一番の違いは、赤くなっている<b>デプスステンシルステート</b>の設定でしょう。<b>CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT)</b>を追いかけていくと、以下の用な設定です<b>d3dx12.h</b>に記述があります。このファイルは<b>マイクロソフト社のDirectX-Graphics-Samples</b>からの引用です。
+<div class="box1">
+<pre>
+explicit CD3DX12_DEPTH_STENCIL_DESC( CD3DX12_DEFAULT )
+{
+    DepthEnable = TRUE;
+    DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    StencilEnable = FALSE;
+    StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+    StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+    const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp =
+    { D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, 
+        D3D12_COMPARISON_FUNC_ALWAYS };
+    FrontFace = defaultStencilOp;
+    BackFace = defaultStencilOp;
+}
+</pre>
+</div>
+　このように、３Ｄなので深度バッファを有効にしてます。<br />
+<br />
+<h4>■コマンドリスト作成■</h4>
+　デフォルトのコマンドリストです。<b>CubeObject::CreateCommandList()関数</b>に記述があります。<br />
+<br />
+<h4>■コンスタントバッファの更新■</h4>
+　<b>CubeObject::UpdateConstantBuffer()関数</b>です。
+<div class="box1">
+<pre>
+void CubeObject::UpdateConstantBuffer() {
+    //行列の定義
+    Matrix4X4 World, View, Proj;
+    //ワールド行列の決定
+    World.AffineTransformation(
+        m_Scale,            //スケーリング
+        Vector3(0, 0, 0),       //回転の中心（重心）
+        m_Qt,               //回転角度
+        m_Pos               //位置
+    );
+    //転置する
+    <span class="red">World.Transpose();</span>
+    //ビュー行列の決定
+    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), 
+        Vector3(0, 1.0f, 0));
+    //転置する
+    <span class="red">View.Transpose();</span>
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    //転置する
+    <span class="red">Proj.Transpose();</span>
+
+    m_StaticConstantBuffer.World = World;
+    m_StaticConstantBuffer.View = View;
+    m_StaticConstantBuffer.Projection = Proj;
+    m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+    //更新
+    memcpy(m_pConstantBuffer, reinterpret_cast&lt;void**>(&m_StaticConstantBuffer),
+        sizeof(m_StaticConstantBuffer));
+}
+</pre>
+</div>
+　ここでは、<b>CubeObject</b>が保持しているスケール、ポジションなどのメンバ変数をもとに<b>ワールド行列</b>を作成し、カメラ位置から<b>ビュー行列</b>を作成し、ゲームの幅と高さから<b>射影行列</b>を作成しています。<br />
+　気を付けたいのは赤くなっている<b>転置する</b>の部分です。<b>Matrix4X4クラス</b>は<b>行優先（row major）</b>の行列です。それに対してシェーダは<b>列優先（col　major）</b>がデフォルトです。２Ｄのスプレイとのシェーダの場合、ビュー行列（２Ｄの場合は通常必要ない）、射影行列の反映はC++側で行っていました。そのため受け取るシェーダーでは、シェーダ側で<b>行優先（row major）</b>としていましたが、３Ｄの場合、C++側で<b>列優先（col　major）</b>に直したうえでシェーダに入力してます。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>CubeObject::OnUpdate()関数</b>です。ここではオブジェクトを回転させています。この処理は<b>Dx11版</b>も同様です。<br/>
+<br />
+<h4>■描画処理■</h4>
+　<b>CubeObject::DrawObject()関数</b>です。この関数を呼ぶ前に<b>コンスタントバッファ更新</b>を行います。
+　描画処理自体はこれまでのサンプルと大きく変わるものではありません。初期化処理で作成した<b>ルートシグネチャ</b>や<b>デスクプリタヒープ</b>などを適切にセットして最後に描画処理します。描画した後、コマンドリストは<b>コマンドリストのプール</b>に送ります。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<h3>【まとめ】</h3>
+　今項はテクスチャや法線を含みませんので、比較的単純な３Ｄの描画を行ってます。次項ではもう少し複雑になります。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="10_08.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="10_10.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

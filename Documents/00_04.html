@@ -8,17 +8,16 @@
 <!-- 全体コンテナ　-->
 <div id="container">
 <div id="header">
-<h2>０．シンプルバージョンサンプル</h2>
+<h2>０．シンプルバージョンサンプル(Dx11版)</h2>
 </div>
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>００４．複数の四角形の描画</h3>
+<h3>００４．複数の四角形の描画(Dx11版)</h3>
 　このサンプルは<b>SimplSample004</b>というディレクトリに含まれます。<br />
-　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 <br />
-　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+　実行結果は以下のような画面が出ます。
 <p>&nbsp;</p>
 <img src="img/0004a.png" width="80%"/>
 <p>図0004a</p>
@@ -35,191 +34,6 @@
 　SimpleSample002と同じシェーダです。<br/>
 <br />
 　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>SquareSpriteGroup::OnUpdate関数</b>には、それぞれの四角形をグループ化して個別に更新する方法が記述されています。<br />
-<br />
-<h3>【Dx12版解説】</h3>
-　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
-<br/>
-<h4>■初期化■</h4>
-　複数の四角形を描画するにあたって、個別に別々の<b>ルートシグネチャやパイプライステート</b>を作成するのは効率が悪く、GPUにも負担がかかります。ですので、個別の最適化が必要でしょう。<br />
-　今回のサンプルでは、Dx12版においては<b>コンスタントバッファをどう設計するか</b>がポイントになります。<br />
-　個別の四角形は<b>SquareSprite構造体</b>です。クラスで作成してもいいのですが、<b>単なるデータのかたまり</b>を強調するために構造体にしてあります。とはいえ、メンバとして<b>デスクプリタヒープとコンスタントバッファ関連</b>を持っています。<br />
-　それに対して、それぞれの四角形をまとめるクラスとして<b>SquareSpriteGroupクラス</b>があります。こちらはゲームに配置されるオブジェクトです。そして<b>SquareSprite構造体の配列</b>を持ちます。<br />
-　<b>ルートシグネチャ、パイプラインステート、コマンドリスト、メッシュリソース</b>は<b>SquareSpriteGroupクラス</b>に持ちます。<br />
-　初期化は、<b>SquareSprite構造体の配列</b>及び<b>SquareSpriteGroupクラス</b>を初期化します。それはまず<b>SquareSpriteGroup::OnCreate()関数</b>から始まります。
-<div class="box1">
-<pre>
-void SquareSpriteGroup::OnCreate() {
-    float HelfSize = 0.5f;
-    //頂点配列
-    vector&lt;VertexPositionColor> vertices = {
-        { VertexPositionColor(Vector3(-HelfSize, HelfSize, 0), Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
-    };
-    //インデックス配列
-    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
-    //メッシュの作成
-    //頂点変更できない
-    m_SquareSpriteMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-    //グループの配列の作成
-    <span class="red">m_SquareSpriteVec.assign(100, SquareSprite());</span>
-    for (auto& v : m_SquareSpriteVec) {
-        v.m_LocalRot = Util::RandZeroToOne(true);
-        v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-        v.m_LocalPos = Vector2(0, 0);
-        v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f,
-             100 + Util::RandZeroToOne(true) * 100.0f);
-        v.m_LocalGravityVelocity = Vector2(0, 0);
-    }
-    ///ルートシグネチャ作成
-    CreateRootSignature();
-    ///デスクプリタヒープ作成
-    CreateDescriptorHeap();
-    ///コンスタントバッファ作成
-    CreateConstantBuffer();
-    ///パイプラインステート作成
-    CreatePipelineState();
-    ///コマンドリスト作成
-    CreateCommandList();
-
-}
-</pre>
-</div>
-　初期化処理は、まず、<b>メッシュリソースの初期化</b>から始まります。これは、前のサンプルと変わりません。<br />
-　その後、<b>グループの配列の作成</b>を行います（赤くなっています）。<br />
-　この<b>m_SquareSpriteVec.assign(100, SquareSprite())</b>で、<b>100個のSquareSprite構造体</b>が初期化されます。vectorの<b>assign関数</b>は<b>最初期化</b>を意味し、2番目の引数でコンストラクタを呼び出してくれます（実際にはインスタンスの参照を渡すのですが、コンストラクタ呼び出しで構築したインスタンスで問題ありません）。<br />
-　<b>SquareSprite()コンストラクタ呼び出し</b>によって実行されるのは、<b>SquareSprite::SquareSprite()関数</b>です。ここでは、<b>m_LocalScale、m_LocalPosなど</b>のそれぞれの四角形が管理する情報をデフォルト初期化します。<br />
-　実際にそれらの値を意味のある値に代入するのは、次の
-<div class="box1">
-<pre>
-for (auto& v : m_SquareSpriteVec) {
-    v.m_LocalRot = Util::RandZeroToOne(true);
-    v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-    v.m_LocalPos = Vector2(0, 0);
-    v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 
-        100 + Util::RandZeroToOne(true) * 100.0f);
-    v.m_LocalGravityVelocity = Vector2(0, 0);
-}
-</pre>
-</div>
-　という記述です。この処理により、各四角形（100個）の初期値が代入されます。<br />
-<br />
-<h4>■Dx12リソースの初期化■</h4>
-　さて、<b>Dx12リソースの初期化</b>ですが、例によって<b>ルートシグネチャ、デスクプリタヒープ、コンスタントバッファ、パイプラインステート、コマンドリスト</b>の順で初期化するわけですが、今回のサンプルでは<b>各四角形に持たせる</b>リソースがあるため内容が違います。<br />
-　前サンプルと内容が違うのは<b>デスクプリタヒープとコンスタントバッファ</b>です。<br />
-　まず<b>デスクプリタヒープ</b>ですが、<b>SquareSpriteGroup側</b>では以下の記述になってます。
-<div class="box1">
-<pre>
-///デスクプリタヒープ作成
-void SquareSpriteGroup::CreateDescriptorHeap() {
-    for (auto& v : m_SquareSpriteVec) {
-        v.CreateDescriptorHeap();
-    }
-}
-</pre>
-</div>
-　このように、<b>m_SquareSpriteVec</b>を<b>拡張for文</b>でループし各四角形の<b>CreateDescriptorHeap()関数</b>を呼び出しています。各四角形における<b>CreateDescriptorHeap()関数</b>は以下です。
-<div class="box1">
-<pre>
-void SquareSprite::CreateDescriptorHeap() {
-    auto Dev = App::GetApp()->GetDeviceResources();
-    m_CbvSrvDescriptorHandleIncrementSize
-    = Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    //CbvSrvデスクプリタヒープ(コンスタントバッファのみ)
-    m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1);
-    //GPU側デスクプリタヒープのハンドルの配列の作成
-    m_GPUDescriptorHandleVec.clear();
-    CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
-        m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-        0,
-        0
-    );
-    m_GPUDescriptorHandleVec.push_back(CbvHandle);
-}
-</pre>
-</div>
-　デスクプリタヒープを各四角形に持たせるわけは<b>コンスタントバッファ</b>の<b>アップロードヒープ</b>を<b>デスクプリタヒープ</b>に結び付けなければならないためです。<br />
-　この関数は内容的には前サンプルの四角形と同じです。<br />
-　つづいて<b>コンスタントバッファ</b>ですが、こちらも<b>SquareSpriteGroup側</b>では以下の記述になってます。
-<div class="box1">
-<pre>
-    ///コンスタントバッファ作成
-    void SquareSpriteGroup::CreateConstantBuffer() {
-        for (auto& v : m_SquareSpriteVec) {
-            v.CreateConstantBuffer();
-        }
-    }
-</pre>
-</div>
-　これも<b>CreateDescriptorHeap()関数</b>同様、各四角形の<b>CreateConstantBuffer()関数</b>を呼び出しています。呼び出した先は、前サンプルのコンスタントバッファを作成するのと同じなので省略します。<br />
-<br />
-　<b>デスクプリタヒープとコンスタントバッファ</b>以外は、<b>SquareSpriteGroup側</b>に持ちます。<br />
-<br />
-<h4>■更新処理■</h4>
-　<b>更新処理</b>は<b>SquareSpriteGroup::OnUpdate()関数</b>になります。
-<div class="box1">
-<pre>
-    void SquareSpriteGroup::OnUpdate() {
-        float ElapsedTime = App::GetApp()->GetElapsedTime();
-        UpdateObjects(ElapsedTime);
-    }
-</pre>
-</div>
-　ここでは前回のターンからの経過時間を取得して<b>UpdateObjects()関数</b>を呼び出しています。以下が<b>UpdateObjects()関数</b>です。
-<div class="box1">
-<pre>
-void SquareSpriteGroup::UpdateObjects(float ElapsedTime) {
-    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    h /= 2.0f;
-    for (auto& v : m_SquareSpriteVec) {
-        if (v.m_LocalPos.y &lt; -h) {
-            v.m_LocalRot = Util::RandZeroToOne(true);
-            v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-            v.m_LocalPos = Vector2(0, 0);
-            v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 
-                100 + Util::RandZeroToOne(true) * 100.0f);
-            v.m_LocalGravityVelocity = Vector2(0, 0);
-        }
-        else {
-            v.m_LocalRot += v.m_LocalRotVelocity * ElapsedTime;
-            v.m_LocalPos += v.m_LocalVelocity * ElapsedTime;
-            v.m_LocalGravityVelocity += Vector2(0, -98.0f) * ElapsedTime;
-            v.m_LocalPos += v.m_LocalGravityVelocity * ElapsedTime;
-        }
-    }
-}
-</pre>
-</div>
-　ここでの処理は、２パターンあります。<b>ある一定Y位置より上にある場合</b>と<b>そうでない場合</b>です。<br />
-　<b>ある一定Y位置より上にある場合</b>は<b>各四角形の速度と落下加速度</b>を加味して、位置を決定します。回転もかけます。<b>そうでない場合</b>は、乱数などを利用して<b>初期化</b>と同じ処理を行います。この処理によって、オブジェクトが繰り返し噴水のように上に飛ばされるような動きになります。（このアルゴリズムはDx11版も同じです）<br />
-<br />
-<h4>■描画処理■</h4>
-　<b>描画処理</b>は、<b>コマンドリスト、ルートシグネチャ、パイプライステート</b>の描画準備が済んだところで、実際の描画は各四角形からデータを取り出して描画します。以下の赤くなっているところが、各四角形の処理をするところです。
-<div class="box1">
-<pre>
-void SquareSpriteGroup::DrawObject() {
-
-    //中略
-
-    //各スプライトごとの処理
-    <span class="red">for (auto& v : m_SquareSpriteVec) {
-        //デスクプリタヒープのセット
-        ID3D12DescriptorHeap* ppHeaps[] = { v.m_CbvSrvUavDescriptorHeap.Get() };
-        m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-        //GPUデスクプリタヒープハンドルのセット
-        for (size_t i = 0; i &lt; v.m_GPUDescriptorHandleVec.size(); i++) {
-            m_CommandList->SetGraphicsRootDescriptorTable(i, v.m_GPUDescriptorHandleVec[i]);
-        }
-        //インデックス描画
-        m_CommandList->DrawIndexedInstanced(m_SquareSpriteMesh->GetNumIndicis(), 1, 0, 0, 0);
-    }</span>
-
-    //中略
-}
-</pre>
-</div>
-　以上、Dx12側の説明は終わりです。<br/>
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />

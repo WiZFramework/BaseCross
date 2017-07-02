@@ -8,214 +8,21 @@
 <!-- 全体コンテナ　-->
 <div id="container">
 <div id="header">
-<h2>０．シンプルバージョンサンプル</h2>
+<h2>０．シンプルバージョンサンプル(Dx11版)</h2>
 </div>
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>００１．三角形の描画</h3>
+<h3>００１．三角形の描画(Dx11版)</h3>
 　これから、<b>シンプルバージョン</b>のサンプルの説明を始めます。このサンプルは<b>SimplSample001</b>というディレクトリに含まれます。<br />
-　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 <br />
-　どちらのソリューションでも、実行結果は以下のような画面が出ます。単純な3角形の描画です。
+　実行結果は以下のような画面が出ます。単純な3角形の描画です。
 <p>&nbsp;</p>
 <img src="img/0001a.png" width="80%"/>
 <p>図0001a</p>
 <p>&nbsp;</p>
 <br/>
-<h4>Dx12版解説</h4>
-　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
-　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
-　親クラスの<b>ObjectInterface</b>は<b>OnCreate()仮想関数</b>を持つインターフェイスクラスです。子クラスはこの仮想関数を実装しなければなりません。<b>ObjectInterface</b>は、自分自身のshared_ptrを作成できるクラスです。（つまりthisポインタのshared_ptr版）。このポインタはオブジェクト配置の時に、簡単に包含関係を作れますので、便利と思われます。<br />
-　一方、<b>ShapeInterfaceクラス</b>は<b>OnUpdate、OnDraw仮想関数</b>を持ちます。こちらは、<b>ObjectInterface</b>ほど重要度は高くありません。<b>OnUpdate、OnDraw仮想関数</b>を作成せずに実装することも可能です。<br />
-　さて、<b>TriangleObjectクラス</b>の<b>OnCreate()関数</b>は以下のようになります。
-<div class="box1">
-<pre>
-void TriangleObject::OnCreate() {
-    //頂点を作成するための配列
-    vector&lt;VertexPositionColor> vertices = {
-        { Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
-    };
-    m_TriangleMesh = MeshResource::CreateMeshResource(vertices,false);
-    CreateRootSignature();
-    CreatePipelineState();
-    CreateCommandList();
-}
-</pre>
-</div>
-　ここでポイントなるのは、<b>CreateRootSignature、CreatePipelineState、CreateCommandList</b>という<b>Dx12用リソース構築</b>の関数です。
-　これらの関数を説明する前に、Dx12で描画するのには何が必要かを述べます。
-<div class="box1">
-<pre>
-【ルートシグネチャ】シェーダに入力する内容の設定
-【パイプラインステート】どのシェーダを使うか、ラスタライザステートやデプスステンシルステートなどの
-　　各レンダリングステートを設定する。
-【コマンドリスト】描画命令や、頂点の型の設定など実際に描画するときに実行する「命令」をコマンドリストという、
-　　命令の手順を定義したものを作成して、それを「実行する」という形で、描画する。
-</pre>
-</div>
-　これらの3つのリソースの記述は、最低限行わなければなりません。
-　そして<b>CreateRootSignature、CreatePipelineState、CreateCommandList</b>の3つの関数は、それぞれの初期化を行う関数です。<br />
-　簡単にそれらの関数の役割を述べます。<br />
-<br />
-<h4>CreateRootSignature関数</h4>
-　Dx12では、<b>シェーダーへのアクセス方法の定義</b>をカプセル化したものが必要です。これを<b>ルートシグネチャ</b>といいます。<br />
-　例えば、コンスタントバッファ、サンプラー、テクスチャの3つのデータをシェーダに渡す場合、それらを渡すための定義が必要になります。
-　このサンプルでは、三角形を描画するわけですが、描画方法は<b>頂点データのみ</b>となります。ですから、以下のような記述になります。
-<div class="box1">
-<pre>
-///ルートシグネチャ作成
-void TriangleObject::CreateRootSignature() {
-    m_RootSignature = RootSignature::CreateSimple();
-}
-</pre>
-</div>
-　<b>RootSignature::CreateSimple関数</b>を読んでいるわけですが、これの実体は以下です。
-<div class="box1">
-<pre>
-//一番シンプルなルートシグネチャ
-static inline ComPtr&lt;ID3D12RootSignature> CreateSimple() {
-    auto Dev = App::GetApp()->GetDeviceResources();
-    ComPtr&lt;ID3D12RootSignature> Ret = Dev->GetRootSignature(L"Simple");
-    if (Ret != nullptr) {
-        return Ret;
-    }
-
-    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(0, nullptr, 0, nullptr, 
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-    Ret = CreateDirect(rootSignatureDesc);
-    Dev->SetRootSignature(L"Simple", Ret);
-    return Ret;
-}
-</pre>
-</div>
-　ここでは、テクスチャ（シェーダーリソース）もサンプラーも、コンスタントバッファも指定しません。シェーダーに入れるのは頂点データのみなのでこのような<b>ルートシグネチャ</b>になります。<br />
-<br />
-<h4>CreatePipelineState関数</h4>
-　ここでは<b>パイプラインステート</b>を作成します。
-<div class="box1">
-<pre>
-///パイプラインステート作成
-void TriangleObject::CreatePipelineState() {
-    //パイプラインステートの定義
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
-    m_PipelineState 
-    = PipelineState::CreateDefault2D&lt;VertexPositionColor, 
-        VSPCDirect, PSPCDirect>(m_RootSignature, PineLineDesc);
-}
-</pre>
-</div>
-　ここで呼び出している<b>PipelineState::CreateDefault2D</b>はテンプレート関数になっていて、基本的な２Ｄのパイプラインの設定を行います。使用するシェーダと頂点形式をテンプレート引数に渡します。
-　また、パイプラインステートを作成するのに<b>ルートシグネチャ</b>が必要になります。<br />
-<br />
-<h4>CreateCommandList関数</h4>
-　この関数で<b>コマンドリスト</b>を作成します。中身は単純です。
-<div class="box1">
-<pre>
-///コマンドリスト作成
-void TriangleObject::CreateCommandList() {
-    m_CommandList = CommandList::CreateDefault(m_PipelineState);
-    CommandList::Close(m_CommandList);
-}
-</pre>
-</div>
-　このように、Dx12描画にはこれらの3つのリソースが必ず必要になります。このサンプルは、非常に単純なのでそれぞれの初期化関数も単純になってますが、この後のサンプルでは、徐々に複雑になっていきます。<br />
-　まずは、Dx12描画の基本だけをおさえてもらえればと思います。<br />
-<br />
-<h4>描画処理</h4>
-　上記3つの関数は<b>初期化処理</b>です。実際の描画は<b>TriangleObject::DrawObject関数</b>に記述します。
-<div class="box1">
-<pre>
-///描画処理
-void TriangleObject::DrawObject() {
-    auto Dev = App::GetApp()->GetDeviceResources();
-    //コマンドリストのリセット
-    CommandList::Reset(m_PipelineState, m_CommandList);
-    //メッシュが更新されていればリソース更新
-    m_TriangleMesh->UpdateResources&lt;VertexPositionColor>(m_CommandList);
-
-    m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-
-    m_CommandList->RSSetViewports(1, &Dev->GetViewport());
-    m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
-
-    //レンダーターゲットビューのハンドルを取得
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle = Dev->GetRtvHandle();
-    //デプスステンシルビューのハンドルを取得
-    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle = Dev->GetDsvHandle();
-    //取得したハンドルをセット
-    m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_CommandList->IASetVertexBuffers(0, 1, &m_TriangleMesh->GetVertexBufferView());
-    m_CommandList->DrawInstanced(m_TriangleMesh->GetNumVertices(), 1, 0, 0);
-
-    //コマンドリストのクローズ
-    CommandList::Close(m_CommandList);
-    //デバイスにコマンドリストを送る
-    Dev->InsertDrawCommandLists(m_CommandList.Get());
-}
-</pre>
-</div>
-　ここでは、初期化処理で作成した<b>コマンドリスト</b>による描画命令を記述します。<br />
-　内容的にはDx11の<b>デバイスコンテキスト</b>の処理に似ています。違いは、最後に<b>Dev->InsertDrawCommandLists関数</b>を呼んでいます。この関数はDx12の関数ではなく、フレームワークの関数です。
-　どういう関数かというと<b>コマンドリスト</b>を貯める（一時的に保持する）関数です。<br />
-　フレームワークではこのように、いくつものコマンドリストを貯めておいて、描画ターンの最後に<b>コマンドリストの実行</b>を行うことで描画処理をします。<br />
-<br />
-<br />
-　さて、このような三角形クラスをゲーム上に配置するのは、シーンの役割です。<b>Scene.h/cpp</b>に記述があります。<br />
-　まず、<b>Scene.h</b>に宣言があります。
-<div class="box1">
-<pre>
-//--------------------------------------------------------------------------------------
-/// ゲームシーン
-//--------------------------------------------------------------------------------------
-class Scene : public SceneInterface {
-    shared_ptr&lt;TriangleObject> m_TriangleObject;
-public:
-    //中略
-};
-</pre>
-</div>
-　ここでメンバ変数になってる<b>m_TriangleObject</b>が三角形オブジェクトのshared_ptrです。<br />
-　これを、シーンの<b>OnCreate</b>で初期化します。
-<div class="box1">
-<pre>
-void Scene::OnCreate() {
-    //三角形の作成
-    m_TriangleObject = ObjectFactory::Create&lt;TriangleObject>();
-}
-</pre>
-</div>
-　そして、シーンの<b>OnDraw()</b>で描画します。
-<div class="box1">
-<pre>
-void Scene::OnDraw() {
-    //描画デバイスの取得
-    auto Dev = App::GetApp()->GetDeviceResources();
-    Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
-    //デフォルト描画の開始
-    Dev->StartDefultDraw();
-    //三角形の描画
-    m_TriangleObject->OnDraw();
-    //デフォルト描画の終了
-    Dev->EndDefultDraw();
-}
-</pre>
-</div>
-　ここで、三角形の<b>OnDraw()</b>を呼び出しているため、<b>TriangleObject::OnDraw()</b>が実行されます。<br />
-　<b>TriangleObject::OnDraw()</b>は<b>TriangleObject::DrawObject()</b>を呼び出します。<br />
-　上記（このページの上のほう）で、<b>ShapeInterfaceクラス</b>は重要ではない、といったのは実は、この、シーンのOnDraw()で、呼び出す三角形の描画関数名は何でもいいのです。<br/>
-　つまり、三角形オブジェクトが<b>OnRender()関数</b>を持ち、シーンからその関数を呼び出せば、結果同じになります。<br />
-　このあたりがシンプルバージョンの融通性でもあります。これがフルバージョンでは、OnDraw()やOnUpdate()は必ずこの仮想関数でなければなりません。<br />
-　ということは逆に考えれば<b>仮想関数がお嫌いなら使わなくてもよい</b>ということになります。描画を呼び出すのはシーンですし、シーンはゲーム側のオブジェクトですから、そのあたりの設計は、ライブラリ（つまりBaseCross側）は関係ないのです。<br />
-　以上、Dx12側の説明は終わりです。<br/>
-<br />
 <h4>Dx11版解説</h4>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
 　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
@@ -287,7 +94,7 @@ void TriangleObject::OnDraw() {
 　さてこうしたうえで、シーンでのこのオブジェクトの準備と、描画呼び出しはDx12版と変わりませんので、上記説明を読んでください。<br />
 <br />
 <h4>まとめ</h4>
-　このようにDx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。Dx12の場合は、ルートシグネチャやパイプライステート、コマンドリストを使用して描画します。<br />
+　Dx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。<br />
 　前述したブログも参考になると思いますので、このあたりを研究しながら自作してみるのもいいと思います。<br />
 <br />
 　以降、こんな感じでサンプルの解説を行っていきたいと思います。

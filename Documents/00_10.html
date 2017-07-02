@@ -8,17 +8,16 @@
 <!-- 全体コンテナ　-->
 <div id="container">
 <div id="header">
-<h2>０．シンプルバージョンサンプル</h2>
+<h2>０．シンプルバージョンサンプル(Dx11版)</h2>
 </div>
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>０１０．立方体とライティング</h3>
+<h3>０１０．立方体とライティング(Dx11版)</h3>
 　このサンプルは<b>SimplSample010</b>というディレクトリに含まれます。<br />
-　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 <br />
-　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+　実行結果は以下のような画面が出ます。
 <p>&nbsp;</p>
 <img src="img/0010a.png" width="80%"/>
 <p>図0010a</p>
@@ -37,107 +36,6 @@
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormal型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
 <br />
 　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
-<br />
-<h3>【Dx12版解説】</h3>
-　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
-<br/>
-<h4>■初期化■</h4>
-　初期化は、まず<b>頂点の配列、インデックスの配列</b>を初期化し<b>メッシュ</b>を作成します。インスタンス構築時のパラメータで<b>法線</b>の作成方法を変えます。<b>CubeObject::CreateBuffers()関数</b>でその処理をしています。<br />
-<div class="box1">
-<pre>
-void CubeObject::CreateBuffers() {
-    float HelfSize = 0.5f;
-    vector&lt;Vector3> PosVec = {
-        { Vector3(-HelfSize, HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, -HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, HelfSize) },
-        { Vector3(-HelfSize, HelfSize, HelfSize) },
-        { Vector3(HelfSize, -HelfSize, HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, HelfSize) },
-    };
-    vector&lt;UINT> PosIndeces = {
-        0, 1, 2, 3,
-        1, 4, 3, 6,
-        4, 5, 6, 7,
-        5, 0, 7, 2,
-        5, 4, 0, 1,
-        2, 3, 7, 6,
-    };
-
-    vector&lt;Vector3> FaceNormalVec = {
-        { Vector3(0, 0, -1.0f) },
-        { Vector3(1.0f, 0, 0) },
-        { Vector3(0, 0, 1.0f) },
-        { Vector3(-1.0f, 0, 0) },
-        { Vector3(0, 1.0f, 0) },
-        { Vector3(0, -1.0f, 0) }
-    };
-
-    vector&lt;VertexPositionNormal> vertices;
-    vector&lt;uint16_t> indices;
-    UINT BasePosCount = 0;
-    for (int i = 0; i &lt; 6; i++) {
-        for (int j = 0; j &lt; 4; j++) {
-            VertexPositionNormal Data;
-            Data.position = PosVec[PosIndeces[BasePosCount + j]];
-            <span class="red">if (m_Flat) </span>{
-                //フラット表示の場合は法線は頂点方向にする
-                Data.normal = Data.position;
-                Data.normal.Normalize();
-            }
-            else {
-                //フラット表示しない場合は、法線は面の向き
-                Data.normal = FaceNormalVec[i];
-            }
-            vertices.push_back(Data);
-        }
-
-        indices.push_back((uint16_t)BasePosCount + 0);
-        indices.push_back((uint16_t)BasePosCount + 1);
-        indices.push_back((uint16_t)BasePosCount + 2);
-        indices.push_back((uint16_t)BasePosCount + 1);
-        indices.push_back((uint16_t)BasePosCount + 3);
-        indices.push_back((uint16_t)BasePosCount + 2);
-
-        BasePosCount += 4;
-    }
-    //メッシュの作成（変更できない）
-    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-}
-</pre>
-</div>
-　上記、赤くなっているところは構築時に渡されるフラグです<b>m_Flat</b>が<b>フラット表示にするかどうか</b>で、<b>向かって右側の立方体</b>での表示方法です。<b>フラットかそうでないか</b>は<b>法線の向き</b>できまります。<b>法線が面に対して垂直</b>の場合は<b>通常</b>の表示です。<b>中心から頂点への直線の向き</b>にすると<b>フラット</b>になります。<br />
-　メッシュを作成したら<b>DX12リソース</b>の初期化を行います。<br />
-<br />
-<h4>■ルートシグネチャ作成■</h4>
-　<b>CubeObject::CreateRootSignature()関数</b>です。コンスタントバッファのみの<b>ルートシグネチャ</b>です。<br />
-<br />
-<h4>■デスクプリタヒープ作成■</h4>
-　<b>CubeObject::CreateDescriptorHeap()関数</b>です。コンスタントバッファのみの<b>デスクプリタヒープ</b>です。<br />
-<br />
-<h4>■コンスタントバッファ作成■</h4>
-　<b>CubeObject::CreateConstantBuffer()関数</b>です。<b>StaticConstantBuffer構造体</b>で作成します。<br />
-　今項では、前回までの構造体に<b>LightDir（ライト方向）</b>と<b>Diffuse（ディフューズ）</b>要素が加わります。<br />
-<br />
-<h4>■パイプラインステート作成■</h4>
-　<b>CubeObject::CreatePipelineState()関数</b>です。<b>頂点型、頂点シェーダ型、ピクセルシェーダ型</b>を渡して、テンプレート関数を呼び出します。<br />
-<br />
-<h4>■コマンドリスト作成■</h4>
-　<b>CubeObject::CreateCommandList()関数</b>です。デフォルトの処理です。
-<br />
-<h4>■コンスタントバッファの更新■</h4>
-　<b>CubeObject::UpdateConstantBuffer()関数</b>です。ここで<b>ライト方向</b>も作成してコンスタントバッファを作成します。<br />
-　通常は<b>ライト</b>は、ゲームステージなどに持たせて、配置されるオブジェクトで共有します。今回は簡易的に直接設定しています。また、ビューや射影行列を作成する<b>カメラ</b>も、通常は共通のものを使いますが、ここで即値で設定しています。<br />
-<br />
-<h4>■更新処理■</h4>
-　<b>CubeObject::OnUpdate()関数</b>です。オブジェクトを回転させています。<br />
-<br />
-<h4>■描画処理■</h4>
-　<b>CubeObject::DrawObject()関数</b>です。前項と変わりません。<br />
-<br />
-　以上、Dx12側の説明は終わりです。<br/>
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />

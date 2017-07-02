@@ -1,0 +1,260 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル(Dx12版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>００５．テクスチャ付き四角形の描画(Dx12版)</h3>
+　このサンプルは<b>SimplSample005</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0005a.png" width="80%"/>
+<p>図0005a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/pXvNQcw-lgU?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionTexture型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
+　またテクスチャも描画します。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>SquareSprite::OnUpdate()関数</b>には、それぞれの四角形を個別に更新する方法が記述されています。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　初期化は、<b>SquareSprite::OnCreate()関数</b>で行います。ここでは、<b>頂点とインデックスの配列</b>を作成し、それをもとに<b>メッシュリソース</b>を作成します。ここでは、前回までのサンプルとは違い<b>VertexPositionTexture型</b>の頂点になります（つまりテクスチャUV値が含まれます）。<br />
+　メッシュを作成した後<b>テクスチャリソースの作成</b>を行います。ここでは、コンストラクタで渡されたテクスチャファイル名を渡すことでテクスチャリソースを初期化します。<b>L"WIC"</b>というのは、テクスチャファイルのファイル形式です。<b>L"WIC"</b>というのは<b>Windows Imaging Component</b>の略で、BMP、JPEG、PNGなど、一般的な画像形式はこのタイプで読み込めます。<b>L"WIC"</b>以外では<b>L"DDS"</b>、<b>L"TGA"</b>があります。前者はDirectX独特の圧縮ファイル形式で、後者はいわゆる<b>タルガ</b>と呼ばれる場合もありますが、フォトショップでも書き出せる画像フォーマットです。<br />
+　ただし、これらの読み込みはプロジェクトとして組み込んでいる<b>DirectXTex</b>の機能に依存しています。<br />
+<br />
+　テクスチャを読み込んだ後は、いつものように<b>Dx12リソース</b>の初期化になりますが、今サンプルは前サンプルと、頂点フォーマットも違いますので、リソースの作成も変わります。<br />
+<br />
+<h4>■ルートシグネチャ作成■</h4>
+　<b>ルートシグネチャ</b>は、以下のように<b>RootSignature::CreateSrvSmpCbv()関数</b>で初期化します。
+<div class="box1">
+<pre>
+void SquareSprite::CreateRootSignature() {
+    //ルートシグネチャ
+    m_RootSignature = <span class="red">RootSignature::CreateSrvSmpCbv()</span>;
+}
+</pre>
+</div>
+　この関数は、以下のようになってます。
+<div class="box1">
+<pre>
+//シェーダリソースとサンプラーとコンスタントバッファ
+static inline ComPtr&lt;ID3D12RootSignature> CreateSrvSmpCbv() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    ComPtr&lt;ID3D12RootSignature> Ret = Dev->GetRootSignature(L"SrvSmpCbv");
+    if (Ret != nullptr) {
+        return Ret;
+    }
+
+    CD3DX12_DESCRIPTOR_RANGE ranges[3];
+    <span class="red">ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);</span>
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+
+    CD3DX12_ROOT_PARAMETER rootParameters[3];
+    <span class="red">rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);</span>
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+
+    CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr,
+         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    Ret = CreateDirect(rootSignatureDesc);
+    Dev->SetRootSignature(L"SrvSmpCbv", Ret);
+    return Ret;
+}
+</pre>
+</div>
+　コメントの通り<b>シェーダリソースとサンプラーとコンスタントバッファ</b>を持つルートシグネチャということになります。<br />　まず<b>CD3DX12_DESCRIPTOR_RANGE</b>（デスクプリタレンジ）は３つ作成します<br />。
+　今回新しく登場したレンジは<b>シェーダーリソースビュー</b>と<b>サンプラー</b>です（赤くなってます）。<br />
+　１つ目のレンジは、<b>シェーダーリソースビュー</b>として使用します。テクスチャはDirectXの内部的には（Dx11も同じ）、<b>シェーダーリソースビュー</b>として作成します。そのためタイプ名は<b>D3D12_DESCRIPTOR_RANGE_TYPE_SRV</b>と<b>SRV</b>が付きます。<br />
+　２つめのレンジは<b>サンプラー</b>として作成します。テクスチャは<b>シェーダリソースビュー</b>と<b>サンプラー</b>がないと表示できません。タイプ名は<b>D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER</b>です。<br />
+　３つ目のレンジは<b>コンスタントバッファ</b>です。これは前サンプルと同じです。<br />
+　このようにして作成した<b>デスクプリタレンジ</b>を使って<b>ルートパラメータ</b>を作成します。最初のレンジ（シェーダーリソースビュー）と2番目のレンジ（サンプラー）は、ピクセルシェーダのみに渡します。３つ目の<b>コンスタントバッファ</b>はすべてのシェーダに渡します。<br />
+　そのようにして作成した<b>ルートパラメータ</b>を使用して、<b>ルートシグネチャ</b>を作成します。<br />
+<br />
+<h4>■デスクプリタヒープ作成■</h4>
+　<b>デスクプリタヒープ</b>は、以下のように作成します。デスクリタヒープは2つ作成する必要があります。<br />
+　<b>シェーダーリソースビュー及びコンスタントバッファ</b>用のものと<b>サンプラー</b>用のものです。<br />
+　<b>m_CbvSrvUavDescriptorHeap</b>が前者で、<b>m_SamplerDescriptorHeap</b>が後者です。
+<div class="box1">
+<pre>
+void SquareSprite::CreateDescriptorHeap() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    m_CbvSrvDescriptorHandleIncrementSize =
+    Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    //CbvSrvデスクプリタヒープ
+    m_CbvSrvUavDescriptorHeap = <span class="red">DescriptorHeap::CreateCbvSrvUavHeap(1 + 1)</span>;
+    //サンプラーデスクプリタヒープ
+    m_SamplerDescriptorHeap = <span class="red">DescriptorHeap::CreateSamplerHeap(1)</span>;
+    //GPU側デスクプリタヒープのハンドルの配列の作成
+    m_GPUDescriptorHandleVec.clear();
+    CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
+        m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );
+    m_GPUDescriptorHandleVec.push_back(SrvHandle);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
+        m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );
+    m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+    CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+        m_CbvSrvUavDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+        1,
+        m_CbvSrvDescriptorHandleIncrementSize
+    );
+    m_GPUDescriptorHandleVec.push_back(CbvHandle);
+}
+</pre>
+</div>
+　<b>DescriptorHeap::CreateCbvSrvUavHeap()関数</b>で<b>シェーダーリソースビュー及びコンスタントバッファ</b>用のヒープを作成します。<b>DescriptorHeap::CreateSamplerHeap()関数</b>で<b>サンプラー</b>用のヒープです。ハンドル数は前者が２つ、後者が１つになります。<br />
+　その後<b>GPU側デスクプリタヒープのハンドルの配列</b>を作成します。この配列には、<b>m_CbvSrvUavDescriptorHeap内</b>のハンドルと<b>m_SamplerDescriptorHeap内</b>のハンドルを混在させてもかまいません。<br/>
+<br />
+<h4>■サンプラー作成■</h4>
+　ここではデフォルトの２Ｄのサンプラーを作成しておきます。、<br />
+<br />
+<h4>■シェーダーリソースビュー作成■</h4>
+　<b>シェーダーリソースビュー</b>は、m_CbvSrvUavDescriptorHeapにテクスチャリソースを結び付ける形で作成します。<br />
+　<b>SquareSprite::CreateShaderResourceView()関数</b>がその関数です。
+<div class="box1">
+<pre>
+void SquareSprite::CreateShaderResourceView() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    //テクスチャハンドルを作成
+    <span class="red">CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
+        m_CbvSrvUavDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+        0,
+        0
+    );</span>
+    //テクスチャのシェーダリソースビューを作成
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    //フォーマット
+    srvDesc.Format = <span class="red">m_TextureResource->GetTextureResDesc().Format</span>;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = <span class="red">m_TextureResource->GetTextureResDesc().MipLevels</span>;
+    //シェーダリソースビュー
+    Dev->GetDevice()->CreateShaderResourceView(
+        <span class="red">m_TextureResource->GetTexture().Get()</span>,
+        &srvDesc,
+        <span class="red">Handle</span>);
+}
+</pre>
+</div>
+　赤くなっているところが、<b>m_CbvSrvUavDescriptorHeapとテクスチャリソース</b>を結びつけるのに重要な処理です。<br />
+<br />
+<h4>■コンスタントバッファ作成■</h4>
+　<b>コンスタントバッファ</b>は、コンスタントバッファ構造体の型は違いますが、作成手順は前サンプルと同じです。<br />
+<br />
+<h4>■パイプラインステート作成■</h4>
+　このオブジェクトは<b>透明処理をするかしないか</b>を分けます。<b>m_Trace</b>メンバ変数が<b>true</b>だった場合、<b>透明処理</b>になります。<br />
+　<b>透明処理</b>は<b>ブレンドステート</b>を変更することで<b>透明</b>にします。
+<div class="box1">
+<pre>
+void SquareSprite::CreatePipelineState() {
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC PineLineDesc;
+    m_PipelineState
+    = PipelineState::CreateDefault2D&lt;VertexPositionTexture, 
+    VSPTSprite, PSPTSprite>(m_RootSignature,PineLineDesc);
+    //透明の場合はブレンドステート差し替え
+    <span class="red">if (m_Trace) {
+        D3D12_BLEND_DESC blend_desc;
+        D3D12_RENDER_TARGET_BLEND_DESC Target;
+        ZeroMemory(&blend_desc, sizeof(blend_desc));
+        blend_desc.AlphaToCoverageEnable = false;
+        blend_desc.IndependentBlendEnable = false;
+        ZeroMemory(&Target, sizeof(Target));
+        Target.BlendEnable = true;
+        Target.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+        Target.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+        Target.BlendOp = D3D12_BLEND_OP_ADD;
+        Target.SrcBlendAlpha = D3D12_BLEND_ONE;
+        Target.DestBlendAlpha = D3D12_BLEND_ZERO;
+        Target.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+        Target.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        for (UINT i = 0; i &lt; D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
+            blend_desc.RenderTarget[i] = Target;
+        }
+        PineLineDesc.BlendState = blend_desc;
+        m_PipelineState = PipelineState::CreateDirect(PineLineDesc);
+    }</span>
+}
+</pre>
+</div>
+　<b>if (m_Trace)</b>の場合の分岐が<b>透明処理</b>です。<br />
+<br />
+<h4>■コマンドリスト作成■</h4>
+　<b>コマンドリスト</b>はデフォルト処理です。<br />
+<br />
+<h4>■コンスタントバッファの更新■</h4>
+　<b>コンスタントバッファの更新</b>は前サンプルと同様です。コンスタントバッファ構造体の内容が違うだけです。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>更新処理</b>は、<b>SquareSprite::OnUpdate()関数</b>で実装されます。左右に移動しながら、中心からの距離が一定以上になれば逆向きに移動する形です。回転も移動方向に応じて別の回転をかけています。<br />
+　この処理は<b>Dx11版</b>も変わりません。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>描画処理</b>で気を付けたいのは、<b>テクスチャ</b>です。すでに<b>シェーダーリソースビューの作成</b>で、<b>デスクプリタヒープ</b>と結び付けられているので、描画処理でテクスチャを設定する必要はありません。その代り<b>デスクプリタヒープ</b>は２つ、しっかりと設定する必要があります。以下は描画処理の抜粋ですが、<b>デスクプリタヒープ</b>を設定しているところを抜粋しています。
+<div class="box1">
+<pre>
+void SquareSprite::DrawObject() {
+    //中略
+
+    <span class="red">ID3D12DescriptorHeap* ppHeaps[] = 
+    { m_CbvSrvUavDescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };</span>
+    m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+    for (size_t i = 0; i &lt; m_GPUDescriptorHandleVec.size(); i++) {
+        m_CommandList->SetGraphicsRootDescriptorTable(i, m_GPUDescriptorHandleVec[i]);
+    }
+
+    //中略
+}
+</pre>
+</div>
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<h3>【まとめ】</h3>
+　こうしてみると、<b>Dx12版</b>は初期化時に設定してしまう作りになっているのがわかります。つまり、動的に描画方法などを変更する場合は<b>Dx11版</b>のほうが記述しやすいと思います。<br />
+　ただ、<b>動的な変更</b>ができるとは言っても、<b>Dx11内部</b>ではそのためにいろいろ負担はかかっているわけで、全部自分で記述しなければならない<b>Dx12版</b>のほうが<b>軽くしようと思えばいろいろ検討できる</b>というのがわかります。<br />
+　もちろん<b>Dx12版</b>であっても<b>動的に変更できる</b>ようには記述できます。<b>Dx11内部</b>で行っているであろう処理を、ゲームプログラマ自身で、記述すればいいのですから・・・。<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="10_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="10_06.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

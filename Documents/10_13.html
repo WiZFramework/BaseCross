@@ -1,0 +1,168 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル(Dx12版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０１３．コントローラとキーボード入力(Dx12版)</h3>
+　このサンプルは<b>SimplSample013</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/0013a.png" width="80%"/>
+<p>図0013a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/BLLu7b3Jvow?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　今項のサンプルは描画は前項と同じです。BaseCrossにおける、<b>キーボード、マウスと、XBoxコントローラの入力</b>を受け取る方法を説明します。<br />
+<br />
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormalTexture型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
+<br />
+　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+<br/>
+<h4>■初期化■</h4>
+　初期化は、まず<b>頂点の配列、インデックスの配列</b>を初期化し<b>メッシュ</b>を作成します。<br />
+　メッシュを作成したら<b>DX12リソース</b>の初期化を行います。<br />
+　今回描画するオブジェクトは2種類あります。<b>SquareObjectとSphereObject</b>です。前者はプレートになってる平面で、後者は球体です。<br/>
+　<b>ルートシグネチャ、デスクプリタヒープ、サンプラー、シェーダーリソースビュー、コンスタントバッファ、パイプラインステート、コマンドリストそれぞれの作成と、コンスタントバッファ更新</b>は前項と同じです。<br />
+<br />
+<h4>■更新処理■</h4>
+　<b>SphereObject::OnUpdate()関数</b>で、キーボードやマウス、コントローラ入力を行ってます。この処理は<b>Dx11版</b>も同じです。<br />
+<br />
+<h4>■キーボードとマウス入力準備■</h4>
+　<b>キーボードとマウス入力</b>を実装するには<b>メインプロジェクト内</b>の<b>WinMain.cpp</b>に<b>入力を受け付けるキー</b>を登録します。<br />
+　<b>int MainLoop()関数</b>内の以下の箇所に記述します。
+<div class="box1">
+<pre>
+int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, 
+    int iClientWidth, int iClientHeight) {
+
+    //中略
+
+    try {
+
+    //中略
+
+        //メッセージループ
+        MSG msg = { 0 };
+        <span class="red">//キーボード入力用
+        //ここに設定したキーボード入力を得る
+        vector&lt;DWORD> UseKeyVec = {
+            'F', 'G', 'T','V',VK_LBUTTON, VK_RBUTTON
+        };</span>
+        while (WM_QUIT != msg.message) {
+            if (!App::GetApp()->ResetInputState(hWnd, UseKeyVec)) {
+                //キー状態が何もなければウインドウメッセージを得る
+                if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+                    //キーボードとマウス状態をリセット
+                    TranslateMessage(&msg);
+                    DispatchMessage(&msg);
+                }
+            }
+            //更新描画処理
+            App::GetApp()->UpdateDraw(1);
+        }
+        //msg.wParamには終了コードが入っている
+        RetCode = (int)msg.wParam;
+    }
+
+    //中略
+}
+</pre>
+</div>
+　上記、赤くなってるところのように、使用するキーボードやマウスのキーを登録します。（VK_LBUTTONはマウスの左ボタンです）。こうしておくとキーボードやマウス入力を受け取れ利用になります。<br />
+<br />
+<h4>■コントローラ入力準備■</h4>
+　<b>XBoxコントローラ入力</b>は特別な準備は必要ありません。<br />
+<br />
+<h4>■各入力の受付■</h4>
+　各入力機器からの受付は、<b>SphereObject::OnUpdate()関数</b>で行います。<br />
+<div class="box1">
+<pre>
+void SphereObject::OnUpdate() {
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    <span class="red">//コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    //キーボードとマウスの取得
+    auto Key = App::GetApp()->GetInputDevice().GetKeyState();
+    //位置情報の退避
+    Vector3 TempPos = m_Pos;
+    if (CntlVec[0].bConnected) {
+        if (CntlVec[0].fThumbLX != 0) {
+            m_Pos.x += (CntlVec[0].fThumbLX * ElapsedTime * 5.0f);
+        }
+        if (CntlVec[0].fThumbLY != 0) {
+            m_Pos.z += (CntlVec[0].fThumbLY * ElapsedTime * 5.0f);
+        }
+    }
+    if (Key.m_bPushKeyTbl['F'] || Key.m_bPushKeyTbl[VK_LBUTTON]) {
+        m_Pos.x -= ElapsedTime * 5.0f;
+    }
+    else if (Key.m_bPushKeyTbl['G'] || Key.m_bPushKeyTbl[VK_RBUTTON]) {
+        m_Pos.x += ElapsedTime * 5.0f;
+    }
+    if (Key.m_bPushKeyTbl['T']) {
+        m_Pos.z += ElapsedTime * 5.0f;
+    }
+    else if (Key.m_bPushKeyTbl['V']) {
+        m_Pos.z -= ElapsedTime * 5.0f;
+    }</span>
+    TempPos = m_Pos - TempPos;
+    if (TempPos.Length() > 0) {
+        //移動した
+        TempPos.Normalize();
+        float Angle = atan2(TempPos.x, TempPos.z);
+        m_Qt.RotationAxis(Vector3(0, 1.0f, 0), Angle);
+        m_Qt.Normalize();
+    }
+}
+</pre>
+</div>
+　赤くなっているところのように、コントローラなら<b>CntlVec</b>、キーボードなら<b>Key</b>のように、<b>Appクラス</b>から情報を取り出しそれに合わせて移動などの処理を行ってます。<br />
+　<b>ElapsedTime</b>は、前回のターンからの<b>経過時間</b>を取得できます。1回のターンはおおむね<b>60分の1秒</b>かかりますが、ほかのアプリの影響、あるいはゲーム時間の処理が多くて重い、などの時にターン間隔がまちまちになります。そのあたりの差異を吸収するために、<b>ElapsedTime</b>を使って移動距離などを算出するとより正確になります。<br />
+　とはいえ、極端に遅い（ターン間隔が30分の1秒未満くらい）などになると、どうしても処理落ちしますので注意しましょう。<br />
+<br />
+<h4>■描画処理■</h4>
+　前項と同じです。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<br />
+<h3>【まとめ】</h3>
+　今項は<b>入力受付</b>の方法の説明でした。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="10_12.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="10_14.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

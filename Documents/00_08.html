@@ -8,17 +8,16 @@
 <!-- 全体コンテナ　-->
 <div id="container">
 <div id="header">
-<h2>０．シンプルバージョンサンプル</h2>
+<h2>０．シンプルバージョンサンプル(Dx11版)</h2>
 </div>
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>００８．頂点色とテクスチャの合成</h3>
+<h3>００８．頂点色とテクスチャの合成(Dx11版)</h3>
 　このサンプルは<b>SimplSample008</b>というディレクトリに含まれます。<br />
-　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 <br />
-　どちらのソリューションでも、実行結果は以下のような画面が出ます。
+　実行結果は以下のような画面が出ます。
 <p>&nbsp;</p>
 <img src="img/0008a.png" width="80%"/>
 <p>図0008a</p>
@@ -38,105 +37,6 @@
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。２種類のセットがあります。<b>VertexPositionTexture型</b>の頂点を持つもの用と<b>VertexPositionColorTexture型</b>のものです。<b>コンスタントバッファ</b>の2種類あります。<br />
 <br />
 　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、それぞれの四角形を個別に更新する方法が記述されています。<br />
-<br />
-<h3>【Dx12版解説】</h3>
-　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
-<br/>
-<h4>■初期化■</h4>
-　<b>Dx12版</b>の初期化は<b>描画クラス</b>で行います。今項のサンプルでは<b>描画クラス</b>は階層化されています。すなわち<b>SpriteDrawクラス</b>が親クラス。<b>PCTSpriteDrawクラス</b>と<b>PTSpriteDrawクラス</b>が子クラスの関係で、<b>描画クラス</b>を構成します。<br/>
-　しかしながら、ほとんどの<b>Dx12リソース</b>の初期化は親クラス側で行います。今回のオブジェクトの描画処理で違いがあるのは<b>コンスタントバッファ</b>と<b>パイプラインステート</b>です。違いがあるといってもそんなに大きな違いがあるわけではありません。前者は<b>コンスタントバッファのサイズ</b>が違うだけで、後者は<b>シェーダと頂点データの型</b>が違うだけです。ですので、コンスタントバッファについては<b>サイズをパラメータ化して初期化</b>という方法が取れますし、後者は<b>テンプレートで型を渡す</b>方法で親クラス側に初期化関数を持たせることができます。それらは<b>SpriteDraw::CreateConstantBufferBase()</b>関数、<b>SpriteDraw::CreatePipelineStateBase()</b>テンプレート関数という形で、親クラス側に実装されています。<br/>
-<br />
-<h4>■ルートシグネチャ作成■</h4>
-　<b>ルートシグネチャ</b>は<b>SpriteDraw::CreateRootSignature()関数</b>で行います。<b>シェーダリソースビュー、サンプラー、コンスタントバッファ</b>を持つルートシグネチャです。<br />
-<br />
-<h4>■デスクプリタヒープ作成■</h4>
-　<b>デスクプリタヒープ</b>は<b>SpriteDraw::CreateDescriptorHeap()関数</b>で行います。前項と同じです。<br />
-<br />
-<h4>■サンプラー作成■</h4>
-　<b>SpriteDraw::CreateSampler()関数</b>で行います。ラッピングサンプラーです。<br />
-<br />
-<h4>■シェーダーリソースビュー作成■</h4>
-　<b>SpriteDraw::CreateShaderResourceView()関数</b>で行います。前項と同じです。<br />
-<br />
-<h4>■コンスタントバッファ作成■</h4>
-　<b>コンスタントバッファ</b>は親クラス側では<b>SpriteDraw::CreateConstantBufferBase()関数</b>で行います。このクラスは引数に<b>コンスタントバッファのサイズ</b>を渡します。子クラス側でサイズを指定して、親クラス側の関数を呼び出します。<br />
-<br />
-<h4>■パイプラインステート作成■</h4>
-　<b>パイプラインステート</b>は親クラス側では<b>SpriteDraw::CreatePipelineStateBase()テンプレート関数</b>が用意されています。子クラス側で頂点型、シェーダ型を渡してこのテンプレート関数を呼び出します。<br />
-<br />
-<h4>■コマンドリスト作成■</h4>
-　デフォルト処理です。<b>SpriteDraw::CreateCommandList()関数</b>で行います。<br />
-<br />
-<h4>■コンスタントバッファの更新■</h4>
-　子クラス側の<b>UpdateConstantBuffer()関数</b>で行います。この関数は引数にコンスタントバッファの構造体を渡します。これは子クラスごとに違います。<br />
-<br />
-<h4>■初期化のメカニズム■</h4>
-　これらの<b>DX12リソース</b>の初期化を実装するのは、<b>SpriteDraw::OnCreate()関数</b>です。
-<div class="box1">
-<pre>
-void SpriteDraw::OnCreate() {
-    //テクスチャの作成
-    m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-    ///各初期化関数呼び出し
-    ///ルートシグネチャ作成
-    CreateRootSignature();
-    ///デスクプリタヒープ作成
-    CreateDescriptorHeap();
-    ///サンプラー作成
-    CreateSampler();
-    ///シェーダーリソースビュー作成
-    CreateShaderResourceView();
-    ///コンスタントバッファ作成
-    CreateConstantBuffer();
-    ///パイプラインステート作成
-    CreatePipelineState();
-    ///コマンドリスト作成
-    CreateCommandList();
-}
-</pre>
-</div>
-　ここで呼び出している関数のうち、<b>CreateConstantBuffer()とCreatePipelineState()</b>は純粋仮想関数になってます。ということは子クラス側の関数を呼びだすわけですが、子クラス<b>PCTSpriteDraw</b>の<b>CreateConstantBuffer()</b>は以下のようになってます。
-<div class="box1">
-<pre>
-void PCTSpriteDraw::CreateConstantBuffer() {
-    CreateConstantBufferBase(sizeof(SpriteConstantBuffer));
-}
-</pre>
-</div>
-　子クラス<b>PTSpriteDraw</b>の<b>CreateConstantBuffer()</b>は以下のようになってます。
-<div class="box1">
-<pre>
-void PTSpriteDraw::CreateConstantBuffer() {
-    CreateConstantBufferBase(sizeof(DiffuseSpriteConstantBuffer));
-}
-</pre>
-</div>
-　つまり、<b>コンスタントバッファのサイズ</b>が違うだけなので、引数を変えて親クラスの関数を呼び出すわけです。<br />
-　<b>CreatePipelineState()</b>の子クラス側の関数は、
-<div class="box1">
-<pre>
-void PCTSpriteDraw::CreatePipelineState() {
-    CreatePipelineStateBase&lt;VertexPositionColorTexture, VSPCTSprite, PSPCTSprite>();
-}
-</pre>
-</div>
-　と
-<div class="box1">
-<pre>
-void PTSpriteDraw::CreatePipelineState() {
-    CreatePipelineStateBase&lt;VertexPositionTexture, VSPTSprite, PSPTSprite>();
-}
-</pre>
-</div>
-　という形です。どちらもそれぞれの頂点型とシェーダクラスを渡しています。このように<b>親クラスから純粋仮想関数を呼び出し、子クラスでは親クラスの関数を呼び出す</b>というテクニックは、子クラスごとの実装の違いを分けるのに便利です。<br />
-<br />
-<h4>■更新処理■</h4>
-　初期化はもっぱら<b>Dx12リソース</b>の初期化ですが、更新は、各配置されるオブジェクトの更新です。今項では、中央の流れるテクスチャのクラス<b>SquareSprite</b>の<b>頂点UV値の変更</b>が更新処理です。<b>SquareSprite::UpdateVertex()関数</b>です。この処理は前項と変わりません。<br />
-<br />
-<h4>■描画処理■</h4>
-　描画は<b>描画クラス</b>の<b>DrawObject()関数</b>で行います。描画する前にコンスタントバッファを更新します。<br />
-<br />
-　以上、Dx12側の説明は終わりです。<br/>
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />

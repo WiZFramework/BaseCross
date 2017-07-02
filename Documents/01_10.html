@@ -1,0 +1,203 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１１０．剣で戦う</h3>
+　このサンプルは<b>FullTutorial010</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<b>リリースモード</b>でのビルトをお勧めします。<br />
+　このサンプルにはいくつかのテーマがあります。以下に紹介します。
+<div class="box1">
+<pre>
+１、テンプレートGameObject
+２、行動の使いまわしによるできるだけ少ないコード
+３、セルマップによるAStar検索
+４、細かなステートの変化
+５、剣での戦い
+</pre>
+</div>
+　今項のタイトルにもなっている「剣での戦い」が最後に来ています。実は、このサンプルは「アルゴリズム研究」のサンプルです。<br />
+　「剣の振り方」などの「戦い」に特化したものではないとまずはお考えください。<br />
+<br />
+　ゲームに限らず何かのプログラムを作成する上で、「コードの最小化」は頭のどこかに持っておきたい概念です。<br />
+　例えば、複数の敵が同じような攻撃をしてくる場合、その攻撃行動を敵ごとに記述するのはナンセンスですし、はっきり言ってメモリの無駄です。できるだけ同じようなコードは2回以上は書かずに済ませたいものです。<br />
+　それは必ずしも「速く動作する」に直結するものではありませんが、多くの場合「動作速度が速く」なります。この矛盾した説明をどう説明するか迷うことですが、コードを少なく記述する、ことは「最適化」を常に考えなければなりません。<br />
+　最適化は多くの場合「省力化」を生むことになり、結果として「動作速度が速く」なります。<br />
+<br />
+　このサンプルをビルドして実行すると以下の画面が現れます。<br />
+<p>&nbsp;</p>
+<img src="img/0110a.png" width="80%"/>
+<p>図0110a</p>
+<p>&nbsp;</p>
+　「Aボタン」で、プレイヤーはジャンプします「Xボタン」で剣にのようなオブジェクトを振り、敵を攻撃します。<br />
+　敵は、プレイヤーが敵のテリトリーに入ると攻撃してきます。テリトリーを抜けると「元の場所」に帰ります。<br />
+
+　剣が相手に当たれば、相手ががノックバックします。プレイヤーも同様です。プレイヤー、敵双方ともHP（ライフゲージ）を持ってます。HPが0になると、負けです。倒れこんで黒焦げになります。しかし、これはサンプルですので、一定時間たつと復活します。<br/>
+<br/>
+<h4>テンプレートGameObject</h4>
+　これまでのサンプルでさんざん紹介してきた「GameObjectの派生クラス」ですが、じつはこのクラスは「テンプレートクラス」として作成可能です。<br />
+　このサンプルの「HPクラス（のマネージャクラス）」である「HPManegerクラス」は「Character.h」に記述がありますが、「テンプレートクラス」として実装されてます。<br />
+　「テンプレートクラス」を説明する前に、プレイヤー及び敵に「HPバー」を実装する方法を考えてみます。おおむね以下の3通りの方法があると思います。
+<div class="box1">
+<pre>
+１、プレイヤーと敵の2つのクラス（マネージャ含めると2セットというべきか）を作成する
+２、クラスは1セットだが、プレイヤーや敵が、その「HPバーセット」を管理しHP変更の場合は、そのメンバ関数を呼び出す。
+３、クラスは1セットで、「HPバーマネージャ」がプレイヤー及び敵の「GetHP()関数」呼び出しを行って、HPを取得する。
+</pre>
+</div>
+　1の方法は助長的です。敵の種類が増えるたびに、同じようなHPバークラスを作成する必要があります。<br />
+　1セットの「HPバークラス」で行うのは２か３ですが、２のケースであれば「テンプレートクラス」は必要がありません。<br />
+　３のケースは、「HPバークラス」が、そのバーを保持するオブジェクトのメンバ関数を呼び出す必要があります。例えば「GetHP()関数」などです。しかし、「GetHP()関数」は「GameObjectクラス」には存在しない関数です。ですから、「プレイヤーのGetHP()関数」や、「敵のGetHP()関数」を呼び出すためには、「プレイヤークラス」や「敵クラス」を特定する必要があります。<br />
+　これまでのサンプルでは「dynamic_pointer_cast&lt;T>()関数」や「ステージ」の「GetSharedGameObject&lt;T>()関数」などで特定してきましたが、もう一つの方法として紹介するのが「３のケース」の「テンプレートクラス（テンプレートゲームオブジェクトクラス）」です。<br />
+<br />
+　「HPバー」は「Character.h」に「バーの背景」である「HPSquareBaseクラス」とHPバーそのものの「HPSquareクラス」、そしてそれらを管理するマネージャである「HPManegerテンプレートクラス」で構成されています。<br />
+　「HPManegerクラス」はテンプレートのため、cppへの記述はしません。（すべてヘッダに記述します）<br />
+　以下は「HPManegerクラス」です。そんなに長いコードではないので全部抜粋します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  HPのマネージャ(テンプレートクラス)
+//--------------------------------------------------------------------------------------
+template&lt;typename T>
+class HPManeger : public GameObject {
+    weak_ptr&lt;T> m_TargetObj;
+    weak_ptr&lt;HPSquareBase> m_HPSquareBase;
+    weak_ptr&lt;HPSquare> m_HPSquare;
+    Color4 m_Color;
+
+    void UpdateHPTrans() {
+        auto ShTarget = m_TargetObj.lock();
+        auto ShHPSquareBase = m_HPSquareBase.lock();
+        auto ShHPSquare = m_HPSquare.lock();
+        if (ShTarget && ShHPSquareBase && ShHPSquare) {
+            auto HPBaseTrans = ShHPSquareBase->GetComponent&lt;Transform>();
+            auto HPTrans = ShHPSquare->GetComponent&lt;Transform>();
+            //スケーリング
+            <span class="red">float MaxHP = ShTarget->GetMaxHP();
+            float HP = ShTarget->GetHP();</span>
+            float Width = HP / MaxHP;
+
+            HPBaseTrans->SetScale(0.5f, 0.125f, 0.5);
+            HPTrans->SetScale(0.46f * Width, 0.1f, 0.46f);
+
+            auto TargetTrans = ShTarget->GetComponent&lt;Transform>();
+            auto Pos = TargetTrans->GetPosition();
+            Pos.y += 0.75f;
+            HPBaseTrans->SetPosition(Pos);
+            Pos = Vector3(0, 0, -0.001f);
+            Pos.x -= 0.46f * 0.5f;
+            Pos.x += (0.46f * Width * 0.5f);
+            HPTrans->SetPosition(Pos);
+
+
+            auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
+            Quaternion Qt;
+            //向きをビルボードにする
+            Qt.Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
+            HPBaseTrans->SetQuaternion(Qt);
+        }
+    }
+public:
+    //構築と破棄
+    HPManeger(const shared_ptr&lt;Stage>& StagePtr,
+    <span class="red">const shared_ptr&lt;T>& TargetObj</span>,
+        const Color4& Col):
+        GameObject(StagePtr),
+        m_TargetObj(TargetObj),
+        m_Color(Col)
+    {}
+
+    virtual ~HPManeger() {}
+    //初期化
+    virtual void OnCreate() override {
+        auto HPBase = GetStage()->AddGameObject&lt;HPSquareBase>();
+        auto HP = GetStage()->AddGameObject&lt;HPSquare>(m_Color);
+        auto PtrTrans = HP->GetComponent&lt;Transform>();
+        PtrTrans->SetParent(HPBase);
+
+        m_HPSquareBase = HPBase;
+        m_HPSquare = HP;
+        UpdateHPTrans();
+    }
+
+    virtual void OnUpdate2() override {
+        UpdateHPTrans();
+    }
+
+
+};
+</pre>
+</div>
+　「テンプレートクラス」というのは「クラスの構築にテンプレート引数が必要」なクラスです。<br />
+　テンプレートですから、記述時は「どのクラスが渡されるか」はわかりません。コンパイル時に、クラスが指定されます。<br />
+　ちなみにこのクラスのインスタンス作成は「GamaStgae.cpp」に、「プレイヤーのHPバーを構築」は「GameStage::CreatePlayer()」内で
+<div class="box1">
+<pre>
+    AddGameObject&lt;HPManeger<span class="red">&lt;Player></span>>(PlayerPtr,Color4(0,1,0,1));
+</pre>
+</div>
+　及び、「敵のHPバーを構築」は「GameStage::CreateEnemy()」内で
+<div class="box1">
+<pre>
+    AddGameObject&lt;HPManeger<span class="red">&lt;Enemy></span>>(EnemyPtr, Color4(1, 0, 0, 1));
+</pre>
+</div>
+　という記述で登録しています。型引数を渡しているのがわかります。<br />
+<br />
+　「HPManegerテンプレートクラス」には「UpdateHPTrans()」関数内に
+<div class="box1">
+<pre>
+    <span class="red">float MaxHP = ShTarget->GetMaxHP();
+    float HP = ShTarget->GetHP();</span>
+</pre>
+</div>
+　という記述があります。「ShTarget」は「T型」の「shared_ptr」変数です。<br />
+　ということは、このテンプレートクラスに関連付けられるクラスには「GetMaxHP()関数」と「GetHP()関数」が必要になります。<br />
+　この関係が「テンプレート」の面白いところです。「テンプレートクラス」はコンパイル（ビルド時）に、コンパイラが自動的に作成する「クラス」です。ですからビルド時までこのクラスの実装は検証されません。VC++には「インテリセンス」といって、存在しないメンバ関数などを記述すると赤く表示されたりする機能がありますが、「テンプレートクラス」にはこの機能は適用されません。だって、「テンプレートクラス」のソースの記述時には、どのようなクラスが関連づけられるのかわからないですから。<br />
+<br />
+　「HPManegerテンプレートクラス」は、コンストラクタの引数に「T型のshared_ptr」を取ります。ここにプレイヤーや敵が渡されます。<br />
+　「OnCreate()関数」では
+<div class="box1">
+<pre>
+    auto HPBase = GetStage()->AddGameObject&lt;HPSquareBase>();
+    auto HP = GetStage()->AddGameObject&lt;HPSquare>(m_Color);
+</pre>
+</div>
+　のように、「HPSquareBaseクラス（HPバーの背景の黒い部分）」と「HPSquareクラス（HPバー）」をステージの「AddGameObject()関数」を呼び出して構築します。「GetStage()」でステージのポインタを取得します。<br />
+　「HPSquareクラス」は「HPSquareBase」と親子関係として設定します。理由は、「HP」は「ビルボード処理」といって、常にカメラを向く処理をします。バラバラにビルボード処理をすると、手前に置くオブジェクト（つまりHP）と奥に置くオブジェクト（背景）のあいだに微妙な回転のずれが起きてしまいます。親子関係にすれば、HPは背景に合わせて回転しますので、ずれがなくなります。<br />
+　HPの値は各オブジェクトから「GetHP()関数呼び出し」で取得して、「GetMaxHP()関数」と合わせて計算します。その計算処理は「UpdateHPTrans()関数」で行います。
+
+<h4>解説</h4>
+<div class="box1">
+<pre>
+</pre>
+</div>
+
+
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_09.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -1,0 +1,146 @@
+<html lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル(Dx12版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>００３．四角形の回転と移動(Dx12版)</h3>
+　このサンプルは<b>SimplSample003</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　どちらのソリューションでも、実行結果は以下のような画面が出ます。単純な四角形が回転しながら左右に移動します。
+<p>&nbsp;</p>
+<img src="img/0003a.png" width="80%"/>
+<p>図0003a</p>
+<p>&nbsp;</p>
+<br/>
+　動画は以下になります。
+<p>&nbsp;</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/twgMpIBsbJ8?rel=0" frameborder="0" allowfullscreen></iframe>
+<p>&nbsp;</p>
+
+<h3>【共通解説】</h3>
+　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
+　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionColor型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
+　SimpleSample002と同じシェーダです。<br/>
+<br />
+　また<b>更新処理</b>も共通になります。<b>SquareSprite::OnUpdate関数</b>には、四角形が左右に移動しながら回転する記述がされています。<br />
+<br />
+<h3>【Dx12版解説】</h3>
+　<b>BaseCrossDx12.sln</b>を開くと、<b>BaseCrossDx12</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
+　オブジェクトのクラスは<b>SquareSpriteクラス</b>です。
+<br />
+<h4>■初期化■</h4>
+　初期化は<b>SquareSprite::OnCreate関数</b>から呼ばれます。<br />
+　ここではまず、<b>頂点の配列</b>を作成し、そこからメッシュを作成しています。今回のメッシュには<b>インデックスバッファ</b>が含まれます。前サンプルでは、描画は三角形を一つ描画しただけなので頂点を使って描画しましたが、ここからのサンプルでは、ほとんどのケースで<b>インデックス描画</b>をします。<br />
+　<b>インデックス描画</b>というのは<b>頂点</b>に番号を付けて、その番号を使って連続した三角形を定義し（これを<b>インデックス</b>といいます）、そのインデックスを使って描画します。頂点を使って直接描画するより効率がよくなります。<br />
+　そのため、ここでの初期化処理では、<b>頂点を作成</b>したあと<b>インデックスを作成</b>しています。<br />
+　頂点の数は４つです。その4つを三角形二つの描画に割り当てるのですが、<b>頂点の順番</b>を考えた場合<b>0, 1, 2, 1, 3, 2</b>という順番で3角形を二つ描画すると考えれば、頂点を使いまわししながら描画できるのがわかります。（つまり頂点の数が少なくすむ）。<br />
+　この<b>0, 1, 2, 1, 3, 2</b>がインデックスです。単純な番号の配列ですが、それを<b>インデックスバッファ</b>という形で作成します。<br />
+　インデックスを含むメッシュの作成は簡単です。<b>頂点の配列</b>と<b>インデックスの配列</b>を作成し
+<div class="box1">
+<pre>
+//メッシュの作成
+m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+</pre>
+</div>
+　のように、<b>MeshResource::CreateMeshResource関数</b>に渡します。すると戻り値はメッシュ(のshared_ptr)になります。<br />
+　パラメータの<b>false</b>は<b>この頂点は変更されるかどうか</b>です。<b>頂点バッファ</b>は動的に変更できます。しかし変更できる頂点は負荷がかかるので、作成時に<b>どちらかに決める</b>という処理になっています。<br />
+　その後、<b>SquareSprite::OnCreate関数</b>では、<b>Dx12リソース</b>を順に初期化します。<br />
+<br />
+<h4>■そのほかのリソースの初期化■</h4>
+　このあと、<b>ルートシグネチャ初期化、デスクプリタヒープ初期化、コンスタントバッファ初期化、パイプラインステート初期化、コマンドリスト初期化、コンスタントバッファの更新</b>の順に呼ばれますが、これらは、<b>SimpleSample002</b>と同じです。詳細は<b>SimpleSample002</b>を参照ください。<br />
+<br />
+<h4>■コンスタントバッファの更新■</h4>
+　このサンプルでは<b>コンスタントバッファ</b>の<b>シェーダに渡す行列</b>を更新するのに、前回のサンプルとは違う方法をとっています。
+<div class="box1">
+<pre>
+//コンスタントバッファ更新
+void SquareSprite::UpdateConstantBuffer() {
+    //行列の定義
+    Matrix4X4 World, Proj;
+    //ワールド行列の決定
+    World.AffineTransformation2D(
+        m_Scale,            //スケーリング
+        Vector2(0, 0),      //回転の中心（重心）
+        m_Rot,              //回転角度
+        m_Pos               //位置
+    );
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Proj.OrthographicLH(w, h, -1.0, 1.0f);
+    //行列の合成
+    World *= Proj;
+
+    //中略
+
+}
+</pre>
+</div>
+　このように、<b>World</b>行列を<b>World.AffineTransformation2D関数</b>を使って<b>スケール、回転、位置</b>を反映した後、<b>射影行列</b>をかけてます。<br />
+　ここで反映させている射影行列
+<div class="box1">
+<pre>
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Proj.OrthographicLH(w, h, -1.0, 1.0f);
+    //行列の合成
+    World *= Proj;
+</pre>
+</div>
+　は<b>非常に重要</b>です。このように射影行列を作ると、いわゆる<b>ピクセル座標系</b>になります。<b>頂点の作成時</b>は<b>幅及び高さが1.0f</b>の四角形を作成します。そしてスケーリングを<b>128.0f, 128.0f</b>で初期化しています。つまり<b>128×128ピクセル</b>で描画したいわけです。このようにしてスプライトの座標系を<b>ピクセル座標系</b>にしておくと、最終的に上記のような射影行列を反映させたうえでシェーダに渡せば、<b>ピクセル座標系</b>での描画が可能になります。グラフィック担当者との画像作成時のサイズ等を決定するのに、このように描画すると決めておけば、スケーリングが<b>ピクセル</b>になるので大変便利です。<br />
+<br />
+<h4>■描画処理■</h4>
+　<b>描画処理</b>も<b>SimpleSample002</b>とほとんど同じです。違う部分は、<b>頂点による描画</b>ではなく<b>インデックス描画</b>を行うところです。その部分を以下に記します。
+<div class="box1">
+<pre>
+void SquareSprite::DrawObject() {
+    //中略
+
+    //描画方法のセット（三角形リスト）
+    m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //頂点バッファのセット
+    m_CommandList->IASetVertexBuffers(0, 1, &m_SquareMesh->GetVertexBufferView());
+    <span class="red">//インデックスバッファをセット
+    m_CommandList->IASetIndexBuffer(&m_SquareMesh->GetIndexBufferView());
+    //インデックス描画
+    m_CommandList->DrawIndexedInstanced(m_SquareMesh->GetNumIndicis(), 1, 0, 0, 0);</span>
+
+    //中略
+
+}
+</pre>
+</div>
+　赤くなっているところがインデックス描画の部分です。頂点制作時にインデックスバッファもメッシュに入れているので、<b>インデックスバッファビュー</b>を取り出すことができます。<br />
+<br />
+　以上、Dx12側の説明は終わりです。<br/>
+<br />
+<h3>【まとめ】</h3>
+　今回は、前回の<b>SimpleSample002</b>と<b>シェーダーや頂点型</b>を変えずに<b>インデックス描画</b>をする方法をサンプル化しました。また<b>スプライト</b>の座標系についても少し触れました。スプライトの座標系は必ずしもこの方法がベストかどうかは議論も残るところですが、いずれにせよ一つのゲームでは一つの座標系で記述したほうが、グラフィッカーとのやり取りを考えてもよろしいかと思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="10_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="10_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
