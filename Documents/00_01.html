@@ -16,7 +16,6 @@
 <h3>００１．三角形の描画(Dx11版)</h3>
 　これから、<b>シンプルバージョン</b>のサンプルの説明を始めます。このサンプルは<b>SimplSample001</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
-<br />
 　実行結果は以下のような画面が出ます。単純な3角形の描画です。
 <p>&nbsp;</p>
 <img src="img/0001a.png" width="80%"/>
@@ -24,9 +23,50 @@
 <p>&nbsp;</p>
 <br/>
 <h4>Dx11版解説</h4>
-　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の「Character.h/cpp」が主な記述個所になります。<br />
+　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。<br />
+　まず<b>BaseCross</b>の根っこにある構造について説明します。<br />
+<br />
+　<b>BaseCross</b>には<b>GameStage</b>や<b>GameObject</b>をそなえた<b>フルバージョン</b>があります。ここには、プログラマの負担をできるだけ減らせるよう（とはいってもGUIがそろっているわけではありませんが）、オブジェクトの大きさや位置、あるいは衝突判定、あるいは物理計算などが<b>コンポーネント</b>という形で用意されてます。<br />
+　また、描画処理も<b>描画コンポーネント</b>を差し替えることで、比較的簡単に描画処理を変更したりできます。<br />
+　エフェクトもパーティクルエフェクトの基本クラスは用意されています。<br />
+　これらの<b>フルバージョン</b>の機能は<b>シンプルバージョン</b>という薄い座布団の上に乗っかている設計になってます。ですから<b>フルバージョン</b>であっても自分で描画処理を記述したり、あるいは自作の衝突判定を実装したりすることは可能です。<br />
+　しかし、<b>フルバージョン</b>の用意された機能に慣れてしまうと、<b>ゲーム制作</b>の根っこにある技術を知らずにゲームを作る癖がついてしまいます。結果として、なかなかゲーム制作会社が求める<b>本当のゲームプログラムの技術</b>を身につけるチャンスを逸してしまいます。そういう意味では<b>フルバージョン</b>は<b>諸刃の剣</b>と言えます。<br />
+　ですから、ゲーム制作に慣れるためには<b>フルバージョン</b>もいいのですが、ある程度何本か作成した後は、<b>シンプルバージョン</b>による<b>ゲーム制作</b>を行うことによって<b>本当のゲームプログラムの技術</b>を身に着けられます。<br />
+　ぜひ挑戦することをお勧めします。<br/>
+<br />
+<h4>ゲームプログラミングで行わなければならないこと</h4>
+　まず<b>ゲームプログラミング</b>で行わなければならないことを以下に列挙します。
+<div class="box1">
+<pre>
+１、ゲームエンジンの初期化と描画バッファの初期化
+２、サウンドや入力インターフェイスの初期化
+３、タイマーによるターンの設定
+４、リソースの構築
+５、更新処理
+６、描画処理
+７、終了処理
+</pre>
+</div>
+　非常にざっくりとしますが、基本的に上記の内容を兼ね備える必要があります。<br />
+　まず、<b>１、ゲームエンジンの初期化と描画バッファの初期化</b>ですが、<b>BaseCrossDx11版</b>の場合は<b>DirectX11の初期化</b>にあたります。デバイスおよびデバイスコンテキストを初期化しゲーム側で描画できるように準備をします。これは<b>BaseCross</b>では<b>DeviceResourcesクラス</b>が担当します。<br />
+　<b>２、サウンドや入力インターフェイスの初期化</b>は<b>BaseCrossDx11版</b>の場合は<b>AudioManagerクラス</b>や<b>AudioResourceクラス</b>、そして<b>MultiAudioObjectクラス</b>で再生します。入力インターフェイスはキーボードやマウス、<b>InputDeviceクラス</b>で管理します。<br />
+　<b>３、タイマーによるターンの設定</b>は、<b>BaseCrossDx11版</b>の場合は<b>StepTimerクラス</b>が行います。<br />
+　　このほかに、例外処理や、バイナリファイルの読み込み、CSVやXMLに関する処理もユーティリティとして用意されています。
+　<b>４、リソースの構築</b>は実際に描画されるメッシュである<b>メッシュリソース</b>や<b>テクスチャリソース</b>あるいはサウンドリソース</b>の構築です。<b>MeshResourceクラス</b>や<b>TextureResourceクラス</b>、そして<b>AudioResourceクラス</b>もリソースです。<br />　また頂点定義を記した、<b>VertexHelper.h</b>もい用意されています。<br />
+<br />
+　以上は<b>シンプルバージョン</b>であっても<b>BaseCross側</b>でクラスや関数で用意されてます。ですから<b>フルバージョン</b>のように簡単ではありませんが、多くの場合<b>Appクラス</b>にまとめられ、そのインスタンスを介して、いつでもアクセスできるようになってます。<br />
+　<b>５、更新処理</b>は準備したリソースを移動したり、あるいは回転させるなど処理です。<b>フルバージョン</b>では<b>更新用のコンポーネント</b>として<b>Transform</b>や<b>Rigidbody</b>、そして<b>Collision</b>があります。しかし、<b>シンプルバージョン</b>にはこれらは用意されてません。<br />
+　<b>フルバージョン</b>のように<b>コンポーネント</b>の形では用意されてませんが、コンポーネントが使用する<b>衝突判定クラス</b>などは<b>TransHelper.h</b>に用意されています。また、<b>基本データ型</b>である<b>Vector2、Vector3、Vector4、Matrix4X4、Quaternion</b>などは実装されています。<br />
+　<b>６、描画処理</b>は<b>描画の仕組み</b>は用意されてますが、実際の描画処理はゲーム側で行います。描画の方法についても<b>シェーダを自作</b>しなければなりません。<br />
+　<b>７、終了処理</b>は<b>BaseCross</b>で用意されてます。<b>Escキー</b>または<b>ウインドウの閉じる</b>で、終了します。<br />
+<br />
+<h4>シンプルバージョンで行わなければならないこと</h4>
+　では、上記の列挙に対してゲームプログラマが実装しないことを挙げながら、今回のサンプルを解説します、<br />
+<br />
+<h4>配置オブジェクトクラスの定義</h4>
 　表示されている三角形は<b>TriangleObjectクラス</b>です。<b>ObjectInterfaceおよびShapeInterface</b>の多重継承オブジェクトです。<br />
-　ここまでは、Dx12版とほとんど一緒です。以下は、<b>TriangleObject::OnCreate()関数</b>です。
+　<b>Character.h/cpp</b>が記述個所になります。<br />
+　以下は、<b>TriangleObject::OnCreate()関数</b>です。
 <div class="box1">
 <pre>
 void TriangleObject::OnCreate() {
@@ -40,8 +80,30 @@ void TriangleObject::OnCreate() {
 }
 </pre>
 </div>
-　Dx12版にあった、<b>m_DrawContext</b>がないのがわかります。これはDx11は、APIがしっかりそろっていて、描画処理を直接書いてもプログラマの負担にはならないからです。ですから、<b>Dx12版のVSPSDrawContextクラス</b>のような描画のためのクラスは存在しません。<br />
-　その代りOnDraw()は、少し書く内容が多いです。
+　<b>ObjectInterfaceおよびShapeInterface</b>の継承クラスは<b>OnCreate()仮想関数</b>を記述する必要があります。この仮想関数は<b>ObjectFactory::Create()テンプレート関数</b>を呼び出した際に、呼び出されます。<br />
+　ここでは上記のように<b>メッシュ</b>を作成しています。<br />
+<br />
+　<b>シンプルバージョン</b>には<b>GameStage</b>がありません。しかし<b>Scene</b>はあります。<b>ステージ、あるいはそれに準ずる仕組み</b>をどのように設計するかは各自考えます。<br />
+　<b>ObjectInterfaceおよびShapeInterfaceの継承クラス</b>として作った<b>TriangleObjectクラス</b>は<b>OnUpdate()、OnDraw()</b>といった仮想関数を持ってます。しかし、<b>フルバージョン</b>のように<b>自動的に</b>呼び出されるわけではありません。<br />
+　一般的には<b>Scene::OnUpdate()</b>で<b>各オブジェクトのOnUpdate()を</b>呼び出し、<b>Scene::OnDraw()</b>で<b>各オブジェクトのOnDraw()を</b>呼び出します。<br />
+　注意したいのは<b>Scene::OnDraw()</b>で、<b>ビューの準備</b>をしているところです
+<div class="box1">
+<pre>
+void Scene::OnDraw() {
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+    //デフォルト描画の開始
+    Dev->StartDefaultDraw();
+    m_TriangleObject->OnDraw();
+    //デフォルト描画の終了
+    Dev->EndDefaultDraw();
+}
+</pre>
+</div>
+　このように。<b>デフォルト描画の開始</b>と<b>デフォルト描画の終了</b>で各オブジェクトの描画を挟みます。ここでは影の描画もエフェクトの描画もスプライトの描画も全くしてません。これらの特殊な配置オブジェクトの描画も各自行う必要があります。<br />
+<br />
+　実際の3角形の描画は以下になります。
 <div class="box1">
 <pre>
 void TriangleObject::OnDraw() {
@@ -84,18 +146,58 @@ void TriangleObject::OnDraw() {
     pID3D11DeviceContext->Draw(3, 0);
     //後始末
     Dev->InitializeStates();
-
 }
 </pre>
 </div>
 　記述内容は多いですが、一つ一つが理にかなっている（というか読めばわかる）操作かと思います。<br />
 　個別の解説はコメントでわかると思います。<br />
 <br />
-　さてこうしたうえで、シーンでのこのオブジェクトの準備と、描画呼び出しはDx12版と変わりませんので、上記説明を読んでください。<br />
+　さてこうしたうえで、シーンでのこのオブジェクトの準備をします。
+<div class="box1">
+<pre>
+void Scene::OnCreate() {
+    //立方体の作成
+    m_TriangleObject = ObjectFactory::Create&lt;TriangleObject>();
+}
+</pre>
+</div>
+　このように<b>m_TriangleObject</b>に作成したオブジェクトを代入します。使いまわしするメッシュなどであれば<b>リソース化</b>する方法もあります。<br />
+<br />
+<h4>シェーダの記述</h4>
+　<b>シンプルバージョン</b>ではシェーダも記述しなければなりません。<b>DxShared</b>にある<b>VSPCDirect.hlsl</b>と<b>PSPCDirect.hlsl</b>がシェーダです。<b>INCStructs.hlsli</b>はシェーダのインクルードファイルになります。<br />
+　シェーダは<b>コンパイル</b>して使用します。ビルドの設定でそれらのシェーダのビルド方法を指定しておきます。コンパイルされたシェーダは<b>media/Shadersディレクトリ</b>に保存されます。<br />
+　シェーダの使用は<b>ProjectShader.h</b>に
+<div class="box1">
+<pre>
+DECLARE_DX11_VERTEX_SHADER(VSPCDirect, VertexPositionColor)
+DECLARE_DX11_PIXEL_SHADER(PSPCDirect)
+</pre>
+</div>
+　そして<b>ProjectShader.cpp</b>に
+<div class="box1">
+<pre>
+//PCDirect
+IMPLEMENT_DX11_VERTEX_SHADER(VSPCDirect, App::GetApp()->GetShadersPath() + L"VSPCDirect.cso")
+IMPLEMENT_DX11_PIXEL_SHADER(PSPCDirect, App::GetApp()->GetShadersPath() + L"PSPCDirect.cso")
+</pre>
+</div>
+　と記述することで、<b>OnDraw()関数</b>でそのシェーダを使用できるようになります。以下は<b>OnDraw()関数</b>内でのシェーダ関連の記述です。
+<div class="box1">
+<pre>
+    //シェーダの設定
+    //頂点シェーダの設定
+    pID3D11DeviceContext->VSSetShader(VSPCDirect::GetPtr()->GetShader(), nullptr, 0);
+    //ピクセルシェーダの設定
+    pID3D11DeviceContext->PSSetShader(PSPCDirect::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pID3D11DeviceContext->IASetInputLayout(VSPCDirect::GetPtr()->GetInputLayout());
+</pre>
+</div>
+　これで、作成したシェーダでの描画ができます。<br />
 <br />
 <h4>まとめ</h4>
-　Dx12とDx11の場合の大きな違いは、、<b>描画処理</b>になります。Dx11を使った場合は、Dx11のAPIを直接呼び出すことになります。<br />
-　前述したブログも参考になると思いますので、このあたりを研究しながら自作してみるのもいいと思います。<br />
+　この項では<b>シンプルバージョン</b>における、制作の流れを説明しました。基本的にこの手順は変わりません。もっと複雑なオブジェクトを作成して描画するためには、これらのオブジェクトを自作し、<b>シーン</b>に配置する必要があります。<br />
+　また、<b>シンプルバージョン</b>のサンプルは、どうしても<b>個別</b>の紹介になります。この後<b>スプライト</b>や<b>３Ｄ表現</b>のサンプルも出てきますが、フルバージョンのように、組み合わさった形でのサンプルは用意しませんので、参考にする場合は、個別に参考にして自分のゲームに各自組み込んでください。<br />
 <br />
 　以降、こんな感じでサンプルの解説を行っていきたいと思います。
 </div>
