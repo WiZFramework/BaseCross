@@ -81,6 +81,19 @@ namespace basecross {
 		Quaternion m_Qt;			///<回転
 		Vector3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
+		Vector3 m_Velocity;		//速度
+		Vector3 m_Gravity;		//自由落下加速度
+		Vector3 m_GravityVelocity;		//自由落下による速度
+		bool m_JumpLock;	//ジャンプのロック
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief Boxとの衝突判定
+		@param[in]	BeforePos	1つ前の場所
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void CollisionWithBoxes(const Vector3& BeforePos);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -153,11 +166,15 @@ namespace basecross {
 		@param[in]	TextureFileName	テクスチャファイル名
 		@param[in]	Trace	透明処理するかどうか
 		@param[in]	Scale	大きさ
+		@param[in]	Qt	回転
 		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
 		BoxObject(const shared_ptr<Scene> PtrScene,
-			const wstring& TextureFileName, bool Trace, const Vector3& Scale, const Vector3& Pos);
+			const wstring& TextureFileName, bool Trace,
+			const Vector3& Scale, 
+			const Quaternion& Qt,
+			const Vector3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -194,6 +211,73 @@ namespace basecross {
 		virtual void OnDraw()override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	PNT頂点描画に使用する構造体
+	//--------------------------------------------------------------------------------------
+	struct DrawObject {
+		shared_ptr<MeshResource> m_MeshRes;
+		shared_ptr<TextureResource> m_TextureRes;
+		Matrix4X4 m_WorldMatrix;
+		bool m_Trace;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	PNT頂点オブジェクトの描画クラス
+	//--------------------------------------------------------------------------------------
+	class PNTDrawObject : public ObjectInterface, public ShapeInterface {
+		weak_ptr<Scene> m_Scene;			///<シーン
+		vector<DrawObject> m_DrawObjectVec;
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief コンストラクタ
+		@param[in]	PtrScene	シーンのポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		PNTDrawObject(const shared_ptr<Scene> PtrScene);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PNTDrawObject();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画するオブジェクトを追加する
+		@param[in]	MeshRes	メッシュ
+		@param[in]	TextureRes テクスチャ
+		@param[in]	WorldMat ワールド行列
+		@param[in]	Trace 透明処理するかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
+			const shared_ptr<TextureResource>& TextureRes,
+			const Matrix4X4& WorldMat,
+			bool Trace);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 更新
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	};
 
 
 }

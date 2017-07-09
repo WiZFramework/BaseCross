@@ -12,7 +12,8 @@ namespace basecross {
 	class Scene : public SceneInterface {
 		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
 		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
-		shared_ptr<BoxObject>	m_BoxObject;				///<ボックスオブジェクト
+		vector<shared_ptr<BoxObject>> m_BoxObjectVec;		///<ボックスオブジェクトの配列
+		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
 		Vector3 m_CamerEye;			///<カメラ位置
 		Vector3 m_CamerAt;			///<カメラ視点
 		Vector3 m_CamerUp;			///<カメラ傾き
@@ -41,12 +42,21 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief ボックスオブジェクトの取得
-		@return	ボックスオブジェクト
+		@brief ボックスオブジェクトの配列の取得
+		@return	ボックスオブジェクトの配列
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<BoxObject> GetBoxObject() const {
-			return m_BoxObject;
+		const vector<shared_ptr<BoxObject>>& GetBoxObjectVec() const {
+			return m_BoxObjectVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画オブジェクトの取得
+		@return	描画オブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<PNTDrawObject> GetPNTDrawObject() const {
+			return m_PNTDrawObject;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

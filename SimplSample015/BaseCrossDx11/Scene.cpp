@@ -51,23 +51,46 @@ namespace basecross {
 			Quaternion(Vector3(1.0f, 0, 0), XM_PIDIV2),
 			Vector3(0.0f, 0.0f, 0.0f)
 			);
-		strTexture = DataDir + L"trace.png";
+		wstring strTexture2 = DataDir + L"trace.png";
 		//球の作成
 		m_SphereObject = ObjectFactory::Create<SphereObject>(
 			GetThis<Scene>(),
-			18, strTexture, true, Vector3(0.0f, 0.5f, 0.0f));
+			18, strTexture2, true, Vector3(0.0f, 0.5f, 0.0f));
 
-		//ボックスの作成
-		m_BoxObject = ObjectFactory::Create<BoxObject>(
-			GetThis<Scene>(),strTexture, true, Vector3(1.0f, 1.0f, 2.0f), Vector3(3.0f, 0.5f, 0.0f));
+		m_BoxObjectVec.push_back(
+			ObjectFactory::Create<BoxObject>(
+				GetThis<Scene>(), strTexture, false,
+				Vector3(3.0f, 1.0f, 3.0f),
+				Quaternion(),
+				Vector3(-3.0f, 0.5f, 0.0f)
+				)
+		);
+
+		m_BoxObjectVec.push_back(
+			ObjectFactory::Create<BoxObject>(
+				GetThis<Scene>(), strTexture, false,
+				Vector3(3.0f, 1.0f, 3.0f),
+				Quaternion(Vector3(0, 0, 1), XM_PIDIV4),
+				Vector3(3.0f, 0.5f, 0.0f)
+				)
+		);
+
+
+		//描画オブジェクトの作成
+		m_PNTDrawObject = ObjectFactory::Create<PNTDrawObject>(GetThis<Scene>());
+
+
 
 
 	}
 
 	void Scene::OnUpdate() {
 		m_SquareObject->OnUpdate();
-		m_BoxObject->OnUpdate();
+		for (auto& v : m_BoxObjectVec) {
+			v->OnUpdate();
+		}
 		m_SphereObject->OnUpdate();
+		m_PNTDrawObject->OnUpdate();
 	}
 	void Scene::OnDraw() {
 		//描画デバイスの取得
@@ -77,7 +100,10 @@ namespace basecross {
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();
 		m_SphereObject->OnDraw();
-		m_BoxObject->OnDraw();
+		for (auto& v : m_BoxObjectVec) {
+			v->OnDraw();
+		}
+		m_PNTDrawObject->OnDraw();
 		//デフォルト描画の終了
 		Dev->EndDefaultDraw();
 	}
