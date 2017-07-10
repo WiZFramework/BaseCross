@@ -125,11 +125,21 @@ namespace basecross {
 					//平面の上
 					m_GravityVelocity = Vector3(0, 0, 0);
 				}
-				m_Velocity = Vector3EX::Slide(CollisionVelosity, Normal);
+				else {
+					//重力をスライドさせて設定する
+					//これで、斜めのボックスを滑り落ちるようになる
+					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+				}
+				//速度をスライドさせて設定する
+				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+				//Y方向は重力に任せる
 				m_Velocity.y = 0;
-				//最後に衝突点から余った時間分だけスライドさせる
+				//最後に衝突点から余った時間分だけ新しい値で移動させる
 				m_Pos = m_Pos + m_Velocity * SpanTime;
+				m_Pos = m_Pos + m_GravityVelocity * SpanTime;
 				//もう一度衝突判定
+				//m_Posが動いたのでSPHEREを再取得
+				Sp = GetSPHERE();
 				if (HitTest::SPHERE_OBB(Sp, Obb, HitPoint)) {
 					//衝突していたら追い出し処理
 					Vector3 EscapeNormal = Sp.m_Center - HitPoint;
