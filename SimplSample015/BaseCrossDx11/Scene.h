@@ -14,6 +14,8 @@ namespace basecross {
 		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
 		vector<shared_ptr<BoxObject>> m_BoxObjectVec;		///<ボックスオブジェクトの配列
 		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
+		shared_ptr<WrappedSprite> m_WallSprite;		///<壁模様のスプライト
+
 		Vector3 m_CamerEye;			///<カメラ位置
 		Vector3 m_CamerAt;			///<カメラ視点
 		Vector3 m_CamerUp;			///<カメラ傾き
@@ -48,6 +50,15 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		const vector<shared_ptr<BoxObject>>& GetBoxObjectVec() const {
 			return m_BoxObjectVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 壁スプライトの取得
+		@return	壁スプライト
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<WrappedSprite> GetWallSprite() const {
+			return m_WallSprite;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

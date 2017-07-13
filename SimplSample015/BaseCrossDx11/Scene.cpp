@@ -75,11 +75,14 @@ namespace basecross {
 				)
 		);
 
-
-		//描画オブジェクトの作成
+		//PNT描画オブジェクトの作成
 		m_PNTDrawObject = ObjectFactory::Create<PNTDrawObject>(GetThis<Scene>());
 
-
+		strTexture = DataDir + L"trace.png";
+		m_WallSprite = ObjectFactory::Create<WrappedSprite>(strTexture, true,
+			Vector2(160, 160),
+			Vector2(-480, 260),
+			4,4);
 
 
 	}
@@ -91,6 +94,7 @@ namespace basecross {
 		}
 		m_SphereObject->OnUpdate();
 		m_PNTDrawObject->OnUpdate();
+		m_WallSprite->OnUpdate();
 	}
 	void Scene::OnDraw() {
 		//描画デバイスの取得
@@ -104,6 +108,7 @@ namespace basecross {
 			v->OnDraw();
 		}
 		m_PNTDrawObject->OnDraw();
+		m_WallSprite->OnDraw();
 		//デフォルト描画の終了
 		Dev->EndDefaultDraw();
 	}

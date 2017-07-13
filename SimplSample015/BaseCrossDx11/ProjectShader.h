@@ -28,6 +28,21 @@ namespace basecross {
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStatic, VertexPositionNormalTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
 
+	//スプライト用コンスタントバッファ構造体
+	struct SpriteConstantBuffer
+	{
+		Matrix4X4 World;
+		Color4 Emissive;
+		SpriteConstantBuffer() {
+			memset(this, 0, sizeof(SpriteConstantBuffer));
+		};
+	};
+	DECLARE_DX11_CONSTANT_BUFFER(CBSprite, SpriteConstantBuffer)
+
+	//PCTSprite
+	DECLARE_DX11_VERTEX_SHADER(VSPCTSprite, VertexPositionColorTexture)
+	DECLARE_DX11_PIXEL_SHADER(PSPCTSprite)
+
 
 }
 //end basecross

@@ -279,6 +279,77 @@ namespace basecross {
 		virtual void OnDraw()override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	ラッピング処理されたスプライト
+	//--------------------------------------------------------------------------------------
+	class WrappedSprite : public ObjectInterface, public ShapeInterface {
+		//メッシュ
+		shared_ptr<MeshResource> m_SquareMesh;
+		//バックアップしておく頂点データ
+		vector<VertexPositionColorTexture> m_BackupVertices;
+		wstring m_TextureFileName;		///<テクスチャファイル名
+		bool m_Trace;					///<透明処理するかどうか
+		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
+		Vector2 m_Scale;				///<スケーリング
+		float m_Rot;				///<回転
+		Vector2 m_Pos;				///<位置
+		UINT m_XWrap;		//X方向のラップ数
+		UINT m_YWrap;		//Y方向のラップ数
+		float m_TotalTime;	//頂点変更に使用するタイム
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 頂点の変更
+		@param[in]	ElapsedTime	ターン時間
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateVertex(float ElapsedTime);
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief コンストラクタ
+		@param[in]	TextureFileName	テクスチャファイル名
+		@param[in]	Trace	透明処理するかどうか
+		@param[in]	StartScale	初期大きさ
+		@param[in]	StartPos	初期位置
+		@param[in]	XWrap	X方向のラップ数
+		@param[in]	YWrap	Y方向のラップ数
+		*/
+		//--------------------------------------------------------------------------------------
+		WrappedSprite(const wstring& TextureFileName, bool Trace,
+			const Vector2& StartScale,
+			const Vector2& StartPos,
+			UINT XWrap,UINT YWrap);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~WrappedSprite();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 更新
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnUpdate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	};
+
+
 
 }
 //end basecross
