@@ -107,6 +107,7 @@ namespace basecross {
 		for (auto& v : ShPtrScene->GetBoxObjectVec()) {
 			OBB Obb = v->GetOBB();
 			SPHERE Sp = GetSPHERE();
+			Sp.m_Center = BeforePos;
 			float HitTime;
 			Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
 			if (HitTest::CollisionTestSphereObb(Sp, CollisionVelosity, Obb, 0, ElapsedTime, HitTime)) {
@@ -121,15 +122,9 @@ namespace basecross {
 				//衝突法線をHitPointとm_Posから導く
 				Vector3 Normal = m_Pos - HitPoint;
 				Normal.Normalize();
-				if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) <= 0.01f) {
-					//平面の上
-					m_GravityVelocity = Vector3(0, 0, 0);
-				}
-				else {
-					//重力をスライドさせて設定する
-					//これで、斜めのボックスを滑り落ちるようになる
-					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
-				}
+				//重力をスライドさせて設定する
+				//これで、斜めのボックスを滑り落ちるようになる
+				m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
 				//速度をスライドさせて設定する
 				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
 				//Y方向は重力に任せる
@@ -166,7 +161,7 @@ namespace basecross {
 	}
 	void SphereObject::OnUpdate() {
 		//1つ前の位置を取っておく
-		Vector3 BeforrPos = m_Pos;
+		Vector3 BeforePos = m_Pos;
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//コントローラの取得
@@ -209,7 +204,7 @@ namespace basecross {
 			m_GravityVelocity = Vector3(0,0,0);
 			m_JumpLock = false;
 		}
-		CollisionWithBoxes(BeforrPos);
+		CollisionWithBoxes(BeforePos);
 	}
 	void SphereObject::OnDraw() {
 		auto ShPtrScene = m_Scene.lock();
