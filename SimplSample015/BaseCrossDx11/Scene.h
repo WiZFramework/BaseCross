@@ -19,6 +19,11 @@ namespace basecross {
 		Vector3 m_CamerEye;			///<カメラ位置
 		Vector3 m_CamerAt;			///<カメラ視点
 		Vector3 m_CamerUp;			///<カメラ傾き
+		float m_FovY;				///<画角
+		float m_CameraXZRad;			//カメラのXZラジアン
+		float m_CameraYRad;				//カメラのYラジアン
+		float m_CameraArmLen;		//カメラの腕の長さ
+
 		Vector4 m_LightDir;			///<ライト向き
 	public:
 		//--------------------------------------------------------------------------------------
@@ -78,6 +83,18 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief カメラのEyeとAtを取得
+		@param[out]	Eye	Eyeを受け取る参照
+		@param[out]	At	Atを受け取る参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetCameraEyeAt(Vector3& Eye, Vector3& At)const {
+			Eye = m_CamerEye;
+			At = m_CamerAt;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief ライト向きの取得

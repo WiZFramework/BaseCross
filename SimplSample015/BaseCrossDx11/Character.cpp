@@ -84,6 +84,9 @@ namespace basecross {
 		m_Division(Division),
 		m_TextureFileName(TextureFileName),
 		m_Trace(Trace),
+		m_Scale(0.25f, 0.25f, 0.25f),
+		m_BaseY(m_Scale.y / 2.0f),
+		m_Qt(),
 		m_Pos(Pos),
 		m_Velocity(0,0,0),
 		m_Gravity(0,-9.8f,0),
@@ -92,10 +95,53 @@ namespace basecross {
 	{}
 	SphereObject::~SphereObject() {}
 
+	Vector3 SphereObject::GetMoveVector() const {
+		Vector3 Angle(0, 0, 0);
+		auto ShPtrScene = m_Scene.lock();
+		if (!ShPtrScene) {
+			return Angle;
+		}
+		Vector3 CameraEye, CameraAt;
+		ShPtrScene->GetCameraEyeAt(CameraEye, CameraAt);
+
+		//コントローラの取得
+		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		if (CntlVec[0].bConnected) {
+			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
+				float MoveLength = 0;	//動いた時のスピード
+										//進行方向の向きを計算
+				Vector3 Front = m_Pos - CameraEye;
+				Front.y = 0;
+				Front.Normalize();
+				//進行方向向きからの角度を算出
+				float FrontAngle = atan2(Front.z, Front.x);
+				//コントローラの向き計算
+				float MoveX = CntlVec[0].fThumbLX;
+				float MoveZ = CntlVec[0].fThumbLY;
+				Vector2 MoveVec(MoveX, MoveZ);
+				float MoveSize = MoveVec.Length();
+				//コントローラの向きから角度を計算
+				float CntlAngle = atan2(-MoveX, MoveZ);
+				//トータルの角度を算出
+				float TotalAngle = FrontAngle + CntlAngle;
+				//角度からベクトルを作成
+				Angle = Vector3(cos(TotalAngle), 0, sin(TotalAngle));
+				//正規化する
+				Angle.Normalize();
+				//移動サイズを設定。
+				Angle *= MoveSize;
+				//Y軸は変化させない
+				Angle.y = 0;
+			}
+		}
+		return Angle;
+	}
+
+
 	SPHERE SphereObject::GetSPHERE()const {
 		SPHERE sp;
 		sp.m_Center = m_Pos;
-		sp.m_Radius =  m_Scale.x * 0.5f;
+		sp.m_Radius =  m_Scale.y * 0.5f;
 		return sp;
 	}
 
@@ -122,9 +168,21 @@ namespace basecross {
 				//衝突法線をHitPointとm_Posから導く
 				Vector3 Normal = m_Pos - HitPoint;
 				Normal.Normalize();
+
+				if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) <= 0.01f) {
+					//平面の上
+					m_GravityVelocity = Vector3(0, 0, 0);
+				}
+				else {
+					//重力をスライドさせて設定する
+					//これで、斜めのボックスを滑り落ちるようになる
+					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+				}
+
+
 				//重力をスライドさせて設定する
 				//これで、斜めのボックスを滑り落ちるようになる
-				m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+//				m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
 				//速度をスライドさせて設定する
 				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
 				//Y方向は重力に任せる
@@ -153,58 +211,44 @@ namespace basecross {
 		MeshUtill::CreateSphere(1.0f, m_Division,vertices, indices);
 		//メッシュの作成（変更できない）
 		m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-
 		//テクスチャの作成
 		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
-		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
-		m_Qt.Identity();
 	}
 	void SphereObject::OnUpdate() {
 		//1つ前の位置を取っておく
-		Vector3 BeforePos = m_Pos;
+		Vector3 BeforrPos = m_Pos;
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		//キーボードとマウスの取得
-		auto Key = App::GetApp()->GetInputDevice().GetKeyState();
+		auto ShPtrScene = m_Scene.lock();
+		if (!ShPtrScene) {
+			return;
+		}
+		Vector3 CameraEye, CameraAt;
+		ShPtrScene->GetCameraEyeAt(CameraEye, CameraAt);
 
 		if (CntlVec[0].bConnected) {
 			if (!m_JumpLock) {
 				//Aボタン
 				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
-					m_GravityVelocity = Vector3(0, 6.0f, 0);
+					BeforrPos.y += 0.01f;
+					m_Pos.y += 0.01f;
+					m_GravityVelocity = Vector3(0, 4.0f, 0);
 					m_JumpLock = true;
 				}
 			}
-			if (CntlVec[0].fThumbLX != 0) {
-				m_Velocity.x = CntlVec[0].fThumbLX * 5.0f;
-			}
-			else {
-				m_Velocity.x *= 0.1f;
-				if (abs(m_Velocity.x) <= 0.01f) {
-					m_Velocity.x = 0;
-				}
-			}
-			if (CntlVec[0].fThumbLY != 0) {
-				m_Velocity.z = CntlVec[0].fThumbLY * 5.0f;
-			}
-			else {
-				m_Velocity.z *= 0.1f;
-				if (abs(m_Velocity.z) <= 0.01f) {
-					m_Velocity.z = 0;
-				}
-			}
+			m_Velocity = GetMoveVector() * 5.0f;
 		}
 		m_Pos += (m_Velocity * ElapsedTime);
 		m_GravityVelocity += m_Gravity * ElapsedTime;
 		m_Pos += m_GravityVelocity * ElapsedTime;
-		if (m_Pos.y <= 0.5f) {
-			m_Pos.y = 0.5f;
-			m_GravityVelocity = Vector3(0,0,0);
+		if (m_Pos.y <= m_BaseY) {
+			m_Pos.y = m_BaseY;
+			m_GravityVelocity = Vector3(0, 0, 0);
 			m_JumpLock = false;
 		}
-		CollisionWithBoxes(BeforePos);
+		CollisionWithBoxes(BeforrPos);
 	}
 	void SphereObject::OnDraw() {
 		auto ShPtrScene = m_Scene.lock();
