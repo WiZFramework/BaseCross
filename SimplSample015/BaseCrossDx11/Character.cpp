@@ -341,6 +341,75 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
+	///	移動ボックス実体
+	//--------------------------------------------------------------------------------------
+	MoveBoxObject::MoveBoxObject(const shared_ptr<Scene> PtrScene,
+		const wstring& TextureFileName, bool Trace,
+		const Vector3& Scale,
+		const Quaternion& Qt,
+		const Vector3& Pos) :
+		m_Scene(PtrScene),
+		ObjectInterface(),
+		ShapeInterface(),
+		m_TextureFileName(TextureFileName),
+		m_Trace(Trace),
+		m_Scale(Scale),
+		m_Qt(Qt),
+		m_Pos(Pos)
+	{}
+	MoveBoxObject::~MoveBoxObject() {}
+
+	OBB MoveBoxObject::GetOBB()const {
+		Matrix4X4 World;
+		//ワールド行列の決定
+		World.AffineTransformation(
+			m_Scale,			//スケーリング
+			Vector3(0, 0, 0),		//回転の中心（重心）
+			m_Qt,				//回転角度
+			m_Pos				//位置
+		);
+		OBB obb(Vector3(1.0f, 1.0f, 1.0f), World);
+		return obb;
+	}
+
+
+	void MoveBoxObject::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		//メッシュの作成（変更できない）
+		m_MoveBoxMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+
+		//テクスチャの作成
+		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+	}
+	void MoveBoxObject::OnUpdate() {
+	}
+
+	void MoveBoxObject::OnDraw() {
+		auto ShPtrScene = m_Scene.lock();
+		if (!ShPtrScene) {
+			return;
+		}
+		//行列の定義
+		Matrix4X4 World;
+		//ワールド行列の決定
+		World.AffineTransformation(
+			m_Scale,			//スケーリング
+			Vector3(0, 0, 0),		//回転の中心（重心）
+			m_Qt,				//回転角度
+			m_Pos				//位置
+		);
+		ShPtrScene->GetPNTDrawObject()->AddDrawMesh(
+			m_MoveBoxMesh,
+			m_TextureResource,
+			World,
+			true
+		);
+	}
+
+
+	//--------------------------------------------------------------------------------------
 	///	PNT頂点オブジェクトの描画クラス
 	//--------------------------------------------------------------------------------------
 	PNTDrawObject::PNTDrawObject(const shared_ptr<Scene> PtrScene) :

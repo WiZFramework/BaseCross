@@ -61,7 +61,7 @@ namespace basecross {
 				GetThis<Scene>(), strTexture, false,
 				Vector3(5.0f, 0.5f, 5.0f),
 				Quaternion(),
-				Vector3(-5.0f, 0.25f, 0.0f)
+				Vector3(5.0f, 0.25f, 0.0f)
 				)
 		);
 
@@ -70,7 +70,7 @@ namespace basecross {
 				GetThis<Scene>(), strTexture, false,
 				Vector3(3.0f, 1.0f, 3.0f),
 				Quaternion(),
-				Vector3(-5.0f, 0.5f, 0.0f)
+				Vector3(5.0f, 0.5f, 0.0f)
 				)
 		);
 
@@ -79,7 +79,7 @@ namespace basecross {
 				GetThis<Scene>(), strTexture, false,
 				Vector3(3.0f, 1.0f, 3.0f),
 				Quaternion(),
-				Vector3(3.5f, 0.5f, 0.0f)
+				Vector3(-3.5f, 0.5f, 0.0f)
 				)
 		);
 
@@ -87,10 +87,20 @@ namespace basecross {
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(5.0f, 0.5f, 5.0f),
-				Quaternion(Vector3(0, 0, 1), XM_PIDIV4),
-				Vector3(5.0f, 1.0f, 0.0f)
+				Quaternion(Vector3(0, 0, 1), -XM_PIDIV4),
+				Vector3(-5.0f, 1.0f, 0.0f)
 				)
 		);
+		//移動ボックス
+		m_MoveBoxObjectVec.push_back(
+			ObjectFactory::Create<MoveBoxObject>(
+				GetThis<Scene>(), strTexture, false,
+				Vector3(0.5f, 0.5f, 0.5f),
+				Quaternion(),
+				Vector3(0.0f, 0.25f, 5.0f)
+				)
+		);
+
 
 		wstring strTexture2 = DataDir + L"trace.png";
 		//球の作成
@@ -114,6 +124,9 @@ namespace basecross {
 	void Scene::OnUpdate() {
 		m_SquareObject->OnUpdate();
 		for (auto& v : m_BoxObjectVec) {
+			v->OnUpdate();
+		}
+		for (auto& v : m_MoveBoxObjectVec) {
 			v->OnUpdate();
 		}
 		m_SphereObject->OnUpdate();
@@ -141,7 +154,7 @@ namespace basecross {
 			}
 
 			if (CntlVec[0].fThumbRX != 0) {
-				m_CameraXZRad -= CntlVec[0].fThumbRX * 0.02f;
+				m_CameraXZRad += CntlVec[0].fThumbRX * 0.02f;
 				if (abs(m_CameraXZRad) >= XM_2PI) {
 					m_CameraXZRad = 0;
 				}
@@ -161,7 +174,7 @@ namespace basecross {
 				Vector3(
 					sin(m_CameraXZRad) * m_CameraArmLen * sin(m_CameraYRad),
 					cos(m_CameraYRad) * m_CameraArmLen,
-					cos(m_CameraXZRad) * m_CameraArmLen * sin(m_CameraYRad)
+					-cos(m_CameraXZRad) * m_CameraArmLen * sin(m_CameraYRad)
 				);
 			m_CamerEye = m_CamerAt + CameraLocalEye;
 		}
@@ -174,6 +187,9 @@ namespace basecross {
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();
 		for (auto& v : m_BoxObjectVec) {
+			v->OnDraw();
+		}
+		for (auto& v : m_MoveBoxObjectVec) {
 			v->OnDraw();
 		}
 		m_SphereObject->OnDraw();
