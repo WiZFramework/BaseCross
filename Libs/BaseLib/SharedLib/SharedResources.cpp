@@ -246,7 +246,7 @@ namespace basecross {
 			m_TargetToAt(0,0,0),
 			m_RadY(0.5f),
 			m_RadXZ(0),
-			m_CameraUpDownSpeed(0.02f),
+			m_CameraUpDownSpeed(0.5f),
 			m_CameraUnderRot(0.1f),
 			m_ArmLen(5.0f),
 			m_MaxArm(20.0f),
@@ -406,18 +406,18 @@ namespace basecross {
 			//ã‰ºŠp“x‚Ì•ÏX
 			if (CntlVec[0].fThumbRY >= 0.1f || KeyData.m_bPushKeyTbl[VK_UP]) {
 				if (IsUDBaseMode()) {
-					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed * ElapsedTime;
 				}
 				else {
-					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed * ElapsedTime;
 				}
 			}
 			else if (CntlVec[0].fThumbRY <= -0.1f || KeyData.m_bPushKeyTbl[VK_DOWN]) {
 				if (IsUDBaseMode()) {
-					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed;
+					pImpl->m_RadY -= pImpl->m_CameraUpDownSpeed * ElapsedTime;
 				}
 				else {
-					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed;
+					pImpl->m_RadY += pImpl->m_CameraUpDownSpeed * ElapsedTime;
 				}
 			}
 			if (pImpl->m_RadY > XM_PI * 4 / 9.0f) {

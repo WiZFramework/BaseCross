@@ -833,7 +833,7 @@ namespace basecross {
 		@return	タイマー
 		*/
 		//--------------------------------------------------------------------------------------
-		const StepTimer& GetStepTimer() const { return m_Timer; }
+		StepTimer& GetStepTimer() { return m_Timer; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 前回のターンからの経過時間を得る
