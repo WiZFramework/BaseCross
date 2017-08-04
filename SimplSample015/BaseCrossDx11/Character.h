@@ -22,7 +22,15 @@ namespace basecross {
 		Vector3 m_Scale;				///<スケーリング
 		Quaternion m_Qt;			///<回転
 		Vector3 m_Pos;				///<位置
-		void CreateBuffers();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 頂点の作成
+		@param[in]	WrapX	X方向のタイリング
+		@param[in]	WrapY	Y方向のタイリング
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void CreateBuffers(float WrapX, float WrapY);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -240,6 +248,33 @@ namespace basecross {
 		Quaternion m_Qt;			///<回転
 		Vector3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
+
+		Vector3 m_Velocity;			//速度
+		float m_Math;	//質量
+		float m_Speed;	//追いかけるスピード
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プレイヤーを追いかける速度を設定する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateVelosity();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief Boxとの衝突判定
+		@param[in]	BeforePos	1つ前の場所
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void CollisionWithBoxes(const Vector3& BeforePos);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 進行方向を向く
+		@param[in]	LerpFact	補間係数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void RotToHead(float LerpFact);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -303,6 +338,14 @@ namespace basecross {
 		shared_ptr<TextureResource> m_TextureRes;
 		Matrix4X4 m_WorldMatrix;
 		bool m_Trace;
+		bool m_Wrap;
+		DrawObject():
+			m_MeshRes(nullptr),
+			m_TextureRes(nullptr),
+			m_WorldMatrix(),
+			m_Trace(false),
+			m_Wrap(false)
+		{}
 	};
 
 
@@ -333,13 +376,14 @@ namespace basecross {
 		@param[in]	TextureRes テクスチャ
 		@param[in]	WorldMat ワールド行列
 		@param[in]	Trace 透明処理するかどうか
+		@param[in]	Wrap ラッピング処理するかどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		void AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
 			const shared_ptr<TextureResource>& TextureRes,
 			const Matrix4X4& WorldMat,
-			bool Trace);
+			bool Trace,bool Wrap = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

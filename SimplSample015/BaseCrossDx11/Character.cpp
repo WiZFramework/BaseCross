@@ -23,13 +23,13 @@ namespace basecross {
 	{}
 	SquareObject::~SquareObject() {}
 
-	void SquareObject::CreateBuffers() {
+	void SquareObject::CreateBuffers(float WrapX, float WrapY) {
 		float HelfSize = 0.5f;
 		vector<VertexPositionNormalTexture> vertices = {
 			{ VertexPositionNormalTexture(Vector3(-HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(1.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(1.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(WrapX, 0.0f)) },
+			{ VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, WrapY)) },
+			{ VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(WrapX, WrapY)) },
 
 		};
 
@@ -43,7 +43,7 @@ namespace basecross {
 
 
 	void SquareObject::OnCreate() {
-		CreateBuffers();
+		CreateBuffers(m_Scale.x, m_Scale.y);
 		//テクスチャの作成
 		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
 	}
@@ -67,7 +67,8 @@ namespace basecross {
 			m_SquareMesh,
 			m_TextureResource,
 			World,
-			false
+			false,
+			true
 		);
 	}
 
@@ -178,11 +179,6 @@ namespace basecross {
 					//これで、斜めのボックスを滑り落ちるようになる
 					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
 				}
-
-
-				//重力をスライドさせて設定する
-				//これで、斜めのボックスを滑り落ちるようになる
-//				m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
 				//速度をスライドさせて設定する
 				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
 				//Y方向は重力に任せる
@@ -355,7 +351,10 @@ namespace basecross {
 		m_Trace(Trace),
 		m_Scale(Scale),
 		m_Qt(Qt),
-		m_Pos(Pos)
+		m_Pos(Pos),
+		m_Velocity(0,0,0),
+		m_Math(1.0f),
+		m_Speed(4.0f)
 	{}
 	MoveBoxObject::~MoveBoxObject() {}
 
@@ -379,11 +378,125 @@ namespace basecross {
 		MeshUtill::CreateCube(1.0f, vertices, indices);
 		//メッシュの作成（変更できない）
 		m_MoveBoxMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-
 		//テクスチャの作成
 		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
 	}
+
+	void MoveBoxObject::UpdateVelosity() {
+		auto ShPtrScene = m_Scene.lock();
+		if (!ShPtrScene) {
+			return;
+		}
+		//フォース（力）
+		Vector3 Fource(0, 0, 0);
+		//プレイヤーを向く方向ベクトル
+		Vector3 ToPlayerVec = 
+			ShPtrScene->GetSphereObject()->GetPosition() - m_Pos;
+		//縦方向は計算しない
+		ToPlayerVec.y = 0;
+		ToPlayerVec *= m_Speed;
+		//力を掛ける方向を決める
+		Fource = ToPlayerVec - m_Velocity;
+		//力と質量から加速を求める
+		Vector3 Accel = Fource / m_Math;
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//速度を加速する
+		m_Velocity += Accel * ElapsedTime;
+	}
+
+	void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//衝突判定
+		auto ShPtrScene = m_Scene.lock();
+		for (auto& v : ShPtrScene->GetBoxObjectVec()) {
+			OBB DestObb = v->GetOBB();
+			OBB SrcObb = GetOBB();
+			SrcObb.m_Center = BeforePos;
+			float HitTime;
+			Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
+			if (HitTest::CollisionTestObbObb(SrcObb, CollisionVelosity, DestObb, 0, ElapsedTime, HitTime)) {
+				m_Pos = BeforePos + CollisionVelosity * HitTime;
+				float SpanTime = ElapsedTime - HitTime;
+				//m_Posが動いたのでOBBを再取得
+				SrcObb = GetOBB();
+				Vector3 HitPoint;
+				//最近接点を得るための判定
+				HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
+				//衝突法線をHitPointとm_Posから導く
+				Vector3 Normal = m_Pos - HitPoint;
+				Normal.Normalize();
+				//速度をスライドさせて設定する
+				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+				//Y方向はなし
+				m_Velocity.y = 0;
+				//最後に衝突点から余った時間分だけ新しい値で移動させる
+				m_Pos = m_Pos + m_Velocity * SpanTime;
+				//追い出し処理
+				//少しづつ相手の領域から退避する
+				//最大10回退避するが、それでも衝突していたら次回ターンに任せる
+				int count = 0;
+				while (count < 10) {
+					//退避する係数
+					float MiniSpan = 0.01f;
+					//もう一度衝突判定
+					//m_Posが動いたのでOBBを再取得
+					SrcObb = GetOBB();
+					if (HitTest::OBB_OBB(SrcObb, DestObb)) {
+						//最近接点を得るための判定
+						HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
+						//衝突していたら追い出し処理
+						Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+						EscapeNormal.y = 0;
+						EscapeNormal.Normalize();
+						m_Pos = m_Pos + EscapeNormal * MiniSpan;
+					}
+					else {
+						break;
+					}
+					count++;
+				}
+			}
+		}
+	}
+
+	void MoveBoxObject::RotToHead(float LerpFact) {
+		if (LerpFact <= 0.0f) {
+			//補間係数が0以下なら何もしない
+			return;
+		}
+		//回転の更新
+		//Velocityの値で、回転を変更する
+		if (m_Velocity.Length() > 0.0f) {
+			Vector3 Temp = m_Velocity;
+			Temp.Normalize();
+			float ToAngle = atan2(Temp.x, Temp.z);
+			Quaternion Qt;
+			Qt.RotationRollPitchYaw(0, ToAngle, 0);
+			Qt.Normalize();
+			//現在と目標を補間
+			if (LerpFact >= 1.0f) {
+				m_Qt = Qt;
+			}
+			else {
+				m_Qt.Slerp(m_Qt, Qt, LerpFact);
+			}
+		}
+	}
+
 	void MoveBoxObject::OnUpdate() {
+		//1つ前の位置を取っておく
+		Vector3 BeforrPos = m_Pos;
+		//速度を変化させる
+		UpdateVelosity();
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//速度に合わせて位置の変更
+		m_Pos += m_Velocity * ElapsedTime;
+		//衝突判定
+		CollisionWithBoxes(BeforrPos);
+		RotToHead(0.1f);
 	}
 
 	void MoveBoxObject::OnDraw() {
@@ -420,12 +533,13 @@ namespace basecross {
 	void PNTDrawObject::AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
 		const shared_ptr<TextureResource>& TextureRes,
 		const Matrix4X4& WorldMat,
-		bool Trace) {
+		bool Trace, bool Wrap) {
 		DrawObject Obj;
 		Obj.m_MeshRes = MeshRes;
 		Obj.m_TextureRes = TextureRes;
 		Obj.m_WorldMatrix = WorldMat;
 		Obj.m_Trace = Trace;
+		Obj.m_Wrap = Wrap;
 		m_DrawObjectVec.push_back(Obj);
 	}
 
@@ -451,9 +565,9 @@ namespace basecross {
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		//デプスステンシルステート
 		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
-		//サンプラー
-		ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
-		pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+		//サンプラーの準備
+		ID3D11SamplerState* pSamplerClamp = RenderState->GetLinearClamp();
+		ID3D11SamplerState* pSamplerWrap = RenderState->GetLinearWrap();
 		//ストライドとオフセット
 		UINT stride = sizeof(VertexPositionNormalTexture);
 		UINT offset = 0;
@@ -501,6 +615,13 @@ namespace basecross {
 			//テクスチャの設定
 			ID3D11ShaderResourceView* pNull[1] = { 0 };
 			pD3D11DeviceContext->PSSetShaderResources(0, 1, v.m_TextureRes->GetShaderResourceView().GetAddressOf());
+			//サンプラー
+			if (v.m_Wrap) {
+				pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerWrap);
+			}
+			else {
+				pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerClamp);
+			}
 			//ブレンドステート
 			if (v.m_Trace) {
 				//透明処理

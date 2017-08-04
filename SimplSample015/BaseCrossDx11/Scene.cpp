@@ -91,11 +91,14 @@ namespace basecross {
 				Vector3(-5.0f, 1.0f, 0.0f)
 				)
 		);
+
+		strTexture = DataDir + L"wall.jpg";
+
 		//移動ボックス
 		m_MoveBoxObjectVec.push_back(
 			ObjectFactory::Create<MoveBoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(0.5f, 0.5f, 0.5f),
+				Vector3(0.25f, 0.5f, 0.5f),
 				Quaternion(),
 				Vector3(0.0f, 0.25f, 5.0f)
 				)
