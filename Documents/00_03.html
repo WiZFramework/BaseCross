@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">
 <link href="css/main.css" rel="stylesheet" type="text/css">
 <title>BaseCrossドキュメント(2017年)</title>
 </head>
@@ -33,15 +34,13 @@
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionColor型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
 　SimpleSample002と同じシェーダです。<br/>
 <br />
-　また<b>更新処理</b>も共通になります。<b>SquareSprite::OnUpdate関数</b>には、四角形が左右に移動しながら回転する記述がされています。<br />
-<br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
 　オブジェクトのクラスは<b>SquareSpriteクラス</b>です。
 <br />
 <h4>■初期化■</h4>
 　初期化は<b>SquareSprite::OnCreate関数</b>から呼ばれます。<br />
-　ここでもDx12版と同じように<b>インデックスバッファ</b>を作成します。作成方法は、<b>頂点配列</b>と<b>インデックス配列</b>を作成して、
+　ここでは<b>インデックスバッファ</b>を作成します。作成方法は、<b>頂点配列</b>と<b>インデックス配列</b>を作成して、
 <div class="box1">
 <pre>
     //メッシュの作成
@@ -49,6 +48,26 @@
 </pre>
 </div>
 　を呼びます。<br />
+<br />
+<h4>■更新処理■</h4>
+　更新処理は<b>回転しながら移動</b>を実装してます。左右の一定以上の場所で、回転方向と移動方向を変えています。
+<div class="box1">
+<pre>
+void SquareSprite::OnUpdate() {
+    if (m_PosSpan.x > 0) {
+        m_Rot -= 0.05f;
+    }
+    else {
+        m_Rot += 0.05f;
+    }
+    m_Pos += m_PosSpan;
+    if (abs(m_Pos.x) > 400.0f) {
+        m_PosSpan *= -1.0f;
+    }
+}
+</pre>
+</div>
+　このほかにもいろいろ記述方法はあると思いますので、各自いろいろやってみると勉強になります。<br />
 <br />
 <h4>■描画処理■</h4>
 　こちらも<b>SimpleSample002</b>とほとんど同じです。違うのは<b>インデックス描画</b>をするところです。あと、<b>コンスタントバッファ</b>へ渡すワールド行列の作成が少し違います。

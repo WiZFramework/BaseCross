@@ -1,6 +1,7 @@
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta charset="utf-8">
 <link href="css/main.css" rel="stylesheet" type="text/css">
 <title>BaseCrossドキュメント(2017年)</title>
 </head>
@@ -58,8 +59,8 @@ PSPCInput main(VSPCInput input)
 </div>
 　ここでインクルードされている<b>INCStructs.hlsli</b>は頂点の型が宣言されたものです。<b>コンスタントバッファ</b>は<b>cbuffer ConstantBuffer</b>というのが、シェーダ側のバッファです。<br />
 　ここでは、<b>MatrixTransform</b>という行列と、<b>Emissive</b>というfloat4型の変数があります。行列の<b>row_major</b>という修飾子は、<b>行優先</b>という意味です。DirectXはデフォルトで<b>行優先</b>で操作します。ところがシェーダはデフォルトで<b>列優先（col-major）</b>で実行されます。そのため、通常、３Ｄ描画時などは、行列を<b>転置</b>させてからシェーダに入力します。<br />
-　コンスタントバッファへCPU側から渡す処理は<b>Dx12、Dx11で違い</b>がありますので、それぞれの説明で行います。<br />
-　<b>頂点シェーダ</b>での処理は、<b>頂点のインプットに行列をかけて</b>ピクセルシェーダ</b>に渡します。頂点色はそのまま渡します。<br />
+　ここでの<b>頂点シェーダ</b>での処理は、<b>頂点のインプットに行列をかけて</b>ピクセルシェーダ</b>に渡しています。頂点色はそのまま渡します。<br />
+　厳密には違うのですが、<b>頂点シェーダ</b>のリターンはそのまま<b>ピクセルシェーダの入力</b>と考えるとわかりやすいかもしれません。（ピクセルシェーダに渡される<b>ポジション</b>は、ピクセル座標になります）<br />
 　<b>ピクセルシェーダ</b>は以下になります。
 <div class="box1">
 <pre>
@@ -79,11 +80,10 @@ float4 main(PSPCInput input) : SV_TARGET
 </pre>
 </div>
 　ここでの処理は<b>頂点シェーダ</b>から渡されたカラー情報に、<b>コンスタントバッファ</b>の<b>Emissive</b>を足してリターンします。<b>ピクセルシェーダのリターン</b>はそのまま<b>バックバッファへの書き込み</b>となります。<br />
-　また「更新処理」も共通になります。「TriangleSprite::OnUpdate関数」には、三角形が左右に移動する記述がされています。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
-　表示しているのは、「TriangleSpriteクラス」です。まず、「Character.h」ですが、以下のようなヘッダになります。
+　表示しているのは、<b>TriangleSpriteクラス</b>です。まず、<b>Character.h</b>ですが、以下のようなヘッダになります。
 <div class="box1">
 <pre>
 class TriangleSprite : public ObjectInterface, public ShapeInterface {
@@ -102,10 +102,10 @@ public:
 };
 </pre>
 </div>
-　「Dx12版」に対してかなりシンプルなのがわかります。「Dx11版」の場合は、初期化しなければならないリソースはDx12よりかなり少ないです。<br />
+　<b>Dx12版</b>に対してかなりシンプルなのがわかります。<b>Dx11版</b>の場合は、初期化しなければならないリソースはDx12よりかなり少ないです。<br />
 <br />
 <h4>■初期化処理■</h4>
-　初期化は「TriangleSprite::OnCreate関数」で行います。以下が実体です。
+　初期化は<b>TriangleSprite::OnCreate関数</b>で行います。以下が実体です。
 <div class="box1">
 <pre>
 void TriangleSprite::OnCreate() {
@@ -119,10 +119,25 @@ void TriangleSprite::OnCreate() {
 }
 </pre>
 </div>
-　ここでは、頂点の配列を作成して「メッシュリソース」を作成しています。<br />
+　ここでは、頂点の配列を作成して<b>メッシュリソース</b>を作成しています。<br />
+　<b>MeshResource::CreateMeshResource()関数</b>はテンプレート関数です。ここでは、VertexPositionColor型の頂点バッファを作成して、<b>MeshResource</b>を取得しています。<br />
+<br />
+<h4>■更新処理■</h4>
+　更新処理は、<b>TriangleSprite::OnUpdate()</b>に記述します。
+<div class="box1">
+<pre>
+void TriangleSprite::OnUpdate() {
+    m_Pos += m_MoveSpan;
+    if (abs(m_Pos.x) >= 0.5f) {
+        m_MoveSpan *= -1.0f;
+    }
+}
+</pre>
+</div>
+　ここでは<b>行ったり来たり</b>の移動処理をしています。<br />
 <br />
 <h4>■描画処理■</h4>
-　描画は「TriangleSprite::OnDraw関数」で行います。以下が実体です。
+　描画は<b>TriangleSprite::OnDraw関数</b>で行います。以下が実体です。
 <div class="box1">
 <pre>
 void TriangleSprite::OnDraw() {
@@ -176,9 +191,9 @@ void TriangleSprite::OnDraw() {
 }
 </pre>
 </div>
-　ここではもっぱら「デバイスコンテキストクラス（pD3D11DeviceContext）」に対する描画準備や描画命令の発行になります。<br />
-　ここで気を付けたいのは「コンスタントバッファ」の扱いです。「Dx12版」では「コンスタントバッファ」はリソースを作成して、コピーも自分で行わなければなりませんでした。<br />
-　しかし、「Dx11版」では
+　ここではもっぱら<b>デバイスコンテキストクラス（pD3D11DeviceContext）</b>に対する描画準備や描画命令の発行になります。<br />
+　ここで気を付けたいのは<b>コンスタントバッファ</b>の扱いです。<b>Dx12版</b>では<b>コンスタントバッファ</b>はリソースを作成して、コピーも自分で行わなければなりませんでした。<br />
+　しかし、<b>Dx11版</b>では
 <div class="box1">
 <pre>
     //コンスタントバッファの準備
@@ -210,8 +225,8 @@ void TriangleSprite::OnDraw() {
     pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 </pre>
 </div>
-　という形で渡しています。このメカニズムは、「CBSpriteクラス」というコンスタントバッファクラスによって実装されます。<br />
-　このクラスは「ProjectShader.h/cpp」にマクロによって実装されます。以下がヘッダです。
+　という形で渡しています。このメカニズムは、<b>CBSpriteクラス</b>というコンスタントバッファクラスによって実装されます。<br />
+　このクラスは<b>ProjectShader.h/cpp</b>にマクロによって実装されます。以下がヘッダです。
 <div class="box1">
 <pre>
 //スプライト用コンスタントバッファ構造体
@@ -226,14 +241,14 @@ struct SpriteConstantBuffer
 DECLARE_DX11_CONSTANT_BUFFER(CBSprite, SpriteConstantBuffer)
 </pre>
 </div>
-　この「DECLARE_DX11_CONSTANT_BUFFER」マクロはシェーダ同様、マクロで「CBSpriteクラス」を宣言します。<br />
+　この<b>DECLARE_DX11_CONSTANT_BUFFER</b>マクロはシェーダ同様、マクロで<b>CBSpriteクラス</b>を宣言します。<br />
 　実体のほうは
 <div class="box1">
 <pre>
 IMPLEMENT_DX11_CONSTANT_BUFFER(CBSprite)
 </pre>
 </div>
-　の1行で実装できます。この実装により「CBSpriteクラス」は「シングルトン」として実体化されます。ですから
+　の1行で実装できます。この実装により<b>CBSpriteクラス</b>は<b>シングルトン</b>として実体化されます。ですから
 <div class="box1">
 <pre>
     CBSprite::GetPtr()->GetBuffer()
@@ -241,7 +256,7 @@ IMPLEMENT_DX11_CONSTANT_BUFFER(CBSprite)
 </div>
 　のような記述でコンスタントバッファの記憶領域にアクセスできます。<br />
 <br />
-　「ProjectShader.h/cpp」には「コンスタントバッファ」のほかに「頂点シェーダとピクセルシェーダのマクロ」が記述されます。以下がその宣言です。
+　<b>ProjectShader.h/cpp</b>には<b>コンスタントバッファ</b>のほかに<b>頂点シェーダとピクセルシェーダのマクロ</b>が記述されます。以下がその宣言です。
 <div class="box1">
 <pre>
 DECLARE_DX11_VERTEX_SHADER(VSPCSprite, VertexPositionColor)
@@ -267,8 +282,6 @@ IMPLEMENT_DX11_PIXEL_SHADER(PSPCSprite,
 </div>
 　のような記述になります。<br />
 <br />
-<h3>【まとめ】</h3>
-　「Dx12版」と「Dx11版」を両方並べてみると、明らかに「Dx12版」のほうがゲーム制作側で記述しなければならない箇所が多くあるのがわかります。<br />
 
 </div>
 <!-- /コンテンツ　-->
