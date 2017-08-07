@@ -130,7 +130,7 @@ namespace basecross {
 		m_StaticConstantBuffer.Projection = Proj;
 		m_StaticConstantBuffer.LightDir = LightDir;
 		m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+		m_StaticConstantBuffer.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
 		//çXêV
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_StaticConstantBuffer),
 			sizeof(m_StaticConstantBuffer));

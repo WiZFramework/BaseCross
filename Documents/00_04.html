@@ -33,8 +33,8 @@
 　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionColor型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
 　SimpleSample002と同じシェーダです。<br/>
-<br />
-　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>SquareSpriteGroup::OnUpdate関数</b>には、それぞれの四角形をグループ化して個別に更新する方法が記述されています。<br />
+　このサンプルは<b>複数のオブジェクトをまとめて処理する</b>サンプルです。<br />
+　ゲーム盤上にはさまざまなオブジェクトが配置されますが、<b>スケーリング、回転、位置</b>のみが違ってテクスチャや描画シェーダが同じもの（グループ）は、結構あります。このサンプルではそのような<b>オブジェクトグループ</b>を配置する場合のサンプルとなります。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
@@ -74,7 +74,44 @@ void SquareSpriteGroup::OnCreate() {
 　これで初期化終了です。<br />
 <br />
 <h4>■更新処理■</h4>
-　<b>更新処理</b>は<b>Dx12版</b>と同じような処理です<b>SquareSpriteGroup::UpdateObjects()関数</b>を確認してください。<br />
+　<b>更新処理</b>は<b>SquareSpriteGroup::OnUpdate()関数</b>で行います。ただ、ここでは以下のように別の関数を呼んでいます。
+<div class="box1">
+<pre>
+void SquareSpriteGroup::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    UpdateObjects(ElapsedTime);
+}
+</pre>
+</div>
+　呼ばれたほうの関数は以下です。
+<div class="box1">
+<pre>
+//各オブジェクトの位置等の変更
+void SquareSpriteGroup::UpdateObjects(float ElapsedTime) {
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    h /= 2.0f;
+    for (auto& v : m_SquareSpriteVec) {
+        if (v.m_LocalPos.y &lt; -h) {
+            v.m_LocalRot = Util::RandZeroToOne(true);
+            v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
+            v.m_LocalPos = Vector2(0, 0);
+            v.m_LocalVelocity = Vector2(
+                Util::RandZeroToOne(true) * 200.0f - 100.0f,
+                 100 + Util::RandZeroToOne(true) * 100.0f
+            );
+            v.m_LocalGravityVelocity = Vector2(0, 0);
+        }
+        else {
+            v.m_LocalRot += v.m_LocalRotVelocity * ElapsedTime;
+            v.m_LocalPos += v.m_LocalVelocity * ElapsedTime;
+            v.m_LocalGravityVelocity += Vector2(0, -98.0f) * ElapsedTime;
+            v.m_LocalPos += v.m_LocalGravityVelocity * ElapsedTime;
+        }
+    }
+}
+</pre>
+</div>
+　ここでは各オブジェクトのそれぞれの位置や回転などを、ターン時間に合わせて変化させながら、設定しています。範囲外に出てしまったオブジェクトは、パラメータを初期化して再登場させています。<br />
 <br />
 <h4>■描画処理■</h4>
 　<b>描画処理</b>は<b>Dx11版</b>は<b>コンスタントバッファ</b>が<b>シングルトン</b>として実装されているので、各四角形に持たせる必要はありません。以下は描画処理です。
@@ -152,7 +189,7 @@ void SquareSpriteGroup::OnDraw() {
 　以上で描画処理は終了です。<br />
 <br />
 <h3>【まとめ】</h3>
-　今回は複数のインスタンスの描画を行いました。ただ今回のように、<b>ワールド行列</b>のみ違うオブジェクトの複数描画であれば<b>SimplSample014</b>で紹介する<b>インスタンス描画</b>のほうが効率が良いかもしれません。<br />
+　今回は複数の同じオブジェクトの描画を行いました。ただ今回のように、<b>ワールド行列</b>のみ違うオブジェクトの複数描画であれば<b>SimplSample014</b>で紹介する<b>インスタンス描画</b>のほうが効率が良いかもしれません。<br />
 　いろんなケースに応じて今回のサンプルのような方法をとるか、インスタンス描画をとるかを検討してみるといいと思います。
 </div>
 <!-- /コンテンツ　-->

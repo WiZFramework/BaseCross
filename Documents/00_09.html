@@ -30,14 +30,70 @@
 <p>&nbsp;</p>
 <h3>【サンプルのポイント】</h3>
 　今項から<b>３Ｄの描画</b>になります。手始めに<b>VertexPositionColor型</b>の頂点を持つ立方体の描画です。<br />
-　まず<b>頂点バッファを自作する</b>処理からやってみます。立法や球体など、基本的な形状はライブラリを使って作成することができます。ですが、今項では、自作する方法の説明から始めます。
+　まず<b>頂点バッファを自作する</b>処理からやってみます。立法や球体など、基本的な形状はライブラリを使って作成することができます。ですが、今項では、自作する方法の説明から始めます。<br />
 <br />
 <h3>【共通解説】</h3>
 　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionColor型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
+　以下は頂点シェーダです。<b>VSPCStatic.hlsl</b>です。<br />
+<div class="box1">
+<pre>
+#include "INCStructs.hlsli"
+
+cbuffer SimpleConstantBuffer : register(b0)
+{
+    float4x4 World  : packoffset(c0);
+    float4x4 View   : packoffset(c4);
+    float4x4 Projection : packoffset(c8);
+    float4 Emissive : packoffset(c12);
+};
+
+PSPCInput main(VSPCInput input)
+{
+    PSPCInput result;
+    //頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);
+    //ピクセルシェーダに渡す変数に設定
+    result.position = pos;
+    result.color = input.color;
+    return result;
+}
+</pre>
+</div>
+　コンスタントバッファを見るとわかりますが、３Ｄ描画には<b>３つの行列</b>をシェーダに渡します。C++側で計算してもいいのですが、シェーダで計算したほうが速いのでそのように記述しています。<br />
+　頂点シェーダの出力型である<b>PSPCInput</b>は、INCStructs.hlsliに定義されているわけですが、以下のような構造です。
+<div class="box1">
+<pre>
+struct PSPCInput
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+};
+</pre>
+</div>
+　このように<b>ポジション</b>と<b>カラー</b>のみあります。頂点シェーダからピクセルシェーダに渡す<b>ポジション</b>は<b>デバイス座標</b>になります。ですから、頂点シェーダでは、
+<div class="box1">
+<pre>
+    PSPCInput result;
+    //頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);
+</pre>
+</div>
+　のように<b>ワールド行列、ビュー行列、射影行列</b>を、順に<b>掛け算</b>します。ローカル座標のある頂点に対して、この順番で掛け算すると、<b>デバイス座標上のポジション</b>に変換されます。その際気を付けなければいけないのは、float4型を使わなければいけないという部分です。そして、wの値は<b>1.0</b>にしておきます。<br />
 <br />
-　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<br />
-<br />
+　ピクセルシェーダは色を決定する処理です。各自読んでみましょう。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
@@ -46,7 +102,7 @@
 　<b>Dx11版</b>の初期化は、<b>頂点配列</b>と<b>インデックス配列</b>を作成し、それをもとに<b>メッシュ</b>を作成します。この処理はDx12版と変わりません。<br />
 <br />
 <h4>■更新処理■</h4>
-　<b>CubeObject::OnUpdate()関数</b>です。ここではオブジェクトを回転させています。この処理は<b>Dx12版</b>と同様です。<br/>
+　<b>CubeObject::OnUpdate()関数</b>です。ここではオブジェクトを回転させています。<br/>
 <br />
 <h4>■描画処理■</h4>
 　このサンプルの描画は<b>Dx11描画</b>を、<b>CubeObject::OnDraw()関数</b>に直接記述しています
@@ -92,7 +148,8 @@ void CubeObject::OnDraw() {
     UINT stride = sizeof(VertexPositionColor);
     UINT offset = 0;
     //頂点バッファのセット
-    pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
     //インデックスバッファのセット
     pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
 

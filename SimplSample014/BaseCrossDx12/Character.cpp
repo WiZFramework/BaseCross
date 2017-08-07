@@ -237,8 +237,8 @@ namespace basecross {
 		sb.LightDir = LightDir;
 		//ディフューズ
 		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
+		//エミッシブ加算。
+		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
 
 		//更新
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&sb),

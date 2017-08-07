@@ -35,21 +35,59 @@
 <h3>【共通解説】</h3>
 　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormalTexture型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
-<br />
-　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
+　シェーダは前項のシェーダに、テクスチャ対応を加えたものです。<br />
+　以下はテクスチャに関係ある<b>ピクセルシェーダ（PSPNTStatic.hlsl）</b>ですが、
+<div class="box1">
+<pre>
+<span class="red">Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);</span>
+
+float4 main(PSPNTInput input) : SV_TARGET
+{
+    //法線ライティング
+    float3 lightdir = normalize(LightDir.xyz);
+    float3 N1 = normalize(input.norm);
+    float4 Light = saturate(dot(N1, -lightdir) * Diffuse) + Emissive;
+    Light.a = Diffuse.a;
+    <span class="red">//テクスチャを設定
+    Light = g_texture.Sample(g_sampler, input.tex) * Light;</span>
+    return saturate(Light);
+}
+</pre>
+</div>
+　赤くなっているところが<b>テクスチャの設定</b>に関連する部分です。<b>サンプラーとテクスチャー</b>の２つのリソースを使用します。<br />
+　カラー要素として<b>ディフューズとエミッシブ</b>があります。テクスチャ要素と合わせて、3つのパラメータがあることになります。これらをどう組み合わせるかは、シェーダ作成者次第ということになります。例えば
+<div class="box1">
+<pre>
+
+float4 main(PSPNTInput input) : SV_TARGET
+{
+
+    //法線ライティング
+    float3 lightdir = normalize(LightDir.xyz);
+    float3 N1 = normalize(input.norm);
+    float4 Light = saturate(dot(N1, -lightdir) * Diffuse);
+    Light.a = Diffuse.a;
+    //テクスチャを設定
+    Light = g_texture.Sample(g_sampler, input.tex) * Light;
+    return saturate(Light <span class="red">+ Emissive</span>);
+}
+</pre>
+</div>
+　と最後にエミッシブを加算する形にするだけでも、表現は大きく変わります。いろいろ試してみましょう。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
 <br />
 <h4>■初期化■</h4>
 　<b>Dx11版</b>の初期化は、<b>Dx12版</b>のようにリソース初期化はありません。頂点バッファを作成し、スケール、位置などを初期化します。<br />
-　頂点作成時の処理は<b>Dx12版</b>と同じです。<br />
 <br />
 <h4>■更新処理■</h4>
 　<b>CubeObject::OnUpdate()関数</b>です。オブジェクトを回転させています。<br />
 <br />
 <h4>■描画処理■</h4>
 　<b>CubeObject::OnDraw()関数</b>です。透明処理をする場合としない場合がありますので、注意してください。<br />
+　また<b>ディフューズとエミッシブ</b>の値も設定しています。
 <div class="box1">
 <pre>
 void CubeObject::OnDraw() {
@@ -89,21 +127,18 @@ void CubeObject::OnDraw() {
     sb.LightDir = LightDir;
     //ディフューズ
     sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-    //エミッシブ加算は行わない。
-    sb.Emissive = Color4(0, 0, 0, 0);
+    //エミッシブ加算。
+    sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
     //コンスタントバッファの更新
-    pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 
-        0, nullptr, &sb, 0, 0);
+    pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 
     //ストライドとオフセット
     UINT stride = sizeof(VertexPositionNormalTexture);
     UINT offset = 0;
     //頂点バッファのセット
-    pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
-        m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
     //インデックスバッファのセット
-    pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), 
-        DXGI_FORMAT_R16_UINT, 0);
+    pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
 
     //描画方法（3角形）
     pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -124,13 +159,11 @@ void CubeObject::OnDraw() {
     //ブレンドステート
     if (m_Trace) {
         //透明処理
-        pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), 
-            nullptr, 0xffffffff);
+        pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
     }
     else {
         //透明処理しない
-        pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), 
-            nullptr, 0xffffffff);
+        pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
     }
 
     //デプスステンシルステート
@@ -138,8 +171,7 @@ void CubeObject::OnDraw() {
 
     //テクスチャとサンプラーの設定
     ID3D11ShaderResourceView* pNull[1] = { 0 };
-    pD3D11DeviceContext->PSSetShaderResources(0, 1, 
-        m_TextureResource->GetShaderResourceView().GetAddressOf());
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, m_TextureResource->GetShaderResourceView().GetAddressOf());
     ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
     pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
 
@@ -166,11 +198,6 @@ void CubeObject::OnDraw() {
 </pre>
 </div>
 <br />
-<h3>【まとめ】</h3>
-　今回はあえて、初期化や描画のソースをできるだけ記してみました。コード分量も含め、<b>Dx12版</b>の設定しなければならないことの多さに戸惑うかもしれません。<br />
-　それだけ<b>Dx12</b>は<b>ゲームプログラマが自分で管理する</b>という考え方が徹底してるといえます。<b>Dx11</b>がやってくれた処理を自分で記述する形になります。<br />
-　このソースをみてただ<b>うんざり</b>するのもいいですが、逆に考えれば<b>Dx12のほうが自由度が高い</b>とも言えます。GPUやDx12のメカニズムにある程度慣れてくれば、Dx12のほうが<b>記述しやすい</b>とおもいます（経験上）。と言いますのは、上記に述べた初期化関数などの処理は<b>一度書けば、あとは使いまわしができる</b>からです。ですから設計によっては<b>Dx11版よりシンプルな形</b>でゲーム制作できるように<b>描画クラス</b>などを構築できます。<br />
-　そのような設計にぜひ挑戦してみてください。
 </div>
 <!-- /コンテンツ　-->
 <hr>

@@ -35,21 +35,291 @@
 <h3>【共通解説】</h3>
 　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionNormal型</b>の頂点を持つものです。<b>コンスタントバッファ</b>もあります。<br />
-<br />
-　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>OnUpdate()関数</b>には、更新する方法が記述されています。<br />
+　今回のポイントは<b>ライティング</b>です。ですので、そこに絞って説明します。以下は頂点シェーダです<b>VSPNStatic.hlsl</b>にあります。抜粋（main関数のみ）ですが、
+<div class="box1">
+<pre>
+PSPNInput main(VSPNInput input)
+{
+    PSPNInput result;
+    //頂点の位置を変換
+    float4 pos = float4(input.position.xyz, 1.0f);
+    //ワールド変換
+    pos = mul(pos, World);
+    //ビュー変換
+    pos = mul(pos, View);
+    //射影変換
+    pos = mul(pos, Projection);
+    //ピクセルシェーダに渡す変数に設定
+    result.position = pos;
+    <span class="red">//ライティング
+    result.norm = mul(input.norm, (float3x3)World);
+    result.norm = normalize(result.norm);</span>
+    return result;
+}
+</pre>
+</div>
+　赤くなっているところが、頂点シェーダにおけるライティングです。<br />
+　これの意味するところは、<b>4X4行列の3X3の部分だけ取り出す</b>という意味です。これは<b>スケーリングと回転のみ取り出す</b>ということです。<br />
+　もともと頂点シェーダに渡される法線は<b>原点を中心とした立方体</b>に対する法線です。これをワールド変換によって、スケーリングと回転、そして<b>移動</b>がなされるわけですが、<b>移動</b>の要素は、ライトが平行ライトなので、どの場所でもライトの向きは一緒です。ですから、ワールド行列の<b>スケーリング</b>と<b>回転</b>をもとに、渡された法線を変換してあげればよいのです。<br />
+　すると<b>ワールド変換された法線</b>が計算できます。法線なので<b>正規化</b>もしています。<br />
+　そして以下は<b>ピクセルシェーダ</b>です。<b>PSPNStatic.hlsl</b>です。同様main関数のみですが、
+<div class="box1">
+<pre>
+float4 main(PSPNInput input) : SV_TARGET
+{
+    <span class="red">//法線ライティング
+    float3 lightdir = normalize(LightDir.xyz);
+    float3 N1 = normalize(input.norm);
+    float4 Light = saturate(dot(N1, -lightdir) * Diffuse + Emissive);</span>
+    Light.a = Diffuse.a;
+    return Light;
+}
+</pre>
+</div>
+　赤くなっているところがポイントですが、以下の図を見てください。
+<p>&nbsp;</p>
+<img src="img/0010b.png" width="80%"/>
+<p>図0010b</p>
+<p>&nbsp;</p>
+　この図は、通常描画（フラットではない）の場合の、ピクセルシェーダに渡される法線と、ライトの関係を示したものです。両方とも正規化されているとします。ピクセルシェーダではその表面の1つの点を処理するので、青い丸のところだけ考えます。<br />
+　法線とライトから、この点の<b>明るさ</b>を求めればいいことがわかります。<br />
+　続いて以下の図を見てください。
+<p>&nbsp;</p>
+<img src="img/0010c.png" width="80%"/>
+<p>図0010c</p>
+<p>&nbsp;</p>
+　この図は前の図から<b>正規化された法線</b>と<b>正規化された光の方向の逆</b>の関係を示したものです。<b>正規化された法線</b>に対して<b>正規化された光の方向の逆</b>の<b>内積</b>を出すと、<b>赤い線の長さ</b>が出せるのがわかります。また、それは最高で<b>1.0</b>であり（法線とライトが重なっている場合）、最低で<b>0.0</b>です（法線とライトが90度になってる場合）。<br />
+　このことから
+<div class="box1">
+<pre>
+    float4 Light = dot(N1, -lightdir);
+</pre>
+</div>
+　という計算ができるのがわかります。<br />
+　一般的に<b>デフューズは掛け算</b>で、<b>エミッシブは足し算</b>ですから
+<div class="box1">
+<pre>
+    float4 Light = dot(N1, -lightdir) * Diffuse + Emissive;
+</pre>
+</div>
+　が導けます。ただ、この計算では<b>Lightの各値</b>が1.0を超える場合もあるので、ピクセルシェーダのリターンは<b>カラー</b>を返すので、<b>saturate()関数</b>によって、0から1.0までの間に丸めます。<br />
+　そして最終的に、アルファ値（デフィーズのアルファを使う）を設定し、リターンします。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
 <br />
 <h4>■初期化■</h4>
-　<b>Dx11版</b>の初期化は、<b>Dx12版</b>のようにリソース初期化はありません。頂点バッファを作成し、スケール、位置などを初期化します。<br />
-　頂点作成時の<b>フラット処理かどうか</b>の部分は<b>Dx12版</b>と同じです。<br />
+　主な初期化は<b>頂点の初期化</b>です。ここでは<b>フラットライティング</b>用の頂点と<b>面にライティング</b>用の頂点を作成します。<br />
+　以下は<b>CubeObject::CreateBuffers()関数</b>ですが
+<div class="box1">
+<pre>
+void CubeObject::CreateBuffers() {
+    float HelfSize = 0.5f;
+    vector&lt;Vector3> PosVec = {
+        { Vector3(-HelfSize, HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, -HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, HelfSize) },
+        { Vector3(-HelfSize, HelfSize, HelfSize) },
+        { Vector3(HelfSize, -HelfSize, HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    };
+    vector&lt;UINT> PosIndeces = {
+        0, 1, 2, 3,
+        1, 4, 3, 6,
+        4, 5, 6, 7,
+        5, 0, 7, 2,
+        5, 4, 0, 1,
+        2, 3, 7, 6,
+    };
+
+
+    vector&lt;Vector3> FaceNormalVec = {
+        { Vector3(0, 0, -1.0f) },
+        { Vector3(1.0f, 0, 0) },
+        { Vector3(0, 0, 1.0f) },
+        { Vector3(-1.0f, 0, 0) },
+        { Vector3(0, 1.0f, 0) },
+        { Vector3(0, -1.0f, 0) }
+    };
+
+    vector&lt;VertexPositionNormal> vertices;
+    vector&lt;uint16_t> indices;
+    UINT BasePosCount = 0;
+    for (int i = 0; i &lt; 6; i++) {
+        for (int j = 0; j &lt; 4; j++) {
+            VertexPositionNormal Data;
+            Data.position = PosVec[PosIndeces[BasePosCount + j]];
+            if (m_Flat) {
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position;
+                Data.normal.Normalize();
+            }
+            else {
+                //フラット表示しない場合は、法線は面の向き
+                Data.normal = FaceNormalVec[i];
+            }
+            vertices.push_back(Data);
+        }
+
+        indices.push_back((uint16_t)BasePosCount + 0);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 2);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 3);
+        indices.push_back((uint16_t)BasePosCount + 2);
+
+        BasePosCount += 4;
+    }
+    //メッシュの作成（変更できない）
+    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+}
+</pre>
+</div>
+　順を追って説明しますと、まず、元になる頂点の配列とインデックスの配列を作成します。以下の部分です。
+<div class="box1">
+<pre>
+    float HelfSize = 0.5f;
+    vector&lt;Vector3> PosVec = {
+        { Vector3(-HelfSize, HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, -HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, -HelfSize, -HelfSize) },
+        { Vector3(HelfSize, HelfSize, HelfSize) },
+        { Vector3(-HelfSize, HelfSize, HelfSize) },
+        { Vector3(HelfSize, -HelfSize, HelfSize) },
+        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    };
+    vector&lt;UINT> PosIndeces = {
+        0, 1, 2, 3,
+        1, 4, 3, 6,
+        4, 5, 6, 7,
+        5, 0, 7, 2,
+        5, 4, 0, 1,
+        2, 3, 7, 6,
+    };
+</pre>
+</div>
+　元になる頂点は、ローカル上の頂点ですから、各XYZ軸に<b>HelfSize</b>ずつ、プラス方向かマイナス方向に伸ばした位置です。<br />
+　立方体ですから、8個の頂点になります。ここで、<b>元になる</b>と言っているのは、この頂点と実際にメッシュに作成する頂点は違いますので、気を付けましょう。<br />
+　続いて、<b>各面の法線</b>を作成します。ライティングするためには、<b>各頂点の法線</b>を指定しなければいけません。立方体のように<b>角張ったオブジェクト</b>を描画するためには<b>面に対する法線</b>を各頂点に設定します。しかし<b>フラットな描画</b>や<b>球のような滑らかなオブジェクト</b>の場合は、法線は<b>面</b>に対するものではなく<b>頂点の方向</b>で設定します。以下が<b>面に対する法線</b>を作成しているところです。面は6つですから、6個の配列になります。
+<div class="box1">
+<pre>
+    vector&lt;Vector3> FaceNormalVec = {
+        { Vector3(0, 0, -1.0f) },
+        { Vector3(1.0f, 0, 0) },
+        { Vector3(0, 0, 1.0f) },
+        { Vector3(-1.0f, 0, 0) },
+        { Vector3(0, 1.0f, 0) },
+        { Vector3(0, -1.0f, 0) }
+    };
+</pre>
+</div>
+　ここまでで、<b>メッシュ</b>を作成するための材料がそろいました。それで、実際に<b>メッシュ</b>を作成します。<b>フラット描画の場合と通常描画の場合</b>で作成方法が違いますので注意しましょう。
+<div class="box1">
+<pre>
+    vector&lt;VertexPositionNormal> vertices;
+    vector&lt;uint16_t> indices;
+    UINT BasePosCount = 0;
+    for (int i = 0; i &lt; 6; i++) {
+        for (int j = 0; j &lt; 4; j++) {
+            VertexPositionNormal Data;
+            Data.position = PosVec[PosIndeces[BasePosCount + j]];
+            if (m_Flat) {
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position;
+                Data.normal.Normalize();
+            }
+            else {
+                //フラット表示しない場合は、法線は面の向き
+                Data.normal = FaceNormalVec[i];
+            }
+            vertices.push_back(Data);
+        }
+
+        indices.push_back((uint16_t)BasePosCount + 0);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 2);
+        indices.push_back((uint16_t)BasePosCount + 1);
+        indices.push_back((uint16_t)BasePosCount + 3);
+        indices.push_back((uint16_t)BasePosCount + 2);
+
+        BasePosCount += 4;
+    }
+    //メッシュの作成（変更できない）
+    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+</pre>
+</div>
+　ここで、<b>verticesとindices</b>という2つの配列を初期化して、最後に<b>MeshResource::CreateMeshResource()関数呼び出し</b>でメッシュを作成します。<br />
+　外側の<b>forループ</b>では<b>6つの面</b>をループします。
+<div class="box1">
+<pre>
+    //6つの面のループ
+    for (int i = 0; i &lt; 6; i++) {
+</pre>
+</div>
+　内側のループは各頂点のループです。1つの面を作成するのに4つの頂点が必要ですから4回ループします。
+<div class="box1">
+<pre>
+        //4つの面のループ
+        for (int j = 0; j &lt; 4; j++) {
+</pre>
+</div>
+　そしてこのループ内で、<b>vertices配列</b>に追加する頂点を決定します。
+<div class="box1">
+<pre>
+            VertexPositionNormal Data;
+            Data.position = PosVec[PosIndeces[BasePosCount + j]];
+</pre>
+</div>
+　上記の2行は、どの<b>元になる頂点のデータ</b>を使うかを決定しています。<b>PosVec</b>及び<b>PosIndeces</b>配列の中身がどうなっているか再確認しながら追いかけていくと理解できると思います。<br />
+　続いて<b>フラットかそうでないか</b>により法線が決定します。
+<div class="box1">
+<pre>
+            if (m_Flat) {
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position;
+                Data.normal.Normalize();
+            }
+            else {
+                //フラット表示しない場合は、法線は面の向き
+                Data.normal = FaceNormalVec[i];
+            }
+</pre>
+</div>
+　フラットの場合の
+<div class="box1">
+<pre>
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position;
+                Data.normal.Normalize();
+</pre>
+</div>
+　に、あれと思うかもしれません。これは、ローカルの立方体が、原点を中心に作成されているので、<b>Data.position</b>がそのまま法線の向きになるのです。ですから
+<div class="box1">
+<pre>
+                //フラット表示の場合は法線は頂点方向にする
+                Data.normal = Data.position - Vector3(0,0,0);
+</pre>
+</div>
+　と同じ意味です。原点を引き算するのと同じです。<br />
+　フラットではない場合は<b>面の法線テーブル</b>から法線をとってきて代入します。<br />
+　最後に、
+<div class="box1">
+<pre>
+    //メッシュの作成（変更できない）
+    m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+</pre>
+</div>
+　とメッシュを作成します。<br />
+　さて、このメッシュ作成の場合、<b>フラットの場合</b>は、頂点が余分にあるのがわかると思います。ある頂点の法線は、原点の逆方向に向くので、同じ内容の頂点が3つずつ出てきます。ですから、<b>フラット描画</b>が決定しているのであれば、メッシュを作成するときの頂点を減らすことができます。しかしその場合、<b>頂点情報の変更</b>する場合は注意が必要です。例えば場合によって<b>フラット描画かそうでないか</b>を切り替えて描画する場合は、上記のように<b>余分な頂点</b>を作成しておいてもいいと思います（立方体の場合、トータルの頂点数もそんなに多くないので）。<br />
 <br />
 <h4>■更新処理■</h4>
 　<b>CubeObject::OnUpdate()関数</b>です。オブジェクトを回転させています。<br />
 <br />
 <h4>■描画処理■</h4>
-　前項の描画と同様です。<br />
+　前項の描画と同様ですが。コンスタントバッファに渡す<b>デフィーズ</b>と<b>エミッシブ</b>の値に注目しましょう。<br />
 <br />
 <h3>【まとめ】</h3>
 　今回は<b>ライティングと法線の関係</b>について<b>法線を変えて頂点を作成する</b>という方法で紹介しました。描画そのものは前項と<b>シェーダと頂点型</b>こそ違いうますが、処理は同じような感じです。

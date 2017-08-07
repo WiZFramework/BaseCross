@@ -32,21 +32,72 @@
 <h3>【共通解説】</h3>
 　Dx12、Dx11両方に共通なのは<b>シェーダー</b>です。<b>DxSharedプロジェクト</b>内に<b>シェーダファイル</b>というフィルタがあり、そこに記述されてます。<br />
 　今回使用するシェーダは<b>頂点シェーダとピクセルシェーダ</b>です。<b>VertexPositionTexture型</b>の頂点を持ち、<b>コンスタントバッファ</b>からの入力で、位置を変更させています。<br />
-　またテクスチャも描画します。<br />
-<br />
-　<b>更新処理</b>は動きは同じですが、Dx12版の<b>更新処理</b>で説明します。<b>SquareSprite::OnUpdate()関数</b>には、それぞれの四角形を個別に更新する方法が記述されています。<br />
+　またテクスチャも描画します。以下が頂点シェーダです。<b>DxSharedフォルダ</b>内<b>VSPTSprite.hlsl</b>に記述されています。<br />
+<div class="box1">
+<pre>
+#include "INCStructs.hlsli"
+
+cbuffer ConstantBuffer : register(b0)
+{
+    row_major float4x4 MatrixTransform : packoffset(c0);
+    float4 Emissive : packoffset(c4);
+    float4 Diffuse : packoffset(c5);
+};
+
+
+PSPTInput main(VSPTInput input)
+{
+    PSPTInput result;
+
+    result.position = mul(input.position, MatrixTransform);
+    <span class="red">result.tex = input.tex;</span>
+
+    return result;
+}
+</pre>
+</div>
+　ここでは<b>テクスチャ</b>を使用するために、<b>テクスチャのUV値</b>が、C++側から渡されますので、それを、ピクセルシェーダに渡します。赤くなっているところがその処理です。<br />
+　以下がピクセルシェーダです。<b>PSPTSprite.hlsl</b>に記述があります。
+<div class="box1">
+<pre>
+#include "INCStructs.hlsli"
+
+cbuffer ConstantBuffer : register(b0)
+{
+    row_major float4x4 MatrixTransform : packoffset(c0);
+    float4 Emissive : packoffset(c4);
+    float4 Diffuse : packoffset(c5);
+};
+
+
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
+
+
+float4 main(PSPTInput input) : SV_TARGET
+{
+    //テクスチャとディフューズからライティングを作成
+    float4 Light = <span class="red">g_texture.Sample(g_sampler, input.tex)</span> * saturate(Diffuse);
+    //エミッシブを足す
+    return saturate(Light + Emissive);
+}
+</pre>
+</div>
+　ここでは<b>テクスチャそのもの</b>と<b>サンプラー</b>を使用します。それぞれ、C++側では、<b>シェーダリソースビュー</b>の設定と<b>サンプラーの設定</b>でシェーダに渡されます。<br />
+　頂点シェーダから渡された<b>テクスチャUV値</b>をもとに、<b>サンプラー</b>でサンプリングをしています。（赤くなっているところです）。<b>テクスチャUV値</b>は<b>頂点シェーダ</b>の時点jでは<b>頂点単位</b>ですが、ピクセルシェーダに来た時点で<b>ピクセル単位</b>になっています。<br/>
+　色要素については<b>ディフューズ</b>と<b>エミッシブ</b>があります。<br />
+　これらの色のパラメータを、どのように料理するかは、シェーダを記述するプログラマにゆだねられるわけですが、一般的には、<b>ディフューズは掛け算、エミッシブは足し算</b>というのが基本なのではと思います。これが3D表現になった場合、３Dのライティングがなされますので、もっと複雑になっていきます。<br />
 <br />
 <h3>【Dx11版解説】</h3>
 　<b>BaseCrossDx11.sln</b>を開くと、<b>BaseCrossDx11</b>というメインプロジェクトがあります。この中の<b>Character.h/cpp</b>が主な記述個所になります。<br />
 <br />
 <h4>■初期化■</h4>
-　<b>Dx11版</b>の初期化は<b>SquareSprite::OnCreate()関数</b>に記述があります。ここでは<b>メッシュリソースとテクスチャリソース</b>を作成し、スケーリングなど各パラメータを初期化して終了です。<br />
+　<b>Dx11版</b>の初期化は<b>SquareSprite::OnCreate()関数</b>に記述があります。ここでは<b>VertexPositionTexture型のメッシュリソースとテクスチャリソース</b>を作成し、スケーリングなど各パラメータを初期化して終了です。<br />
 <br />
 <h4>■更新処理■</h4>
-　更新処理は<b>Dx12版</b>と変わりありませんのでそちらの説明を参照ください。<br />
+　更新処理は<b>SquareSprite::OnUpdate()</b>に記述があります。<b>回転しながら移動する</b>を実装しています。<br />
 <br />
 <h4>■描画処理■</h4>
-　<b>描画処理</b>は<b>Dx12版</b>と違って、<b>デスクプリタヒープ</b>などはありませんので、テクスチャリソース、サンプラー、ブレンドステートなどを設定して、描画関数を呼び出します。<br />
 　以下が描画処理です。今回のサンプルで特徴的な、<b>テクスチャ、サンプラー、ブレンドステート（透明処理）</b>などが赤くなっています。
 <div class="box1">
 <pre>
@@ -83,12 +134,7 @@ void SquareSprite::OnDraw() {
 }
 </pre>
 </div>
-　以上で<b>Dx11版</b>の実装は終わりです。<br />
 <br />
-<h3>【まとめ】</h3>
-　<b>Dx11版</b>は、描画時にいろいろ設定できるのに対して、<b>Dx12版</b>は初期化時に設定してしまう作りになっています。つまり、動的に描画方法などを変更する場合は<b>Dx11版</b>のほうが記述しやすいと思います。<br />
-　ただ、<b>動的な変更</b>ができるとは言っても、<b>Dx11内部</b>ではそのためにいろいろ負担はかかっているわけで、全部自分で記述しなければならない<b>Dx12版</b>のほうが<b>軽くしようと思えばいろいろ検討できる</b>というのがわかります。<br />
-　もちろん<b>Dx12版</b>であっても<b>動的に変更できる</b>ようには記述できます。<b>Dx11内部</b>で行っているであろう処理を、ゲームプログラマ自身で、記述すればいいのですから・・・。<br />
 </div>
 <!-- /コンテンツ　-->
 <hr>

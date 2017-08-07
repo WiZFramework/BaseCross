@@ -132,9 +132,9 @@ namespace basecross {
 		LightDir.Normalize();
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(0.0f, 0.0f, 1.0f, 1.0f);
-		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
+		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		//エミッシブ加算
+		sb.Emissive = Color4(0.0f, 0.0f, 0.5f, 0);
 		//コンスタントバッファの更新
 		pD3D11DeviceContext->UpdateSubresource(CBPNStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 
