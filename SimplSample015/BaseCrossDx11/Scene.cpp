@@ -56,7 +56,7 @@ namespace basecross {
 			Vector3(0.0f, 0.0f, 0.0f)
 			);
 
-		m_BoxObjectVec.push_back(
+		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(5.0f, 0.5f, 5.0f),
@@ -65,7 +65,7 @@ namespace basecross {
 				)
 		);
 
-		m_BoxObjectVec.push_back(
+		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(3.0f, 1.0f, 3.0f),
@@ -74,7 +74,7 @@ namespace basecross {
 				)
 		);
 
-		m_BoxObjectVec.push_back(
+		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(3.0f, 1.0f, 3.0f),
@@ -83,7 +83,7 @@ namespace basecross {
 				)
 		);
 
-		m_BoxObjectVec.push_back(
+		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(5.0f, 0.5f, 5.0f),
@@ -92,10 +92,11 @@ namespace basecross {
 				)
 		);
 
+
 		strTexture = DataDir + L"wall.jpg";
 
 		//移動ボックス
-		m_MoveBoxObjectVec.push_back(
+		m_BoxVec.push_back(
 			ObjectFactory::Create<MoveBoxObject>(
 				GetThis<Scene>(), strTexture, false,
 				Vector3(0.25f, 0.5f, 0.5f),
@@ -124,17 +125,28 @@ namespace basecross {
 
 	}
 
+
 	void Scene::OnUpdate() {
+		//更新
 		m_SquareObject->OnUpdate();
-		for (auto& v : m_BoxObjectVec) {
-			v->OnUpdate();
-		}
-		for (auto& v : m_MoveBoxObjectVec) {
-			v->OnUpdate();
-		}
 		m_SphereObject->OnUpdate();
+		for (auto& v : m_BoxVec) {
+			v->OnUpdate();
+		}
+		//衝突判定
+		m_SphereObject->OnCollision();
+		for (auto& v : m_BoxVec) {
+			v->OnCollision();
+		}
+		//回転処理
+		m_SphereObject->OnRotation();
+		for (auto& v : m_BoxVec) {
+			v->OnRotation();
+		}
+		//描画オブジェクトの更新
 		m_PNTDrawObject->OnUpdate();
 		m_WallSprite->OnUpdate();
+
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
 		if (CntlVec[0].bConnected) {
@@ -151,8 +163,8 @@ namespace basecross {
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
 				//カメラ位置を寄る
 				m_CameraArmLen -= 0.1f;
-				if (m_CameraArmLen <= 5.0f) {
-					m_CameraArmLen = 5.0f;
+				if (m_CameraArmLen <= 2.0f) {
+					m_CameraArmLen = 2.0f;
 				}
 			}
 
@@ -189,10 +201,7 @@ namespace basecross {
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();
-		for (auto& v : m_BoxObjectVec) {
-			v->OnDraw();
-		}
-		for (auto& v : m_MoveBoxObjectVec) {
+		for (auto& v : m_BoxVec) {
 			v->OnDraw();
 		}
 		m_SphereObject->OnDraw();

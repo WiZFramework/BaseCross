@@ -12,10 +12,10 @@ namespace basecross {
 	class Scene : public SceneInterface {
 		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
 		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
-		vector<shared_ptr<BoxObject>> m_BoxObjectVec;		///<ボックスオブジェクトの配列
-		vector<shared_ptr<MoveBoxObject>> m_MoveBoxObjectVec;		///<移動ボックスオブジェクトの配列
+		vector<shared_ptr<BoxBase>> m_BoxVec;		///<ボックスの配列
+
 		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
-		shared_ptr<WrappedSprite> m_WallSprite;		///<壁模様のスプライト
+		shared_ptr<WrappedSprite> m_WallSprite;		///<スプライト
 
 		Vector3 m_CamerEye;			///<カメラ位置
 		Vector3 m_CamerAt;			///<カメラ視点
@@ -26,6 +26,8 @@ namespace basecross {
 		float m_CameraArmLen;		//カメラの腕の長さ
 
 		Vector4 m_LightDir;			///<ライト向き
+
+
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -50,12 +52,12 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief ボックスオブジェクトの配列の取得
-		@return	ボックスオブジェクトの配列
+		@brief ボックスの配列の取得
+		@return	ボックスの配列
 		*/
 		//--------------------------------------------------------------------------------------
-		const vector<shared_ptr<BoxObject>>& GetBoxObjectVec() const {
-			return m_BoxObjectVec;
+		const vector<shared_ptr<BoxBase>>& GetBoxVec() const {
+			return m_BoxVec;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

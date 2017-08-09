@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０．シンプルバージョンサンプル(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０１５．衝突判定の実装と簡単なAI(Dx11版)</h3>
+　このサンプルは<b>SimplSample015</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+<br />
+　実行結果は以下のような画面が出ます。<br/>
+　起動直後から、<b>敵</b>に見立てたブロックが追いかけてきます。プレイヤーは丸い球です。XBoxコントローラの右スティックで動かすことができ、左スティックでカメラを変化させることができます。また、カメラを<b>寄る</b>あるいは<b>引く</b>も左十字キーでできます。<br />
+　プレイヤーはAボタンでジャンプができます。移動するブロックのほかに障害物があり、これらと衝突判定します。
+<p>&nbsp;</p>
+<img src="img/0015a.png" width="80%"/>
+<p>図0015a</p>
+<p>&nbsp;</p>
+<br/>
+<h3>【サンプルのポイント】</h3>
+　今項のサンプルは、<b>シンプルバージョンにおいて、どのようにゲーム機能を実装していくか</b>というサンプルとなっています。<br />
+　<b>SimpleSample014までのサンプル</b>では、個別の配置や変化を紹介してきました。しかしこれだけでは、<b>ゲーム</b>という形には程遠い状態です。ゲームとしての最低限の機能としましては
+<div class="box1">
+<pre>
+１、コントローラやキーボードなどからの入力の受付
+２、プレイヤーの操作
+３、敵（またはほかのキャラクターやアイテムなど）のAI
+４、衝突判定と衝突応答
+５、エフェクト
+６、インターフェイス
+７、ミュージック
+８、効果音
+９、メニュー、サブメニューやステージ切り替えなどの機能
+１０、ステージデータなどの読み込み機能
+１１、プリミティブ形状作成やモデルの読み込みとその描画機能
+</pre>
+</div>
+　などがあげられるでしょう。<br />
+　このほかにももちろんそのゲーム固有の機能や、コンセプトやルールにのっとった機能が必要でしょう。<br />
+　<b>フルバージョン</b>であれば、ある程度汎用的に利用できる機能は実装されてますが、シンプルバージョンの場合は、これらを０から（あるいは０に近い部分から）実装する必要があります。<br />
+　このサンプルでは上記のうちの
+<div class="box1">
+<pre>
+１、コントローラからの入力の受付
+２、プレイヤーの操作
+３、敵（またはほかのキャラクターやアイテムなど）のAI
+４、衝突判定と衝突応答
+</pre>
+</div>
+　のサンプルとなります。ただ一つ断っておきたいのは、あくまで<b>サンプル</b>だということです。<br />
+　実際にゲームに導入するためには、このままでは当然だめで、どんどん自分のコードで書き換えていく必要があります。つまり、ゲーム制作の<b>とっかかり</b>くらいの役割しか持ってませんので、そのつもりで実行してみてください。<br />
+<br />
+<h4>■オブジェクトの種類■</h4>
+　シーンに実装されているオブジェクトは以下になります。すべて<b>Character.h/cpp</b>に記述されています。
+<div class="box1">
+<pre>
+１、平面（SquareObject）。地面です。タイリング処理されています。
+２、プレイヤー（SphereObject）。コントローラで操作できます。
+３、ブロック（MoveBoxObject）。AIでプレイヤーをどこまでも追いかけてきます。
+４、固定の障害物（BoxObject）。プレイヤーは乗ることができる障害物です。
+５、スプライト（WrappedSprite）。左上で回転しているスプライトです。インターフェイス等に利用できるサンプルです。
+</pre>
+</div>
+　これらのオブジェクトについて、順を追って説明します。<br />
+<br />
+<h4>■５、スプライト（WrappedSprite）■</h4>
+　最初は、スプライトです。こちらはほかのオブジェクトの影響は受けませんので最初に説明します。実際にインターフェイス等に利用する場合は、データのやりとりなどが必要になります。<br />
+<br />
+<h4>初期化</h4>
+　スプライトの初期化は<b>WrappedSprite::OnCreate()関数</b>で行います。ラッピング（タイリング）処理しますので。あらかじめコンストラクタに、X方向及びY方向に並べる数を設定しておきます。初期化のポイントは以下です。
+<div class="box1">
+<pre>
+void WrappedSprite::OnCreate() {
+    float HelfSize = 0.5f;
+    //頂点配列(縦横10個ずつ表示)
+    m_BackupVertices = {
+        { VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),
+            Color4(1.0f,0,0,1.0f), Vector2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), 
+            Color4(0, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, 0.0f)) },
+        { VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), 
+            Color4(0, 0, 1.0f, 1.0f), Vector2(0.0f, (float)m_YWrap)) },
+        { VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), 
+            Color4(1.0f, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, (float)m_YWrap)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    //メッシュの作成（変更できる）
+    m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, <span class="red">true</span>);
+    //テクスチャの作成
+    m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
+}
+</pre>
+</div>
+　<b>m_BackupVertices</b>は<b>VertexPositionColorTexture型</b>の頂点の配列です。動的に頂点を変更できるように、メンバ変数になってます。作成時にテクスチャUV値を、X方向、Y方向の繰り返す数で初期化します。<br />
+　赤くなっている<b>true</b>は<b>頂点変更が可能なメッシュかどうか</b>を指定します。<b>MeshResource::CreateMeshResource()関数</b>はこのパラメータがtrueの場合は頂点変更可能なメッシュを作成します。<br />
+<br/>
+<h4>更新処理</h4>
+　更新処理は<b>WrappedSprite::OnUpdate()関数</b>で行います。以下がその実体です。
+<div class="box1">
+<pre>
+void WrappedSprite::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_Rot += ElapsedTime;
+    if (m_Rot >= XM_2PI) {
+        m_Rot = 0;
+    }
+    UpdateVertex(ElapsedTime);
+}
+</pre>
+</div>
+　ここではまず、<b>App::GetApp()->GetElapsedTime()</b>によって、前回からのターン時間を取得します。この値を、<b>回転</b>のラジアン値である<b>m_Rot</b>に加算しています。これを
+<div class="box1">
+<pre>
+    m_Rot += 0.01f;
+</pre>
+</div>
+　などのように、即値（マジックナンバーではなかったとしても）を設定するのはできるだけ控えましょう。パソコンによっては、ターン時間が一定とは限りません。かならず<b>ElapsedTime</b>を何らかの形で計算に利用する癖をつけましょう。<br />
+<br />
+　<b>WrappedSprite::OnUpdate()</b>では<b>UpdateVertex()関数</b>を呼んでます。これは<b>WrappedSpriteのプライベートメンバ関数</b>です。実体は、以下です。
+<div class="box1">
+<pre>
+void WrappedSprite::UpdateVertex(float ElapsedTime) {
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime >= 1.0f) {
+        m_TotalTime = 0;
+    }
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+
+    //頂点の変更
+    //D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
+    <span class="red">D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;</span>
+    D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+    //頂点のマップ
+    <span class="red">if (FAILED(pD3D11DeviceContext->Map(m_SquareMesh->GetVertexBuffer().Get(),
+         0, mapType, 0, &mappedBuffer))) {</span>
+        // Map失敗
+        throw BaseException(
+            L"頂点のMapに失敗しました。",
+            L"if(FAILED(pID3D11DeviceContext->Map()))",
+            L"WrappedSprite::UpdateVertex()"
+        );
+    }
+    //頂点の変更
+    <span class="red">VertexPositionColorTexture* vertices
+        = (VertexPositionColorTexture*)mappedBuffer.pData;</span>
+    for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
+        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        if (UV.x == 0.0f) {
+            UV.x = m_TotalTime;
+        }
+        else if (UV.x == 4.0f) {
+            UV.x += m_TotalTime;
+        }
+        vertices[i] = VertexPositionColorTexture(
+            m_BackupVertices[i].position,
+            m_BackupVertices[i].color,
+            UV
+        );
+
+    }
+    //アンマップ
+    pD3D11DeviceContext->Unmap(m_SquareMesh->GetVertexBuffer().Get(), 0);
+
+}
+</pre>
+</div>
+　ここでは、動的に頂点を変更する処理をしています。<br/>
+　m_TotalTimeというfloat型のメンバ変数を持っていて、それにElapsedTimeを加算していきます。1秒をこえたら0に初期化します。つまり、流れるUV値は<b>1秒基準</b>で変化します。<br />
+　次に重要な処理は<b>マップ</b>と言われる処理です。Dx11では、頂点バッファに登録されている領域にアクセスする場合、GPUによって邪魔がいらないよう、ロックを掛ける必要があります。それが
+<div class="box1">
+<pre>
+    <span class="red">D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;</span>
+    D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+    //頂点のマップ
+    <span class="red">if (FAILED(pD3D11DeviceContext->Map(m_SquareMesh->GetVertexBuffer().Get(),
+         0, mapType, 0, &mappedBuffer))) {</span>
+</pre>
+</div>
+　の部分です。<b>mapType</b>を<b>D3D11_MAP_WRITE_DISCARD</b>にすることにより、書き込みできるようになります。<br />
+　<b>D3D11_MAP_WRITE_DISCARD</b>の場合、頂点バッファの内容は破壊されているので、頂点の内容の<b>再構築</b>が必要になります。この時に使用するのが、構築時にとっておいた<b>m_BackupVertices</b>です。
+<div class="box1">
+<pre>
+    //頂点の変更
+    <span class="red">VertexPositionColorTexture* vertices
+        = (VertexPositionColorTexture*)mappedBuffer.pData;</span>
+    for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
+        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        if (UV.x == 0.0f) {
+            UV.x = m_TotalTime;
+        }
+        else if (UV.x == 4.0f) {
+            UV.x += m_TotalTime;
+        }
+        vertices[i] = VertexPositionColorTexture(
+            m_BackupVertices[i].position,
+            m_BackupVertices[i].color,
+            UV
+        );
+
+    }
+</pre>
+</div>
+　上記の処理は、赤くなっているところで<b>mappedBuffer.pDat</b>を<b>vertices</b>にキャストしています。これで、<b>vertices</b>への書き込みは、マップされたデータへの書き込みになります。<br />
+　あとは、<b>m_BackupVertices</b>を参照しながら<b>UV値</b>を変更します。これで、テクスチャが流れるような表現になります。<br />
+　書き込みが終わったら、<b>アンマップ</b>します。
+<div class="box1">
+<pre>
+    //アンマップ
+    pD3D11DeviceContext->Unmap(m_SquareMesh->GetVertexBuffer().Get(), 0);
+</pre>
+</div>
+<h4>描画処理</h4>
+　描画は<b>スプライトの描画</b>になります。シェーダはこれまでも紹介してきたものです。<b>WrappedSprite::OnDraw()関数</b>で行いますが、<b>透明処理するかしないか</b>の分岐と<b>ラッピングサンプラー</b>で、タイリング処理しています。以下の部分です。
+<div class="box1">
+<pre>
+    //テクスチャとサンプラーの設定
+    ID3D11ShaderResourceView* pNull[1] = { 0 };
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, 
+        m_TextureResource->GetShaderResourceView().GetAddressOf());
+    //ラッピングサンプラー
+    ID3D11SamplerState* pSampler = RenderState->GetLinearWrap();
+    pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+</pre>
+</div>
+　このようにして、スプライトオブジェクトを作成しています。<br />
+<br />
+<h4>■３Ｄオブジェクトの描画■</h4>
+　スプライト（WrappedSprite）以外は<b>３Ｄオブジェクト</b>です。これらは<b>PNT頂点（PositionNormalTexture）</b>を持ちます。つまり描画処理はほぼ同じということになります。<br />
+　であれば各オブジェクトの<b>OnDraw()関数</b>を別に記述するのではなく、同じ処理をする関数（あるいはクラス）を作成するのが効率的です。<br />
+　<b>PNTDrawObjectクラス</b>はそんな役割のクラスです。<br />
+<br />
+<h4>PNTDrawObjectクラスの実装</h4>
+　<b>PNTDrawObjectクラス</b>は、ほかのクラス同様<b>ObjectInterfaceとShapeInterface</b>を親に持つクラスです。特徴とすれば、<b>AddDrawMesh()関数</b>という公開メンバ関数を持ち、ほかの３Ｄオブジェクトが、描画のタイミングでこの関数を呼び出します。<br />
+　この関数の宣言は以下のようになってます。
+<div class="box1">
+<pre>
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 描画するオブジェクトを追加する
+    @param[in]  MeshRes メッシュ
+    @param[in]  TextureRes テクスチャ
+    @param[in]  WorldMat ワールド行列
+    @param[in]  Trace 透明処理するかどうか
+    @param[in]  Wrap ラッピング処理するかどうか
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes,
+        const shared_ptr&lt;TextureResource>& TextureRes,
+        const Matrix4X4& WorldMat,
+        bool Trace,bool Wrap = false);
+</pre>
+</div>
+　コメントにあるように、各３Ｄオブジェクトは、この描画クラスに、メッシュやテクスチャ、あるいはワールド行列など、３Ｄオブジェクトの描画に必要なパラメータを渡します。<br />
+　AddDrawMesh()関数では、これらのパラメータを受け取り、特殊な構造体である、<b>DrawObject構造体</b>のインスタンスを作成します。そして、<b>PNTDrawObjectクラス</b>のメンバである<b>m_DrawObjectVec</b>に追加します。<b>m_DrawObjectVec</b>は<b>DrawObject</b>の配列（vector）です。<br />
+　以下は<b>AddDrawMesh()関数</b>の実体です。
+<div class="box1">
+<pre>
+void PNTDrawObject::AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes,
+    const shared_ptr&lt;TextureResource>& TextureRes,
+    const Matrix4X4& WorldMat,
+    bool Trace, bool Wrap) {
+    DrawObject Obj;
+    Obj.m_MeshRes = MeshRes;
+    Obj.m_TextureRes = TextureRes;
+    Obj.m_WorldMatrix = WorldMat;
+    Obj.m_Trace = Trace;
+    Obj.m_Wrap = Wrap;
+    m_DrawObjectVec.push_back(Obj);
+}
+</pre>
+</div>
+　このように、<b>m_DrawObjectVec</b>にためておきます。そして<b>PNTDrawObject::OnDraw()</b>で一気に描画します。描画のコードはこれまでに紹介してきた<b>PNTオブジェクトの描画</b>と基本的に同じです。オブジェクトの数だけループして描画します。<br />
+　さて、ここで、毎ターン<b>m_DrawObjectVec</b>にためたのでは、あふれてしまうのでは、という疑問がわきます、１ターンは約６０分の１秒に１回ですから、いくら配置オブジェクトが少なくてもすぐに大量になってしまいます。<br />
+　ですから、<b>PNTDrawObject::OnUpdate()</b>では、この配列をクリアします。
+<div class="box1">
+<pre>
+void PNTDrawObject::OnUpdate() {
+    m_DrawObjectVec.clear();
+}
+</pre>
+</div>
+　こんな感じです、これは<b>描画終了直後にクリア</b>しても問題はありません。ようは、毎ターン、どこかで初期化されていればいいのです。<br />
+　さて、ここで疑問が生まれます。<b>vector</b>は<b>STL</b>にある<b>可変長配列</b>ですが、毎ターンクリアと<b>push_back</b>を繰り返して、負担はかからないのか、という疑問です。<br />
+　これには<b>STLのvector</b>について、少し説明が必要です。<br />
+<br />
+<h4>STLのvector</h4>
+　<b>STLのvector</b>はC++で汎用的に使用できる、大変便利な<b>可変長配列</b>です。しかし<b>可変長配列</b>といいますが、実はデフォルトでは<b>増えることがあっても減ることがない</b>配列なのです。<br />
+　例えば、要素を指定しないで<b>STLのvector</b>を作成すると、要素数は<b>0</b>で初期化されます。ここまでは想像できます。<br />
+　1回<b>push_back</b>を呼ぶと、要素数は<b>1</b>になります。実は、ここに<b>capacity</b>という特別な変数があり、これも<b>1</b>になります。<br />
+　<b>capacity</b>は<b>容量</b>という意味です。<b>vector</b>は<b>push_back</b>が呼ばれるたびに、必要なメモリを<b>new</b>して、<b>capacity</b>を増やすのです。ちょっとわかりにくいかと思うので、要素数（size()で取得できる値）と<b>capacity</b>の関係（一般的な動き）を以下に示します。<table>
+<tr>
+<th>要素数（size()関数の戻り値）</th>
+<th>capacity（capacity()関数の戻り値）</th>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4</td>
+</tr>
+<tr>
+<td>5</td>
+<td>8</td>
+</tr>
+<tr>
+<td>9</td>
+<td>16</td>
+</tr>
+<tr>
+<td>17</td>
+<td>32</td>
+</tr>
+</table>
+　この表は、push_backによって、要素数が増えた場合に、newで作成される<b>capacity</b>の関係を表にしたものです。<b>capacity</b>の増加数を見るとわかりますが<b>1,2,4,8,16,32....</b>と、倍々増えていってるのがわかります。<br />
+　このように<b>STLのvector</b>は<b>capacity</b>を、使用される要素数<b>size</b>より多く持つことにより、<b>newの呼び出しを最小限に抑える</b>機能を持っています。<br />
+<br />
+　さて、このことを前提に、<b>PNTDrawObject::OnUpdate()</b>を見てみましょう。
+<div class="box1">
+<pre>
+    m_DrawObjectVec.clear();
+</pre>
+</div>
+　となっています<b>clear()関数</b>は<b>要素数を0にする</b>関数です。決して<b>capacityを0にする（つまりメモリを開放する）</b>関数ではないのです。<b>capacityが0になる（つまりメモリを開放する）</b>のは、何もしなければ、そのvectorのデストラクタが呼ばれたときです。<br >
+　ですから、次のターンで、同じオブジェクトが<b>push_back</b>されても、あらたに<b>new</b>されるのではなく、無効状態になっているメモリに割り当てる形になります。このことを知っておくと、<b>STLのvector</b>内部のメモリの動き、が理解できると思います。<br />
+<br />
+　一般的なゲームは、ステージの読み込み時に、配置されるオブジェクトを、おおむね全部、読み込みます。実行途中で読み込むことも可能ですが、<b>newの呼び出しを極力減らす</b>ためにも、一気にメモリに読み込みます。<br />
+　ここで<b>STLのvector</b>と、ネイティブなC言語と比べてみましょう。<br />
+　例えば、150個のオブジェクトをステージ作成時に読み込む場合、C言語では<b>150個分のメモリをmalloc</b>します。<b>STLのvector</b>は、ここまで直接的ではないですが<b>1,2,4,8,16,32,128,256</b>と<b>８回new</b>します（もちろん150個でメモリを初期化することもできますが、すべてpush_backを使ったとして、です）。<br />
+　この<b>1回と8回の差</b>がもったいないというのであれば仕方がないですが、<b>STLのvector</b>の多大な恩恵に対して、<b>ステージ構築時の8回のnew</b>は決して<b>無駄</b>ではないと、僕は思います。<br />
+<br />
+<h4>PNTDrawObjectクラスの描画</h4>
+　さてこのように<b>AddDrawMesh()関数</b>によって、描画すべきオブジェクトが登録されますが、実際の描画は<b>PNTDrawObject::OnDraw()</b>で行います。<br />
+　ここでは、<b>m_DrawObjectVec</b>にためられたオブジェクトの描画のためのデータを使って描画します。<br />
+　実は、ここでは<b>フルバージョンではできない処理</b>が実装されています。<b>BaseCrossのフルバージョン</b>では、汎用性を担保するために、各オブジェクトの描画の後に、パイプラインの設定を初期化します。<b>PNTDrawObject::OnDraw()</b>の最後に記述がある
+<div class="box1">
+<pre>
+    //後始末
+    Dev->InitializeStates();
+</pre>
+</div>
+　という処理です。この関数を追いかけていくとわかりますが、レンダリングに必要なパラメータをすべて初期化しています。<br >
+　<b>フルバージョン</b>ではこの関数を<b>各オブジェクトの描画ごとに</b>呼び出します。エフェクトなど特殊なオブジェクトは別ですが<b>GameObjectの派生クラス</b>を描画するたびに初期化します。<br />
+、実はこの処理は、案外コストが高いと思っています。（思っていますというのは、Dx11内部の処理なので細かいことまではわからない。大量な描画を繰り返して、処理速度を比較すればわかるかもしれないけど、そんな趣味はないので・・・）。<br />
+　いずれにせよ、パイプラインの設定変更は最低限に抑えたほうが速いに決まってます。<br />
+　ですから、配置されるオブジェクトの細かい処理を実装できる<b>シンプルバージョン</b>のほうが圧倒的に自由度が高いといえます。<br />
+<br />
+<h4>■３Ｄオブジェクトの作成■</h4>
+　さて、描画処理は<b>PNTDrawObjectクラス</b>に任せるとして、問題は各オブジェクトの<b>更新処理</b>です。このサンプルの一番のポイントはここにあります。<br />
+　配置される３Ｄオブジェクトをもう一度おさらいしてみましょう。
+<div class="box1">
+<pre>
+１、平面（SquareObject）。地面です。タイリング処理されています。
+２、プレイヤー（SphereObject）。コントローラで操作できます。
+３、ブロック（MoveBoxObject）。AIでプレイヤーをどこまでも追いかけてきます。
+４、固定の障害物（BoxObject）。プレイヤーは乗ることができる障害物です。
+</pre>
+</div>
+　です。この中で<b>動かない</b>のは<b>１と４</b>です。<b>２</b>は、コントローラによって、<b>３</b>はＡＩによって動きがあります。<br />
+　では、<b>動かない１と４</b>について説明をします。<br />
+<br />
+<h4>平面（SquareObject）の初期化</h4>
+　<b>平面（SquareObject）の初期化</b>は<b>SquareObject::OnCreate()</b>に記述があります。この関数はさらに<b>CreateBuffers()メンバ関数</b>を呼んで、頂点の初期化を行っています。以下は<b>CreateBuffers()メンバ関数</b>の実体です。<br />
+<div class="box1">
+<pre>
+void SquareObject::CreateBuffers(float WrapX, float WrapY) {
+    float HelfSize = 0.5f;
+    vector&lt;VertexPositionNormalTexture> vertices = {
+        { VertexPositionNormalTexture(Vector3(-HelfSize, HelfSize, 0), 
+                Vector3(0, 0, -1.0f), Vector2(0.0f, 0.0f)) },
+        { VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), 
+                Vector3(0, 0, -1.0f), Vector2(WrapX, 0.0f)) },
+        { VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), 
+                Vector3(0, 0, -1.0f), Vector2(0.0f, WrapY)) },
+        { VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), 
+            Vector3(0, 0, -1.0f), Vector2(WrapX, WrapY)) },
+
+    };
+
+    vector&lt;uint16_t> indices = {
+        0, 1, 2,
+        1, 3, 2,
+    };
+    //メッシュの作成（変更できない）
+    m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, <span class="red">false</span>);
+}
+</pre>
+</div>
+　このように、タイリング処理をするので、分割数をテクスチャＵＶに設定しています。最後の
+<div class="box1">
+<pre>
+    //メッシュの作成（変更できない）
+    m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, <span class="red">false</span>);
+</pre>
+</div>
+　でメッシュを作成しますが、スプライト（WrappedSprite）と違って、こちらは<b>頂点変化させない</b>ので<b>false</b>を渡しています。<br />
+<br />
+<h4>平面（SquareObject）の更新</h4>
+　平面は変化しないので<b>更新処理</b>は空関数になっています。<br />
+<br />
+<h4>平面（SquareObject）の描画</h4>
+　描画処理は、前述した<b>PNTDrawObject</b>の<b>AddDrawMesh()関数</b>に必要なパラメータを渡します。実際の描画は<b>PNTDrawObjectクラス</b>が行います。<br />
+　以下、３Ｄオブジェクトの描画処理は同様の処理です。<br />
+<br />
+<h4>固定の障害物（BoxObject）の初期化</h4>
+　こちらも平面同様、<b>変化しない</b>ので先に説明します。ただ、ちょっと平面とは違う部分があります。こちらは<b>衝突判定</b>は行います。自分からは判定は行いませんが、プレイヤーや移動するブロックが、このオブジェクトに対して<b>衝突判定</b>を行います。<br >
+　その判定がしやすいように、<b>BoxBaseクラス</b>という<b>ボックスの親</b>を定義しています。<br />
+　このクラスは<b>BoxObject</b>のほかに、移動するブロックである<b>MoveBoxObject</b>の親クラスでもあります。以下が<b>BoxBaseクラス</b>の宣言です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ボックスの親
+//--------------------------------------------------------------------------------------
+class BoxBase : public ObjectInterface, public ShapeInterface {
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    BoxBase() :
+        ObjectInterface(),
+        ShapeInterface() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~BoxBase() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief OBBを得る（仮想関数）
+    @return OBB
+    */
+    //--------------------------------------------------------------------------------------
+    virtual OBB GetOBB()const = 0;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 衝突判定をする（仮想関数）
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCollision() {}
+};
+</pre>
+</div>
+　このクラスは<b>cppファイル</b>の記述はありません。<b>BoxObjectクラス</b>と移動するブロックの<b>MoveBoxObjectクラス</b>の共通の親です。このようなクラスを用意することで、まとめて衝突判定ができるようになります。<br />
+　このクラスには<b>GetOBB()</b>という<b>純粋仮想関数</b>があります。この関数は、派生クラスが<b>必ず実装しなければいけない</b>関数です。何をする関数かというと<b>衝突判定に使用するOBBボリューム境界</b>を返す関数です。プレイヤーや移動するブロックがこの関数を通じて、OBBを取り出します。<br />
+<br />
+　それで固定のボックスである<b>BoxObject</b>は<b>BoxBase</b>の派生クラスとして作成します。以下は宣言です。<br />
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 固定のボックス
+//--------------------------------------------------------------------------------------
+class BoxObject : public <span class="red">BoxBase</span> {
+    //中略
+public:
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief OBBを得る
+    @return OBB
+    */
+    //--------------------------------------------------------------------------------------
+    virtual OBB GetOBB()const;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //中略
+};
+</pre>
+</div>
+　このように<b>BoxBaseの派生クラス</b>として作成します。また仮想関数<b>GetOBB()</b>も実装します。<br />
+<br />
+　<b>固定の障害物（BoxObject）の初期化</b>は<b>BoxObject::OnCreate()</b>に記述があります。以下実体です。
+<div class="box1">
+<pre>
+void BoxObject::OnCreate() {
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    <span class="red">MeshUtill::CreateCube(1.0f, vertices, indices);</span>
+    //メッシュの作成（変更できない）
+    m_BoxMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+
+    //テクスチャの作成
+    m_TextureResource = ObjectFactory::Create&lt;TextureResource>(m_TextureFileName, L"WIC");
+}
+</pre>
+</div>
+　ここではこれまでの例のように<b>頂点を自作</b>するのではなく<b>シンプルバージョンでも使用できるユーティリティ関数</b>を使用して、ボックス（立方体）を作成しています。
+<div class="box1">
+<pre>
+    <span class="red">MeshUtill::CreateCube(1.0f, vertices, indices);</span>
+</pre>
+</div>
+　この部分です。これで、１辺が1.0fの<b>PNT頂点の立方体</b>を作成できます。これ以外の頂点や、あるいはタイリング処理したりする場合は、いったんユーティリティ関数を使って<b>PNT頂点</b>のオブジェクトを作った後、内容を変更するといいでしょう。<br />
+<br />
+<h4>固定の障害物（BoxObject）の更新と描画</h4>
+　<b>更新</b>は何も記述しません。<b>描画</b>は、<b>PNTDrawObject::AddDrawMesh()</b>を呼び出します。<br />
+<br />
+<h4>■３Ｄオブジェクトの配置と衝突判定■</h4>
+　残りの２つのオブジェクトの説明の前に、このサンプルにおける<b>シーンへの配置</b>の方法と<b>衝突判定の実装方法</b>を説明します。<br />
+　<b>フルバージョン</b>では<b>配置オブジェクト</b>は<b>ステージ</b>に配置されます。<b>BaseCross</b>の命名では、<b>シーン</b>というのはアプリケーション唯一のオブジェクトで<b>ステージ</b>はシーンによって作成されるオブジェクトです。ですから<b>ゲームステージ</b>あるいは<b>メニューステージ</b>などは<b>シーン</b>によって切り替えられます。<br />
+　<b>シンプルバージョン</b>では<b>ステージ</b>という概念はありません。ですので<b>ステージ（もしくはそれに類するオブジェクト）</b>は自作する必要があるわけですが<b>シーン</b>は存在します。<br />
+　これまでのサンプル、そしてこのサンプルも<b>シーンに直接</b>オブジェクトを配置しています。<br />
+<br/>
+　さて、シーンにあるメンバ変数は<b>各オブジェクトをコレクションしたもの</b>となります。<b>フルバージョン</b>のように<b>ゲームオブジェクト</b>といった共通の親はないので、配置されるオブジェクトは、そのポインタ（shared_ptr）を、メンバ変数としてもちます。以下は<b>Sceneクラス</b>の宣言部です。各オブジェクトクラスのポインタが用意されています。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ゲームシーン
+//--------------------------------------------------------------------------------------
+class Scene : public SceneInterface {
+    shared_ptr&lt;SquareObject> m_SquareObject;             ///&lt;平面オブジェクト
+    shared_ptr&lt;SphereObject> m_SphereObject;             ///&lt;球オブジェクト
+    vector&lt;shared_ptr&lt;BoxBase>> m_BoxVec;     ///&lt;ボックスの配列
+
+    shared_ptr&lt;PNTDrawObject>    m_PNTDrawObject;                ///&lt;描画オブジェクト
+    shared_ptr&lt;WrappedSprite> m_WallSprite;      ///&lt;スプライト
+//以下略
+</pre>
+</div>
+　このように<b>平面、球（プレイヤー）、スプライト</b>は単一のポインタ（shared_ptr）ですが、<b>ボックスは配列</b>になっています。それも、先ほど説明した<b>BoxObjectのポインタの配列</b>ではなく、親クラスである<b>BoxBaseのポインタの配列</b>です。これの意味するところは、動きのない<b>BoxObject</b>も、これから説明する、動きがある<b>MoveBoxObject</b>も、同じ配列にまとめられます。こうすることで、衝突判定を別々に書かなくても済むようになってます。<br />
+　各オブジェクトの配置は、<b>Scene::OnCreate()関数</b>で行っているわけですが、以下のようにボックスは配置されます。
+<div class="box1">
+<pre>
+void Scene::OnCreate() {
+
+    //中略
+
+    m_BoxVec.push_back(
+        ObjectFactory::Create&lt;BoxObject>(
+            GetThis&lt;Scene>(), strTexture, false,
+            Vector3(5.0f, 0.5f, 5.0f),
+            Quaternion(),
+            Vector3(5.0f, 0.25f, 0.0f)
+            )
+    );
+
+    //中略
+
+    m_BoxVec.push_back(
+        ObjectFactory::Create&lt;BoxObject>(
+            GetThis&lt;Scene>(), strTexture, false,
+            Vector3(5.0f, 0.5f, 5.0f),
+            Quaternion(Vector3(0, 0, 1), -XM_PIDIV4),
+            Vector3(-5.0f, 1.0f, 0.0f)
+            )
+    );
+
+
+    strTexture = DataDir + L"wall.jpg";
+
+    //移動ボックス
+    m_BoxVec.push_back(
+        ObjectFactory::Create&lt;MoveBoxObject>(
+            GetThis&lt;Scene>(), strTexture, false,
+            Vector3(0.25f, 0.5f, 0.5f),
+            Quaternion(),
+            Vector3(0.0f, 0.25f, 5.0f)
+            )
+    );
+
+    //中略
+
+
+}
+</pre>
+</div>
+　このように<b>BoxBase</b>のポインタの配列である<b>m_BoxVec</b>に<b>MoveBoxObject</b>も配置しています。<br />
+<br />
+<h4>ブロック（MoveBoxObject）クラスの実装と衝突判定</h4>
+　さていよいよ、<b>衝突判定</b>を行うオブジェクトの作成です。<br />
+　まず、ブロックである、<b>MoveBoxObject</b>です。初期化は<b>MoveBoxObject::OnCreate()</b>に記述がありますが、固定のボックスと大きな違いはありません。<br />
+　更新処理ですが、MoveBoxObjectクラスには<b>OnUpdate()関数</b>のほかに<b>MoveBoxObject::OnCollision()</b>という衝突判定を行う関数があります。また<b>MoveBoxObject::OnRotation()関数</b>もあります。<br />
+　この関数は仮想関数で、親クラスである
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ボックスの親
+//--------------------------------------------------------------------------------------
+class BoxBase : public ObjectInterface, public ShapeInterface {
+public:
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief OBBを得る（仮想関数）
+    @return OBB
+    */
+    //--------------------------------------------------------------------------------------
+    virtual OBB GetOBB()const = 0;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 衝突判定をする（仮想関数）
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    <span class="red">virtual void OnCollision() {}</span>
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 回転処理をする（仮想関数）
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    <span class="red">  virtual void OnRotation() {}</span>
+};
+</pre>
+</div>
+　<b>OnCollision()やOnRotation()関数</b>が、同じく仮想関数<b>GetOBB()</b>と違うところは<b>純粋仮想関数ではない</b>というところです。<br />
+　純粋仮想関数は、<b>派生クラスで必ず記述しなければいけない</b>のに対して、この仮想関数は上記のように空関数ですが実体を持ってます。ですから、派生クラスでは<b>必要であれば多重定義する</b>という意味になります。<br />
+　ですから、同じBoxBaseの派生クラスである<b>BoxObjectクラス</b>では<b>OnCollision()やOnRotation()関数</b>は定義されてません。<br />
+　では、この関数は使われ方をするのでしょうか？答えは<b>Scene::OnUpdate()関数</b>にあります。以下は実体です。
+<div class="box1">
+<pre>
+void Scene::OnUpdate() {
+    //更新
+    m_SquareObject->OnUpdate();
+    m_SphereObject->OnUpdate();
+    for (auto& v : m_BoxVec) {
+        v->OnUpdate();
+    }
+    <span class="red">//衝突判定
+    m_SphereObject->OnCollision();
+    for (auto& v : m_BoxVec) {
+        v->OnCollision();
+    }
+    //回転処理
+    m_SphereObject->OnRotation();
+    for (auto& v : m_BoxVec) {
+        v->OnRotation();
+    }</span>
+    //描画オブジェクトの更新
+    m_PNTDrawObject->OnUpdate();
+    m_WallSprite->OnUpdate();
+
+    //中略
+
+}
+</pre>
+</div>
+　このように、プレイヤーとボックスの<b>OnUpdate()</b>を呼んだあとで、再びそれらの<b>OnCollision()、さらにOnRotation()</b>を呼び出しています。<br />
+　すなわち、一通り移動処理が終わったところで、一通り<b>衝突判定</b>を行い、その後、一通り<b>回転処理</b>を行います。<br />
+　なぜこんなまどろっこいことをするんでしょうか。<br />
+　これは、ゲームにはターン（ステップ）がある、ということに起因します。<br />
+　現実の世界では<b>時間</b>は継続しています。しかし、ゲームのステップは<b>約60分の1</b>づつ、ストップモーションがかかった世界です。僕たちが<b>移動</b>と称しているのは、実は<b>少しずつ飛んでいる</b>のです。現実が<b>実線</b>とするなら、ゲームのターンは<b>点線</b>の感じです。飛び飛びです。<br />
+　そのため、<b>すべてのオブジェっクトが移動し終わった後</b>でないと、何と何が衝突しているかどうか、の、誤差が大きくなります。ですから<b>すべてが移動し終わった後に</b>衝突判定を行います。<br />
+　また、回転処理については、このサンプルの衝突判定が<b>フルバージョンサンプル。３０４．衝突判定を考える</b>で述べた方法で判定していることが起因します。<br />
+　トンネル現象が起こらない手法として、上記手法をとっているわけですが、この方法だと<b>回転</b>に弱いのです。同じ回転を維持したまま、前回のターンと今回のターンの経過を前提として判定するので、各々の衝突直後の処理として回転させると、安定しない動きになってしまいます。<br />
+<br />
+　ちょっと蛇足として、いわゆる<b>物理エンジン</b>が実装している<b>衝突判定</b>について述べます。多くのフレームワークが実装している物理エンジンは、<b>トンネル現象を加味しない形</b>で判定を行う場合が多いです。というのは<b>衝突によって生じる回転</b>を計算に入れているからです。例えば直方体同士が衝突した場合、当たる場所や角度によって、衝突後の回転が違うものになります。正確に物理計算をした場合、この<b>回転</b>の要素は無視できません。<br />
+　しかし、このサンプルでは、<b>回転</b>は<b>衝突後は移動方向を向く</b>という形で簡略化しています。<br />
+　<b>衝突判定</b>は正確にやろうとしても、どこかに誤差が出てしまいます。<b>物理エンジン</b>の判定は、より正確でより複雑な形状に対応できますが、その分<b>トンネル現象</b>が起きやすかったりするので、<b>60分の1さらに刻む</b>ことも必要でしょう。<br />
+　ただ、<b>衝突判定</b>の正確さはそのゲームによって違うと思います。作るのはゲームであって<b>シミュレーション</b>ではありません。遊ぶユーザーが<b>リアルに感じれば</b>それでいいのです。逆に正確な物理計算がユーザーの操作の邪魔になってはいけません。<br />
+<br />
+　というわけで<b>Scene::OnUpdate()</b>による、オブジェクトの関数呼び出し方法に沿って、説明します。<br />
+<br />
+<h4>ブロック（MoveBoxObject）クラスのOnUpdate()</h4>
+　こちらは<b>MoveBoxObject::OnUpdate()</b>に実体があります。ここでは<b>UpdateVelosity()関数</b>を呼び出しています。以下は<b>MoveBoxObject::UpdateVelosity()</b>の実体です。
+<div class="box1">
+<pre>
+void MoveBoxObject::UpdateVelosity() {
+    auto ShPtrScene = m_Scene.lock();
+    if (!ShPtrScene) {
+        return;
+    }
+    //フォース（力）
+    Vector3 Force(0, 0, 0);
+    //プレイヤーを向く方向ベクトル
+    Vector3 ToPlayerVec = 
+        ShPtrScene->GetSphereObject()->GetPosition() - m_Pos;
+    //縦方向は計算しない
+    ToPlayerVec.y = 0;
+    ToPlayerVec *= m_Speed;
+    //力を掛ける方向を決める
+    Force = ToPlayerVec - m_Velocity;
+    //力と質量から加速を求める
+    Vector3 Accel = Force / m_Mass;
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //速度を加速する
+    m_Velocity += Accel * ElapsedTime;
+}
+</pre>
+</div>
+　ここでは、<b>プレイヤーを追いかける</b>というAI処理を<b>フォース</b>を用いて計算しています。<br />
+　<b>フォース</b>は<b>力</b>です。ものの速度を変化させるのには、どこかの方向に<b>力</b>を加える必要があります。軽いものであれば、<b>少ない力</b>で変化させられますが、重いものだと<b>大きな力</b>が必要になります。そうして力と質量から<b>加速</b>を導き出し、それを現在の速度に加算します。すると、オブジェクトの移動する方向が変わります。<br />
+　この<b>フォース</b>を使った移動は、<b>フルバージョンのサンプル</b>でも随所に説明してますので、繰り返しませんが、<b>オブジェクトを移動させる</b>場合、以下の３つの方法が考えられます。
+<div class="box1">
+<pre>
+１、直接、位置（Position）を変化させる
+２、速度（Velocity）を変化させて、その値でPositionを動かす。
+３、力（Force）を作り出して、加速を加え、それで速度（Velocity）を変化させる。
+　　最後に、Velocityの値でPositionを動かす。
+</pre>
+</div>
+　１は直感的ですが、ほかのオブジェクトと相互作用をする場合、<b>Velocoty</b>を持たないので、エラーが出やすくなります。（例えば相手にめり込んで止まっちゃうとか）<br />
+　２は、１よりはましですが、Velocityを直接いじるので、例えば<b>左に動く物体を、急に右に全速力で動かす</b>なんてことが可能になります。現実にはこんなことはありえないので、注意して計算する必要があります。ほかのオブジェクトとの相互作用は、いくらかやりやすくなります。<br />
+　３は、２より、よりリアリティな動きを演出できます。半面<b>ぬるぬるした動き</b>になり、それはそれで<b>ゲーム的なリアリティ</b>は失われる場合があります。他オブジェクトとの相互作用は、かなりバグが少なく実装できます。<br />
+<br />
+　結論として、１は他と相互作用しないのであればいいかと思いますが、相互作用をする場合、２か３を使うのがいいでしょう。どちらかは、オブジェクトのタイプによると思います。<br />
+　<b>ＡＩのみで動くブロック</b>のような処理を実装する場合、３ばベストと考えます。半面<b>プレイヤー</b>に３を使うと、なんとなく操作しにくい、もたもたした動きになるので、操作する人にストレスを与えます。ですので、基本３にしておいて、コントローラ操作に対する自由度は高くしておくか、あるいは２を使う方法がいいと思います。<br />
+　今回のサンプルでは、プレイヤーは、２で実装しています。<br />
+<br />
+<h4>ブロック（MoveBoxObject）クラスのOnCollision()</h4>
+　これは<b>MoveBoxObject::OnCollision()</b>に記述されてますが、この関数では<b>CollisionWithBoxes()</b>を呼んでいます。以下実体です、
+
+<div class="box1">
+<pre>
+void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //衝突判定
+    auto ShPtrScene = m_Scene.lock();
+    for (auto& v : ShPtrScene->GetBoxVec()) {
+        <span class="red">if (v == GetThis&lt;BoxBase>()) {
+            //相手が自分自身なら処理しない
+            continue;
+        }</span>
+        OBB DestObb = v->GetOBB();
+        OBB SrcObb = GetOBB();
+        SrcObb.m_Center = BeforePos;
+        float HitTime;
+        Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
+        if (HitTest::CollisionTestObbObb(SrcObb, CollisionVelosity, DestObb, 0, ElapsedTime, HitTime)) {
+            m_Pos = BeforePos + CollisionVelosity * HitTime;
+            float SpanTime = ElapsedTime - HitTime;
+            //m_Posが動いたのでOBBを再取得
+            SrcObb = GetOBB();
+            Vector3 HitPoint;
+            //最近接点を得るための判定
+            HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
+            //衝突法線をHitPointとm_Posから導く
+            Vector3 Normal = m_Pos - HitPoint;
+            Normal.Normalize();
+            //速度をスライドさせて設定する
+            m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+            //Y方向はなし
+            m_Velocity.y = 0;
+            //最後に衝突点から余った時間分だけ新しい値で移動させる
+            m_Pos = m_Pos + m_Velocity * SpanTime;
+            //追い出し処理
+            //少しづつ相手の領域から退避する
+            //最大10回退避するが、それでも衝突していたら次回ターンに任せる
+            int count = 0;
+            while (count &lt; 20) {
+                //退避する係数
+                float MiniSpan = 0.001f;
+                //もう一度衝突判定
+                //m_Posが動いたのでOBBを再取得
+                SrcObb = GetOBB();
+                if (HitTest::OBB_OBB(SrcObb, DestObb)) {
+                    //最近接点を得るための判定
+                    HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
+                    //衝突していたら追い出し処理
+                    Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+                    EscapeNormal.y = 0;
+                    EscapeNormal.Normalize();
+                    m_Pos = m_Pos + EscapeNormal * MiniSpan;
+                }
+                else {
+                    break;
+                }
+                count++;
+            }
+        }
+    }
+}
+</pre>
+</div>
+　ここでは<b>ShPtrScene->GetBoxVec()</b>でシーンからボックスの配列を取り出し、その中の要素と<b>OBB対OBB</b>の衝突判定を行ってます。その際、ボックスの配列には自分自身も含まれるので、赤くなっているところのように<b>自分とは判定しない</b>という形にしています。<br />
+　具体的なコードの流れはコード中のコメントを読んでください。<br />
+　なお、ブロックオブジェクトから<b>プレイヤー</b>にたいする判定は行ってません。これは<b>プレイヤー</b>がわで行います。衝突判定は<b>多対多</b>の判定ですが、2重に行う必要はありません。<br />
+　また、最後の
+<div class="box1">
+<pre>
+            //追い出し処理
+            //少しづつ相手の領域から退避する
+            //最大10回退避するが、それでも衝突していたら次回ターンに任せる
+            int count = 0;
+            while (count &lt; 20) {
+                //退避する係数
+                float MiniSpan = 0.001f;
+                //もう一度衝突判定
+                //m_Posが動いたのでOBBを再取得
+                SrcObb = GetOBB();
+                if (HitTest::OBB_OBB(SrcObb, DestObb)) {
+                    //最近接点を得るための判定
+                    HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
+                    //衝突していたら追い出し処理
+                    Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+                    EscapeNormal.y = 0;
+                    EscapeNormal.Normalize();
+                    m_Pos = m_Pos + EscapeNormal * MiniSpan;
+                }
+                else {
+                    break;
+                }
+                count++;
+            }
+</pre>
+</div>
+　は<b>追い出し処理（拘束の解除）</b>です。<b>トンネル現象</b>が起こらない形で判定してるので、この処理が必要なのは全部ではないのですが、まれに、相手に拘束されてしまう場合があるので、実装してます。これは<b>OBBとOBB</b>なので、ややこしい処理になってますが、プレイヤー側ではもう少し単純になります。<br />
+<br />
+<h4>ブロック（MoveBoxObject）クラスのOnRotation()</h4>
+　ここでは進行方向を徐々に向く処理（補間しながら回転する）処理となってます。<b>MoveBoxObject::RotToHead()関数</b>を確認ください。<br />
+<br />
+<h4>プレイヤー（SphereObject）クラスの初期化と描画</h4>
+　さて、いよいよプレイヤーです。こちらはこれまでの３Ｄオブジェクトと基本的に同じです。<br />
+<br />
+<h4>プレイヤー（SphereObject）クラスのOnUpdate()</h4>
+　更新処理は<b>SphereObject::OnUpdate()</b>が実体です。
+<div class="box1">
+<pre>
+void SphereObject::OnUpdate() {
+    //1つ前の位置を取っておく
+    m_BeforePos = m_Pos;
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    auto ShPtrScene = m_Scene.lock();
+    if (!ShPtrScene) {
+        return;
+    }
+    if (CntlVec[0].bConnected) {
+        if (!m_JumpLock) {
+            //Aボタン
+            if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+                m_BeforePos.y += 0.01f;
+                m_Pos.y += 0.01f;
+                m_GravityVelocity = Vector3(0, 4.0f, 0);
+                m_JumpLock = true;
+            }
+        }
+        <span class="red">Vector3 Direction = GetMoveVector();
+        if (Direction.Length() &lt; 0.1f) {
+            m_Velocity *= 0.9f;
+        }
+        else {
+            m_Velocity = Direction * 5.0f;
+        }</span>
+    }
+    m_Pos += (m_Velocity * ElapsedTime);
+    m_GravityVelocity += m_Gravity * ElapsedTime;
+    m_Pos += m_GravityVelocity * ElapsedTime;
+    if (m_Pos.y &lt;= m_BaseY) {
+        m_Pos.y = m_BaseY;
+        m_GravityVelocity = Vector3(0, 0, 0);
+        m_JumpLock = false;
+    }
+}
+</pre>
+</div>
+　赤くなっているところは、コントローラとカメラの方向から、プレイヤーが向かうべき方向をGetMoveVector()で取り出します。コントローラが離された場合、速度は下がらないと変なので、その処理も加味しています。<br />
+　Ａボタンでジャンプ処理もしています。<br />
+<br />
+<h4>プレイヤー（SphereObject）クラスのOnCollision()</h4>
+　こちらは<b>SphereObject::CollisionWithBoxes()</b>になります。以下が実体です。
+<div class="box1">
+<pre>
+void SphereObject::CollisionWithBoxes(const Vector3& BeforePos) {
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //衝突判定
+    auto ShPtrScene = m_Scene.lock();
+    for (auto& v : ShPtrScene->GetBoxVec()) {
+        OBB Obb = v->GetOBB();
+        SPHERE Sp = GetSPHERE();
+        Sp.m_Center = BeforePos;
+        float HitTime;
+        //相手の速度
+        Vector3 DestVelocity(0, 0, 0);
+        auto MovBoxPtr = dynamic_pointer_cast&lt;MoveBoxObject>(v);
+        if (MovBoxPtr) {
+            DestVelocity = MovBoxPtr->GetPosition() - MovBoxPtr->GetBeforePos();
+            Obb.m_Center = MovBoxPtr->GetBeforePos();
+        }
+        Vector3 SrcVelocity = m_Pos - BeforePos;
+
+        Vector3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
+        if (HitTest::CollisionTestSphereObb(Sp, CollisionVelosity, Obb, 0, ElapsedTime, HitTime)) {
+            m_JumpLock = false;
+            m_Pos = BeforePos + CollisionVelosity * HitTime;
+            float SpanTime = ElapsedTime - HitTime;
+            //m_Posが動いたのでSPHEREを再取得
+            Sp = GetSPHERE();
+            Vector3 HitPoint;
+            //最近接点を得るための判定
+            HitTest::SPHERE_OBB(Sp, Obb, HitPoint);
+            //衝突法線をHitPointとm_Posから導く
+            Vector3 Normal = m_Pos - HitPoint;
+            Normal.Normalize();
+            if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) &lt;= 0.01f) {
+                //平面の上
+                m_GravityVelocity = Vector3(0, 0, 0);
+            }
+            else {
+                //重力をスライドさせて設定する
+                //これで、斜めのボックスを滑り落ちるようになる
+                m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+            }
+            if (MovBoxPtr) {
+                <span class="red">//お互いに反発する
+                Vector3 TgtVelo = CollisionVelosity * 0.5f;
+                if (TgtVelo.Length() &lt; 1.0f) {
+                    //衝突時の速度が小さかったら、速度を作り出す
+                    TgtVelo = MovBoxPtr->GetPosition() - m_Pos;
+                    TgtVelo.Normalize();
+                    TgtVelo *= 2.0f;
+                }
+                Vector3 DestVelo = Vector3EX::Reflect(-TgtVelo, Normal);
+                DestVelo.y = 0;
+                MovBoxPtr->SetVelocity(DestVelo);
+                //速度を反発させて設定する
+                m_Velocity = Vector3EX::Reflect(TgtVelo, -Normal);</span>
+            }
+            else {
+                //速度をスライドさせて設定する
+                m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+            }
+            //Y方向は重力に任せる
+            m_Velocity.y = 0;
+            //最後に衝突点から余った時間分だけ新しい値で移動させる
+            m_Pos = m_Pos + m_Velocity * SpanTime;
+            m_Pos = m_Pos + m_GravityVelocity * SpanTime;
+            //もう一度衝突判定
+            //m_Posが動いたのでSPHEREを再取得
+            Sp = GetSPHERE();
+            if (HitTest::SPHERE_OBB(Sp, Obb, HitPoint)) {
+                //衝突していたら追い出し処理
+                Vector3 EscapeNormal = Sp.m_Center - HitPoint;
+                EscapeNormal.Normalize();
+                m_Pos = HitPoint + EscapeNormal * Sp.m_Radius;
+            }
+        }
+    }
+}
+</pre>
+</div>
+　ここでは、ボックスの配列をスキャンしながら、<b>SPHEREとOBB</b>の判定を行ってます。<br />
+　<b>CollisionTestSphereObb()関数</b>を呼び出す前に、もし、相手が<b>MoveBoxObject</b>だった場合に、相手の速度を取得して、自分の速度から引き算します。すると、相手との相対速度が出るので、それで<b>CollisionTestSphereObb()関数</b>を呼びます。この関数は、衝突した場所などを返すのではなく<b>１ターン内の衝突した時間</b>を返すので、引き算して相手の動きを止めた形にしても結果は同じになります。<br />
+　衝突後の処理ですが、動かないブックスの場合は<b>スライド</b>して<b>動くボックス</b>の場合は<b>反発</b>にしています。そのとき、相手も少し反発させてます。（赤くなっている部分です）<br />
+　また、<b>追い出し処理</b>ですが、<b>OBB対OBB</b>よりはいくらか単純になります。<br />
+<br />
+<h4>プレイヤー（SphereObject）クラスのOnRotation()</h4>
+　こちらは、<b>MoveBoxObjectクラス</b>と変わりありません。<br />
+<br />
+<h4>■まとめ■</h4>
+　この項では、<b>シンプルバージョンにおける３Ｄオブジェクトの実装</b>を説明しました。かなり詳しく説明したつもりです。<br />
+　ただ冒頭にも述べました通り、<b>実装の方法は無限にあり、このサンプルは一つの方法でしかない</b>ということと、ゲームを形成する実装としては、ほかにも必要な機能が山ほどある、ということです。<br />
+　そういいう意味でも<b>しっかりと時間を確保して</b>プログラムの学習に励んでいただきたいと思います。
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_14.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

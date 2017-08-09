@@ -92,7 +92,9 @@ namespace basecross {
 		m_Velocity(0,0,0),
 		m_Gravity(0,-9.8f,0),
 		m_GravityVelocity(0,0,0),
-		m_JumpLock(false)
+		m_JumpLock(false),
+		m_BeforePos(Pos),
+		m_Mass(1.0f)
 	{}
 	SphereObject::~SphereObject() {}
 
@@ -151,12 +153,21 @@ namespace basecross {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//衝突判定
 		auto ShPtrScene = m_Scene.lock();
-		for (auto& v : ShPtrScene->GetBoxObjectVec()) {
+		for (auto& v : ShPtrScene->GetBoxVec()) {
 			OBB Obb = v->GetOBB();
 			SPHERE Sp = GetSPHERE();
 			Sp.m_Center = BeforePos;
 			float HitTime;
-			Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
+			//相手の速度
+			Vector3 DestVelocity(0, 0, 0);
+			auto MovBoxPtr = dynamic_pointer_cast<MoveBoxObject>(v);
+			if (MovBoxPtr) {
+				DestVelocity = MovBoxPtr->GetPosition() - MovBoxPtr->GetBeforePos();
+				Obb.m_Center = MovBoxPtr->GetBeforePos();
+			}
+			Vector3 SrcVelocity = m_Pos - BeforePos;
+
+			Vector3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
 			if (HitTest::CollisionTestSphereObb(Sp, CollisionVelosity, Obb, 0, ElapsedTime, HitTime)) {
 				m_JumpLock = false;
 				m_Pos = BeforePos + CollisionVelosity * HitTime;
@@ -169,7 +180,6 @@ namespace basecross {
 				//衝突法線をHitPointとm_Posから導く
 				Vector3 Normal = m_Pos - HitPoint;
 				Normal.Normalize();
-
 				if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) <= 0.01f) {
 					//平面の上
 					m_GravityVelocity = Vector3(0, 0, 0);
@@ -179,8 +189,25 @@ namespace basecross {
 					//これで、斜めのボックスを滑り落ちるようになる
 					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
 				}
-				//速度をスライドさせて設定する
-				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+				if (MovBoxPtr) {
+					//お互いに反発する
+					Vector3 TgtVelo = CollisionVelosity * 0.5f;
+					if (TgtVelo.Length() < 1.0f) {
+						//衝突時の速度が小さかったら、速度を作り出す
+						TgtVelo = MovBoxPtr->GetPosition() - m_Pos;
+						TgtVelo.Normalize();
+						TgtVelo *= 2.0f;
+					}
+					Vector3 DestVelo = Vector3EX::Reflect(-TgtVelo, Normal);
+					DestVelo.y = 0;
+					MovBoxPtr->SetVelocity(DestVelo);
+					//速度を反発させて設定する
+					m_Velocity = Vector3EX::Reflect(TgtVelo, -Normal);
+				}
+				else {
+					//速度をスライドさせて設定する
+					m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+				}
 				//Y方向は重力に任せる
 				m_Velocity.y = 0;
 				//最後に衝突点から余った時間分だけ新しい値で移動させる
@@ -212,7 +239,7 @@ namespace basecross {
 	}
 	void SphereObject::OnUpdate() {
 		//1つ前の位置を取っておく
-		Vector3 BeforrPos = m_Pos;
+		m_BeforePos = m_Pos;
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//コントローラの取得
@@ -221,20 +248,23 @@ namespace basecross {
 		if (!ShPtrScene) {
 			return;
 		}
-		Vector3 CameraEye, CameraAt;
-		ShPtrScene->GetCameraEyeAt(CameraEye, CameraAt);
-
 		if (CntlVec[0].bConnected) {
 			if (!m_JumpLock) {
 				//Aボタン
 				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
-					BeforrPos.y += 0.01f;
+					m_BeforePos.y += 0.01f;
 					m_Pos.y += 0.01f;
 					m_GravityVelocity = Vector3(0, 4.0f, 0);
 					m_JumpLock = true;
 				}
 			}
-			m_Velocity = GetMoveVector() * 5.0f;
+			Vector3 Direction = GetMoveVector();
+			if (Direction.Length() < 0.1f) {
+				m_Velocity *= 0.9f;
+			}
+			else {
+				m_Velocity = Direction * 5.0f;
+			}
 		}
 		m_Pos += (m_Velocity * ElapsedTime);
 		m_GravityVelocity += m_Gravity * ElapsedTime;
@@ -244,8 +274,42 @@ namespace basecross {
 			m_GravityVelocity = Vector3(0, 0, 0);
 			m_JumpLock = false;
 		}
-		CollisionWithBoxes(BeforrPos);
 	}
+
+	void SphereObject::OnCollision() {
+		//衝突判定
+		CollisionWithBoxes(m_BeforePos);
+	}
+
+	void SphereObject::RotToHead(float LerpFact) {
+		if (LerpFact <= 0.0f) {
+			//補間係数が0以下なら何もしない
+			return;
+		}
+		//回転の更新
+		//Velocityの値で、回転を変更する
+		Vector3 Temp = m_Velocity;
+		Temp.Normalize();
+		float ToAngle = atan2(Temp.x, Temp.z);
+		Quaternion Qt;
+		Qt.RotationRollPitchYaw(0, ToAngle, 0);
+		Qt.Normalize();
+		//現在と目標を補間
+		if (LerpFact >= 1.0f) {
+			m_Qt = Qt;
+		}
+		else {
+			m_Qt.Slerp(m_Qt, Qt, LerpFact);
+		}
+	}
+
+	void SphereObject::OnRotation() {
+		//回転
+		RotToHead(0.1f);
+	}
+
+
+
 	void SphereObject::OnDraw() {
 		auto ShPtrScene = m_Scene.lock();
 		if (!ShPtrScene) {
@@ -269,16 +333,15 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
-	///	ボックス実体
+	///	固定のボックス実体
 	//--------------------------------------------------------------------------------------
 	BoxObject::BoxObject(const shared_ptr<Scene> PtrScene,
 		const wstring& TextureFileName, bool Trace, 
 		const Vector3& Scale,
 		const Quaternion& Qt,
 		const Vector3& Pos) :
+		BoxBase(),
 		m_Scene(PtrScene),
-		ObjectInterface(),
-		ShapeInterface(),
 		m_TextureFileName(TextureFileName),
 		m_Trace(Trace),
 		m_Scale(Scale),
@@ -344,17 +407,17 @@ namespace basecross {
 		const Vector3& Scale,
 		const Quaternion& Qt,
 		const Vector3& Pos) :
+		BoxBase(),
 		m_Scene(PtrScene),
-		ObjectInterface(),
-		ShapeInterface(),
 		m_TextureFileName(TextureFileName),
 		m_Trace(Trace),
 		m_Scale(Scale),
 		m_Qt(Qt),
 		m_Pos(Pos),
 		m_Velocity(0,0,0),
-		m_Math(1.0f),
-		m_Speed(4.0f)
+		m_Mass(1.0f),
+		m_Speed(4.0f),
+		m_BeforePos(Pos)
 	{}
 	MoveBoxObject::~MoveBoxObject() {}
 
@@ -388,7 +451,7 @@ namespace basecross {
 			return;
 		}
 		//フォース（力）
-		Vector3 Fource(0, 0, 0);
+		Vector3 Force(0, 0, 0);
 		//プレイヤーを向く方向ベクトル
 		Vector3 ToPlayerVec = 
 			ShPtrScene->GetSphereObject()->GetPosition() - m_Pos;
@@ -396,9 +459,9 @@ namespace basecross {
 		ToPlayerVec.y = 0;
 		ToPlayerVec *= m_Speed;
 		//力を掛ける方向を決める
-		Fource = ToPlayerVec - m_Velocity;
+		Force = ToPlayerVec - m_Velocity;
 		//力と質量から加速を求める
-		Vector3 Accel = Fource / m_Math;
+		Vector3 Accel = Force / m_Mass;
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//速度を加速する
@@ -410,7 +473,11 @@ namespace basecross {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//衝突判定
 		auto ShPtrScene = m_Scene.lock();
-		for (auto& v : ShPtrScene->GetBoxObjectVec()) {
+		for (auto& v : ShPtrScene->GetBoxVec()) {
+			if (v == GetThis<BoxBase>()) {
+				//相手が自分自身なら処理しない
+				continue;
+			}
 			OBB DestObb = v->GetOBB();
 			OBB SrcObb = GetOBB();
 			SrcObb.m_Center = BeforePos;
@@ -437,9 +504,9 @@ namespace basecross {
 				//少しづつ相手の領域から退避する
 				//最大10回退避するが、それでも衝突していたら次回ターンに任せる
 				int count = 0;
-				while (count < 10) {
+				while (count < 20) {
 					//退避する係数
-					float MiniSpan = 0.01f;
+					float MiniSpan = 0.001f;
 					//もう一度衝突判定
 					//m_Posが動いたのでOBBを再取得
 					SrcObb = GetOBB();
@@ -468,36 +535,43 @@ namespace basecross {
 		}
 		//回転の更新
 		//Velocityの値で、回転を変更する
-		if (m_Velocity.Length() > 0.0f) {
-			Vector3 Temp = m_Velocity;
-			Temp.Normalize();
-			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
-			//現在と目標を補間
-			if (LerpFact >= 1.0f) {
-				m_Qt = Qt;
-			}
-			else {
-				m_Qt.Slerp(m_Qt, Qt, LerpFact);
-			}
+		Vector3 Temp = m_Velocity;
+		Temp.Normalize();
+		float ToAngle = atan2(Temp.x, Temp.z);
+		Quaternion Qt;
+		Qt.RotationRollPitchYaw(0, ToAngle, 0);
+		Qt.Normalize();
+		//現在と目標を補間
+		if (LerpFact >= 1.0f) {
+			m_Qt = Qt;
+		}
+		else {
+			m_Qt.Slerp(m_Qt, Qt, LerpFact);
 		}
 	}
 
 	void MoveBoxObject::OnUpdate() {
 		//1つ前の位置を取っておく
-		Vector3 BeforrPos = m_Pos;
+		m_BeforePos = m_Pos;
 		//速度を変化させる
 		UpdateVelosity();
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//速度に合わせて位置の変更
 		m_Pos += m_Velocity * ElapsedTime;
+	}
+
+	void MoveBoxObject::OnCollision() {
 		//衝突判定
-		CollisionWithBoxes(BeforrPos);
+		CollisionWithBoxes(m_BeforePos);
+	}
+
+	void MoveBoxObject::OnRotation() {
+		//回転
 		RotToHead(0.1f);
 	}
+
+
 
 	void MoveBoxObject::OnDraw() {
 		auto ShPtrScene = m_Scene.lock();
@@ -591,8 +665,8 @@ namespace basecross {
 		sb.LightDir = LightDir;
 		//ディフューズ
 		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
+		//エミッシブ加算。
+		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
 		//個別処理
 		for (auto& v : m_DrawObjectVec) {
 			//転置する
@@ -686,7 +760,7 @@ namespace basecross {
 
 	void WrappedSprite::UpdateVertex(float ElapsedTime) {
 		m_TotalTime += ElapsedTime;
-		if (m_TotalTime > 1.0f) {
+		if (m_TotalTime >= 1.0f) {
 			m_TotalTime = 0;
 		}
 
@@ -731,11 +805,11 @@ namespace basecross {
 
 
 	void WrappedSprite::OnUpdate() {
-		m_Rot += 0.01f;
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		m_Rot += ElapsedTime;
 		if (m_Rot >= XM_2PI) {
 			m_Rot = 0;
 		}
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		UpdateVertex(ElapsedTime);
 	}
 
