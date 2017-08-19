@@ -10,6 +10,8 @@
 #include "../DxLib/BaseHelper.h"
 //XML読み込み
 #include "../DxLib/XmlDoc.h"
+//シンプルな計算クラス
+#include "../DxLib/BaseMath.h"
 //ベクトル計算の計算クラス
 #include "../DxLib/MathVector.h"
 //行列、クオータニオン、カラーなどの計算クラス

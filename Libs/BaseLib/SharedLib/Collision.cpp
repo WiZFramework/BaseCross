@@ -429,9 +429,9 @@ namespace basecross {
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereSphere(SrcBeforSphere, SpanVelocity, DestSphere, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereSphere(SrcBeforSphere, SpanVelocity, DestBeforeSphere, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionSphere, CollisionSphere>
-			(SrcVelocity,DestVelocity,ElapsedTime,HitTime, GetThis<CollisionSphere>(),DestColl);
+				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionSphere>(), DestColl);
 		}
 	}
 
@@ -456,7 +456,7 @@ namespace basecross {
 
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereCapsule(SrcBeforSphere, SpanVelocity, DestCap, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereCapsule(SrcBeforSphere, SpanVelocity, DestBeforeCap, 0, ElapsedTime, HitTime)) {
 
 			AfterCollisionTmpl_1<CollisionSphere, CollisionCapsule>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionSphere>(), DestColl);
@@ -485,7 +485,7 @@ namespace basecross {
 
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereObb(SrcBeforSphere, SpanVelocity, DestObb, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereObb(SrcBeforSphere, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionSphere, CollisionObb>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionSphere>(), DestColl);
 		}
@@ -544,7 +544,7 @@ namespace basecross {
 
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereRect(SrcBeforSphere, SpanVelocity, DestRect, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereRect(SrcBeforSphere, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionSphere, CollisionRect>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionSphere>(), DestColl);
 		}
@@ -887,7 +887,7 @@ namespace basecross {
 		//SPHERE‚ÆCAPSULE‚Ìˆµ‚¢‚ª‹t‚É‚È‚é
 		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereCapsule(DestBeforeSphere, SpanVelocity, SrcCapsule, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereCapsule(DestBeforeSphere, SpanVelocity, SrcBeforCapsule, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionSphere>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionCapsule>(), DestColl);
 		}
@@ -913,7 +913,7 @@ namespace basecross {
 		CAPSULE DestBeforeCapsule = DestColl->GetBeforeCapsule();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestCapsuleCapsule(SrcBeforCapsule, SpanVelocity, DestCapsule, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestCapsuleCapsule(SrcBeforCapsule, SpanVelocity, DestBeforeCapsule, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionCapsule>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionCapsule>(), DestColl);
 		}
@@ -939,7 +939,7 @@ namespace basecross {
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestCapsuleObb(SrcBeforCapsule, SpanVelocity, DestObb, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestCapsuleObb(SrcBeforCapsule, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionObb>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionCapsule>(), DestColl);
 		}
@@ -1000,7 +1000,7 @@ namespace basecross {
 		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestCapsuleRect(SrcBeforCapsule, SpanVelocity, DestRect, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestCapsuleRect(SrcBeforCapsule, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionCapsule, CollisionRect>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionCapsule>(), DestColl);
 		}
@@ -1354,7 +1354,7 @@ namespace basecross {
 		//SPHERE‚ÆOBB‚Ìˆµ‚¢‚ª‹t‚É‚È‚é
 		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestSphereObb(DestBeforeSphere, SpanVelocity, SrcObb, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestSphereObb(DestBeforeSphere, SpanVelocity, SrcBeforeObb, 0, ElapsedTime, HitTime)) {
 
 			AfterCollisionTmpl_1<CollisionObb, CollisionSphere>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionObb>(), DestColl);
@@ -1383,7 +1383,7 @@ namespace basecross {
 		//SPHERE‚ÆOBB‚Ìˆµ‚¢‚ª‹t‚É‚È‚é
 		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestCapsuleObb(DestBeforeCapsule, SpanVelocity, SrcObb, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestCapsuleObb(DestBeforeCapsule, SpanVelocity, SrcBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionObb, CollisionCapsule>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionObb>(), DestColl);
 		}
@@ -1410,7 +1410,7 @@ namespace basecross {
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestObbObb(SrcBeforObb, SpanVelocity, DestObb, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestObbObb(SrcBeforObb, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionObb, CollisionObb>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionObb>(), DestColl);
 		}
@@ -1437,7 +1437,7 @@ namespace basecross {
 		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
 		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
-		if (HitTest::CollisionTestObbRect(SrcBeforObb, SpanVelocity, DestRect, 0, ElapsedTime, HitTime)) {
+		if (HitTest::CollisionTestObbRect(SrcBeforObb, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionObb, CollisionRect>
 				(SrcVelocity, DestVelocity, ElapsedTime, HitTime, GetThis<CollisionObb>(), DestColl);
 		}
