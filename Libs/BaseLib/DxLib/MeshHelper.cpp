@@ -836,10 +836,10 @@ namespace basecross {
 
 			if (Vector3EX::AngleBetweenNormals(Norm, Vector3(0, 1, 0)) <= 0.1f || 
 				Vector3EX::AngleBetweenNormals(Norm, Vector3(0, -1, 0)) <= 0.1f) {
-				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 0, 1));
+				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 0, 1)),0.0);
 			}
 			else {
-				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 1, 0));
+				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 1, 0)),0.0);
 			}
 			vertices[i].tangent.w = 0.0f;
 		}
@@ -852,10 +852,10 @@ namespace basecross {
 
 			if (Vector3EX::AngleBetweenNormals(Norm, Vector3(0, 1, 0)) <= 0.1f ||
 				Vector3EX::AngleBetweenNormals(Norm, Vector3(0, -1, 0)) <= 0.1f) {
-				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 0, 1));
+				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 0, 1)),0.0);
 			}
 			else {
-				vertices[i].tangent = Vector3EX::Cross(Norm, Vector3(0, 1, 0));
+				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 1, 0)),0.0);
 			}
 			vertices[i].tangent.w = 0.0f;
 		}

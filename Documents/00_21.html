@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０２．シンプルバージョンでゲームの実装(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０２１．ゲーム実装の雛形(Dx11版)</h3>
+　このサンプルは<b>SimplSample021</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+　また、このサンプルはこれ以降のサンプルの、ひな形的な役割を担ってます。<br />
+　あるいは実際のゲーム制作の、ひな形としても利用できると思います（ただし、これ以降のサンプルと同じ設計で作成する場合）。設計的には、<b>フルバージョン</b>の簡略化したものです。もし、このような設計が気に入らなければ、<b>SimpleSample015（あるいはそれ以前のサンプル）</b>をひな形として、自分の設計で制作することをお勧めします。<br />
+　例えば<b>画面のフェードイン。フェードアウト</b>を実装する場合は、このサンプルをひな型にしてもよいですが、<b>画面のオーバーラップ</b>を実装するには不向きです。そういう場合は<b>SimpleSample015（あるいはそれ以前のサンプル）</b>をひな形にするのをお勧めします。また今流行りの<b>オープンワールド</b>にも不向きでしょう。<b>オープンワールド</b>の実装には<b>ゲームを遊んでいる最中</b>の、リソース読み込みや破棄が必要であり、そのためには<b>マルチスレッド</b>処理や<b>テッセレーション</b>も必要になるでしょう。<br />
+<br />
+　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。
+<p>&nbsp;</p>
+<img src="img/0021a.png" width="80%"/>
+<p>図0021a</p>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　見た感じ、非常にシンプルですが、このサンプルにはいくつもの新しい機能が実装されています。以下に列挙します。
+<div class="box1">
+<pre>
+１、シンプルな計算ライブラリの利用
+２、ステージの切り替え
+３、テクスチャのリソース登録
+４、親子関係のスプライト
+</pre>
+</div>
+　これらについて、詳しく説明します。<br />
+<br />
+<h4>■１、シンプルな計算ライブラリの利用■</h4>
+　<b>BaseCross</b>の、行列やベクトル計算は<b>DirectXMath</b>を使用しています。これにより、<b>ストリーミング SIMD 拡張命令 2 (いわゆるSSE2)</b>による計算が実装できます。これは<b>浮動小数点の計算</b>が最適化されている、ということです。３Ｄプログラムは、複雑な浮動小数点計算が大量に必要なプログラムです。ですから、こういった<b>ハードウェア依存</b>の計算は、必須と言ってもいいでしょう。<br />
+　<b>BaseCross</b>では、<b>DirectXMath</b>を利用するにあったっての制限を、ゲームプログラマに負担を掛けないように、<b>DirectXMath</b>をラッピング（包み込む）ような計算クラスとして<b>Vector3</b>や<b>Matrix4X4</b>の計算クラスを用意してきました。これは、<b>DirectXMath</b>の利用が<b>ややこしい部分</b>があるからです。<br />
+　まずは、<b>DirectXMathの利用の、どこがややこしいのか</b>を説明します、<br />
+　<b>DirectXMath</b>の関数群は<b>XMMatrixAffineTransformation()</b>のように<b>XM</b>で始まる関数名を持ちます。ほとんど（というか、ほぼ全部）、<b>XMVECTOR</b>もしくは<b>XMMATRIX</b>という型の変数を返す、あるいは引数に必要とします。<br />
+　この<b>XMVECTOR</b>と<b>XMMATRIX</b>の2つの型が曲者です。<b>基本的な情報 - MSDN - Microsoft</b>というマイクロソフトのページに、その要件について記されています）。（かなり下のほうです）<br />
+　<b>XMVECTOR</b>と<b>XMMATRIX</b>についての内容をまとめると以下のような特徴があります。
+<div class="box1">
+<pre>
+１、これらの変数は、16 バイトのアライメント、が必要。
+２、スタック上の場合は問題ない
+３、データセグメントの場合は問題ない
+４、ヒープ領域で、Xbox 360 および Windows x64では問題ない
+５、ヒープ領域で、Windows x86 では 8 バイトアラインメントなので問題になる
+</pre>
+</div>
+　ここで<b>５</b>のケースがまさに<b>BaseCross</b>の環境です。ならば<b>Windows x64</b>にすればいいだろうと思うかもしれませんが、<b>Windows x64</b>の場合、size_tの大きさの違いなど、x64の環境に合わせなければいけないので、将来的にはそうすべきですが、現状、<b>Windows x86</b>を使用しています。<br />
+　ここで<b>スタック、データセグメント、ヒープ領域</b>の意味が分からない方のために説明しますと、まず<b>スタック領域</b>に変数が展開される例は、<b>関数の内部変数や、呼び出しの引数</b>です。<br />
+　例えば以下の例は、わかりやすい<b>スタック上</b>の変数です。
+<div class="box1">
+<pre>
+void test(){
+    //単位クォータニオンの取得
+    XMVECTOR q = XMQuaternionIdentity();
+    //単位行列の取得
+    XMMATRIX m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　これは、関数内のローカル変数に代入しています。この場合は問題ないということです。<br />
+　データセグメントは、<b>グローバル変数</b>がそうです。
+<div class="box1">
+<pre>
+XMVECTOR q;
+XMMATRIX m;
+void test(){
+    //単位クォータニオンの取得
+    q = XMQuaternionIdentity();
+    //単位行列の取得
+    m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　これも問題がありません。しかし、以下が<b>ヒープ領域</b>です。
+<div class="box1">
+<pre>
+struct teststr{
+    XMVECTOR q;
+    XMMATRIX m;
+};
+
+void test(){
+    //以下は実行できない
+    auto t = new teststr();
+    //単位クォータニオンの取得
+    t.q = XMQuaternionIdentity();
+    //単位行列の取得
+    t.m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　この実行ができないのです。エラーをなくすためには<b>new演算子</b>を多重定義する必要がありますが、これは負担の重いことです。<br />
+　解決策として、上記マイクロソフトサイトでは<b>XMFLOAT3、XMFLOAT4、XMFLOAT4X3、XMFLOAT4X4</b>を使用すべき、という記述があります。これはどういいうことかというと、実際にコード化してみます。
+<div class="box1">
+<pre>
+struct teststr{
+    XMFLOAT4 q;
+    XMFLOAT4X4 m;
+};
+
+void test(){
+    //以下は実行できる
+    auto t = new teststr();
+    //
+    //ここでtの変数を何らかの形で設定
+    //
+    //変数のXMVECTORへのロード
+    XMVECTOR q = XMLoadFloat4(&t.q);
+    //クォータニオンの正規化
+    q = XMQuaternionNormalize(q);
+    //tの変数に戻す
+    XMStoreFloat4&t.q,q);
+    //変数のXMMATRIXへのロード
+    XMMATRIX m = XMLoadFloat4x4A(&t.m);
+    //行列の転置
+    m = XMMatrixTranspose(m);
+    //tの変数に戻す
+    XMStoreFloat4x4(&t.m,m);
+}
+</pre>
+</div>
+　この処理で<b>newで作成したt</b>の変数を計算することができます。<br />
+　これで、めでたしめでたし、のようですが、実際にプログラムを組んでみると<b>常にロードトストアをしないといけない</b>という現実にぶち当たります。これでは意味がありません。<br />
+　それで、<b>Matrix4X4、Quaternion、Vector3</b>などの構造体が必要になります。以下、<b>Quaternionクラスの宣言</b>ですが
+<div class="box1">
+<pre>
+struct Quaternion : public XMFLOAT4 {
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  v4  XMFLOAT4値
+    */
+    //--------------------------------------------------------------------------------------
+    Quaternion(const XMFLOAT4& v4) :XMFLOAT4(v4) {
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  other   XMVECTOR値
+    */
+    //--------------------------------------------------------------------------------------
+    Quaternion(const XMVECTOR& other) :XMFLOAT4() {
+        XMVECTOR temp = other;
+        XMStoreFloat4(this, temp);
+    }
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  XMVECTORへのキャスト（thisをキャストして返す）
+    @return XMVECTOR型の値
+    */
+    //--------------------------------------------------------------------------------------
+    operator XMVECTOR() const {
+        XMFLOAT4 temp = *this;
+        XMVECTOR Vec = XMLoadFloat4(&temp);
+        return Vec;
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  代入
+    @param[in]  other   コピー元(XMVECTOR型)
+    @return Quaternion
+    */
+    //--------------------------------------------------------------------------------------
+    Quaternion& operator=(const XMVECTOR& other) {
+        XMVECTOR temp = other;
+        XMStoreFloat4(this, temp);
+        return *this;
+    }
+    //中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  thisを正規化する
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void Normalize() {
+        *this = (Quaternion)XMQuaternionNormalize(XMVECTOR(*this));
+    }
+    //中略
+};
+</pre>
+</div>
+　このように、<b>Quaternion</b>は<b>XMFLOAT4</b>の派生クラスとして作成したうえで
+<div class="box1">
+<pre>
+１、XMFLOAT4を引数としたコンストラクタ
+２、XMVECTORを引数としたコンストラクタ
+３、XMVECTORを引数としたコピー
+４、XMVECTORへのキャスト演算子の多重定義
+</pre>
+</div>
+　を作成し、その中で的確に<b>ロード関数とストア関数</b>を作成すれば<b>Normalize()関数</b>内での処理のように
+<div class="box1">
+<pre>
+        *this = (Quaternion)XMQuaternionNormalize(XMVECTOR(*this));
+</pre>
+</div>
+　のように記述できるようになります。実際には<b>XMVECTORへのキャスト</b>や<b>XMVECTORからのコンストラクタ</b>が実装されているので
+<div class="box1">
+<pre>
+        *this = XMQuaternionNormalize(*this);
+</pre>
+</div>
+　でも動作します。
+<br/>
+<br/>
+　さてここまでの実装を踏まえて、<b>BaseCross</b>では、上記の<b>Normalize()関数</b>のように、<b>DirectXMath関数</b>を隠す形で実装を進めてきたのですが、実際に使用すると<b>関数を用意するのではなく、DirectXMath関数を使いやすい環境を用意</b>したほうが、使いやすいのでは、という思いに至りました。<br />
+　そこで、シンプルで、かつ、<b>ロードやストア</b>をいちいち記述しなくてよい計算クラス群を作成しました。それが<b>DxLib</b>内の<b>BaseMath.hおよびBaseMathInc.h</b>に記載されているクラス群です。<br />
+　今回紹介する<b>SimplSample021</b>では、このクラス群を使用しています。（この後のシンプルバージョンでもそうなる予定です）。<br />
+<br />
+<h4>bsmネームスペース</h4>
+　新しい計算ライブラリ<b>仮にBaseMathと言うとして</b>、実装は<b>basecross::bsm</b>というネームスペースに実装があります。なぜ子供ネームスペースにしたかというと、<b>型名や関数名が混同しやすい</b>からです。
+　混同する可能性がない場合は<b>using namespace</b>を使ってあらかじめ宣言しておきます。<br />
+　このサンプルでは、内容もシンプルで混同する可能性がないので、<b>using句</b>を使っています。<b>Project.h</b>に
+<div class="box1">
+<pre>
+using namespace basecross::bsm;
+</pre>
+</div>
+　という記述があります。<br />
+<br/>
+　さて、そのような<b>using</b>がある環境で、使用できる型は以下の通りです。
+<table>
+<tr>
+<th>型名</th>
+<th>用途</th>
+<th>親クラス</th>
+<th>備考</th>
+</tr>
+<tr>
+<td>Vec2</td>
+<td>2次元ベクトル</td>
+<td>XMFLOAT2</td>
+<td>Flt2の別名</td>
+</tr>
+<tr>
+<td>Vec3</td>
+<td>3次元ベクトル</td>
+<td>XMFLOAT3</td>
+<td>Flt3の別名</td>
+</tr>
+<tr>
+<td>Vec4</td>
+<td>4次元ベクトル</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Pt2</td>
+<td>2次元ポイント</td>
+<td>XMFLOAT2</td>
+<td>Flt2の別名</td>
+</tr>
+<tr>
+<td>Pt3</td>
+<td>3次元ポイント</td>
+<td>XMFLOAT3</td>
+<td>Flt3の別名</td>
+</tr>
+<tr>
+<td>Col4</td>
+<td>RGBAカラー</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Plane4</td>
+<td>平面方程式</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Quat</td>
+<td>クォータニオン</td>
+<td>XMFLOAT4</td>
+<td>オリジナル名</td>
+</tr>
+<tr>
+<td>Mat3x3</td>
+<td>3x3行列</td>
+<td>XMFLOAT3X3</td>
+<td>オリジナル名</td>
+</tr>
+<tr>
+<td>Mat4x4</td>
+<td>4x4行列</td>
+<td>XMFLOAT4X4</td>
+<td>オリジナル名</td>
+</tr>
+</table>
+　この表で、例えば<b>Vec3</b>は<b>Flt3</b>の別名で、<b>Flt3</b>は<b>XMFLOAT3</b>の派生クラスとして実装されています。<br />
+　<b>float型の変数が3つある型</b>が、まず、<b>Flt3型</b>として実装されていて、その<b>別名</b>として<b>Vec3およびPt3がある</b>という形になります。つまり<b>Vec3とPt3</b>は、名前こそ違いますが、内容は全く同じということです。便宜上、<b>ベクトル</b>あるいは<b>ポイント</b>といういい方をしたほうが扱いやすい場合は多々あります。<br />
+　<b>float型の変数が4つある型</b>も<b>Flt4型</b>として実装されていて、その<b>別名</b>として<b>Vec4、Col4、Plane4がある</b>となってます。クォータニオンだけ特別で<b>直接XMFLOAT4の派生</b>となっています。<br />
+　<b>Mat3x3とMat4x4</b>は行列です。（4x3行列の機能はMat4x4で代用できると思います）。<br />
+　さてこのような<b>型構造</b>を持っていますが、実際の使用は、例えばサンプルの<b>Character.cpp</b>にある<b>SphereObject::OnDraw()</b>を見てください。
+<div class="box1">
+<pre>
+void SphereObject::OnDraw() {
+    auto TexPtr 
+    = App::GetApp()->GetResource&lt;TextureResource>(m_TextureResName);
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    <span class="red">//ワールド行列の決定
+    auto World = (Mat4x4)XMMatrixAffineTransformation(
+        m_Scale, 
+        Vec3(0, 0, 0),
+        m_Qt, 
+        m_Pos
+    );</span>
+    PtrGameStage->GetPNTDrawObject()->AddDrawMesh(
+        m_SphereMesh,
+        TexPtr,
+        World,
+        true
+    );
+}
+</pre>
+</div>
+　赤くなっているところが<b>DurectXMath関数</b>を呼び出しているところです。<br />
+　このように引数に関しては<b>Vec3型やQuat型</b>を直接渡すことができます。戻り値は<b>(Mat4x4)</b>のように、キャストする必要があります。<br />
+<br/>
+　ここで<b>XMMatrixAffineTransformation()</b>の戻り値を<b>Mat4x4</b>にキャストしなければいけないかを説明します。C++の文法の話です。<br />
+　<b>Mat4x4型</b>には<b>XMMATRIXを引数としたコンストラクタ</b>があり、以下のような実体になってます。
+<div class="box1">
+<pre>
+inline Mat4x4::Mat4x4(const XMMATRIX& other) :
+    XMFLOAT4X4()
+{
+    XMMATRIX temp = other;
+    XMStoreFloat4x4((XMFLOAT4X4*)this, temp);
+}
+</pre>
+</div>
+　この実装があるので、暗黙のキャストができるはずなのですが、できません。理由は宣言部になります。以下が宣言です。
+<div class="box1">
+<pre>
+<span class="red">explicit</span> inline Mat4x4(const XMFLOAT4X4& other);
+</pre>
+</div>
+　ここで、コンストラクタの宣言に<b>explicit</b>がついています。これは<b>暗黙の型変換は行わない</b>という指示になります。<br />
+　この<b>explicit</b>の役割について述べますと、例えばついてなかった場合、<b>引数が1つの場合int型と解釈されてしまう場合がある</b>ということです。つまり、<b>const XMFLOAT4X4& other</b>を渡したはずが<b>int型の値渡し</b>になってしまうのです。<br />
+　このような現象はエラーなので<b>explicit</b>を付けて<b>暗黙の型変換</b>を行わない設計になっています。<br />
+　しかし<b>(Mat4x4)</b>を記述するのがめんどくさい（あるいはスッキリしない）場合は、以下のように、コンストラクタと代入を分けて書くか
+<div class="box1">
+<pre>
+    //行列の定義
+    Mat4x4 World;
+    World = XMMatrixAffineTransformation(
+        m_Scale, 
+        Vec3(0, 0, 0),
+        m_Qt, 
+        m_Pos
+    );
+</pre>
+</div>
+　あるいは、コンストラクタの引数として、関数呼び出しを入れます。
+<div class="box1">
+<pre>
+    //行列の定義
+    Mat4x4 World(XMMatrixAffineTransformation(
+        m_Scale,
+        Vec3(0, 0, 0),
+        m_Qt,
+        m_Pos
+    ));
+</pre>
+</div>
+　続いてサンプルを紹介します。<b>SphereObject::GetMoveVector()</b>です。
+<div class="box1">
+<pre>
+Vec3 SphereObject::GetMoveVector() const {
+
+    //中略
+
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
+
+            //中略
+
+            Vec3 Front = m_Pos - CameraEye;
+            Front.y = 0;
+            <span class="red">Front.normalize();</span>
+            //進行方向向きからの角度を算出
+            float FrontAngle = atan2(Front.z, Front.x);
+            //コントローラの向き計算
+            float MoveX = CntlVec[0].fThumbLX;
+            float MoveZ = CntlVec[0].fThumbLY;
+            Vec2 MoveVec(MoveX, MoveZ);
+            float MoveSize = length(MoveVec);
+            //コントローラの向きから角度を計算
+            float CntlAngle = atan2(-MoveX, MoveZ);
+            //トータルの角度を算出
+            float TotalAngle = FrontAngle + CntlAngle;
+            //角度からベクトルを作成
+            Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+            //正規化する
+            <span class="red">Angle.normalize();</span>
+            //移動サイズを設定。
+            Angle *= MoveSize;
+            //Y軸は変化させない
+            Angle.y = 0;
+        }
+    }
+    return Angle;
+}
+</pre>
+</div>
+　上記、<b>FrontやAngle</b>はVec3型ですが、そのメンバ関数として<b>normalize()関数</b>が用意されています。<br />
+　この関数は内部で<b>XMVector2Normalize()関数</b>が実装されています。<br />
+　このようにラッピング関数は、全然ないわけではないです（使用しなくてもかまいません）。しかし、限定的な実装です。（詳しくは<b>BaseMath.h</b>を読んでください。）<br />
+　最後にもう一つサンプルです。スプライトの描画を行う<b>SpriteBase::OnDraw()関数</b>です。
+<div class="box1">
+<pre>
+void SpriteBase::OnDraw() {
+
+    //中略
+    //ワールド行列の決定
+    Mat4x4 World(XMMatrixAffineTransformation2D(
+        m_Scale,            //スケーリング
+        Vec2(0, 0),     //回転の中心（重心）
+        m_Rot,              //回転角度
+        m_Pos               //位置
+    ));
+
+
+    //射影行列の決定
+    float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
+    float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
+    Mat4x4 Proj(XMMatrixOrthographicLH(w, h, -1.0, 1.0f));
+
+    <span class="red">//行列の合成
+    World = Proj * World;</span>
+
+    //中略
+
+}
+</pre>
+</div>
+　赤くなっているところでは<b>行列の掛け算</b>が多重定義されています。<br />
+　この実装は以下です。
+<div class="box1">
+<pre>
+inline const Mat4x4 Mat4x4::operator *(const Mat4x4 & mat) const
+{
+    return  (Mat4x4)XMMatrixMultiply(<span class="red">mat, *this</span>);
+}
+</pre>
+</div>
+　演算子の多重定義内で、<b>MMatrixMultiply()関数</b>を呼んでいますが、その順番が逆になっています。これは、これまでの計算クラス<b>Matrix4X4</b>とは逆です。これは、ほかの計算ライブラリなどと互換をとるためにこうしました。このほかに<b>Quat同士の掛け算</b>もこのような方向になってます。気になる人は、多重定義を使わずに<b>XMMatrixMultiply()</b>を直接呼んでもらえればよいかと思います。<br />
+<br />
+<h4>■２、ステージの切り替え■</h4>
+　ゲームにはいろんな<b>画面</b>があります。<b>ゲーム画面</b>や<b>メインメニュー</b>や<b>リザルト画面</b>などです。これらを<b>BaceCross</b>では<b>ステージ</b>と称してます。<br />
+　<b>ステージ</b>の実装方法はいろいろありますが、このサンプル（や今後のサンプル）では<b>シーンが動的に切り変える画面</b>として実装しています。フルバージョンと同様です。つまり<b>かなり縮小したフルバージョン</b>の設計をしています。<br />
+　<b>ステージ</b>は<b>シーン</b>が管理します。<b>シーン</b>は<b>アクティブステージ</b>というのを一つだけ持っていて、それを動的に変更します。変更する際に<b>今まで使っていたステージ</b>は破棄します。しかし、一度読み込んだ<b>リソース</b>をステージの破棄のたびに一緒に破棄していたのでは、読み込む時間がもったいないので<b>リソース登録</b>することにより、リソースの再読み込みをしなくても済むようになってます。（リソース登録については、３、テクスチャのリソース登録で説明します）。<br />
+<br />
+<h4>ステージ切り替えの実装</h4>
+　まず、<b>シーン</b>の<b>OnCreate()関数</b>を見てください。
+<div class="box1">
+<pre>
+void Scene::OnCreate() {
+    CreateResources();
+    //自分自身にイベントを送る
+    //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
+    <span class="red">PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToGameStage");</span>
+}
+</pre>
+</div>
+　赤くなっているところで<b>イベント</b>を自分自身に送ってます。<b>PostEvent()関数</b>は、最速で<b>次のターンの最初</b>に実装されるイベントです。ここでは<b>L"ToGameStage"</b>というメッセージが送られます。<br />
+　送られたイベントは<b>Scene::OnEvent()関数</b>で処理されます。ここでは以下のように記述があります。
+<div class="box1">
+<pre>
+void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
+    if (event->m_MsgStr == L"ToGameStage") {
+        //アクティブステージをGameStageに設定
+        ResetActiveStage&lt;GameStage>();
+    }
+    else if (event->m_MsgStr == L"ToEmptyStage") {
+        //アクティブステージをEmptyStageに設定
+        ResetActiveStage&lt;EmptyStage>();
+    }
+}
+</pre>
+</div>
+　<b>"ToGameStage"</b>という文字列が送られた場合は<b>GameStage</b>がアクティブステージになります。<b>ResetActiveStage()関数</b>は、指定されたクラスのインスタンスをnewして、アクティブステージに設定します。その際、これまでのステージは<b>スマートポインタ</b>により、自動的に破棄されます。<br />
+　ステージがnewされたときに呼ばれる関数が、<b>コンストラクタと、OnCreate()関数</b>です。<b>GameStage::OnCreate()関数</b>は以下の通りです。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    //平面の作成
+    Quat(Vector3(1.0f, 0, 0), XM_PIDIV2);
+    m_SquareObject = ObjectFactory::Create&lt;SquareObject>(
+        GetThis&lt;Stage>(),
+        <span class="red">L"SKY_TX",</span>
+        Vector3(50.0f, 50.0f, 1.0f),
+        Quat::rotationX(XM_PIDIV2),
+        Vector3(0.0f, 0.0f, 0.0f)
+        );
+    //球の作成
+    m_SphereObject = ObjectFactory::Create&lt;SphereObject>(
+        GetThis&lt;Stage>(),
+        18, L"TRACE_TX", true, Vector3(0.0f, 0.125f, 0.0f));
+    //PNT描画オブジェクトの作成
+    m_PNTDrawObject = ObjectFactory::Create&lt;PNTDrawObject>(
+        GetThis&lt;Stage>()
+    );
+
+//中略
+
+}
+</pre>
+</div>
+　このように、以前のサンプル(SimplaSample015)では<b>Scene::OnCreate()関数</b>に記述されていた内容が記述されています。また、テクスチャも<b>ファイル名</b>を渡すのではなく<b>リソース名</b>を渡しています。これは、テクスチャを使いまわしができるように<b>リソース登録</b>されているためです。<br />
+<br />
+　さて、このようにして<b>ゲームステージ</b>は表示されるわけですが、もう一つの<b>EmptyStage</b>はどのように切り替えられるのでしょうか。答えは<b>GameStage::OnUpdate()関数</b>にあります。<br />
+　この関数では<b>カメラの移動</b>を行っていますが、その際<b>コントローラのBボタンが押されたら</b>という処理が追加されています。
+<div class="box1">
+<pre>
+void GameStage::OnUpdate() {
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+
+        //中略
+
+        //Bボタン
+        if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+            <span class="red">PostEvent(0.0f, GetThis&lt;ObjectInterface>(),
+                 App::GetApp()->GetScene&lt;Scene>(), L"ToEmptyStage");</span>
+        }
+    }
+}
+</pre>
+</div>
+　このように、<b>L"ToEmptyStage"</b>というメッセージをシーンに送ってます。シーンでは<b>OnEvent()関数</b>で、ゲームステージのアクティブ化が行われますので、<b>ステージの切り替え</b>が実行されます。<br />
+<br />
+<h4>■３、テクスチャのリソース登録■</h4>
+　<b>ステージ切り替え</b>のところでも少し触れましたが、このサンプルでは<b>テクスチャのリソース登録</b>することで、同じテクスチャを、2つ以上メモリ上に配置しなくても済むような作りになってます。（同じデータを複数メモリ上に置くのは無駄ですからね）。<br />
+　<b>テクスチャのリソース登録</b>は<b>Appクラスにリソースを登録する</b>ことで実装します。<b>Scene::CreateResources()関数</b>で行っています。<br />
+<div class="box1">
+<pre>
+void Scene::CreateResources() {
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //各ゲームは以下のようにデータディレクトリを取得すべき
+    //App::GetApp()->GetDataDirectory(DataDir);
+    wstring strTexture = DataDir + L"sky.jpg";
+    <span class="red">App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);</span>
+    strTexture = DataDir + L"trace.png";
+    <span class="red">App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);</span>
+    strTexture = DataDir + L"StageMessage.png";
+    <span class="red">App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);</span>
+}
+</pre>
+</div>
+　赤くなっているところは、<b>テクスチャリソースを作成してリソース登録する</b>という処理です。テクスチャファイル名とリソース名を渡すと<b>リソース登録</b>してくれます。<br />
+　一度リソース登録したデータは、このゲームが終了するまでメモリに保持されます。<br />
+　もし、ゲーム途中で、もう使用しなくなったリソースがあれば、<b>App::GetApp()->UnRegisterResource()関数</b>で解放できます。しかしこの関数は存在チェックをしないので、失敗したら例外が発生するので、あらかじめ<b>App::GetApp()->CheckResource()関数</b>で存在をチェックするとよいでしょう。<br />
+<br />
+　<b>リソース登録</b>は<b>メッシュ</b>や<b>WAVファイル</b>もすることが可能です。このサンプルで使用するメッシュは、動的に頂点を変更するのが多いのでリソース登録してませんが、固定メッシュの場合はリソースにしておいたほうがいいでしょう。またWAVはデータが大きくなる傾向にあるので、リソース登録は必須と言えます。（WAVについてのサンプルは後ほど紹介します）。<br />
+<br />
+<h4>■４、親子関係のスプライト■</h4>
+　最後にスプライトの説明です。BaseCrossでは<b>２Ｄの単一テクスチャオブジェクト</b>を<b>スプライト</b>と称しています。コード説明に入る前に、<b>スプライトにはどういう機能があると便利か</b>を記します。
+<div class="box1">
+<pre>
+１、PCT頂点を作成する機能（共通）
+２、描画機能（共通）
+３、頂点を変更する機能（個別）
+４、テクスチャを動的に変更できる機能（個別）
+５、エミッシブ色を変更できる機能（個別）
+６、ブレンドステートを変更できる機能（個別）
+</pre>
+</div>
+　<b>共通</b>となっているのは、どのスプライトでも同じように記述できる部分で、<b>個別</b>となっているのは、スプライトの種類（クラス）やインスタンスごとに違う処理ができるの便利な部分です。<br />
+　こういった要件を踏まえて作成したのが<b>SpriteBaseクラス</b>とその派生クラス<b>RotateSpriteとMessageSprite</b>です。<br />
+　共通の処理は<b>SpriteBaseクラス</b>で行い、ここでは個別処理用にインターフェイス（操作関数）を用意します。それで、各派生クラスでは、親クラスのインターフェイスを使って個別の処理をします。<br />
+<br />
+<h4>１、PCT頂点を作成する機能（共通）と２．描画機能（共通）</h4>
+　この機能は、親クラスの<b>SpriteBase::OnCr、ate()関数</b>で実装されてます。
+<div class="box1">
+<pre>
+void SpriteBase::OnCreate() {
+    float HelfSize = 0.5f;
+    //頂点配列(縦横指定数ずつ表示)
+    m_BackupVertices = {
+        { VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),
+            Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), 
+            Col4(1.0f,1.0f,1.0f,1.0f), Vec2((float)m_XWrap, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), 
+            Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, (float)m_YWrap)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), 
+            Col4(1.0f,1.0f,1.0f,1.0f), Vec2((float)m_XWrap, (float)m_YWrap)) },
+    };
+    <span class="red">//頂点の初期修正（仮想関数呼びだし）
+    AdjustVertex();</span>
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    //メッシュの作成（変更できる）
+    m_SquareMesh 
+        = MeshResource::CreateMeshResource(m_BackupVertices, indices, true);
+}
+</pre>
+</div>
+　このように最初に<b>m_BackupVertices</b>を初期化し、赤くなっていおるところのように<b>AdjustVertex()</b>を呼び出します。この関数は仮想関数になっていて、派生クラスで多重定義する音で、<b>m_BackupVertices</b>の初期値を変更することができます。<br />
+　<b>RotateSpriteクラス</b>では多重定義内で変更しています。
+<div class="box1">
+<pre>
+void RotateSprite::AdjustVertex() {
+    //頂点色を変更する
+    for (size_t i = 0; i &lt; m_BackupVertices.size();i++) {
+        switch (i) {
+        case 0:
+            m_BackupVertices[i].color = Col4(1.0f, 0.0f, 0.0f, 1.0f);
+            break;
+        case 1:
+            m_BackupVertices[i].color = Col4(0.0f, 1.0f, 0.0f, 1.0f);
+            break;
+        case 2:
+            m_BackupVertices[i].color = Col4(0.0f, 0.0f, 1.0f, 1.0f);
+            break;
+        case 3:
+            m_BackupVertices[i].color = Col4(1.0f, 1.0f, 0, 1.0);
+            break;
+        }
+    }
+}
+</pre>
+</div>
+<br />
+<h4>３、頂点を変更する機能（個別）</h4>
+　これも、修正するタイミングで呼ばれる仮想関数が用意されています。<b>UpdateVertex()関数</b>です。<br />
+　<b>RotateSpriteクラス</b>では多重定義して、UV値を変更して、テクスチャのスクロール処理を実装しています。<br />
+　<b>MessageSpriteクラス</b>では多重定義して、点滅処理を実装しています。この仮想関数は、親クラスにおいて頂点バッファをあらかじめマップしておいて、そのデータのポインタを渡します。ですから、派生クラスではマップのことは考えずに修正処理のみ行うことができます。以下は、<b>MessageSprite</b>での更新処理です。
+<div class="box1">
+<pre>
+void  MessageSprite::UpdateVertex(float ElapsedTime, 
+        VertexPositionColorTexture* vertices) {
+    m_TotalTime += (ElapsedTime * 5.0f);
+    if (m_TotalTime >= XM_2PI) {
+        m_TotalTime = 0;
+    }
+    float sin_val = sin(m_TotalTime) * 0.5f + 0.5f;
+    Col4 UpdateCol(1.0f, 1.0f, 1.0f, sin_val);
+    for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
+        vertices[i] = VertexPositionColorTexture(
+            m_BackupVertices[i].position,
+            UpdateCol,
+            m_BackupVertices[i].textureCoordinate
+        );
+
+    }
+}
+</pre>
+</div>
+<br />
+<h4>その他の処理</h4>
+　４、テクスチャを動的に変更できる機能（個別）、５、エミッシブ色を変更できる機能（個別）、６、ブレンドステートを変更できる機能（個別）については親クラスにアクセサが用意されてますので、それを利用します。アクセサは公開メンバですので外部からも利用できます。<br />
+<br/>
+<h4>■まとめ■</h4>
+　今回は、シンプルバージョンという低レベルの状態から、どのようにして<b>ゲーム</b>に仕上げていくか、そのヒントになる実装を紹介しました。<br />
+　次項からはこのサンプルをベースに、その項目ごとのテーマにあった実装を個別にサンプル化していきます。<br />
+　<b>必要のないものは実装しない</b>というシンプルな考え方は、<b>フルバージョン</b>や<b>他のゲームフレームワーク</b>では実装が難しい昨今です。しかし、今後、サンプルの紹介では、個別に紹介することで、ほかの実装とは分けて考えることが可能にしていきます。<br />
+　例えば、<b>影の描画、リアルなシェーダ、モデル、アニメーションの実装</b>などなど、紹介すべき事項は多々ありますが、それらは<b>ミックスされた状態</b>で紹介するのではなく、個別に紹介していきます。そうすることで、<b>必要のないものは実装しない</b>という考え方が浸透しますし、何より、それぞれの実装の勉強にもなると思います。
+
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="00_22.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

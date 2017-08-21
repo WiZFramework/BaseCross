@@ -16,31 +16,31 @@ namespace bsm {
 	///	Flt2インライン実装
 	//--------------------------------------------------------------------------------------
 	inline Flt2::Flt2(const Flt2 & vec) :
-		XMFLOAT2()
+		XMFLOAT2(vec.x, vec.y)
 	{
-		x = vec.x;
-		y = vec.y;
 	}
 
-	inline Flt2::Flt2(float _x, float _y) :
-		XMFLOAT2()
+	inline Flt2::Flt2(const XMFLOAT2& v) :
+		XMFLOAT2(v)
 	{
-		x = _x;
-		y = _y;
+	}
+
+
+	inline Flt2::Flt2(float _x, float _y) :
+		XMFLOAT2(_x, _y)
+	{
 	}
 
 	inline Flt2::Flt2(float val) :
-		XMFLOAT2()
+		XMFLOAT2(val, val)
 	{
-		x = val;
-		y = val;
 	}
 
 	inline Flt2::Flt2(const XMVECTOR& vec) :
 		XMFLOAT2()
 	{
 		XMVECTOR temp = vec;
-		XMStoreFloat2(this, temp);
+		XMStoreFloat2((XMFLOAT2*)this, temp);
 	}
 
 	inline Flt2::operator XMVECTOR() const {
@@ -58,9 +58,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt2& Flt2::operator=(const XMFLOAT2& other) {
+		(XMFLOAT2)*this = other;
+		return *this;
+	}
+
+
 	inline Flt2&  Flt2::operator=(const XMVECTOR& other) {
 		XMVECTOR temp = other;
-		XMStoreFloat2(this, temp);
+		XMStoreFloat2((XMFLOAT2*)this, temp);
 		return *this;
 	}
 
@@ -165,39 +171,40 @@ namespace bsm {
 		);
 	}
 
+	inline Flt2& Flt2::normalize() {
+		*this = (Flt2)XMVector2Normalize(*this);
+		return *this;
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	Flt3インライン実装
 	//--------------------------------------------------------------------------------------
 	inline Flt3::Flt3(const Flt3 & vec) :
-		XMFLOAT3()
+		XMFLOAT3(vec.x, vec.y, vec.z)
 	{
-		x = vec.x;
-		y = vec.y;
-		z = vec.z;
 	}
 
-	inline Flt3::Flt3(float _x, float _y, float _z):
-		XMFLOAT3()
+	inline Flt3::Flt3(const XMFLOAT3& v) :
+		XMFLOAT3(v)
 	{
-		x = _x;
-		y = _y;
-		z = _z;
+	}
+
+
+	inline Flt3::Flt3(float _x, float _y, float _z):
+		XMFLOAT3(_x, _y, _z)
+	{
 	}
 
 	inline Flt3::Flt3(float val):
-		XMFLOAT3()
+		XMFLOAT3(val, val, val)
 	{
-		x = val;
-		y = val;
-		z = val;
 	}
 
 	inline Flt3::Flt3(const XMVECTOR& vec) :
 		XMFLOAT3()
 	{
 		XMVECTOR temp = vec;
-		XMStoreFloat3(this, temp);
+		XMStoreFloat3((XMFLOAT3*)this, temp);
 	}
 
 	inline Flt3::operator XMVECTOR() const {
@@ -216,9 +223,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt3& Flt3::operator=(const XMFLOAT3& other) {
+		(XMFLOAT3)*this = other;
+		return *this;
+	}
+
+
 	inline Flt3&  Flt3::operator=(const XMVECTOR& other) {
 		XMVECTOR temp = other;
-		XMStoreFloat3(this, temp);
+		XMStoreFloat3((XMFLOAT3*)this, temp);
 		return *this;
 	}
 
@@ -335,41 +348,40 @@ namespace bsm {
 		);
 	}
 
+	inline Flt3& Flt3::normalize() {
+		*this = (Flt3)XMVector3Normalize(*this);
+		return *this;
+	}
+
 	//--------------------------------------------------------------------------------------
 	///	Flt4インライン実装
 	//--------------------------------------------------------------------------------------
 	inline Flt4::Flt4(const Flt4 & vec) :
-		XMFLOAT4()
+		XMFLOAT4(vec.x, vec.y, vec.z, vec.w)
 	{
-		x = vec.x;
-		y = vec.y;
-		z = vec.z;
-		w = vec.w;
 	}
 
-	inline Flt4::Flt4(float _x, float _y, float _z, float _w) :
-		XMFLOAT4()
+	inline Flt4::Flt4(const XMFLOAT4& v) :
+		XMFLOAT4(v)
 	{
-		x = _x;
-		y = _y;
-		z = _z;
-		w = _w;
+	}
+
+
+	inline Flt4::Flt4(float _x, float _y, float _z, float _w) :
+		XMFLOAT4(_x, _y, _z, _w)
+	{
 	}
 
 	inline Flt4::Flt4(float val) :
-		XMFLOAT4()
+		XMFLOAT4(val, val, val, val)
 	{
-		x = val;
-		y = val;
-		z = val;
-		w = val;
 	}
 
 	inline Flt4::Flt4(const XMVECTOR& vec) :
 		XMFLOAT4()
 	{
 		XMVECTOR temp = vec;
-		XMStoreFloat4(this, temp);
+		XMStoreFloat4((XMFLOAT4*)this, temp);
 	}
 
 	inline Flt4::operator XMVECTOR() const {
@@ -394,9 +406,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt4& Flt4::operator=(const XMFLOAT4& other) {
+		(XMFLOAT4)*this = other;
+		return *this;
+	}
+
+
 	inline Flt4&  Flt4::operator=(const XMVECTOR& other) {
 		XMVECTOR temp = other;
-		XMStoreFloat4(this, temp);
+		XMStoreFloat4((XMFLOAT4*)this, temp);
 		return *this;
 	}
 
@@ -523,26 +541,27 @@ namespace bsm {
 		);
 	}
 
+	inline Flt4& Flt4::normalize() {
+		*this = (Flt4)XMVector4Normalize(*this);
+		return *this;
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	Quatインライン関数
 	//--------------------------------------------------------------------------------------
 	inline Quat::Quat(const Quat & quat):
-		XMFLOAT4()
+		XMFLOAT4(quat.x, quat.y, quat.z, quat.w)
 	{
-		x = quat.x;
-		y = quat.y;
-		z = quat.z;
-		w = quat.w;
+	}
+
+	inline Quat::Quat(const XMFLOAT4& v) :
+		XMFLOAT4(v)
+	{
 	}
 
 	inline Quat::Quat(float _x, float _y, float _z, float _w):
-		XMFLOAT4()
+		XMFLOAT4(_x, _y, _z, _w)
 	{
-		x = _x;
-		y = _y;
-		z = _z;
-		w = _w;
 	}
 
 	inline Quat::Quat(const Flt3 & xyz, float _w):
@@ -565,7 +584,7 @@ namespace bsm {
 		XMFLOAT4() 
 	{
 		XMVECTOR temp = other;
-		XMStoreFloat4(this, temp);
+		XMStoreFloat4((XMFLOAT4*)this, temp);
 	}
 
 	inline Quat::operator XMVECTOR() const {
@@ -579,9 +598,15 @@ namespace bsm {
 		return (Quat)XMQuaternionIdentity();
 	}
 
+	inline Quat& Quat::operator=(const XMFLOAT4& other) {
+		(XMFLOAT4)*this = other;
+		return *this;
+	}
+
+
 	inline Quat& Quat::operator=(const XMVECTOR& other) {
 		XMVECTOR temp = other;
-		XMStoreFloat4(this, temp);
+		XMStoreFloat4((XMFLOAT4*)this, temp);
 		return *this;
 	}
 
@@ -689,6 +714,10 @@ namespace bsm {
 		);
 	}
 
+	inline Quat& Quat::normalize() {
+		*this = (Quat)XMQuaternionNormalize(*this);
+		return *this;
+	}
 
 	inline const Quat Quat::rotationX(float radians)
 	{
@@ -728,11 +757,17 @@ namespace bsm {
 		}
 	}
 
+	inline Mat3x3::Mat3x3(const XMFLOAT3X3& other):
+		XMFLOAT3X3(other)
+	{
+
+	}
+
 	inline Mat3x3::Mat3x3(const XMMATRIX& other):
 		XMFLOAT3X3()
 	{
 		XMMATRIX temp = other;
-		XMStoreFloat3x3(this, temp);
+		XMStoreFloat3x3((XMFLOAT3X3*)this, temp);
 	}
 
 	inline  Mat3x3::operator XMMATRIX() const {
@@ -741,9 +776,15 @@ namespace bsm {
 		return m;
 	}
 
+	inline Mat3x3& Mat3x3::operator=(const XMFLOAT3X3& other) {
+		(XMFLOAT3X3)*this = other;
+		return *this;
+	}
+
+
 	inline Mat3x3& Mat3x3::operator=(const XMMATRIX& other) {
 		XMMATRIX temp = other;
-		XMStoreFloat3x3(this, temp);
+		XMStoreFloat3x3((XMFLOAT3X3*)this, temp);
 		return *this;
 	}
 
@@ -907,7 +948,7 @@ namespace bsm {
 
 	inline const Mat3x3 Mat3x3::operator *(const Mat3x3 & mat) const
 	{
-		return  (Mat3x3)XMMatrixMultiply(mat,*this);
+		return  (Mat3x3)XMMatrixMultiply(mat, *this);
 	}
 
 
@@ -996,11 +1037,18 @@ namespace bsm {
 		}
 	}
 
+	inline Mat4x4::Mat4x4(const XMFLOAT4X4& other):
+		XMFLOAT4X4(other)
+	{
+
+	}
+
+
 	inline Mat4x4::Mat4x4(const XMMATRIX& other) :
 		XMFLOAT4X4()
 	{
 		XMMATRIX temp = other;
-		XMStoreFloat4x4(this, temp);
+		XMStoreFloat4x4((XMFLOAT4X4*)this, temp);
 	}
 
 	inline  Mat4x4::operator XMMATRIX() const {
@@ -1009,9 +1057,14 @@ namespace bsm {
 		return m;
 	}
 
+	inline Mat4x4& Mat4x4::operator=(const XMFLOAT4X4& other) {
+		(XMFLOAT4X4)*this = other;
+		return *this;
+	}
+
 	inline Mat4x4& Mat4x4::operator=(const XMMATRIX& other) {
 		XMMATRIX temp = other;
-		XMStoreFloat4x4(this, temp);
+		XMStoreFloat4x4((XMFLOAT4X4*)this, temp);
 		return *this;
 	}
 
@@ -1262,7 +1315,7 @@ namespace bsm {
 
 	inline const Mat4x4 Mat4x4::operator *(const Mat3x3 & mat) const
 	{
-		return  (Mat4x4)XMMatrixMultiply(mat,*this);
+		return  (Mat4x4)XMMatrixMultiply(mat, *this);
 	}
 
 
@@ -1304,6 +1357,12 @@ namespace bsm {
 	{
 		return Mat4x4(Mat3x3(unitQuat), Flt3(0.0f));
 	}
+
+	//--------------------------------------------------------------------------------------
+	///	ユーティリティ関数群XM変数へのコピー
+	//--------------------------------------------------------------------------------------
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt2
@@ -1624,14 +1683,14 @@ namespace bsm {
 		XMVECTOR Vec;
 		return (Mat4x4)XMMatrixInverse(&Vec, mat);
 	}
+	using Vec2 = Flt2;
+	using Vec3 = Flt3;
+	using Vec4 = Flt4;
+	using Pt2 = Flt2;
+	using Pt3 = Flt3;
+	using Col4 = Flt4;
+	using Plane4 = Flt4;
 
-
-	typedef Flt2 Vec2;
-	typedef Flt2 Pt2;
-	typedef Flt3 Vec3;
-	typedef Flt3 Pt3;
-	typedef Flt4 Vec4;
-	typedef Flt4 Col4;
 
 }
 // end bsm
