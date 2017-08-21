@@ -109,26 +109,18 @@ namespace bsm {
 
 	inline const Flt2 Flt2::operator +(const Flt2 & vec) const
 	{
-		return Flt2(
-			(x + vec.x),
-			(y + vec.y)
-		);
+		return (Flt2)XMVectorAdd(*this, vec);
 	}
 
 	inline const Flt2 Flt2::operator -(const Flt2 & vec) const
 	{
-		return Flt2(
-			(x - vec.x),
-			(y - vec.y)
-		);
+		return (Flt2)XMVectorSubtract(*this, vec);
 	}
 
 	inline const Flt2 Flt2::operator *(float val) const
 	{
-		return Flt2(
-			(x * val),
-			(y * val)
-		);
+		Flt2 temp(val, val);
+		return (Flt2)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt2 & Flt2::operator +=(const Flt2 & vec)
@@ -151,10 +143,8 @@ namespace bsm {
 
 	inline const Flt2 Flt2::operator /(float val) const
 	{
-		return Flt2(
-			(x / val),
-			(y / val)
-		);
+		Flt2 temp(XMVectorReciprocal(Flt2(val, val)));
+		return (Flt2)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt2 & Flt2::operator /=(float val)
@@ -165,10 +155,8 @@ namespace bsm {
 
 	inline const Flt2 Flt2::operator -() const
 	{
-		return Flt2(
-			-x,
-			-y
-		);
+		Flt2 temp(-1.0f, -1.0f);
+		return (Flt2)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt2& Flt2::normalize() {
@@ -281,29 +269,18 @@ namespace bsm {
 
 	inline const Flt3 Flt3::operator +(const Flt3 & vec) const
 	{
-		return Flt3(
-			(x + vec.x),
-			(y + vec.y),
-			(z + vec.z)
-		);
+		return (Flt3)XMVectorAdd(*this, vec);
 	}
 
 	inline const Flt3 Flt3::operator -(const Flt3 & vec) const
 	{
-		return Flt3(
-			(x - vec.x),
-			(y - vec.y),
-			(z - vec.z)
-		);
+		return (Flt3)XMVectorSubtract(*this, vec);
 	}
 
 	inline const Flt3 Flt3::operator *(float val) const
 	{
-		return Flt3(
-			(x * val),
-			(y * val),
-			(z * val)
-		);
+		Flt3 temp(val, val, val);
+		return (Flt3)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt3 & Flt3::operator +=(const Flt3 & vec)
@@ -326,11 +303,8 @@ namespace bsm {
 
 	inline const Flt3 Flt3::operator /(float val) const
 	{
-		return Flt3(
-			(x / val),
-			(y / val),
-			(z / val)
-		);
+		Flt3 temp(XMVectorReciprocal(Flt3(val, val, val)));
+		return (Flt3)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt3 & Flt3::operator /=(float val)
@@ -341,11 +315,8 @@ namespace bsm {
 
 	inline const Flt3 Flt3::operator -() const
 	{
-		return Flt3(
-			-x,
-			-y,
-			-z
-		);
+		Flt3 temp(-1.0f, -1.0f, -1.0f);
+		return (Flt3)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt3& Flt3::normalize() {
@@ -469,32 +440,18 @@ namespace bsm {
 
 	inline const Flt4 Flt4::operator +(const Flt4 & vec) const
 	{
-		return Flt4(
-			(x + vec.x),
-			(y + vec.y),
-			(z + vec.z),
-			(w + vec.w)
-		);
+		return (Flt4)XMVectorAdd(*this, vec);
 	}
 
 	inline const Flt4 Flt4::operator -(const Flt4 & vec) const
 	{
-		return Flt4(
-			(x - vec.x),
-			(y - vec.y),
-			(z - vec.z),
-			(w - vec.w)
-		);
+		return (Flt4)XMVectorSubtract(*this, vec);
 	}
 
 	inline const Flt4 Flt4::operator *(float val) const
 	{
-		return Flt4(
-			(x * val),
-			(y * val),
-			(z * val),
-			(w * val)
-		);
+		Flt4 temp(val, val, val, val);
+		return (Flt4)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt4 & Flt4::operator +=(const Flt4 & vec)
@@ -517,12 +474,8 @@ namespace bsm {
 
 	inline const Flt4 Flt4::operator /(float val) const
 	{
-		return Flt4(
-			(x / val),
-			(y / val),
-			(z / val),
-			(w / val)
-		);
+		Flt4 temp(XMVectorReciprocal(Flt4(val, val, val, val)));
+		return (Flt4)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt4 & Flt4::operator /=(float val)
@@ -533,12 +486,8 @@ namespace bsm {
 
 	inline const Flt4 Flt4::operator -() const
 	{
-		return Flt4(
-			-x,
-			-y,
-			-z,
-			-w
-		);
+		Flt4 temp(-1.0f, -1.0f, -1.0f, -1.0f);
+		return (Flt4)XMVectorMultiply(*this, temp);
 	}
 
 	inline Flt4& Flt4::normalize() {
@@ -681,22 +630,12 @@ namespace bsm {
 
 	inline const Quat Quat::operator +(const Quat & quat) const
 	{
-		return Quat(
-			(x + quat.x),
-			(y + quat.y),
-			(z + quat.z),
-			(w + quat.w)
-		);
+		return (Quat)XMVectorAdd(*this, quat);
 	}
 
 	inline const Quat Quat::operator -(const Quat & quat) const
 	{
-		return Quat(
-			(x - quat.x),
-			(y - quat.y),
-			(z - quat.z),
-			(w - quat.w)
-		);
+		return (Quat)XMVectorSubtract(*this, quat);
 	}
 
 	inline const Quat Quat::operator *(const Quat & quat) const
@@ -706,12 +645,8 @@ namespace bsm {
 
 	inline const Quat Quat::operator *(float val) const
 	{
-		return Quat(
-			(x * val),
-			(y * val),
-			(z * val),
-			(w * val)
-		);
+		Quat temp(val, val, val, val);
+		return (Quat)XMVectorMultiply(*this, temp);
 	}
 
 	inline Quat& Quat::normalize() {
@@ -898,22 +833,18 @@ namespace bsm {
 
 	inline const Mat3x3 Mat3x3::operator +(const Mat3x3 & mat) const
 	{
-		Mat3x3 temp(*this);
+		Mat3x3 temp;
 		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				temp.m[i][j] += mat[i][j];
-			}
+			temp[i] = getMajor(i) + mat.getMajor(i);
 		}
 		return temp;
 	}
 
 	inline const Mat3x3 Mat3x3::operator -(const Mat3x3 & mat) const
 	{
-		Mat3x3 temp(*this);
+		Mat3x3 temp;
 		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				temp.m[i][j] -= mat[i][j];
-			}
+			temp[i] = getMajor(i) - mat.getMajor(i);
 		}
 		return temp;
 	}
@@ -922,20 +853,16 @@ namespace bsm {
 	{
 		Mat3x3 temp;
 		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				temp.m[i][j] = -m[i][j];
-			}
+			temp[i] = -getMajor(i);
 		}
 		return temp;
 	}
 
 	inline const Mat3x3 Mat3x3::operator *(float val) const
 	{
-		Mat3x3 temp(*this);
+		Mat3x3 temp;
 		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				temp.m[i][j] *= val;
-			}
+			temp[i] = getMajor(i) * val;
 		}
 		return temp;
 	}
@@ -1166,6 +1093,7 @@ namespace bsm {
 		m[major][1] = vec.y;
 		m[major][2] = vec.z;
 		m[major][3] = vec.w;
+		m[3][3] = 1.0f;
 		return *this;
 	}
 
@@ -1184,6 +1112,7 @@ namespace bsm {
 		setElem(1, minor, vec.getElem(1));
 		setElem(2, minor, vec.getElem(2));
 		setElem(3, minor, vec.getElem(3));
+		m[3][3] = 1.0f;
 		return *this;
 	}
 	inline Mat4x4 & Mat4x4::setElem(int major, int minor, float val)
@@ -1254,23 +1183,21 @@ namespace bsm {
 
 	inline const Mat4x4 Mat4x4::operator +(const Mat4x4 & mat) const
 	{
-		Mat4x4 temp(*this);
+		Mat4x4 temp;
 		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				temp.m[i][j] += mat[i][j];
-			}
+			temp[i] = getMajor(i) + mat.getMajor(i);
 		}
+		temp[3][3] = 1.0f;
 		return temp;
 	}
 
 	inline const Mat4x4 Mat4x4::operator -(const Mat4x4 & mat) const
 	{
-		Mat4x4 temp(*this);
+		Mat4x4 temp;
 		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				temp.m[i][j] -= mat[i][j];
-			}
+			temp[i] = getMajor(i) - mat.getMajor(i);
 		}
+		temp[3][3] = 1.0f;
 		return temp;
 	}
 
@@ -1278,21 +1205,19 @@ namespace bsm {
 	{
 		Mat4x4 temp;
 		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				temp.m[i][j] = -m[i][j];
-			}
+			temp[i] = -getMajor(i);
 		}
+		temp[3][3] = 1.0f;
 		return temp;
 	}
 
 	inline const Mat4x4 Mat4x4::operator *(float val) const
 	{
-		Mat4x4 temp(*this);
+		Mat4x4 temp;
 		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				temp.m[i][j] *= val;
-			}
+			temp[i] = getMajor(i) * val;
 		}
+		temp[3][3] = 1.0f;
 		return temp;
 	}
 
@@ -1359,63 +1284,45 @@ namespace bsm {
 	}
 
 	//--------------------------------------------------------------------------------------
-	///	ユーティリティ関数群XM変数へのコピー
-	//--------------------------------------------------------------------------------------
-
-
-
-	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt2
 	//--------------------------------------------------------------------------------------
 	inline const Flt2 operator *(float val, const Flt2 & vec)
 	{
-		return vec * val;
+		Flt2 temp( val, val);
+		return (Flt2)XMVectorMultiply(vec, temp);
 	}
 	inline const Flt2 operator /(float val, const Flt2 & vec)
 	{
-		return vec / val;
+		Flt2 temp(XMVectorReciprocal(Flt2(val, val)));
+		return (Flt2)XMVectorMultiply(vec, temp);
 	}
 
 
 	inline const Flt2 mulPerElem(const Flt2 & vec0, const Flt2 & vec1)
 	{
-		return Flt2(
-			(vec0.x * vec1.x),
-			(vec0.y * vec1.y)
-		);
+		return (Flt2)XMVectorMultiply(vec0, vec1);
 	}
 
 	inline const Flt2 divPerElem(const Flt2 & vec0, const Flt2 & vec1)
 	{
-		return Flt2(
-			(vec0.x / vec1.x),
-			(vec0.y / vec1.y)
-		);
+		Flt2 temp(XMVectorReciprocal(vec1));
+		return (Flt2)XMVectorMultiply(vec0, temp);
 	}
 
 
 	inline const Flt2 absPerElem(const Flt2 & vec)
 	{
-		return Flt2(
-			fabsf(vec.x),
-			fabsf(vec.y)
-		);
+		return (Flt2)XMVectorAbs(vec);
 	}
 
 	inline const Flt2 maxPerElem(const Flt2 & vec0, const Flt2 & vec1)
 	{
-		return Flt2(
-			(vec0.x > vec1.x) ? vec0.x : vec1.x,
-			(vec0.y > vec1.y) ? vec0.y : vec1.y
-		);
+		return (Flt2)XMVectorMax(vec0, vec1);
 	}
 
 	inline const Flt2 minPerElem(const Flt2 & vec0, const Flt2 & vec1)
 	{
-		return Flt2(
-			(vec0.x < vec1.x) ? vec0.x : vec1.x,
-			(vec0.y < vec1.y) ? vec0.y : vec1.y
-		);
+		return (Flt2)XMVectorMin(vec0, vec1);
 	}
 
 	inline float dot(const Flt2 & vec0, const Flt2 & vec1)
@@ -1444,58 +1351,41 @@ namespace bsm {
 	//--------------------------------------------------------------------------------------
 	inline const Flt3 operator *(float val, const Flt3 & vec)
 	{
-		return vec * val;
+		Flt3 temp(val, val, val);
+		return (Flt3)XMVectorMultiply(vec, temp);
 	}
 	inline const Flt3 operator /(float val, const Flt3 & vec)
 	{
-		return vec / val;
+		Flt3 temp(XMVectorReciprocal(Flt3(val,val,val)));
+		return (Flt3)XMVectorMultiply(vec, temp);
 	}
 
 
 	inline const Flt3 mulPerElem(const Flt3 & vec0, const Flt3 & vec1)
 	{
-		return Flt3(
-			(vec0.x * vec1.x),
-			(vec0.y * vec1.y),
-			(vec0.z * vec1.z)
-		);
+		return (Flt3)XMVectorMultiply(vec0, vec1);
 	}
 
 	inline const Flt3 divPerElem(const Flt3 & vec0, const Flt3 & vec1)
 	{
-		return Flt3(
-			(vec0.x / vec1.x),
-			(vec0.y / vec1.y),
-			(vec0.z / vec1.z)
-		);
+		Flt3 temp(XMVectorReciprocal(vec1));
+		return (Flt3)XMVectorMultiply(vec0, temp);
 	}
 
 
 	inline const Flt3 absPerElem(const Flt3 & vec)
 	{
-		return Flt3(
-			fabsf(vec.x),
-			fabsf(vec.y),
-			fabsf(vec.z)
-		);
+		return (Flt3)XMVectorAbs(vec);
 	}
 
 	inline const Flt3 maxPerElem(const Flt3 & vec0, const Flt3 & vec1)
 	{
-		return Flt3(
-			(vec0.x > vec1.x) ? vec0.x : vec1.x,
-			(vec0.y > vec1.y) ? vec0.y : vec1.y,
-			(vec0.z > vec1.z) ? vec0.z : vec1.z
-		);
+		return (Flt3)XMVectorMax(vec0, vec1);
 	}
 
 	inline const Flt3 minPerElem(const Flt3 & vec0, const Flt3 & vec1)
 	{
-		return Flt3(
-			(vec0.x < vec1.x) ? vec0.x : vec1.x,
-			(vec0.y < vec1.y) ? vec0.y : vec1.y,
-			(vec0.z < vec1.z) ? vec0.z : vec1.z
-		);
+		return (Flt3)XMVectorMin(vec0, vec1);
 	}
 
 	inline float dot(const Flt3 & vec0, const Flt3 & vec1)
@@ -1528,63 +1418,41 @@ namespace bsm {
 	//--------------------------------------------------------------------------------------
 	inline const Flt4 operator *(float val, const Flt4 & vec)
 	{
-		return vec * val;
+		Flt4 temp(val, val, val, val);
+		return (Flt4)XMVectorMultiply(vec, temp);
 	}
 	inline const Flt4 operator /(float val, const Flt4 & vec)
 	{
-		return vec / val;
+		Flt4 temp(XMVectorReciprocal(Flt4(val, val, val, val)));
+		return (Flt4)XMVectorMultiply(vec, temp);
 	}
 
 
 	inline const Flt4 mulPerElem(const Flt4 & vec0, const Flt4 & vec1)
 	{
-		return Flt4(
-			(vec0.x * vec1.x),
-			(vec0.y * vec1.y),
-			(vec0.z * vec1.z),
-			(vec0.w * vec1.w)
-		);
+		return (Flt4)XMVectorMultiply(vec0, vec1);
 	}
 
 	inline const Flt4 divPerElem(const Flt4 & vec0, const Flt4 & vec1)
 	{
-		return Flt4(
-			(vec0.x / vec1.x),
-			(vec0.y / vec1.y),
-			(vec0.z / vec1.z),
-			(vec0.w / vec1.w)
-		);
+		Flt4 temp(XMVectorReciprocal(vec1));
+		return (Flt4)XMVectorMultiply(vec0, temp);
 	}
 
 
 	inline const Flt4 absPerElem(const Flt4 & vec)
 	{
-		return Flt4(
-			fabsf(vec.x),
-			fabsf(vec.y),
-			fabsf(vec.z),
-			fabsf(vec.w)
-		);
+		return (Flt4)XMVectorAbs(vec);
 	}
 
 	inline const Flt4 maxPerElem(const Flt4 & vec0, const Flt4 & vec1)
 	{
-		return Flt4(
-			(vec0.x > vec1.x) ? vec0.x : vec1.x,
-			(vec0.y > vec1.y) ? vec0.y : vec1.y,
-			(vec0.z > vec1.z) ? vec0.z : vec1.z,
-			(vec0.w > vec1.w) ? vec0.w : vec1.w
-		);
+		return (Flt4)XMVectorMax(vec0, vec1);
 	}
 
 	inline const Flt4 minPerElem(const Flt4 & vec0, const Flt4 & vec1)
 	{
-		return Flt4(
-			(vec0.x < vec1.x) ? vec0.x : vec1.x,
-			(vec0.y < vec1.y) ? vec0.y : vec1.y,
-			(vec0.z < vec1.z) ? vec0.z : vec1.z,
-			(vec0.w < vec1.w) ? vec0.w : vec1.w
-		);
+		return (Flt4)XMVectorMin(vec0, vec1);
 	}
 
 	inline float dot(const Flt4 & vec0, const Flt4 & vec1)
