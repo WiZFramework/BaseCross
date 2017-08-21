@@ -1572,7 +1572,7 @@ namespace basecross {
 			new_pntnt_v.normal = vertices[i].normal;
 			new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
 			Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
-			new_pntnt_v.tangent = n;
+			new_pntnt_v.tangent = Vector4(n.x,n.y,n.z,0.0f);
 			new_pntnt_v.tangent.w = 0.0f;
 
 			new_pc_vertices.push_back(new_pc_v);
