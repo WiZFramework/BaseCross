@@ -19,18 +19,19 @@ namespace basecross {
 
 	void GameStage::OnCreate() {
 		//平面の作成
-		Quat(Vector3(1.0f, 0, 0), XM_PIDIV2);
+		Quat Qt;
+		Qt.rotationX(XM_PIDIV2);
 		m_SquareObject = ObjectFactory::Create<SquareObject>(
 			GetThis<Stage>(),
 			L"SKY_TX",
-			Vector3(50.0f, 50.0f, 1.0f),
-			Quat::rotationX(XM_PIDIV2),
-			Vector3(0.0f, 0.0f, 0.0f)
+			Vec3(50.0f, 50.0f, 1.0f),
+			Qt,
+			Vec3(0.0f, 0.0f, 0.0f)
 			);
 		//球の作成
 		m_SphereObject = ObjectFactory::Create<SphereObject>(
 			GetThis<Stage>(),
-			18, L"TRACE_TX", true, Vector3(0.0f, 0.125f, 0.0f));
+			18, L"TRACE_TX", true, Vec3(0.0f, 0.125f, 0.0f));
 		//PNT描画オブジェクトの作成
 		m_PNTDrawObject = ObjectFactory::Create<PNTDrawObject>(
 			GetThis<Stage>()
@@ -38,16 +39,16 @@ namespace basecross {
 		m_RotateSprite = ObjectFactory::Create<RotateSprite>(
 			GetThis<Stage>(),
 			L"TRACE_TX",
-			Vector2(160, 160),
+			Vec2(160, 160),
 			0.0f,
-			Vector2(-480, 260),
+			Vec2(-480, 260),
 			4, 4);
 		m_MessageSprite = ObjectFactory::Create<MessageSprite>(
 			GetThis<Stage>(),
 			L"MESSAGE_TX",
-			Vector2(256, 64),
+			Vec2(256, 64),
 			0.0f,
-			Vector2(480, 260),
+			Vec2(480, 260),
 			1, 1);
 	}
 
@@ -124,7 +125,7 @@ namespace basecross {
 	void GameStage::OnDrawStage() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		//プレート描画
@@ -155,9 +156,9 @@ namespace basecross {
 		m_MessageSprite = ObjectFactory::Create<MessageSprite>(
 			GetThis<Stage>(),
 			L"MESSAGE_TX",
-			Vector2(256, 64),
+			Vec2(256, 64),
 			0.0f,
-			Vector2(0, 0),
+			Vec2(0, 0),
 			1, 1);
 	}
 	void EmptyStage::OnUpdateStage() {
@@ -180,7 +181,7 @@ namespace basecross {
 	void EmptyStage::OnDrawStage() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		//スプライト描画

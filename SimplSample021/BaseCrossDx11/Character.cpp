@@ -130,8 +130,8 @@ namespace basecross {
 
 	SPHERE SphereObject::GetSPHERE()const {
 		SPHERE sp;
-		sp.m_Center = (Vector3)m_Pos;
-		sp.m_Radius =  m_Scale.y * 0.5f;
+		sp.m_Center = (XMFLOAT3)m_Pos;
+		sp.m_Radius = m_Scale.y * 0.5f;
 		return sp;
 	}
 
@@ -426,7 +426,7 @@ namespace basecross {
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
 		Mat4x4 Proj(XMMatrixOrthographicLH(w, h, -1.0, 1.0f));
 		//行列の合成
-		World = Proj * World;
+		World *= Proj;
 		//コンスタントバッファの準備
 		SpriteConstantBuffer sb;
 		//エミッシブ加算。
@@ -533,7 +533,7 @@ namespace basecross {
 			m_TotalTime = 0;
 		}
 		for (size_t i = 0; i < m_SquareMesh->GetNumVertices(); i++) {
-			Vec2 UV = m_BackupVertices[i].textureCoordinate;
+			Vec2 UV(m_BackupVertices[i].textureCoordinate);
 			if (UV.x == 0.0f) {
 				UV.x = m_TotalTime;
 			}

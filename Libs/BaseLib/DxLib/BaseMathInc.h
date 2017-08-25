@@ -15,6 +15,11 @@ namespace bsm {
 	//--------------------------------------------------------------------------------------
 	///	Flt2インライン実装
 	//--------------------------------------------------------------------------------------
+	inline Flt2::Flt2() :
+		XMFLOAT2(0, 0)
+	{
+	}
+
 	inline Flt2::Flt2(const Flt2 & vec) :
 		XMFLOAT2(vec.x, vec.y)
 	{
@@ -70,7 +75,18 @@ namespace bsm {
 		return *this;
 	}
 
+	inline bool Flt2::operator==(const Flt2& other)const {
+		return XMVector2Equal(*this, other);
+	}
 
+	inline bool Flt2::operator!=(const Flt2& other)const {
+		return !XMVector2Equal(*this, other);
+	}
+
+	inline Flt2& Flt2::setAll(float val) {
+		x = y = val;
+		return *this;
+	}
 
 	inline Flt2 & Flt2::setX(float _x)
 	{
@@ -164,9 +180,29 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt2::dot(const Flt2 & vec1)const {
+		return ((Flt2)XMVector2Dot(*this, vec1)).x;
+	}
+
+	inline float Flt2::lengthSqr()const {
+		return ((Flt2)XMVector2LengthSq(*this)).x;
+	}
+
+	inline float Flt2::length()const {
+		return ((Flt2)XMVector2Length(*this)).x;
+
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	///	Flt3インライン実装
 	//--------------------------------------------------------------------------------------
+	inline Flt3::Flt3() :
+		XMFLOAT3(0, 0, 0)
+	{
+	}
+
+
 	inline Flt3::Flt3(const Flt3 & vec) :
 		XMFLOAT3(vec.x, vec.y, vec.z)
 	{
@@ -223,9 +259,20 @@ namespace bsm {
 		return *this;
 	}
 
+	inline bool Flt3::operator==(const Flt3& other)const {
+		return XMVector3Equal(*this, other);
+	}
 
+	inline bool Flt3::operator!=(const Flt3& other)const {
+		return !XMVector3Equal(*this, other);
+	}
 
-	inline Flt3 & Flt3::setX(float _x)
+	inline Flt3& Flt3::setAll(float val) {
+		x = y = z = val;
+		return *this;
+	}
+
+	inline Flt3& Flt3::setX(float _x)
 	{
 		x = _x;
 		return *this;
@@ -283,6 +330,16 @@ namespace bsm {
 		return (Flt3)XMVectorMultiply(*this, temp);
 	}
 
+	inline const Flt3 Flt3::operator *(const Mat3x3 & mat) const {
+		return (Flt3)XMVector3Transform(*this, mat);
+	}
+
+	inline const Flt3 Flt3::operator *(const Mat4x4 & mat) const {
+		return (Flt3)XMVector3Transform(*this, mat);
+	}
+
+
+
 	inline Flt3 & Flt3::operator +=(const Flt3 & vec)
 	{
 		*this = *this + vec;
@@ -300,6 +357,18 @@ namespace bsm {
 		*this = *this * val;
 		return *this;
 	}
+
+	inline Flt3& Flt3::operator *=(const Mat3x3 & mat) {
+		*this = *this * mat;
+		return *this;
+	}
+
+	inline Flt3& Flt3::operator *=(const Mat4x4 & mat) {
+		*this = *this * mat;
+		return *this;
+	}
+
+
 
 	inline const Flt3 Flt3::operator /(float val) const
 	{
@@ -324,13 +393,45 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt3::dot(const Flt3 & vec1)const {
+		return ((Flt3)XMVector3Dot(*this, vec1)).x;
+	}
+
+	inline Flt3& Flt3::cross(const Flt3 & vec1) {
+		*this = (Flt3)XMVector3Cross(*this, vec1);
+		return *this;
+	}
+
+
+
+	inline float Flt3::lengthSqr()const {
+		return ((Flt3)XMVector3LengthSq(*this)).x;
+	}
+
+	inline float Flt3::length()const {
+		return ((Flt3)XMVector3Length(*this)).x;
+
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	///	Flt4インライン実装
 	//--------------------------------------------------------------------------------------
+	inline Flt4::Flt4() :
+		XMFLOAT4(0, 0, 0, 0)
+	{
+	}
+
+
 	inline Flt4::Flt4(const Flt4 & vec) :
 		XMFLOAT4(vec.x, vec.y, vec.z, vec.w)
 	{
 	}
+
+	inline Flt4::Flt4(const Flt3& vec, float _w):
+		XMFLOAT4(vec.x, vec.y, vec.z, _w)
+	{}
+
 
 	inline Flt4::Flt4(const XMFLOAT4& v) :
 		XMFLOAT4(v)
@@ -377,6 +478,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt4& Flt4::operator =(const Flt3& other) {
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		w = 0.0f;
+		return *this;
+	}
+
+
 	inline Flt4& Flt4::operator=(const XMFLOAT4& other) {
 		(XMFLOAT4)*this = other;
 		return *this;
@@ -389,7 +499,18 @@ namespace bsm {
 		return *this;
 	}
 
+	inline bool Flt4::operator==(const Flt4& other)const {
+		return XMVector4Equal(*this, other);
+	}
 
+	inline bool Flt4::operator!=(const Flt4& other)const {
+		return !XMVector4Equal(*this, other);
+	}
+
+	inline Flt4& Flt4::setAll(float val) {
+		x = y = z = w = val;
+		return *this;
+	}
 
 	inline Flt4 & Flt4::setX(float _x)
 	{
@@ -454,6 +575,16 @@ namespace bsm {
 		return (Flt4)XMVectorMultiply(*this, temp);
 	}
 
+	inline const Flt4 Flt4::operator *(const Mat3x3 & mat) const {
+		return (Flt4)XMVector4Transform(*this, mat);
+	}
+
+	inline const Flt4  Flt4::operator *(const Mat4x4 & mat) const {
+		return (Flt4)XMVector4Transform(*this, mat);
+	}
+
+
+
 	inline Flt4 & Flt4::operator +=(const Flt4 & vec)
 	{
 		*this = *this + vec;
@@ -471,6 +602,18 @@ namespace bsm {
 		*this = *this * val;
 		return *this;
 	}
+
+	inline Flt4& Flt4::operator *=(const Mat3x3 & mat) {
+		*this = *this * mat;
+		return *this;
+	}
+
+	inline Flt4& Flt4::operator *=(const Mat4x4 & mat) {
+		*this = *this * mat;
+		return *this;
+	}
+
+
 
 	inline const Flt4 Flt4::operator /(float val) const
 	{
@@ -495,9 +638,29 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt4::dot(const Flt4 & vec1)const {
+		return ((Flt4)XMVector4Dot(*this, vec1)).x;
+	}
+
+	inline float Flt4::lengthSqr()const {
+		return ((Flt4)XMVector4LengthSq(*this)).x;
+	}
+
+	inline float Flt4::length()const {
+		return ((Flt4)XMVector4Length(*this)).x;
+
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	///	Quatインライン関数
 	//--------------------------------------------------------------------------------------
+	inline Quat::Quat():
+		XMFLOAT4()
+	{
+		identity();
+	}
+
 	inline Quat::Quat(const Quat & quat):
 		XMFLOAT4(quat.x, quat.y, quat.z, quat.w)
 	{
@@ -542,10 +705,6 @@ namespace bsm {
 		return Vec;
 	}
 
-	inline const Quat Quat::identity()
-	{
-		return (Quat)XMQuaternionIdentity();
-	}
 
 	inline Quat& Quat::operator=(const XMFLOAT4& other) {
 		(XMFLOAT4)*this = other;
@@ -568,6 +727,14 @@ namespace bsm {
 			w = quat.w;
 		}
 		return *this;
+	}
+
+	inline bool Quat::operator==(const Quat& other)const {
+		return XMQuaternionEqual(*this, other);
+	}
+
+	inline bool Quat::operator!=(const Quat& other)const {
+		return !XMQuaternionEqual(*this, other);
 	}
 
 	inline Quat & Quat::setXYZ(const Flt3 & vec)
@@ -640,7 +807,7 @@ namespace bsm {
 
 	inline const Quat Quat::operator *(const Quat & quat) const
 	{
-		return (Quat)XMQuaternionMultiply(quat, *this);
+		return (Quat)XMQuaternionMultiply(*this, quat);
 	}
 
 	inline const Quat Quat::operator *(float val) const
@@ -649,34 +816,90 @@ namespace bsm {
 		return (Quat)XMVectorMultiply(*this, temp);
 	}
 
+	inline Quat& Quat::operator *=(const Quat& quat) {
+		*this = *this * quat;
+		return *this;
+	}
+
+
 	inline Quat& Quat::normalize() {
 		*this = (Quat)XMQuaternionNormalize(*this);
 		return *this;
 	}
 
-	inline const Quat Quat::rotationX(float radians)
+	inline Quat& Quat::identity()
 	{
-		return (Quat)XMQuaternionRotationAxis(XMVECTOR(Flt3(1,0,0)), radians);
+		*this = (Quat)XMQuaternionIdentity();
+		return *this;
 	}
 
-	inline const Quat Quat::rotationY(float radians)
+
+	inline Quat&  Quat::rotationX(float radians)
 	{
-		return (Quat)XMQuaternionRotationAxis(Flt3(0, 1, 0), radians);
+		*this = (Quat)XMQuaternionRotationAxis(XMVECTOR(Flt3(1,0,0)), radians);
+		return *this;
 	}
 
-	inline const Quat Quat::rotationZ(float radians)
+	inline Quat&  Quat::rotationY(float radians)
 	{
-		return (Quat)XMQuaternionRotationAxis(Flt3(0, 0, 1), radians);
+		*this = (Quat)XMQuaternionRotationAxis(Flt3(0, 1, 0), radians);
+		return *this;
 	}
 
-	inline const Quat Quat::rotation(float radians, const Flt3 & unitVec) {
-		return (Quat)XMQuaternionRotationAxis(unitVec, radians);
+	inline Quat&  Quat::rotationZ(float radians)
+	{
+		*this = (Quat)XMQuaternionRotationAxis(Flt3(0, 0, 1), radians);
+		return *this;
+	}
+
+	inline Quat&  Quat::rotation(float radians, const Flt3 & unitVec) {
+		*this = (Quat)XMQuaternionRotationAxis(unitVec, radians);
+		return *this;
+	}
+
+	inline Quat& Quat::rotationRollPitchYawFromVector(const Flt3& rotVec) {
+		*this = (Quat)XMQuaternionRotationRollPitchYawFromVector(rotVec);
+		return *this;
+	}
+
+	inline const Flt3 Quat::toRotVec() const {
+		Quat Temp = *this;
+		Temp.normalize();
+		Mat4x4 mt(Temp);
+		Flt3 Rot;
+		if (mt._32 == 1.0f) {
+			Rot.x = XM_PI / 2.0f;
+			Rot.y = 0;
+			Rot.z = -atan2(mt._21, mt._11);
+		}
+		else if (mt._32 == -1.0f) {
+			Rot.x = -XM_PI / 2.0f;
+			Rot.y = 0;
+			Rot.z = -atan2(mt._21, mt._11);
+		}
+		else {
+			Rot.x = -asin(mt._32);
+			Rot.y = -atan2(-mt._31, mt._33);
+			Rot.z = atan2(mt._12, mt._11);
+		}
+		return Rot;
+	}
+
+	inline Quat& Quat::inverse() {
+		*this = (Quat)XMQuaternionInverse(*this);
+		return *this;
 	}
 
 
 	//--------------------------------------------------------------------------------------
 	///	Mat3x3インライン関数
 	//--------------------------------------------------------------------------------------
+	inline Mat3x3::Mat3x3():
+		XMFLOAT3X3()
+	{
+		identity();
+	}
+
 	inline Mat3x3::Mat3x3(const Mat3x3 & mat):
 		XMFLOAT3X3(mat)
 	{
@@ -722,6 +945,37 @@ namespace bsm {
 		XMStoreFloat3x3((XMFLOAT3X3*)this, temp);
 		return *this;
 	}
+
+	inline Mat3x3 & Mat3x3::operator =(const Mat3x3& mat)
+	{
+		if (this != &mat) {
+			for (int i = 0; i < 3; i++) {
+				for (int j = 0; j < 3; j++) {
+					m[i][j] = mat[i][j];
+				}
+			}
+		}
+		return *this;
+	}
+
+	inline bool Mat3x3::operator==(const Mat3x3& other)const {
+		for (int i = 0; i < 3; i++) {
+			if (!XMVector3Equal(getMajor(i), other.getMajor(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	inline bool Mat3x3::operator!=(const Mat3x3& other)const {
+		for (int i = 0; i < 3; i++) {
+			if (!XMVector3Equal(getMajor(i), other.getMajor(i))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 
 	inline Mat3x3::Mat3x3(const Quat & unitQuat):
@@ -819,17 +1073,6 @@ namespace bsm {
 		return (Flt3&)(m[major][0]);
 	}
 
-	inline Mat3x3 & Mat3x3::operator =(const Mat3x3& mat)
-	{
-		if (this != &mat) {
-			for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 3; j++) {
-					m[i][j] = mat[i][j];
-				}
-			}
-		}
-		return *this;
-	}
 
 	inline const Mat3x3 Mat3x3::operator +(const Mat3x3 & mat) const
 	{
@@ -875,7 +1118,7 @@ namespace bsm {
 
 	inline const Mat3x3 Mat3x3::operator *(const Mat3x3 & mat) const
 	{
-		return  (Mat3x3)XMMatrixMultiply(mat, *this);
+		return  (Mat3x3)XMMatrixMultiply(*this, mat);
 	}
 
 
@@ -892,20 +1135,65 @@ namespace bsm {
 		return *this;
 	}
 
-
-	inline const Mat3x3 Mat3x3::identity()
-	{
-		return (Mat3x3)XMMatrixIdentity();
+	inline Mat3x3 & Mat3x3::operator *=(float val) {
+		*this = *this * val;
+		return *this;
 	}
 
-	inline const Mat3x3 Mat3x3::scale(const Flt3 & scaleVec)
-	{
-		return  (Mat3x3)XMMatrixScalingFromVector(scaleVec);
+	inline Mat3x3 & Mat3x3::operator *=(const Mat3x3 & mat) {
+		*this = *this * mat;
+		return *this;
 	}
+
+
+	inline Mat3x3& Mat3x3::identity()
+	{
+		*this =  (Mat3x3)XMMatrixIdentity();
+		return *this;
+	}
+
+	inline Mat3x3& Mat3x3::scale(const Flt3 & scaleVec)
+	{
+		*this = (Mat3x3)XMMatrixScalingFromVector(scaleVec);
+		return *this;
+	}
+
+	inline Mat3x3& Mat3x3::rotation(const Quat & unitQuat)
+	{
+		*this = (Mat3x3)XMMatrixRotationQuaternion(unitQuat);
+		return *this;
+	}
+
+	inline Mat3x3& Mat3x3::transpose() {
+		*this = (Mat3x3)XMMatrixTranspose(*this);
+		return *this;
+	}
+	inline Mat3x3& Mat3x3::inverse() {
+		XMVECTOR Vec;
+		*this = (Mat3x3)XMMatrixInverse(&Vec, *this);
+		return *this;
+	}
+
+	inline Mat3x3& Mat3x3::crossMatrix(const Flt3 & vec) {
+		*this = Mat3x3(
+			Flt3(0.0f, vec.z, -vec.y),
+			Flt3(-vec.z, 0.0f, vec.x),
+			Flt3(vec.y, -vec.x, 0.0f)
+		);
+		return *this;
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	Mat4x4インライン関数
 	//--------------------------------------------------------------------------------------
+	inline Mat4x4::Mat4x4():
+		XMFLOAT4X4()
+	{
+		identity();
+	}
+
+
 	inline Mat4x4::Mat4x4(const Mat4x4 & mat) :
 		XMFLOAT4X4(mat)
 	{
@@ -914,7 +1202,7 @@ namespace bsm {
 	inline Mat4x4::Mat4x4(const Mat3x3 & mat) :
 		XMFLOAT4X4()
 	{
-		*this = Mat4x4::identity();
+		identity();
 		this->setUpper3x3(mat);
 	}
 
@@ -922,7 +1210,7 @@ namespace bsm {
 	inline Mat4x4::Mat4x4(const Flt3 & _major0, const Flt3 & _major1, const Flt3 & _major2, const Flt3& _major3) :
 		XMFLOAT4X4()
 	{
-		*this = Mat4x4::identity();
+		identity();
 		setMajor(0, _major0);
 		setMajor(1, _major1);
 		setMajor(2, _major2);
@@ -932,7 +1220,7 @@ namespace bsm {
 	inline Mat4x4::Mat4x4(const Flt4 & _major0, const Flt4 & _major1, const Flt4 & _major2, const Flt4& _major3) :
 		XMFLOAT4X4()
 	{
-		*this = Mat4x4::identity();
+		identity();
 		setMajor(0, _major0);
 		setMajor(1, _major1);
 		setMajor(2, _major2);
@@ -941,14 +1229,14 @@ namespace bsm {
 
 	inline Mat4x4::Mat4x4(const Mat3x3 & tfrm, const Flt3 & translateVec)
 	{
-		*this = Mat4x4::identity();
+		identity();
 		this->setUpper3x3(tfrm);
 		this->setTranslation(translateVec);
 	}
 
 	inline Mat4x4::Mat4x4(const Quat & unitQuat, const Flt3 & translateVec)
 	{
-		*this = Mat4x4::identity();
+		identity();
 		this->setUpper3x3(Mat3x3(unitQuat));
 		this->setTranslation(translateVec);
 	}
@@ -994,6 +1282,35 @@ namespace bsm {
 		XMStoreFloat4x4((XMFLOAT4X4*)this, temp);
 		return *this;
 	}
+
+	inline bool Mat4x4::operator==(const Mat4x4& other)const {
+		for (int i = 0; i < 4; i++) {
+			if (!XMVector4Equal(getMajor(i), other.getMajor(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	inline bool Mat4x4::operator!=(const Mat4x4& other)const {
+		for (int i = 0; i < 4; i++) {
+			if (!XMVector4Equal(getMajor(i), other.getMajor(i))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	inline bool Mat4x4::equalInt(const Mat4x4& other)const {
+		for (int i = 0; i < 4; i++) {
+			if (!XMVector4EqualInt(getMajor(i), other.getMajor(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 
 
 	inline Mat4x4::Mat4x4(const Quat & unitQuat) :
@@ -1223,7 +1540,7 @@ namespace bsm {
 
 	inline const Flt3 Mat4x4::operator *(const Flt3 & vec) const
 	{
-		return (Flt3)XMVector4Transform(vec, *this);
+		return (Flt3)XMVector3Transform(vec, *this);
 	}
 
 	inline const Flt4 Mat4x4::operator *(const Flt4 & vec) const
@@ -1235,12 +1552,12 @@ namespace bsm {
 
 	inline const Mat4x4 Mat4x4::operator *(const Mat4x4 & mat) const
 	{
-		return  (Mat4x4)XMMatrixMultiply(mat, *this);
+		return  (Mat4x4)XMMatrixMultiply(*this, mat);
 	}
 
 	inline const Mat4x4 Mat4x4::operator *(const Mat3x3 & mat) const
 	{
-		return  (Mat4x4)XMMatrixMultiply(mat, *this);
+		return  (Mat4x4)XMMatrixMultiply(*this, mat);
 	}
 
 
@@ -1256,32 +1573,150 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Mat4x4&  Mat4x4::operator *=(float val) {
+		*this = *this * val;
+		return *this;
+	}
+
+
 	inline Mat4x4 & Mat4x4::operator *=(const Mat4x4 & tfrm)
 	{
 		*this = *this * tfrm;
 		return *this;
 	}
 
-	inline Mat4x4 & Mat4x4::operator *=(const Mat3x3 & tfrm)
+	inline Mat4x4& Mat4x4::operator *=(const Mat3x3 & tfrm)
 	{
 		*this = *this * tfrm;
 		return *this;
 	}
 
-	inline const Mat4x4 Mat4x4::identity()
-	{
-		return (Mat4x4)XMMatrixIdentity();
+	inline void Mat4x4::decompose(Flt3& rScaling, Quat& rQt, Flt3& rTranslation)const {
+		XMVECTOR Scale;
+		XMVECTOR Qt;
+		XMVECTOR Translation;
+		if (XMMatrixDecompose(&Scale, &Qt, &Translation, *this)) {
+			rScaling = Scale;
+			rQt = Qt;
+			rTranslation = Translation;
+		}
+		else {
+			throw BaseException(
+				L"行列のデコンポーズに失敗しました",
+				L"if(!XMMatrixDecompose(&Scale, &Qt, &Translation, *this))",
+				L"Mat4X4::decompose()"
+			);
+		}
 	}
 
-	inline const Mat4x4 Mat4x4::scale(const Flt3 & scaleVec)
-	{
-		return  (Mat4x4)XMMatrixScalingFromVector(scaleVec);
+	inline Flt3 Mat4x4::scaleInMatrix()const {
+		Flt3 scale, pos;
+		Quat qt;
+		decompose(scale, qt, pos);
+		return scale;
+	}
+	inline Quat Mat4x4::quatInMatrix()const {
+		Flt3 scale, pos;
+		Quat qt;
+		decompose(scale, qt, pos);
+		return qt;
+	}
+	inline Flt3 Mat4x4::transInMatrix()const {
+		Flt3 pos;
+		pos.x = _41;
+		pos.y = _42;
+		pos.z = _43;
+		return pos;
 	}
 
-	inline const Mat4x4 Mat4x4::rotation(const Quat & unitQuat)
+
+
+	inline Mat4x4& Mat4x4::identity()
 	{
-		return Mat4x4(Mat3x3(unitQuat), Flt3(0.0f));
+		*this = (Mat4x4)XMMatrixIdentity();
+		return *this;
 	}
+
+	inline Mat4x4&  Mat4x4::scaleIdentity() {
+		Flt3 Scale, Translation;
+		Quat Qt;
+		decompose(Scale, Qt, Translation);
+		Scale = Flt3(1.0f, 1.0f, 1.0f);
+		return affineTransformation(Scale, Flt3(0.0f,0.0f,0.0f), Qt, Translation);
+	}
+
+
+	inline Mat4x4& Mat4x4::scale(const Flt3 & scaleVec)
+	{
+		*this = (Mat4x4)XMMatrixScalingFromVector(scaleVec);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::rotation(const Quat & unitQuat)
+	{
+		*this = (Mat4x4)XMMatrixRotationQuaternion(unitQuat);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::translation(const Flt3 & transVec) {
+		*this = (Mat4x4)XMMatrixTranslationFromVector(transVec);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::transpose() {
+		*this = (Mat4x4)XMMatrixTranspose(*this);
+		return *this;
+	}
+	inline Mat4x4& Mat4x4::inverse() {
+		XMVECTOR Vec;
+		*this = (Mat4x4)XMMatrixInverse(&Vec, *this);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::affineTransformation2D(
+		const Flt2 & scaleVec,
+		const Flt2 & rotOrigin,
+		const float & rotation,
+		const Flt2 & transVec) {
+		*this = (Mat4x4)XMMatrixAffineTransformation2D(scaleVec, rotOrigin,
+			rotation, transVec);
+		return *this;
+	}
+
+
+	inline Mat4x4& Mat4x4::affineTransformation(
+		const Flt3 & scaleVec,
+		const Flt3 & rotOrigin,
+		const Quat & unitQuat,
+		const Flt3 & transVec) {
+		*this = (Mat4x4)XMMatrixAffineTransformation(scaleVec, rotOrigin,
+			unitQuat, transVec);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::affineTransformation(
+		const Flt3 & scaleVec,
+		const Flt3 & rotOrigin,
+		const Flt3 & rotVec,
+		const Flt3 & transVec) {
+		Quat Qt = (Quat)XMQuaternionRotationRollPitchYawFromVector(rotVec);
+		Qt.normalize();
+		return affineTransformation(scaleVec, rotOrigin, Qt, transVec);
+	}
+
+
+	inline Mat4x4& Mat4x4::strTransformation(
+		const Flt3 & scaleVec,
+		const Flt3 & transVec,
+		const Quat & unitQuat
+	) {
+		Mat4x4 Scale = (Mat4x4)XMMatrixScalingFromVector(scaleVec);
+		Mat4x4 Trans = (Mat4x4)XMMatrixTranslationFromVector(transVec);
+		Mat4x4 Qt = (Mat4x4)XMMatrixRotationQuaternion(unitQuat);
+		*this = Scale * Trans * Qt;
+		return *this;
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt2
@@ -1485,6 +1920,11 @@ namespace bsm {
 	{
 		return (Flt3)XMVector3Rotate(vec, quat);
 	}
+
+	inline const Quat inverse(const Quat & quat) {
+		return (Quat)XMQuaternionInverse(quat);
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Mat3x3関連
