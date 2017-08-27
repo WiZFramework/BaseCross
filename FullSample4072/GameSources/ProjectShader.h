@@ -12,7 +12,7 @@ namespace basecross{
 		XMMATRIX m_World;
 		XMMATRIX m_View;
 		XMMATRIX m_Proj;
-		Vector3  m_LightDir;
+		Vec3  m_LightDir;
 		float m_Explode;
 		BallConstantBuffer() {
 			memset(this, 0, sizeof(BallConstantBuffer));

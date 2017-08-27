@@ -516,14 +516,14 @@ namespace basecross {
 		struct data{
 			float time;	//スタートタイム
 			SsInterpolationType::_enum ipType;
-			Color4 val;	//値
+			bsm::Col4 val;	//値
 		};
 		vector< data > line;
 	};
 
 	//--------------------------------------------------------------------------------------
 	//	class SS5AnimeColorVal : public SS5AnimeLine;
-	//	用途: Color4型の値を保持するアニメーションライン
+	//	用途: bsm::Col4型の値を保持するアニメーションライン
 	//--------------------------------------------------------------------------------------
 	SS5AnimeColorVal::SS5AnimeColorVal(IXMLDOMNodePtr TgtNode, const wstring& typestr) :
 		SS5AnimeLine(),
@@ -554,16 +554,16 @@ namespace basecross {
 
 
 	//設定された補間をもとに指定時間の値を返す
-	Color4 SS5AnimeColorVal::GetValue(float Time){
+	bsm::Col4 SS5AnimeColorVal::GetValue(float Time){
 		if (pImpl->line.size() <= 0){
-			return Color4(0, 0, 0, 0);
+			return bsm::Col4(0, 0, 0, 0);
 		}
 		size_t TgtVecIndex = 0;
 		SsInterpolationType::_enum Type;
 		Type = SsInterpolationType::none;
 
-		Color4 Start(0, 0, 0, 0);
-		Color4 End(0, 0, 0, 0);
+		bsm::Col4 Start(0, 0, 0, 0);
+		bsm::Col4 End(0, 0, 0, 0);
 
 		float StartTime = 0;
 		float EndTime = 0;
@@ -596,18 +596,18 @@ namespace basecross {
 		if (totalFrame > 0){
 			tgtFrame = spanFreme / totalFrame;
 		}
-		Color4 ret(0, 0, 0, 0);
+		bsm::Col4 ret(0, 0, 0, 0);
 		ret.x = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.x, End.x, nullptr);
 		ret.y = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.y, End.y, nullptr);
 		ret.z = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.z, End.z, nullptr);
 		ret.w = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.w, End.w, nullptr);
-		ret.AdjustRange();
+		ret = XMVector4ClampLength(ret, 0.0f, 1.0f);
 		return ret;
 	}
 
 
 	//--------------------------------------------------------------------------------------
-	//	struct SS5AnimeVector3Val::Impl;
+	//	struct SS5Animebsm::Vec3Val::Impl;
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct SS5AnimeVector3Val::Impl{
@@ -620,8 +620,8 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class SS5AnimeVector3Val : public SS5AnimeLine;
-	//	用途: Vector3型の値を保持するアニメーションライン
+	//	class SS5Animebsm::Vec3Val : public SS5AnimeLine;
+	//	用途: bsm::Vec3型の値を保持するアニメーションライン
 	//--------------------------------------------------------------------------------------
 	SS5AnimeVector3Val::SS5AnimeVector3Val(IXMLDOMNodePtr TgtNode, const wstring& typestr) :
 		SS5AnimeLine(),
@@ -712,7 +712,7 @@ namespace basecross {
 			throw BaseException(
 				L"現在その補間方法は実装されません",
 				L"ベジェもしくはエルミートを使用してませんか？",
-				L"SS5AnimeVector3Val::GetValue()"
+				L"SS5Animebsm::Vec3Val::GetValue()"
 				);
 		}
 		double spanFreme = Time - StartTime;
@@ -721,7 +721,7 @@ namespace basecross {
 		if (totalFrame > 0){
 			tgtFrame = spanFreme / totalFrame;
 		}
-		Vector3 ret(0, 0, 0);
+		bsm::Vec3 ret(0, 0, 0);
 		Ret.LeftTop.x = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.LeftTop.x, End.LeftTop.x, nullptr);
 		Ret.LeftTop.y = SS5Util::SsInterpolate(Type, (float)tgtFrame, Start.LeftTop.y, End.LeftTop.y, nullptr);
 
@@ -895,7 +895,7 @@ namespace basecross {
 		//操作
 		void FloatAnimationSub(IXMLDOMNodePtr TgtNode, const wstring& Key);
 		//現在の姿勢を得る
-		Matrix4X4 GetLocalMatrix();
+		bsm::Mat4x4 GetLocalMatrix();
 
 		bool GetHide();
 		float GetPrio();
@@ -1035,13 +1035,13 @@ namespace basecross {
 
 	//現在の行列を得る。
 	//アニメーションからのデータの取り出し
-	Matrix4X4 SS5PartAnimation::Impl::GetLocalMatrix(){
+	bsm::Mat4x4 SS5PartAnimation::Impl::GetLocalMatrix(){
 		float AnimeFrame = m_pSS5Animation->GetAnimationTimer2Frame();
 
-		Matrix4X4 LocalMatrix;
-		Vector3 Pos(0, 0, 0);
-		Vector3 Rot(0, 0, 0);
-		Vector3 Scale(1.0f, 1.0f, 1.0f);
+		bsm::Mat4x4 LocalMatrix;
+		bsm::Vec3 Pos(0, 0, 0);
+		bsm::Vec3 Rot(0, 0, 0);
+		bsm::Vec3 Scale(1.0f, 1.0f, 1.0f);
 		for (auto ptr : m_LineVec){
 			GetIfFloatVal(ptr->GetType() == SsAttributeKind::posx, ptr, Pos.x, AnimeFrame);
 			GetIfFloatVal(ptr->GetType() == SsAttributeKind::posy, ptr, Pos.y, AnimeFrame);
@@ -1059,7 +1059,7 @@ namespace basecross {
 		Rot.x = Rot.x * XM_PI / 180.0f;
 		Rot.y = Rot.y * XM_PI / 180.0f;
 		Rot.z = Rot.z * XM_PI / 180.0f;
-		LocalMatrix.DefTransformation(Scale, Rot, Pos);
+		LocalMatrix.affineTransformation(Scale, bsm::Vec3(0,0,0),Rot, Pos);
 		return LocalMatrix;
 	}
 
@@ -1085,7 +1085,7 @@ namespace basecross {
 	}
 
 
-	Matrix4X4 SS5PartAnimation::GetLocalMatrix(){
+	bsm::Mat4x4 SS5PartAnimation::GetLocalMatrix(){
 		return pImpl->GetLocalMatrix();
 	}
 
@@ -1123,9 +1123,9 @@ namespace basecross {
 		SsPartsSortMode::_enum sortMode;
 		Point2D<float> canvasSize;
 		Point2D<float> pivot;
-		Color4 bgColor;
+		bsm::Col4 bgColor;
 		float gridSize;
-		Color4 gridColor;
+		bsm::Col4 gridColor;
 		int outStartNum;
 		float m_CurrentTime;
 		bool m_Looped;
@@ -1369,7 +1369,7 @@ namespace basecross {
 			IXMLDOMNodePtr ScanNode, IXMLDOMNodePtr TgtNode, const shared_ptr<SSPart>& Parent, bool SpriteType);
 		~Impl(){}
 		//操作
-		Matrix4X4 CaluclateMatrix();
+		bsm::Mat4x4 CaluclateMatrix();
 	};
 	//構築と破棄
 	SSPart::Impl::Impl(const wstring& SsaeName, 
@@ -1434,9 +1434,9 @@ namespace basecross {
 	}
 
 	//アニメーション後の行列を計算する
-	Matrix4X4 SSPart::Impl::CaluclateMatrix(){
-		Matrix4X4 ret;
-		ret.Identity();
+	bsm::Mat4x4 SSPart::Impl::CaluclateMatrix(){
+		bsm::Mat4x4 ret;
+		ret.identity();
 		if (m_PartAnime){
 			m_Prio = -m_PartAnime->GetPrio();
 			m_Hide = m_PartAnime->GetHide();
@@ -1510,7 +1510,7 @@ namespace basecross {
 				for (auto& v : vertices){
 					VertexPositionColorTexture nv;
 					nv.position = v.position;
-					nv.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+					nv.color = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 					nv.textureCoordinate = v.textureCoordinate;
 					new_vertices.push_back(nv);
 				}
@@ -1638,35 +1638,35 @@ namespace basecross {
 		CellRect -= Pivot;
 
 		vertices[0] = VertexPositionColorTexture(
-			XMFLOAT3(
+			bsm::Vec3(
 			CellRect.left + pImpl->m_Vertex2DAnimeData.LeftTop.x / grid,
 			CellRect.top + pImpl->m_Vertex2DAnimeData.LeftTop.y / grid,
 			0),
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.left, UVRect.top));
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.left, UVRect.top));
 
 		vertices[1] = VertexPositionColorTexture(
-			XMFLOAT3(
+			bsm::Vec3(
 			CellRect.right + pImpl->m_Vertex2DAnimeData.RightTop.x / grid,
 			CellRect.top + pImpl->m_Vertex2DAnimeData.RightTop.y / grid,
 			0), 
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.right, UVRect.top));
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.right, UVRect.top));
 
 		vertices[2] = VertexPositionColorTexture(
-			XMFLOAT3(
+			bsm::Vec3(
 			CellRect.left + pImpl->m_Vertex2DAnimeData.LeftBottom.x / grid,
 			CellRect.bottom + +pImpl->m_Vertex2DAnimeData.LeftBottom.y / grid,
 			0), 
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.left, UVRect.bottom));
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.left, UVRect.bottom));
 		vertices[3] = VertexPositionColorTexture(
-			XMFLOAT3(
+			bsm::Vec3(
 			CellRect.right + pImpl->m_Vertex2DAnimeData.RightBottom.x / grid,
 			CellRect.bottom + pImpl->m_Vertex2DAnimeData.RightBottom.y / grid,
 			0), 
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.right, UVRect.bottom));
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.right, UVRect.bottom));
 		//アンマップ
 		pID3D11DeviceContext->Unmap(pVertexBuffer, 0);
 	}
@@ -1698,32 +1698,32 @@ namespace basecross {
 
 		m_VertexVec.push_back(
 			VertexPositionColorTexture(
-			XMFLOAT3(CellRect.left + pImpl->m_Vertex2DAnimeData.LeftTop.x / grid,CellRect.top + pImpl->m_Vertex2DAnimeData.LeftTop.y / grid,0),
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.left, UVRect.top)
+			bsm::Vec3(CellRect.left + pImpl->m_Vertex2DAnimeData.LeftTop.x / grid,CellRect.top + pImpl->m_Vertex2DAnimeData.LeftTop.y / grid,0),
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.left, UVRect.top)
 			)
 		);
 		m_VertexVec.push_back(
 			VertexPositionColorTexture(
-			XMFLOAT3(CellRect.right + pImpl->m_Vertex2DAnimeData.RightTop.x / grid,CellRect.top + pImpl->m_Vertex2DAnimeData.RightTop.y / grid,0),
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.right, UVRect.top)
+			bsm::Vec3(CellRect.right + pImpl->m_Vertex2DAnimeData.RightTop.x / grid,CellRect.top + pImpl->m_Vertex2DAnimeData.RightTop.y / grid,0),
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.right, UVRect.top)
 			)
 			);
 
 		m_VertexVec.push_back(
 			VertexPositionColorTexture(
-			XMFLOAT3(CellRect.left + pImpl->m_Vertex2DAnimeData.LeftBottom.x / grid,CellRect.bottom + +pImpl->m_Vertex2DAnimeData.LeftBottom.y / grid,0),
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.left, UVRect.bottom)
+			bsm::Vec3(CellRect.left + pImpl->m_Vertex2DAnimeData.LeftBottom.x / grid,CellRect.bottom + +pImpl->m_Vertex2DAnimeData.LeftBottom.y / grid,0),
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.left, UVRect.bottom)
 			)
 			);
 
 		m_VertexVec.push_back(
 			VertexPositionColorTexture(
-			XMFLOAT3(CellRect.right + pImpl->m_Vertex2DAnimeData.RightBottom.x / grid,CellRect.bottom + pImpl->m_Vertex2DAnimeData.RightBottom.y / grid,0),
-			Color4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
-			XMFLOAT2(UVRect.right, UVRect.bottom)
+			bsm::Vec3(CellRect.right + pImpl->m_Vertex2DAnimeData.RightBottom.x / grid,CellRect.bottom + pImpl->m_Vertex2DAnimeData.RightBottom.y / grid,0),
+			bsm::Col4(1.0f, 1.0f, 1.0f, pImpl->m_Alpha),
+			bsm::Vec2(UVRect.right, UVRect.bottom)
 			)
 			);
 
@@ -1734,7 +1734,7 @@ namespace basecross {
 
 	//アニメーション後の行列を計算する
 	void SSPart::CaluclateMatrix(){
-		Matrix4X4 ret = pImpl->CaluclateMatrix();
+		bsm::Mat4x4 ret = pImpl->CaluclateMatrix();
 		if (pImpl->m_SS5CellPtr){
 			//頂点の変更（UVの変更）
 			ResetVirtex();
@@ -1742,9 +1742,9 @@ namespace basecross {
 			ResetSpriteVirtex();
 		}
 		auto PtrT = GetComponent<Transform>();
-		PtrT->SetScale(ret.ScaleInMatrix());
-		PtrT->SetQuaternion(ret.QtInMatrix());
-		PtrT->SetWorldPosition(ret.PosInMatrix());
+		PtrT->SetScale(ret.scaleInMatrix());
+		PtrT->SetQuaternion(ret.quatInMatrix());
+		PtrT->SetWorldPosition(ret.transInMatrix());
 		//子供の行列を計算する
 		for (auto ptr : pImpl->m_Childlen){
 			ptr->CaluclateMatrix();
@@ -1793,9 +1793,9 @@ namespace basecross {
 		SsPartsSortMode::_enum sortMode;
 		Point2D<float> canvasSize;
 		Point2D<float> pivot;
-		Color4 bgColor;
+		bsm::Col4 bgColor;
 		float gridSize;
-		Color4 gridColor;
+		bsm::Col4 gridColor;
 		int outStartNum;
 		//複数セルマップ
 		vector< shared_ptr<SS5ssce> > m_SS5ssces;
@@ -1808,7 +1808,7 @@ namespace basecross {
 		//現在のアニメーション（ポインタ）
 		shared_ptr<SS5Animation> m_NowAnimationPtr;
 		//SS5ssaeからアニメーションオブジェクトへの行列
-		Matrix4X4 m_ToAnimeMatrix;
+		bsm::Mat4x4 m_ToAnimeMatrix;
 		//スプライトかどうか
 		bool m_SpriteType;
 
@@ -2064,10 +2064,10 @@ namespace basecross {
 		}
 	}
 	//SS5ssaeからアニメーションオブジェクトへの行列
-	const Matrix4X4& SS5ssae::GetToAnimeMatrix() const{
+	const bsm::Mat4x4& SS5ssae::GetToAnimeMatrix() const{
 		return pImpl->m_ToAnimeMatrix;
 	}
-	void SS5ssae::SetToAnimeMatrix(const Matrix4X4& mat){
+	void SS5ssae::SetToAnimeMatrix(const bsm::Mat4x4& mat){
 		pImpl->m_ToAnimeMatrix = mat;
 	}
 
@@ -2113,7 +2113,7 @@ namespace basecross {
 				auto PtrT = ptr->GetComponent<Transform>();
 				auto TempPos = PtrT->GetWorldPosition();
 				auto Pos = PtrT->GetWorldPosition();
-				Vector3 Z(0, 0, count);
+				bsm::Vec3 Z(0, 0, count);
 				Pos += Z;
 				PtrT->SetWorldPosition(Pos);
 				ptr->OnDraw();

@@ -11,12 +11,12 @@ namespace basecross {
 	//PNTStatic
 	struct PNTStaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Vector4 LightDir;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Vec4 LightDir;
+		Col4 Emissive;
+		Col4 Diffuse;
 		PNTStaticConstantBuffer() {
 			memset(this, 0, sizeof(PNTStaticConstantBuffer));
 		};
@@ -28,20 +28,20 @@ namespace basecross {
 	///	立方体
 	//--------------------------------------------------------------------------------------
 	struct CubeObject {
-		Vector3 m_Scale;			///<スケーリング
-		Quaternion m_Quaternion;	///<回転
-		Vector3 m_QuaternionRot;	///<回転軸
+		Vec3 m_Scale;			///<スケーリング
+		Quat m_Quaternion;	///<回転
+		Vec3 m_QuaternionRot;	///<回転軸
 		float m_QuaternionVelocity;	///<回転速度
-		Vector3 m_Posision;				///<位置
-		Vector3 m_Velocity;			///<速度
+		Vec3 m_Posision;				///<位置
+		Vec3 m_Velocity;			///<速度
 		CubeObject() {}
 		void Refresh() {
-			m_Scale = Vector3(0.1f, 0.1f, 0.1f);
-			m_QuaternionRot = Vector3(Util::RandZeroToOne() - 0.5f, 1.0f, Util::RandZeroToOne() - 0.5f);
-			m_Quaternion.RotationAxis(m_QuaternionRot, Util::RandZeroToOne());
+			m_Scale = Vec3(0.1f, 0.1f, 0.1f);
+			m_QuaternionRot = Vec3(Util::RandZeroToOne() - 0.5f, 1.0f, Util::RandZeroToOne() - 0.5f);
+			m_Quaternion.rotation(m_QuaternionRot, Util::RandZeroToOne());
 			m_QuaternionVelocity = (Util::RandZeroToOne() - 0.5f) * 10.0f;
-			m_Posision = Vector3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne(), Util::RandZeroToOne());
-			m_Velocity = Vector3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f);
+			m_Posision = Vec3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne(), Util::RandZeroToOne());
+			m_Velocity = Vec3(Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f, Util::RandZeroToOne() - 0.5f);
 			m_Velocity *= 2.0f;
 		}
 	};

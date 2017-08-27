@@ -12,7 +12,7 @@ namespace basecross{
 	///	Pnt球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PntSphere::PntSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	PntSphere::PntSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -22,9 +22,9 @@ namespace basecross{
 	//初期化
 	void PntSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -48,27 +48,27 @@ namespace basecross{
 		//行列の定義
 		auto PtrTrans = GetComponent<Transform>();
 		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
+		Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
 		World = PtrTrans->GetWorldMatrix();
 		//転置する
-		World.Transpose();
+		World.transpose();
 		//カメラを得る
 		auto CameraPtr = OnGetDrawCamera();
 		//ビューと射影行列を得る
 		ViewMat = CameraPtr->GetViewMatrix();
 		//転置する
-		ViewMat.Transpose();
+		ViewMat.transpose();
 		ProjMat = CameraPtr->GetProjMatrix();
 		//転置する
-		ProjMat.Transpose();
+		ProjMat.transpose();
 		Cb.World = World;
 		Cb.View = ViewMat;
 		Cb.Projection = ProjMat;
 		//エミッシブ
-		Cb.Emissive = Color4(0.5f, 0.5f, 0.5f,0);
+		Cb.Emissive = Col4(0.5f, 0.5f, 0.5f,0);
 		//デフィーズ
-		Cb.Diffuse = Color4(1, 1, 1, 1);
+		Cb.Diffuse = Col4(1, 1, 1, 1);
 		//ライティング
 		auto StageLight = OnGetDrawLight();
 		Cb.LightDir = StageLight.m_Directional;

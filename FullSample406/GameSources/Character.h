@@ -26,17 +26,17 @@ namespace basecross{
 	//	ópìr: å≈íËÇÃâÒì]É{ÉbÉNÉX
 	//--------------------------------------------------------------------------------------
 	class RollingBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 		//âÒì]åWêî
 		float m_RotParam;
 	public:
 		//ç\ízÇ∆îjä¸
 		RollingBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position,
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position,
 			float RotParam
 		);
 		virtual ~RollingBox();

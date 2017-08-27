@@ -82,21 +82,21 @@ namespace basecross {
 	struct Transform::Impl {
 		bool m_Init{ false };	//初期化済みかどうか（1回目のUpdateで、Beforeに値を入れる）
 		//1つ前の変数
-		Vector3 m_BeforeScale;
-		Vector3 m_BeforePivot;
-		Quaternion m_BeforeQuaternion;
-		Vector3 m_BeforePosition;
+		bsm::Vec3 m_BeforeScale;
+		bsm::Vec3 m_BeforePivot;
+		bsm::Quat m_BeforeQuaternion;
+		bsm::Vec3 m_BeforePosition;
 		//再計算抑制用変数
 		bool m_BeforeChangeed;
-		Matrix4X4 m_BeforeWorldMatrix;
+		bsm::Mat4x4 m_BeforeWorldMatrix;
 		//現在の変数
-		Vector3 m_Scale;
-		Vector3 m_Pivot;
-		Quaternion m_Quaternion;
-		Vector3 m_Position;
+		bsm::Vec3 m_Scale;
+		bsm::Vec3 m_Pivot;
+		bsm::Quat m_Quaternion;
+		bsm::Vec3 m_Position;
 		//再計算抑制用変数
 		bool m_Changeed;
-		Matrix4X4 m_WorldMatrix;
+		bsm::Mat4x4 m_WorldMatrix;
 		//親オブジェクト
 		weak_ptr<GameObject> m_Parent;
 		Impl():
@@ -121,35 +121,35 @@ namespace basecross {
 
 	//アクセサ
 	//BeforeGetter
-	Vector3 Transform::GetBeforeScale() const {
+	bsm::Vec3 Transform::GetBeforeScale() const {
 		return pImpl->m_BeforeScale;
 	}
 
-	Vector3 Transform::GetBeforePivot() const{
+	bsm::Vec3 Transform::GetBeforePivot() const{
 		return pImpl->m_BeforePivot;
 	}
 
-	Quaternion Transform::GetBeforeQuaternion() const {
+	bsm::Quat Transform::GetBeforeQuaternion() const {
 		return pImpl->m_BeforeQuaternion;
 	}
 
-	Vector3 Transform::GetBeforeRotation() const {
-		return pImpl->m_BeforeQuaternion.GetRotation();
+	bsm::Vec3 Transform::GetBeforeRotation() const {
+		return pImpl->m_BeforeQuaternion.toRotVec();
 	}
 
-	Vector3 Transform::GetBeforePosition() const {
+	bsm::Vec3 Transform::GetBeforePosition() const {
 		return pImpl->m_BeforePosition;
 	}
 
-	bool Transform::IsSameBeforeWorldMatrix(const Matrix4X4& mat) const {
-		return mat.EqualInt(GetBeforeWorldMatrix());
+	bool Transform::IsSameBeforeWorldMatrix(const bsm::Mat4x4& mat) const {
+		return mat.equalInt(GetBeforeWorldMatrix());
 	}
 
 
-	const Matrix4X4& Transform::GetBeforeWorldMatrix() const{
+	const bsm::Mat4x4& Transform::GetBeforeWorldMatrix() const{
 		auto ParPtr = GetParent();
 		if (pImpl->m_BeforeChangeed || ParPtr) {
-			pImpl->m_BeforeWorldMatrix.AffineTransformation(
+			pImpl->m_BeforeWorldMatrix.affineTransformation(
 				pImpl->m_BeforeScale,
 				pImpl->m_BeforePivot,
 				pImpl->m_BeforeQuaternion,
@@ -158,7 +158,7 @@ namespace basecross {
 			pImpl->m_BeforeChangeed = false;
 			if (ParPtr) {
 				auto ParBeforeWorld = ParPtr->GetComponent<Transform>()->GetBeforeWorldMatrix();
-				ParBeforeWorld.ScaleIdentity();
+				ParBeforeWorld.scaleIdentity();
 				pImpl->m_BeforeWorldMatrix = pImpl->m_BeforeWorldMatrix * ParBeforeWorld;
 			}
 		}
@@ -168,112 +168,109 @@ namespace basecross {
 
 	//Getter&Setter
 
-	Vector3 Transform::GetScale() const {
+	bsm::Vec3 Transform::GetScale() const {
 		return pImpl->m_Scale;
 	}
 
-	void Transform::SetScale(const Vector3& Scale) {
+	void Transform::SetScale(const bsm::Vec3& Scale) {
 		pImpl->m_Changeed = true;
 		pImpl->m_Scale = Scale;
 	}
 	void Transform::SetScale(float x, float y, float z) {
-		SetScale(Vector3(x, y, z));
+		SetScale(bsm::Vec3(x, y, z));
 	}
 
-	Vector3 Transform::GetPivot() const {
+	bsm::Vec3 Transform::GetPivot() const {
 		return pImpl->m_Pivot;
 	}
-	void Transform::SetPivot(const Vector3& Pivot) {
+	void Transform::SetPivot(const bsm::Vec3& Pivot) {
 		pImpl->m_Changeed = true;
 		pImpl->m_Pivot = Pivot;
 	}
 	void Transform::SetPivot(float x, float y, float z) {
-		SetPivot(Vector3(x, y, z));
+		SetPivot(bsm::Vec3(x, y, z));
 	}
 
-	Quaternion Transform::GetQuaternion() const {
+	bsm::Quat Transform::GetQuaternion() const {
 		return pImpl->m_Quaternion;
 	}
-	void Transform::SetQuaternion(const Quaternion& quaternion) {
+	void Transform::SetQuaternion(const bsm::Quat& quaternion) {
 		pImpl->m_Changeed = true;
 		pImpl->m_Quaternion = quaternion;
-		pImpl->m_Quaternion.Normalize();
+		pImpl->m_Quaternion.normalize();
 	}
-	Vector3 Transform::GetRotation() const {
-		return pImpl->m_Quaternion.GetRotation();
+	bsm::Vec3 Transform::GetRotation() const {
+		return pImpl->m_Quaternion.toRotVec();
 	}
 
-	void Transform::SetRotation(const Vector3& Rot) {
+	void Transform::SetRotation(const bsm::Vec3& Rot) {
 		pImpl->m_Changeed = true;
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Rot);
+		bsm::Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Rot);
 		SetQuaternion(Qt);
 	}
 	void Transform::SetRotation(float x, float y, float z) {
-		SetRotation(Vector3(x, y, z));
+		SetRotation(bsm::Vec3(x, y, z));
 	}
 
-	Vector3 Transform::GetPosition() const {
+	bsm::Vec3 Transform::GetPosition() const {
 		return pImpl->m_Position;
 	}
 
-	void Transform::SetPosition(const Vector3& Position) {
+	void Transform::SetPosition(const bsm::Vec3& Position) {
 		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 	void Transform::SetPosition(float x, float y, float z) {
-		SetPosition(Vector3(x, y, z));
+		SetPosition(bsm::Vec3(x, y, z));
 	}
 
-	void Transform::ResetPosition(const Vector3& Position) {
+	void Transform::ResetPosition(const bsm::Vec3& Position) {
 		pImpl->m_BeforeChangeed = true;
 		pImpl->m_BeforePosition = Position;
 		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 
-	Vector3 Transform::GetWorldPosition() const {
-		return GetWorldMatrix().PosInMatrixSt();
+	bsm::Vec3 Transform::GetWorldPosition() const {
+		return GetWorldMatrix().transInMatrix();
 	}
-	void Transform::SetWorldPosition(const Vector3& Position) {
+	void Transform::SetWorldPosition(const bsm::Vec3& Position) {
 		auto SetPos = Position;
 		auto ParPtr = GetParent();
 		if (ParPtr) {
-			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
+			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().transInMatrix();
 			SetPos -= ParWorldPos;
-			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().QtInMatrix();
-			ParQt.Inverse();
-			Matrix4X4 ParQtMat;
-			ParQtMat.RotationQuaternion(ParQt);
-			SetPos.Transform(ParQtMat);
-
+			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().quatInMatrix();
+			ParQt = bsm::inverse(ParQt);
+			bsm::Mat4x4 ParQtMat(ParQt);
+			SetPos *= ParQtMat;
 		}
 		SetPosition(SetPos);
 	}
-	void Transform::ResetWorldPosition(const Vector3& Position) {
+	void Transform::ResetWorldPosition(const bsm::Vec3& Position) {
 		auto SetPos = Position;
 		auto ParPtr = GetParent();
 		if (ParPtr) {
-			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
+			auto ParWorldPos = ParPtr->GetComponent<Transform>()->GetWorldMatrix().transInMatrix();
 			SetPos -= ParWorldPos;
-			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().QtInMatrix();
-			ParQt.Inverse();
-			Matrix4X4 ParQtMat;
-			ParQtMat.RotationQuaternion(ParQt);
-			SetPos.Transform(ParQtMat);
+			auto ParQt = ParPtr->GetComponent<Transform>()->GetWorldMatrix().quatInMatrix();
+			ParQt = bsm::inverse(ParQt);
+			bsm::Mat4x4 ParQtMat(ParQt);
+			SetPos *= ParQtMat;
 		}
 		ResetPosition(SetPos);
 	}
 
-	bool Transform::IsSameWorldMatrix(const Matrix4X4& mat) const {
-		return mat.EqualInt(GetWorldMatrix());
+	bool Transform::IsSameWorldMatrix(const bsm::Mat4x4& mat) const {
+		return mat.equalInt(GetWorldMatrix());
 	}
 
 
-	const Matrix4X4& Transform::GetWorldMatrix() const{
+	const bsm::Mat4x4& Transform::GetWorldMatrix() const{
 		auto ParPtr = GetParent();
 		if (pImpl->m_Changeed || ParPtr) {
-			pImpl->m_WorldMatrix.AffineTransformation(
+			pImpl->m_WorldMatrix.affineTransformation(
 				pImpl->m_Scale,
 				pImpl->m_Pivot,
 				pImpl->m_Quaternion,
@@ -282,22 +279,22 @@ namespace basecross {
 			pImpl->m_Changeed = false;
 			if (ParPtr) {
 				auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
-				ParWorld.ScaleIdentity();
+				ParWorld.scaleIdentity();
 				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
 			}
 		}
 		return pImpl->m_WorldMatrix;
 	}
 
-	const Matrix4X4& Transform::Get2DWorldMatrix() const {
+	const bsm::Mat4x4& Transform::Get2DWorldMatrix() const {
 		auto ParPtr = GetParent();
 		if (pImpl->m_Changeed || ParPtr) {
 			pImpl->m_Scale.z = 1.0f;
-			XMVector temp_z(pImpl->m_Position.z);
-			temp_z.Clamp(0.0f, 1.0f);
+			bsm::Vec4 temp_z(pImpl->m_Position.z);
+			temp_z = XMVector4ClampLength(temp_z, 0.0f, 1.0f);
 			pImpl->m_Position.z = temp_z.z;
 			pImpl->m_Pivot.z = 0;
-			pImpl->m_WorldMatrix.AffineTransformation(
+			pImpl->m_WorldMatrix.affineTransformation(
 				pImpl->m_Scale,
 				pImpl->m_Pivot,
 				pImpl->m_Quaternion,
@@ -306,7 +303,7 @@ namespace basecross {
 			pImpl->m_Changeed = false;
 			if (ParPtr) {
 				auto ParWorld = ParPtr->GetComponent<Transform>()->Get2DWorldMatrix();
-				ParWorld.ScaleIdentity();
+				ParWorld.scaleIdentity();
 				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
 			}
 		}
@@ -329,18 +326,17 @@ namespace basecross {
 			ClearParent();
 			pImpl->m_Parent = Obj;
 			auto ParWorld = Obj->GetComponent<Transform>()->GetWorldMatrix();
-			ParWorld.ScaleIdentity();
-			auto PosSpan = GetPosition() - ParWorld.PosInMatrixSt();
-			auto QtSpan = ParWorld.QtInMatrix();
-			QtSpan.Inverse();
-			Matrix4X4 ParQtMat;
-			ParQtMat.RotationQuaternion(QtSpan);
-			PosSpan.Transform(ParQtMat);
+			ParWorld.scaleIdentity();
+			auto PosSpan = GetPosition() - ParWorld.transInMatrix();
+			auto QtSpan = ParWorld.quatInMatrix();
+			QtSpan = bsm::inverse(QtSpan);
+			bsm::Mat4x4 ParQtMat(QtSpan);
+			PosSpan *= ParQtMat;
 
-			Matrix4X4 Mat = GetWorldMatrix() * ParWorld;
-			Vector3 Scale, Pos;
-			Quaternion Qt;
-			Mat.Decompose(Scale, Qt, Pos);
+			bsm::Mat4x4 Mat = GetWorldMatrix() * ParWorld;
+			bsm::Vec3 Scale, Pos;
+			bsm::Quat Qt;
+			Mat.decompose(Scale, Qt, Pos);
 			SetScale(Scale);
 			SetQuaternion(Qt);
 			SetPosition(PosSpan);
@@ -361,10 +357,10 @@ namespace basecross {
 		}
 		pImpl->m_Parent.reset();
 	}
-	Vector3 Transform::GetVelocity() const {
+	bsm::Vec3 Transform::GetVelocity() const {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vector3 Velocity = pImpl->m_Position - pImpl->m_BeforePosition;
+		bsm::Vec3 Velocity = pImpl->m_Position - pImpl->m_BeforePosition;
 		Velocity /= ElapsedTime;
 		return Velocity;
 	}
@@ -1220,7 +1216,7 @@ namespace basecross {
 	PathSearch::~PathSearch() {}
 
 
-	bool PathSearch::SearchCell(const Vector3& TargetPosition, vector<CellIndex>& RetCellIndexVec) {
+	bool PathSearch::SearchCell(const bsm::Vec3& TargetPosition, vector<CellIndex>& RetCellIndexVec) {
 		//オープン・クローズリストのクリア
 		pImpl->m_OpenVec.clear();
 		pImpl->m_CloseVec.clear();

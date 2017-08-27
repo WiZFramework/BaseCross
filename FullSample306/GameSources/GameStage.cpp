@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -32,8 +32,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(20.0f, 20.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -54,26 +54,26 @@ namespace basecross {
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(1.0f, 0.5f, 20.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(9.0f, 0.25f, 0.0f)
+				Vec3(1.0f, 0.5f, 20.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(9.0f, 0.25f, 0.0f)
 			},
 			{
-				Vector3(1.0f, 0.5f, 20.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-9.0f, 0.25f, 0.0f)
+				Vec3(1.0f, 0.5f, 20.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-9.0f, 0.25f, 0.0f)
 			},
 			{
-				Vector3(20.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 9.0f)
+				Vec3(20.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 9.0f)
 			},
 			{
-				Vector3(20.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, -9.0f)
+				Vec3(20.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, -9.0f)
 			},
 		};
 		//オブジェクトの作成
@@ -86,10 +86,10 @@ namespace basecross {
 	//ボールの作成
 	void GameStage::CreateBalls() {
 		//ボールの作成
-		auto Ball1 = AddGameObject<Ball>(Vector3(-2.5f, 0.125f, 5.0f), true);
+		auto Ball1 = AddGameObject<Ball>(Vec3(-2.5f, 0.125f, 5.0f), true);
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Ball1", Ball1);
-		auto Ball2 = AddGameObject<Ball>(Vector3(2.5f, 0.125f, 5.0f), false);
+		auto Ball2 = AddGameObject<Ball>(Vec3(2.5f, 0.125f, 5.0f), false);
 		SetSharedGameObject(L"Ball2", Ball2);
 	}
 

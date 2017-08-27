@@ -187,7 +187,7 @@ void CMainFrame::OnOpenFbxFile()
 			wstring Dir = RelativePath;
 			Dir += L"\\";
 			float Scale = (float)_wtof(m_MeshScale);
-			Vector3 Pos(
+			Vec3 Pos(
 				(float)_wtof(m_MeshPosX),
 				(float)_wtof(m_MeshPosY),
 				(float)_wtof(m_MeshPosZ)

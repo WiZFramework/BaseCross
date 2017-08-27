@@ -28,8 +28,8 @@ namespace basecross {
 			Qt,
 			Vec3(0.0f, 0.0f, 0.0f)
 			);
-		//球の作成
-		m_SphereObject = ObjectFactory::Create<SphereObject>(
+		//プレイヤーの作成
+		m_Player = ObjectFactory::Create<Player>(
 			GetThis<Stage>(),
 			18, L"TRACE_TX", true, Vec3(0.0f, 0.125f, 0.0f));
 		//PNT描画オブジェクトの作成
@@ -55,10 +55,10 @@ namespace basecross {
 	void GameStage::OnUpdateStage() {
 		//プレートの更新
 		m_SquareObject->OnUpdate();
-		//球体の更新
-		m_SphereObject->OnUpdate();
+		//プレイヤーの更新
+		m_Player->OnUpdate();
 		//回転処理
-		m_SphereObject->OnRotation();
+		m_Player->OnRotation();
 		//描画オブジェクトの更新
 		m_PNTDrawObject->OnUpdate();
 		//スプライトの更新
@@ -107,7 +107,7 @@ namespace basecross {
 				}
 			}
 
-			m_Camera.m_CamerAt = GetSphereObject()->GetPosition();
+			m_Camera.m_CamerAt = GetPlayer()->GetPosition();
 			Vec3 CameraLocalEye =
 				Vec3(
 					sin(m_Camera.m_CameraXZRad) * m_Camera.m_CameraArmLen * sin(m_Camera.m_CameraYRad),
@@ -130,8 +130,8 @@ namespace basecross {
 		Dev->StartDefaultDraw();
 		//プレート描画
 		m_SquareObject->OnDraw();
-		//球体描画
-		m_SphereObject->OnDraw();
+		//プレイヤー描画
+		m_Player->OnDraw();
 		//描画オブジェクト描画
 		m_PNTDrawObject->OnDraw();
 		//スプライト描画

@@ -59,50 +59,50 @@ namespace basecross {
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Velocity = PtrTransform->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		bsm::Vec3 Velocity = PtrTransform->GetVelocity();
+		if (Velocity.length() > 0.0f) {
+			bsm::Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			bsm::Quat Qt;
+			Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			bsm::Quat NowQt = PtrTransform->GetQuaternion();
 			//現在と目標を補間
 			//現在と目標を補間
 			if (LerpFact >= 1.0f) {
 				NowQt = Qt;
 			}
 			else {
-				NowQt.Slerp(NowQt, Qt, LerpFact);
+				NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
 			}
 			PtrTransform->SetQuaternion(NowQt);
 		}
 	}
 
-	void UtilBehavior::RotToHead(const Vector3& Velocity, float LerpFact) {
+	void UtilBehavior::RotToHead(const bsm::Vec3& Velocity, float LerpFact) {
 		if (LerpFact <= 0.0f) {
 			//補間係数が0以下なら何もしない
 			return;
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		//回転の更新
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		if (Velocity.length() > 0.0f) {
+			bsm::Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			bsm::Quat Qt;
+			Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			bsm::Quat NowQt = PtrTransform->GetQuaternion();
 			//現在と目標を補間
 			if (LerpFact >= 1.0f) {
 				NowQt = Qt;
 			}
 			else {
-				NowQt.Slerp(NowQt, Qt, LerpFact);
+				NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
 			}
 			PtrTransform->SetQuaternion(NowQt);
 		}
@@ -113,14 +113,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	何もしない行動クラス
 	//--------------------------------------------------------------------------------------
-	float WaitBehavior::Execute(const Vector3& TargetPos) {
+	float WaitBehavior::Execute(const bsm::Vec3& TargetPos) {
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
 		auto Velo = PtrRigid->GetVelocity();
 		//減速
 		Velo *= 0.95f;
 		PtrRigid->SetVelocity(Velo);
 		auto Pos = GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+		return bsm::length(Pos - TargetPos);
 	}
 
 	float WaitBehavior::Execute(const wstring& TargetKey) {
@@ -135,7 +135,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct Gravity::Impl {
 		//現在の重力加速度
-		Vector3 m_Gravity;
+		bsm::Vec3 m_Gravity;
 	public:
 		Impl() :
 			m_Gravity(0, -9.8f, 0)
@@ -153,23 +153,23 @@ namespace basecross {
 	{}
 	Gravity::~Gravity() {}
 
-	const Vector3& Gravity::GetGravity() const {
+	const bsm::Vec3& Gravity::GetGravity() const {
 		return pImpl->m_Gravity;
 	}
-	void Gravity::SetGravity(const Vector3& gravity) {
+	void Gravity::SetGravity(const bsm::Vec3& gravity) {
 		pImpl->m_Gravity = gravity;
 	}
 	void Gravity::SetGravity(float x, float y, float z) {
-		pImpl->m_Gravity = Vector3(x, y, z);
+		pImpl->m_Gravity = bsm::Vec3(x, y, z);
 	}
 
-	void Gravity::StartJump(const Vector3& StartVec, float EscapeSpan) {
+	void Gravity::StartJump(const bsm::Vec3& StartVec, float EscapeSpan) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>();
 		auto Velo = PtrRigid->GetGravityVelocity();
 		Velo += StartVec;
 		PtrRigid->SetGravityVelocity(Velo);
-		Vector3 EscapeVec = StartVec;
+		bsm::Vec3 EscapeVec = StartVec;
 		//ジャンプして親オブジェクトボリュームから脱出できないとき対応
 		EscapeVec *= EscapeSpan;
 		auto Pos = PtrTransform->GetWorldPosition();
@@ -177,7 +177,7 @@ namespace basecross {
 		PtrTransform->ResetWorldPosition(Pos);
 	}
 	void Gravity::StartJump(float x, float y, float z, float EscapeSpan) {
-		StartJump(Vector3(x, y, z), EscapeSpan);
+		StartJump(bsm::Vec3(x, y, z), EscapeSpan);
 	}
 
 	void Gravity::UpdateFromTime(float CalcTime) {

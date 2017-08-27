@@ -11,10 +11,10 @@ namespace basecross{
 	///	StaticƒLƒƒƒ‰
 	//--------------------------------------------------------------------------------------
 	class StaticChara : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		StaticChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~StaticChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -24,10 +24,10 @@ namespace basecross{
 	///	BoneƒLƒƒƒ‰
 	//--------------------------------------------------------------------------------------
 	class BoneChara : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		BoneChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~BoneChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;

@@ -140,7 +140,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateCapsule(float diameter,
-			const Vector3& PointA, const Vector3& PointB,
+			const bsm::Vec3& PointA, const bsm::Vec3& PointB,
 			size_t tessellation,
 			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices);
 		//--------------------------------------------------------------------------------------

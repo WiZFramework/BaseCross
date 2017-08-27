@@ -17,7 +17,7 @@ namespace basecross{
 		//\’z‚Æ”jŠü
 		AttackBall(const shared_ptr<Stage>& StagePtr);
 		virtual ~AttackBall();
-		void Weakup(const Vector3& Position, const Vector3& Velocity);
+		void Weakup(const Vec3& Position, const Vec3& Velocity);
 		//‰Šú‰»
 		virtual void OnCreate() override;
 		//‘€ì

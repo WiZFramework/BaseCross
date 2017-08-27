@@ -18,10 +18,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)BaseHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BaseMath.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BaseMathInc.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MathExt.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MathExtEX.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MathVector.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MathVectorEX.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MeshHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)TransHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)XmlDoc.h" />

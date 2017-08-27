@@ -58,10 +58,10 @@ namespace basecross {
 		try {
 			float HelfSize = size / 2.0f;
 			//頂点配列
-			vertices.push_back(VertexPositionNormalTexture(XMFLOAT3(-HelfSize, HelfSize, 0), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f)));
-			vertices.push_back(VertexPositionNormalTexture(XMFLOAT3(HelfSize, HelfSize, 0), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(1.0f, 0.0f)));
-			vertices.push_back(VertexPositionNormalTexture(XMFLOAT3(-HelfSize, -HelfSize, 0), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 1.0f)));
-			vertices.push_back(VertexPositionNormalTexture(XMFLOAT3(HelfSize, -HelfSize, 0), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(1.0f, 1.0f)));
+			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(-HelfSize, HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(0.0f, 0.0f)));
+			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(HelfSize, HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(1.0f, 0.0f)));
+			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(-HelfSize, -HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(0.0f, 1.0f)));
+			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(HelfSize, -HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(1.0f, 1.0f)));
 			//インデックスを作成するための配列
 			indices.push_back((uint16_t)0);
 			indices.push_back((uint16_t)1);
@@ -201,7 +201,7 @@ namespace basecross {
 
 
 	void MeshUtill::CreateCapsule(float diameter,
-		const Vector3& PointA, const Vector3& PointB,
+		const bsm::Vec3& PointA, const bsm::Vec3& PointB,
 		size_t tessellation,
 		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
@@ -227,7 +227,7 @@ namespace basecross {
 
 				XMScalarSinCos(&dy, &dxz, latitude);
 
-				Vector3 CenterPos = PointA;
+				bsm::Vec3 CenterPos = PointA;
 				if (i >= (verticalSegments / 2)) {
 					CenterPos = PointB;
 				}
@@ -831,15 +831,14 @@ namespace basecross {
 
 	void MeshUtill::SetNormalTangent(vector<VertexPositionNormalTangentTexture>& vertices) {
 		for (size_t i = 0; i < vertices.size(); i++) {
-			Vector3 Norm = vertices[i].normal;
-			Norm.Normalize();
-
-			if (Vector3EX::AngleBetweenNormals(Norm, Vector3(0, 1, 0)) <= 0.1f || 
-				Vector3EX::AngleBetweenNormals(Norm, Vector3(0, -1, 0)) <= 0.1f) {
-				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 0, 1)),0.0);
+			bsm::Vec3 Norm = (bsm::Vec3)vertices[i].normal;
+			Norm.normalize();
+			if (bsm::Vec3(XMVector3AngleBetweenNormals(Norm, bsm::Vec3(0, 1, 0))).x <= 0.1f ||
+				bsm::Vec3(XMVector3AngleBetweenNormals(Norm, bsm::Vec3(0, -1, 0))).x <= 0.1f) {
+				vertices[i].tangent = bsm::Vec4(bsm::cross(Norm, bsm::Vec3(0, 0, 1)),0.0);
 			}
 			else {
-				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 1, 0)),0.0);
+				vertices[i].tangent = bsm::Vec4(bsm::cross(Norm, bsm::Vec3(0, 1, 0)),0.0);
 			}
 			vertices[i].tangent.w = 0.0f;
 		}
@@ -847,15 +846,14 @@ namespace basecross {
 
 	void MeshUtill::SetNormalTangent(vector<VertexPositionNormalTangentTextureSkinning>& vertices) {
 		for (size_t i = 0; i < vertices.size(); i++) {
-			Vector3 Norm = vertices[i].normal;
-			Norm.Normalize();
-
-			if (Vector3EX::AngleBetweenNormals(Norm, Vector3(0, 1, 0)) <= 0.1f ||
-				Vector3EX::AngleBetweenNormals(Norm, Vector3(0, -1, 0)) <= 0.1f) {
-				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 0, 1)),0.0);
+			bsm::Vec3 Norm = (bsm::Vec3)vertices[i].normal;
+			Norm.normalize();
+			if (bsm::Vec3(XMVector3AngleBetweenNormals(Norm, bsm::Vec3(0, 1, 0))).x <= 0.1f ||
+				bsm::Vec3(XMVector3AngleBetweenNormals(Norm, bsm::Vec3(0, -1, 0))).x <= 0.1f) {
+				vertices[i].tangent = bsm::Vec4(bsm::cross(Norm, bsm::Vec3(0, 0, 1)),0.0);
 			}
 			else {
-				vertices[i].tangent = Vector4(Vector3EX::Cross(Norm, Vector3(0, 1, 0)),0.0);
+				vertices[i].tangent = bsm::Vec4(bsm::cross(Norm, bsm::Vec3(0, 1, 0)),0.0);
 			}
 			vertices[i].tangent.w = 0.0f;
 		}

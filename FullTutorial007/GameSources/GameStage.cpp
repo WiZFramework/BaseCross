@@ -41,8 +41,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -55,8 +55,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -79,7 +79,7 @@ namespace basecross {
 		//オブジェクトのグループを作成する
 		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 0, 2.0f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
@@ -96,32 +96,32 @@ namespace basecross {
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 10.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 10.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(14.0f, 0.25f, 10.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(14.0f, 0.25f, 10.0f)
 			},
 
 			{
-				Vector3(2.0f, 1.0f, 2.0f),
-				Vector3(0, 0, 0),
-				Vector3(10.0f, 0.5f, 10.0f)
+				Vec3(2.0f, 1.0f, 2.0f),
+				Vec3(0, 0, 0),
+				Vec3(10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(4.0f, 1.0f, 4.0f),
-				Vector3(0, 0, 0),
-				Vector3(-10.0f, 0.5f, 10.0f)
+				Vec3(4.0f, 1.0f, 4.0f),
+				Vec3(0, 0, 0),
+				Vec3(-10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(10.0f, 0.5f, 10.0f),
-				Vector3(-0.5f, 0.0f, -0.5f),
-				Vector3(-10.0f, 0.25f, 10.0f)
+				Vec3(10.0f, 0.5f, 10.0f),
+				Vec3(-0.5f, 0.0f, -0.5f),
+				Vec3(-10.0f, 0.25f, 10.0f)
 			},
 		};
 		//オブジェクトの作成
@@ -135,16 +135,16 @@ namespace basecross {
 	void GameStage::CreateMoveBox() {
 		CreateSharedObjectGroup(L"MoveBox");
 		AddGameObject<MoveBox>(
-			Vector3(5.0f, 0.5f, 5.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.5f, 20.0f)
+			Vec3(5.0f, 0.5f, 5.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, -0.5f, 20.0f)
 			);
 	}
 
 	//ヒットする球体の作成
 	void GameStage::CreateSphere() {
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 20.0f, 0, 20.0f },
 		};
 		//配置オブジェクトの作成
@@ -156,7 +156,7 @@ namespace basecross {
 	//ヒットするカプセルの作成
 	void GameStage::CreateCapsule() {
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 20.0f, 0, 0.0f },
 		};
 		//配置オブジェクトの作成
@@ -171,271 +171,271 @@ namespace basecross {
 		//でこぼこ床のデータの作成
 		AddGameObject<UnevenGroundData>();
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 5.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 5.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 7.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 9.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 13.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 15.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 15.0f)
-			},
-
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 5.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 9.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 11.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 7.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 9.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 11.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 13.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 11.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 13.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 13.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-2.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 15.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-1.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 15.0f)
 			},
 
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 5.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 5.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 7.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 9.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 13.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(0.0f, 0.0f, 15.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(1.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 9.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 11.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 11.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 13.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 13.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-2.0f, 0.0f, 15.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-1.0f, 0.0f, 15.0f)
+			},
+
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 5.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 5.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(2.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(3.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 9.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 11.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 13.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(0.0f, 0.0f, 15.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(1.0f, 0.0f, 15.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 5.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 5.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 7.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 7.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 9.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 9.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 11.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 13.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(2.0f, 0.0f, 15.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(3.0f, 0.0f, 15.0f)
 			},
 
 
@@ -452,9 +452,9 @@ namespace basecross {
 	//固定のモデルの作成
 	void GameStage::CreateStaticModel() {
 		AddGameObject<StaticModel>(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(5.0f, 0.25f, 5.0f)
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(5.0f, 0.25f, 5.0f)
 			);
 
 	}

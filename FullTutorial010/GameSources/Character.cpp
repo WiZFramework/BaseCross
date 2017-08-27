@@ -13,7 +13,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	Sword::Sword(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
+		const Vec3& Scale,
 		const wstring& Tag
 	) :
 		GameObject(StagePtr),
@@ -61,7 +61,7 @@ namespace basecross{
 	//操作
 	void Sword::OnUpdate() {
 		float Val = m_Strength / 100.0f * 2.0f;
-		Color4 Col = Color4(Val, Val, Val, 0);
+		Col4 Col = Col4(Val, Val, Val, 0);
 		//描画コンポーネントの設定
 		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
 		PtrDraw->SetEmissive(Col);
@@ -70,9 +70,9 @@ namespace basecross{
 
 	//構築と破棄
 	TilingPlate::TilingPlate(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Quaternion& Qt,
-		const Vector3& Position,
+		const Vec3& Scale,
+		const Quat& Qt,
+		const Vec3& Position,
 		float UPic,
 		float VPic
 	) :
@@ -137,9 +137,9 @@ namespace basecross{
 
 
 	TilingFixedBox::TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position,
 		float UPic,
 		float VPic
 	) :
@@ -204,7 +204,7 @@ namespace basecross{
 	}
 
 
-	void MultiSpark::InsertSpark(const Vector3& Pos) {
+	void MultiSpark::InsertSpark(const Vec3& Pos) {
 		auto ParticlePtr = InsertParticle(16);
 		ParticlePtr->SetEmitterPos(Pos);
 		ParticlePtr->SetTextureResource(L"SPARK_TX");
@@ -214,15 +214,15 @@ namespace basecross{
 			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.2f - 0.1f;
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.2f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.2f - 0.1f;
-			rParticleSprite.m_LocalScale = Vector3(0.5f, 0.5f, 0.5f);
+			rParticleSprite.m_LocalScale = Vec3(0.5f, 0.5f, 0.5f);
 			//各パーティクルの移動速度を指定
-			rParticleSprite.m_Velocity = Vector3(
+			rParticleSprite.m_Velocity = Vec3(
 				rParticleSprite.m_LocalPos.x * 5.0f,
 				rParticleSprite.m_LocalPos.y * 5.0f,
 				rParticleSprite.m_LocalPos.z * 5.0f
 			);
 			//色の指定
-			rParticleSprite.m_Color = Color4(1.0f, 0.5f, 0.0f, 1.0f);
+			rParticleSprite.m_Color = Col4(1.0f, 0.5f, 0.0f, 1.0f);
 		}
 	}
 
@@ -242,7 +242,7 @@ namespace basecross{
 		SetAddType(true);
 	}
 
-	void MultiFire::InsertFire(const Vector3& Pos) {
+	void MultiFire::InsertFire(const Vec3& Pos) {
 		auto ParticlePtr = InsertParticle(16);
 		ParticlePtr->SetEmitterPos(Pos);
 		ParticlePtr->SetTextureResource(L"FIRE_TX");
@@ -253,13 +253,13 @@ namespace basecross{
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.01f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
 			//各パーティクルの移動速度を指定
-			rParticleSprite.m_Velocity = Vector3(
+			rParticleSprite.m_Velocity = Vec3(
 				rParticleSprite.m_LocalPos.x * 10.0f,
 				rParticleSprite.m_LocalPos.y * 10.0f,
 				rParticleSprite.m_LocalPos.z * 10.0f
 			);
 			//色の指定
-			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			rParticleSprite.m_Color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -270,9 +270,9 @@ namespace basecross{
 	//構築と破棄
 	Enemy::Enemy(const shared_ptr<Stage>& StagePtr,
 		const shared_ptr<StageCellMap>& CellMap,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_CelMap(CellMap),
@@ -373,7 +373,7 @@ namespace basecross{
 				//スパークの放出
 				auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
 				if (PtrSpark) {
-					Vector3 Pos1, Pos2;
+					Vec3 Pos1, Pos2;
 					HitTest::CAPSULE_CAPSULE(SrcColl->GetCapsule(), DestColl->GetCapsule(), Pos1, Pos2);
 					PtrSpark->InsertSpark(Pos1);
 				}
@@ -415,18 +415,18 @@ namespace basecross{
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
 		auto PtrTransform = GetComponent<Transform>();
-		Vector3 Velocity = PtrRigidbody->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		Vec3 Velocity = PtrRigidbody->GetVelocity();
+		if (Velocity.length() > 0.0f) {
+			Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			Quat NowQt = PtrTransform->GetQuaternion();
 			//現在と目標を補間（10分の1）
-			NowQt.Slerp(NowQt, Qt, 0.1f);
+			NowQt = XMQuaternionSlerp(NowQt, Qt, 0.1f);
 			PtrTransform->SetQuaternion(NowQt);
 		}
 	}
@@ -437,18 +437,18 @@ namespace basecross{
 		auto PtrTransform = GetComponent<Transform>();
 		auto Pos = PtrTransform->GetPosition();
 		auto PlayerPos = PlayerPtr->GetComponent<Transform>()->GetPosition();
-		Vector3 Velocity = PlayerPos - Pos;
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		Vec3 Velocity = PlayerPos - Pos;
+		if (Velocity.length() > 0.0f) {
+			Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			Quat NowQt = PtrTransform->GetQuaternion();
 			//現在と目標を補間（5分の1）
-			NowQt.Slerp(NowQt, Qt, 0.2f);
+			NowQt = XMQuaternionSlerp(NowQt, Qt, 0.2f);
 			PtrTransform->SetQuaternion(NowQt);
 		}
 
@@ -486,7 +486,7 @@ namespace basecross{
 			}
 			else {
 				auto EnemyPos = Obj->GetComponent<Transform>()->GetPosition();
-				if (Vector3EX::Length(EnemyPos - PlayerPos) <= 1.8f) {
+				if (length(EnemyPos - PlayerPos) <= 1.8f) {
 					Obj->GetStateMachine()->ChangeState(EnemySwordState::Instance());
 				}
 			}
@@ -577,7 +577,7 @@ namespace basecross{
 	void HPSquareBase::OnCreate() {
 		auto PtrDraw = AddComponent<PCStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_PC_SQUARE");
-		PtrDraw->SetDiffuse(Color4(0, 0, 0, 1));
+		PtrDraw->SetDiffuse(Col4(0, 0, 0, 1));
 
 	}
 
@@ -585,7 +585,7 @@ namespace basecross{
 	//	HPのスクエア
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	HPSquare::HPSquare(const shared_ptr<Stage>& StagePtr, const Color4& Col) :
+	HPSquare::HPSquare(const shared_ptr<Stage>& StagePtr, const Col4& Col) :
 		GameObject(StagePtr),
 		m_Color(Col)
 	{

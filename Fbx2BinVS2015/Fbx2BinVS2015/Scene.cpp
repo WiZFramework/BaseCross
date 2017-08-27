@@ -27,7 +27,7 @@ namespace basecross{
 		}
 	}
 
-	void Scene::ReadFbxFile(const wstring& Dir, const wstring& FileName,size_t MeshIndex, float Scale, const Vector3& Position,
+	void Scene::ReadFbxFile(const wstring& Dir, const wstring& FileName,size_t MeshIndex, float Scale, const Vec3& Position,
 		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
 			GetActiveTypeStage<GameStage>()->ReadFbxFile(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic, WithTangent,

@@ -14,20 +14,20 @@ namespace basecross{
 	struct TestConstants
 	{
 		/// ワールド行列
-		Matrix4X4 World;
+		Mat4x4 World;
 		/// ビュー行列
-		Matrix4X4 View;
+		Mat4x4 View;
 		/// 射影行列
-		Matrix4X4 Projection;
+		Mat4x4 Projection;
 		/// エミッシブ色
-		Color4 Emissive;
+		Col4 Emissive;
 		/// デフューズ色
-		Color4 Diffuse;
+		Col4 Diffuse;
 		/// ライイト方向
-		Vector4 LightDir;
+		Vec4 LightDir;
 		TestConstants() {
 			memset(this, 0, sizeof(TestConstants));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 	//コンスタントバッファ用マクロ

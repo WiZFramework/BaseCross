@@ -19,7 +19,7 @@ namespace basecross{
 		virtual ~MultiSpark();
 		//初期化
 		virtual void OnCreate() override;
-		void InsertSpark(const Vector3& Pos);
+		void InsertSpark(const Vec3& Pos);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ namespace basecross{
 		virtual ~MultiFire();
 		//初期化
 		virtual void OnCreate() override;
-		void InsertFire(const Vector3& Pos);
+		void InsertFire(const Vec3& Pos);
 	};
 
 
@@ -42,8 +42,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class TraceSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector3 m_StartPos;
+		Vec2 m_StartScale;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		//バックアップ頂点データ
 		vector<VertexPositionColor> m_BackupVertices;
@@ -58,7 +58,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-			const Vector2& StartScale, const Vector3& StartPos);
+			const Vec2& StartScale, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -87,8 +87,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class WallSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector2 m_StartPos;
+		Vec2 m_StartScale;
+		Vec2 m_StartPos;
 		wstring m_TextureKey;
 	public:
 		//--------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		WallSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-			const Vector2& StartScale, const Vector2& StartPos);
+			const Vec2& StartScale, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -132,8 +132,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class ScrollSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector2 m_StartPos;
+		Vec2 m_StartScale;
+		Vec2 m_StartPos;
 		wstring m_TextureKey;
 		float m_TotalTime;
 		//バックアップ頂点データ
@@ -150,7 +150,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		ScrollSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-			const Vector2& StartScale,const Vector2& StartPos);
+			const Vec2& StartScale,const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -179,9 +179,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class RollingCube : public GameObject {
 		bool m_Trace;
-		Vector3 m_StartScale;
-		Quaternion m_StartQt;
-		Vector3 m_StartPos;
+		Vec3 m_StartScale;
+		Quat m_StartQt;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		//バックアップ頂点データ
 		vector<VertexPositionColor> m_BackupVertices;
@@ -199,7 +199,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		RollingCube(const shared_ptr<Stage>& StagePtr,bool Trace,
-			const Vector3& StartScale, const Quaternion& StartQt,const Vector3& StartPos);
+			const Vec3& StartScale, const Quat& StartQt,const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -235,9 +235,9 @@ namespace basecross{
 	class RollingWallCube : public GameObject {
 		wstring m_TextureKey;
 		bool m_Trace;
-		Vector3 m_StartScale;
-		Quaternion m_StartQt;
-		Vector3 m_StartPos;
+		Vec3 m_StartScale;
+		Quat m_StartQt;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		shared_ptr<MeshResource> m_MeshResource;
 
@@ -256,7 +256,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		RollingWallCube(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-			const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos);
+			const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -291,9 +291,9 @@ namespace basecross{
 	///	白い立方体
 	//--------------------------------------------------------------------------------------
 	class WhiteCube : public GameObject {
-		Vector3 m_StartScale;
-		Quaternion m_StartQt;
-		Vector3 m_StartPos;
+		Vec3 m_StartScale;
+		Quat m_StartQt;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		shared_ptr<MeshResource> m_MeshResource;
 	public:
@@ -307,7 +307,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		WhiteCube(const shared_ptr<Stage>& StagePtr,
-			const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos);
+			const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -339,9 +339,9 @@ namespace basecross{
 	class TransSphere : public GameObject {
 		wstring m_TextureKey;
 		bool m_Trace;
-		Vector3 m_StartScale;
-		Quaternion m_StartQt;
-		Vector3 m_StartPos;
+		Vec3 m_StartScale;
+		Quat m_StartQt;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		//バックアップ頂点データ
 		vector<VertexPositionColorTexture> m_BackupVertices;
@@ -362,7 +362,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		TransSphere(const shared_ptr<Stage>& StagePtr,const wstring& TextureKey,bool Trace,
-			const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos);
+			const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -393,11 +393,11 @@ namespace basecross{
 	class SeekObject : public GameObject {
 		//ステートマシーン
 		unique_ptr< StateMachine<SeekObject> >  m_StateMachine;
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		float m_StateChangeSize;
 	public:
 		//構築と破棄
-		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~SeekObject();
 		//初期化
 		virtual void OnCreate() override;
@@ -453,6 +453,24 @@ namespace basecross{
 		shared_ptr<MeshResource> m_SquareMeshResource;
 		//背番号
 		size_t m_Number;
+
+		Quat Billboard(const Vec3& Line) {
+			Vec3 Temp = Line;
+			Mat4x4 RotMatrix;
+			Vec3 DefUp(0, 1.0f, 0);
+			Vec2 TempVec2(Temp.x, Temp.z);
+			if (TempVec2.length() < 0.1f) {
+				DefUp = Vec3(0, 0, 1.0f);
+			}
+			Temp.normalize();
+			RotMatrix = XMMatrixLookAtLH(Vec3(0, 0, 0), Temp, DefUp);
+			RotMatrix.inverse();
+			Quat Qt;
+			Qt = RotMatrix.quatInMatrix();
+			Qt.normalize();
+			return Qt;
+		}
+
 	public:
 		//構築と破棄
 		NumberSquare(const shared_ptr<Stage>& StagePtr, 
@@ -473,15 +491,15 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		FixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~FixedBox();
 		//初期化
@@ -494,15 +512,15 @@ namespace basecross{
 	//	用途: 上下移動するボックス
 	//--------------------------------------------------------------------------------------
 	class MoveBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		MoveBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~MoveBox();
 		//初期化
@@ -515,10 +533,10 @@ namespace basecross{
 	//	用途: 障害物球
 	//--------------------------------------------------------------------------------------
 	class SphereObject : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//構築と破棄
-		SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		SphereObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~SphereObject();
 		//初期化
 		virtual void OnCreate() override;
@@ -550,15 +568,15 @@ namespace basecross{
 	//	用途: でこぼこ床
 	//--------------------------------------------------------------------------------------
 	class UnevenGround : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		UnevenGround(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position);
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position);
 		virtual ~UnevenGround();
 		//初期化
 		virtual void OnCreate() override;

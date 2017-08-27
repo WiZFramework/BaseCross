@@ -863,7 +863,7 @@ namespace basecross {
 
 
 	//通常描画のクリア
-	void DeviceResources::ClearDefaultViews(const Color4& col) {
+	void DeviceResources::ClearDefaultViews(const bsm::Col4& col) {
 		ThrowIfFailed(pImpl->m_CommandAllocator->Reset(),
 			L"コマンドアロケータのリセットに失敗しました",
 			L"m_CommandAllocator->Reset()",
@@ -1254,7 +1254,7 @@ namespace basecross {
 	}
 
 	//レンダリングターゲットをクリアする
-	void ShadowMapRenderTarget::ClearViews(const Color4& col) {
+	void ShadowMapRenderTarget::ClearViews(const bsm::Col4& col) {
 		//シャドウマップはcolは未使用
 		auto Dev = App::GetApp()->GetDeviceResources();
 		CommandList::Reset(pImpl->m_CommandList);

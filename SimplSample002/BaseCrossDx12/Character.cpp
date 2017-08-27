@@ -94,9 +94,9 @@ namespace basecross {
 	void TriangleSprite::OnCreate() {
 		//頂点を作成するための配列
 		vector<VertexPositionColor> vertices = {
-			{ VertexPositionColor(Vector3(0.0f, 0.5f, 0.0f), Color4(1.0f,0.0f,0.0f,1.0f)) },
-			{ VertexPositionColor(Vector3(0.5f, -0.5f, 0.0f), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(-0.5f, -0.5f, 0.0f), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(0.0f, 0.5f, 0.0f), Col4(1.0f,0.0f,0.0f,1.0f)) },
+			{ VertexPositionColor(Vec3(0.5f, -0.5f, 0.0f), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-0.5f, -0.5f, 0.0f), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
 		};
 		m_TriangleMesh = MeshResource::CreateMeshResource(vertices, false);
 
@@ -116,9 +116,9 @@ namespace basecross {
 
 	void TriangleSprite::UpdateConstantBuffer() {
 		//コンスタントバッファの準備
-		m_SpriteConstantBuffer.Emissive = Color4(0.0f, 0.0f, 0, 1.0f);
-		Matrix4X4 mat;
-		mat.TranslationFromVector(m_Pos);
+		m_SpriteConstantBuffer.Emissive = Col4(0.0f, 0.0f, 0, 1.0f);
+		Mat4x4 mat;
+		mat.translation(m_Pos);
 		m_SpriteConstantBuffer.World = mat;
 		//更新
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SpriteConstantBuffer),

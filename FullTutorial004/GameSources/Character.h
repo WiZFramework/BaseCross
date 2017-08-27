@@ -13,7 +13,7 @@ namespace basecross{
 	///	敵１
 	//--------------------------------------------------------------------------------------
 	class Enemy1 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy1>>  m_StateMachine;
 		//NearとFarを切り替える値
@@ -26,7 +26,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy1(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos);
+		Enemy1(const shared_ptr<Stage>& StagePtr,const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -94,7 +94,7 @@ namespace basecross{
 	///	敵2
 	//--------------------------------------------------------------------------------------
 	class Enemy2 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy2>>  m_StateMachine;
 		//longとmediumを切り替える値
@@ -110,7 +110,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy2(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Enemy2(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -205,7 +205,7 @@ namespace basecross{
 	///	敵３
 	//--------------------------------------------------------------------------------------
 	class Enemy3 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy3>>  m_StateMachine;
 		//defaultとnearを切り替える値
@@ -219,7 +219,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy3(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Enemy3(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

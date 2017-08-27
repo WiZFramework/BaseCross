@@ -43,13 +43,14 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
-		Matrix4X4 WorldMat;
-		WorldMat.DefTransformation(
-			Vector3(200.0f, 200.0f, 1.0f),
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
+		Mat4x4 WorldMat;
+		WorldMat.affineTransformation(
+			Vec3(200.0f, 200.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
 			Qt,
-			Vector3(0.0f, 0.0f, 0.0f)
+			Vec3(0.0f, 0.0f, 0.0f)
 		);
 		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
@@ -90,7 +91,7 @@ namespace basecross {
 		}
 	}
 
-	void GameStage::ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vector3& Position,
+	void GameStage::ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vec3& Position,
 		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
 			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");

@@ -141,7 +141,7 @@ namespace basecross {
 		@return	メッシュとワールド行列の間を補完する行列
 		*/
 		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetMeshToTransformMatrix() const;
+		const bsm::Mat4x4& GetMeshToTransformMatrix() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュとワールド行列の間を補完する行列の取得<br />
@@ -151,7 +151,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetMeshToTransformMatrix(const Matrix4X4& Mat);
+		void SetMeshToTransformMatrix(const bsm::Mat4x4& Mat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	各オブジェクトごとにボーンを所持しておくポインタ<br />
@@ -160,7 +160,7 @@ namespace basecross {
 		@return	ボーン行列の配列のポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const { return nullptr; }
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const { return nullptr; }
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -235,7 +235,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes);
+		void AddParticle(float ToCaneraLength, const bsm::Mat4x4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理
@@ -365,7 +365,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -373,14 +373,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の取得
 		@return	デフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bsm::Col4 GetDiffuse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の設定
@@ -388,7 +388,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetDiffuse(const bsm::Col4& col);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -683,7 +683,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -691,14 +691,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の取得
 		@return	デフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bsm::Col4 GetDiffuse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の設定
@@ -706,14 +706,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetDiffuse(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ビュー行列の取得
 		@return	ビュー行列
 		*/
 		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetViewMatrix() const;
+		const bsm::Mat4x4& GetViewMatrix() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ビュー行列の設定
@@ -721,14 +721,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetViewMatrix(const Matrix4X4& mat);
+		void SetViewMatrix(const bsm::Mat4x4& mat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	射影行列の取得
 		@return	射影行列
 		*/
 		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetProjMatrix() const;
+		const bsm::Mat4x4& GetProjMatrix() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	射影行列の設定
@@ -736,7 +736,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetProjMatrix(const Matrix4X4& mat);
+		void SetProjMatrix(const bsm::Mat4x4& mat);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1358,7 +1358,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -1366,7 +1366,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	透明かどうかの取得

@@ -24,11 +24,11 @@ namespace basecross{
 	//カスタム描画コンスタントバッファ構造体
 	struct CustomDrawConstantBuffer
 	{
-		Matrix4X4 World[3];
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Vector4 LightDir;
-		Vector4 Param;	//汎用パラメータ
+		Mat4x4 World[3];
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Vec4 LightDir;
+		Vec4 Param;	//汎用パラメータ
 		CustomDrawConstantBuffer() {
 			memset(this, 0, sizeof(CustomDrawConstantBuffer));
 		};

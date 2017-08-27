@@ -33,13 +33,13 @@ namespace basecross {
 		void AddText(const wstring& str);
 
 
-		const Color4& GetFontColor() const;
-		void SetFontColor(const Color4& Col);
+		const bsm::Col4& GetFontColor() const;
+		void SetFontColor(const bsm::Col4& Col);
 		const wstring& GetFontName() const;
 		float GetFontSize() const;
 
-		const Color4& GetBackColor() const;
-		void SetBackColor(const Color4& Col);
+		const bsm::Col4& GetBackColor() const;
+		void SetBackColor(const bsm::Col4& Col);
 
 		Point2D<float> GetBackTextMargin() const;
 		void SetBackTextMargin(Point2D<float> p);

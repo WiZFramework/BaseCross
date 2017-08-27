@@ -10,7 +10,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	///	ãÖ
 	//--------------------------------------------------------------------------------------
-	Ball::Ball(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool isone) :
+	Ball::Ball(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool isone) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		isOne(isone)
@@ -115,9 +115,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//ç\ízÇ∆îjä¸
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),

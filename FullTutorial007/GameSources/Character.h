@@ -15,11 +15,11 @@ namespace basecross{
 	class SeekObject : public GameObject {
 		//ステートマシーン
 		unique_ptr< StateMachine<SeekObject> >  m_StateMachine;
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		float m_StateChangeSize;
 	public:
 		//構築と破棄
-		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~SeekObject();
 		//初期化
 		virtual void OnCreate() override;
@@ -68,15 +68,15 @@ namespace basecross{
 	//	用途: 固定のモデル
 	//--------------------------------------------------------------------------------------
 	class StaticModel : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		StaticModel(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~StaticModel();
 		//初期化
@@ -91,15 +91,15 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		FixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~FixedBox();
 		//初期化
@@ -112,15 +112,15 @@ namespace basecross{
 	//	用途: 上下移動するボックス
 	//--------------------------------------------------------------------------------------
 	class MoveBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		MoveBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~MoveBox();
 		//初期化
@@ -133,10 +133,10 @@ namespace basecross{
 	//	用途: 障害物球
 	//--------------------------------------------------------------------------------------
 	class SphereObject : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//構築と破棄
-		SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		SphereObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~SphereObject();
 		//初期化
 		virtual void OnCreate() override;
@@ -148,10 +148,10 @@ namespace basecross{
 	//	用途: 障害物カプセル
 	//--------------------------------------------------------------------------------------
 	class CapsuleObject : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//構築と破棄
-		CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~CapsuleObject();
 		//初期化
 		virtual void OnCreate() override;
@@ -183,15 +183,15 @@ namespace basecross{
 	//	用途: でこぼこ床
 	//--------------------------------------------------------------------------------------
 	class UnevenGround : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		UnevenGround(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position);
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position);
 		virtual ~UnevenGround();
 		//初期化
 		virtual void OnCreate() override;

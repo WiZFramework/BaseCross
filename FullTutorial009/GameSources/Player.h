@@ -16,7 +16,7 @@ namespace basecross{
 		//構築と破棄
 		AttackBall(const shared_ptr<Stage>& StagePtr);
 		virtual ~AttackBall();
-		void Weakup(const Vector3& Position, const Vector3& Velocity);
+		void Weakup(const Vec3& Position, const Vec3& Velocity);
 		//初期化
 		virtual void OnCreate() override;
 		//操作
@@ -42,7 +42,7 @@ namespace basecross{
 		PlayerAction m_PlayerAction;
 		//階層化ステートマシーン
 		unique_ptr<LayeredStateMachine<Player>>  m_StateMachine;
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Player(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Player(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

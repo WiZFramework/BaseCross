@@ -12,7 +12,7 @@ namespace basecross{
 	///	PC球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PcSphere::PcSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	PcSphere::PcSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -22,9 +22,9 @@ namespace basecross{
 	//初期化
 	void PcSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -38,7 +38,7 @@ namespace basecross{
 		for (size_t i = 0; i < vertices.size(); i++) {
 			VertexPositionColor new_v;
 			new_v.position = vertices[i].position;
-			new_v.color = Color4(
+			new_v.color = Col4(
 				new_v.position.x * 2.0f, 
 				new_v.position.y * 2.0f, 
 				new_v.position.z * 2.0f, 
@@ -62,7 +62,7 @@ namespace basecross{
 	///	PT球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PtSphere::PtSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	PtSphere::PtSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -72,9 +72,9 @@ namespace basecross{
 	//初期化
 	void PtSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -108,7 +108,7 @@ namespace basecross{
 	///	PCT球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PctSphere::PctSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	PctSphere::PctSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -118,9 +118,9 @@ namespace basecross{
 	//初期化
 	void PctSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -135,7 +135,7 @@ namespace basecross{
 			VertexPositionColorTexture new_v;
 			new_v.position = vertices[i].position;
 			new_v.textureCoordinate = vertices[i].textureCoordinate;
-			new_v.color = Color4(
+			new_v.color = Col4(
 				new_v.position.x * 2.0f,
 				new_v.position.y * 2.0f,
 				new_v.position.z * 2.0f,
@@ -161,7 +161,7 @@ namespace basecross{
 	///	Pnt球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PntSphere::PntSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TextureUse) :
+	PntSphere::PntSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TextureUse) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_TextureUse(TextureUse)
@@ -172,9 +172,9 @@ namespace basecross{
 	//初期化
 	void PntSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -195,7 +195,7 @@ namespace basecross{
 	///	Pntスペキュラー球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	PntSpSphere::PntSpSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TextureUse) :
+	PntSpSphere::PntSpSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TextureUse) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_TextureUse(TextureUse)
@@ -205,9 +205,9 @@ namespace basecross{
 	//初期化
 	void PntSpSphere::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 
@@ -218,7 +218,7 @@ namespace basecross{
 		//描画コンポーネント
 		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetSpecularColorAndPower(Color4(1.0f, 1.0f, 1.0f, 1.0f));
+		PtrDraw->SetSpecularColorAndPower(Col4(1.0f, 1.0f, 1.0f, 1.0f));
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		if (m_TextureUse) {
 			PtrDraw->SetTextureResource(L"SKY_TX");
@@ -230,7 +230,7 @@ namespace basecross{
 	///	Staticキャラ
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	StaticChara::StaticChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TamgentUse) :
+	StaticChara::StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_TamgentUse(TamgentUse)
@@ -245,11 +245,12 @@ namespace basecross{
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(m_StartPos);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, 0.0f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
 		);
 
 		//影をつける（シャドウマップを描画する）
@@ -282,7 +283,7 @@ namespace basecross{
 	///	Boneキャラ
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	BoneChara::BoneChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TamgentUse) :
+	BoneChara::BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_TamgentUse(TamgentUse)
@@ -298,11 +299,12 @@ namespace basecross{
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(m_StartPos);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, 0.0f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
 		);
 
 		//影をつける（シャドウマップを描画する）

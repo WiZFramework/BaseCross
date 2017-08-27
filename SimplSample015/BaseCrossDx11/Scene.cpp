@@ -22,18 +22,18 @@ namespace basecross {
 		m_CameraArmLen(5.0f),
 		m_LightDir(0.5f, -1.0f, 0.5f, 1.0f)
 	{
-		m_LightDir.Normalize();
+		m_LightDir.normalize();
 	}
 
-	void Scene::GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const {
-		View.LookAtLH(m_CamerEye, m_CamerAt, m_CamerUp);
+	void Scene::GetViewProjMatrix(Mat4x4& View, Mat4x4& Proj)const {
+		View = XMMatrixLookAtLH(m_CamerEye, m_CamerAt, m_CamerUp);
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
 
 	}
 
-	void Scene::GetLightDir(Vector4& LightDir)const {
+	void Scene::GetLightDir(Vec4& LightDir)const {
 		LightDir = m_LightDir;
 	}
 
@@ -47,48 +47,48 @@ namespace basecross {
 
 		wstring strTexture = DataDir + L"sky.jpg";
 		//平面の作成
-		Quaternion(Vector3(1.0f, 0, 0), XM_PIDIV2);
+		Quat(Vec3(1.0f, 0, 0), XM_PIDIV2);
 		m_SquareObject = ObjectFactory::Create<SquareObject>(
 			GetThis<Scene>(),
 			strTexture,
-			Vector3(50.0f, 50.0f, 1.0f),
-			Quaternion(Vector3(1.0f, 0, 0), XM_PIDIV2),
-			Vector3(0.0f, 0.0f, 0.0f)
+			Vec3(50.0f, 50.0f, 1.0f),
+			Quat(Vec3(1.0f, 0, 0), XM_PIDIV2),
+			Vec3(0.0f, 0.0f, 0.0f)
 			);
 
 		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(5.0f, 0.5f, 5.0f),
-				Quaternion(),
-				Vector3(5.0f, 0.25f, 0.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Quat(),
+				Vec3(5.0f, 0.25f, 0.0f)
 				)
 		);
 
 		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(3.0f, 1.0f, 3.0f),
-				Quaternion(),
-				Vector3(5.0f, 0.5f, 0.0f)
+				Vec3(3.0f, 1.0f, 3.0f),
+				Quat(),
+				Vec3(5.0f, 0.5f, 0.0f)
 				)
 		);
 
 		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(3.0f, 1.0f, 3.0f),
-				Quaternion(),
-				Vector3(-3.5f, 0.5f, 0.0f)
+				Vec3(3.0f, 1.0f, 3.0f),
+				Quat(),
+				Vec3(-3.5f, 0.5f, 0.0f)
 				)
 		);
 
 		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(5.0f, 0.5f, 5.0f),
-				Quaternion(Vector3(0, 0, 1), -XM_PIDIV4),
-				Vector3(-5.0f, 1.0f, 0.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Quat(Vec3(0, 0, 1), -XM_PIDIV4),
+				Vec3(-5.0f, 1.0f, 0.0f)
 				)
 		);
 
@@ -99,9 +99,9 @@ namespace basecross {
 		m_BoxVec.push_back(
 			ObjectFactory::Create<MoveBoxObject>(
 				GetThis<Scene>(), strTexture, false,
-				Vector3(0.25f, 0.5f, 0.5f),
-				Quaternion(),
-				Vector3(0.0f, 0.25f, 5.0f)
+				Vec3(0.25f, 0.5f, 0.5f),
+				Quat(),
+				Vec3(0.0f, 0.25f, 5.0f)
 				)
 		);
 
@@ -110,7 +110,7 @@ namespace basecross {
 		//球の作成
 		m_SphereObject = ObjectFactory::Create<SphereObject>(
 			GetThis<Scene>(),
-			18, strTexture2, true, Vector3(0.0f, 0.125f, 0.0f));
+			18, strTexture2, true, Vec3(0.0f, 0.125f, 0.0f));
 
 
 		//PNT描画オブジェクトの作成
@@ -118,8 +118,8 @@ namespace basecross {
 
 		strTexture = DataDir + L"trace.png";
 		m_WallSprite = ObjectFactory::Create<WrappedSprite>(strTexture, true,
-			Vector2(160, 160),
-			Vector2(-480, 260),
+			Vec2(160, 160),
+			Vec2(-480, 260),
 			4,4);
 
 
@@ -156,7 +156,7 @@ namespace basecross {
 				//カメラ位置を引く
 				m_CameraArmLen += 0.1f;
 				if (m_CameraArmLen >= 50.0f) {
-					m_CameraArmLen = m_CameraArmLen;
+					m_CameraArmLen = 50.0f;
 				}
 			}
 			//Dパッド上
@@ -185,8 +185,8 @@ namespace basecross {
 			}
 
 			m_CamerAt = GetSphereObject()->GetPosition();
-			Vector3 CameraLocalEye =
-				Vector3(
+			Vec3 CameraLocalEye =
+				Vec3(
 					sin(m_CameraXZRad) * m_CameraArmLen * sin(m_CameraYRad),
 					cos(m_CameraYRad) * m_CameraArmLen,
 					-cos(m_CameraXZRad) * m_CameraArmLen * sin(m_CameraYRad)
@@ -197,7 +197,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();

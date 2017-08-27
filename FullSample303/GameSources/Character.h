@@ -34,7 +34,7 @@ namespace basecross{
 		@return	追いかける位置との距離
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const Vector3& TargetPos);
+		float Execute(const Vec3& TargetPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -53,13 +53,13 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class SeekObject : public GameObject {
 		shared_ptr< StateMachine<SeekObject> >  m_StateMachine;	//ステートマシーン
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		float m_StateChangeSize;
 		//進行方向を向くようにする
 		void RotToHead();
 	public:
 		//構築と破棄
-		SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~SeekObject();
 		//初期化
 		virtual void OnCreate() override;

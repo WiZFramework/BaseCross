@@ -317,7 +317,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -325,14 +325,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の取得
 		@return	デフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bsm::Col4 GetDiffuse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の設定
@@ -340,14 +340,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetDiffuse(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラー色の取得
 		@return	スペキュラー色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetSpecularColor() const;
+		bsm::Col4 GetSpecularColor() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラー色の設定
@@ -355,7 +355,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetSpecularColor(const Color4& col);
+		void SetSpecularColor(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラー色をなくす
@@ -384,7 +384,7 @@ namespace basecross {
 		@return	スペキュラーとパワー色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetSpecularColorAndPower() const;
+		bsm::Col4 GetSpecularColorAndPower() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラーとパワー色の設定
@@ -392,7 +392,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetSpecularColorAndPower(const Color4& col);
+		void SetSpecularColorAndPower(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	アルファ値の取得
@@ -414,7 +414,7 @@ namespace basecross {
 		@return	カラーとアルファ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetColorAndAlpha() const;
+		bsm::Col4 GetColorAndAlpha() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カラーとアルファ色の設定
@@ -422,7 +422,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetColorAndAlpha(const Color4& col);
+		void SetColorAndAlpha(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ライティングするかどうか
@@ -502,7 +502,7 @@ namespace basecross {
 		@return	アンビエントライト色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetAmbientLightColor()const;
+		bsm::Col4 GetAmbientLightColor()const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	アンビエントライト色の設定
@@ -510,7 +510,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetAmbientLightColor(const Color4& value);
+		void SetAmbientLightColor(const bsm::Col4& value);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	インデックスが有効かどうかチェックする（無効なら例外）
@@ -558,7 +558,7 @@ namespace basecross {
 		@return	指定のライトの向き
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetLightDirection(int whichLight) const;
+		bsm::Vec3 GetLightDirection(int whichLight) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定のライトの向きを設定する
@@ -567,7 +567,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLightDirection(int whichLight,const Vector3& value);
+		void SetLightDirection(int whichLight,const bsm::Vec3& value);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定のライトのデフューズ色を得る
@@ -575,7 +575,7 @@ namespace basecross {
 		@return	指定のライトのデフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetLightDiffuseColor(int whichLight) const;
+		bsm::Col4 GetLightDiffuseColor(int whichLight) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定のライトのデフューズ色を設定する
@@ -584,7 +584,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLightDiffuseColor(int whichLight,const Color4& value);
+		void SetLightDiffuseColor(int whichLight,const bsm::Col4& value);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定のライトのスペキュラー色を得る
@@ -592,7 +592,7 @@ namespace basecross {
 		@return	指定のライトのスペキュラー色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetLightSpecularColor(int whichLight) const;
+		bsm::Col4 GetLightSpecularColor(int whichLight) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定のライトのスペキュラー色を設定する
@@ -601,7 +601,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLightSpecularColor(int whichLight, const Color4& value);
+		void SetLightSpecularColor(int whichLight, const bsm::Col4& value);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	フォグを使うかどうか
@@ -660,7 +660,7 @@ namespace basecross {
 		@return	フォグ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetFogColor() const;
+		bsm::Col4 GetFogColor() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	フォグ色の設定
@@ -668,7 +668,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetFogColor(const Color4& col);
+		void SetFogColor(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ライティングなしのスタティックメッシュの描画
@@ -1148,7 +1148,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out);
+		void InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	アニメーションを追加する
@@ -1192,7 +1192,7 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理
@@ -1455,7 +1455,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out);
+		void InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	アニメーションを追加する
@@ -1499,7 +1499,7 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理

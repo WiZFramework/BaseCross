@@ -13,9 +13,9 @@ namespace basecross{
 	//	用途: タイリングするプレート
 	//--------------------------------------------------------------------------------------
 	class TilingPlate : public GameObject {
-		Vector3 m_Scale;
-		Quaternion m_Qt;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Quat m_Qt;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
@@ -31,9 +31,9 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class TilingFixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
@@ -51,7 +51,7 @@ namespace basecross{
 	///	敵１
 	//--------------------------------------------------------------------------------------
 	class Enemy1 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy1>>  m_StateMachine;
 		//NearとFarを切り替える値
@@ -132,7 +132,7 @@ namespace basecross{
 	///	敵2
 	//--------------------------------------------------------------------------------------
 	class Enemy2 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy2>>  m_StateMachine;
 		//longとmediumを切り替える値
@@ -243,7 +243,7 @@ namespace basecross{
 	///	敵３
 	//--------------------------------------------------------------------------------------
 	class Enemy3 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy3>>  m_StateMachine;
 		//defaultとnearを切り替える値

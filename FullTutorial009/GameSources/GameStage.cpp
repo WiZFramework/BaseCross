@@ -39,8 +39,8 @@ namespace basecross {
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
 
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -53,8 +53,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(20.0f, 40.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 20.0f);
@@ -74,7 +74,7 @@ namespace basecross {
 	void GameStage::CreateStageCellMap() {
 		auto Group = CreateSharedObjectGroup(L"CellMap");
 		float  PieceSize = 1.0f;
-		auto Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);
+		auto Ptr = AddGameObject<StageCellMap>(Vec3(-10.0f, 0, 4.0f),PieceSize,20,7);
 		//セルマップの区画を表示する場合は以下の設定
 		Ptr->SetDrawActive(true);
 		//さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -83,7 +83,7 @@ namespace basecross {
 		//グループに追加
 		Group->IntoGroup(Ptr);
 
-		Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
+		Ptr = AddGameObject<StageCellMap>(Vec3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
 		//セルマップの区画を表示する場合は以下の設定
 		Ptr->SetDrawActive(true);
 		//さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -96,7 +96,7 @@ namespace basecross {
 		//動的にセルマップを変更する敵用
 		auto Group2 = CreateSharedObjectGroup(L"CellMap2");
 
-		Ptr = AddGameObject<StageCellMap>(Vector3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
+		Ptr = AddGameObject<StageCellMap>(Vec3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
 		//セルマップの区画を表示する場合は以下の設定
 		Ptr->SetDrawActive(true);
 		//さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -113,131 +113,131 @@ namespace basecross {
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(1.0f, 0.5f, 40.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(9.5f, 0.25f, 20.0f)
+				Vec3(1.0f, 0.5f, 40.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(9.5f, 0.25f, 20.0f)
 			},
 			{
-				Vector3(1.0f, 0.5f, 40.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-9.5f, 0.25f, 20.0f)
-			},
-
-			{
-				Vector3(20.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 0.5f)
+				Vec3(1.0f, 0.5f, 40.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-9.5f, 0.25f, 20.0f)
 			},
 
 			{
-				Vector3(20.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 39.5f)
-			},
-
-			///////
-
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-8.0f, 0.25f, 6.5f)
+				Vec3(20.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 0.5f)
 			},
 
 			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-4.5f, 0.25f, 7.0f)
-			},
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 7.5f)
-			},
-
-			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(4.5f, 0.25f, 7.0f)
-			},
-
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(8.0f, 0.25f, 6.5f)
-			},
-
-
-			///////
-
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-8.0f, 0.25f,18.5f)
-			},
-
-			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-4.5f, 0.25f, 19.0f)
-			},
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 19.5f)
-			},
-
-			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(4.5f, 0.25f, 19.0f)
-			},
-
-
-			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(8.0f, 0.25f, 18.5f)
+				Vec3(20.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 39.5f)
 			},
 
 			///////
 
 
 			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-8.0f, 0.25f, 30.5f)
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-8.0f, 0.25f, 6.5f)
 			},
 
 			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-4.5f, 0.25f, 31.0f)
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-4.5f, 0.25f, 7.0f)
 			},
 
 			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(0.0f, 0.25f, 31.5f)
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 7.5f)
 			},
 
 			{
-				Vector3(1.0f, 0.5f, 2.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(4.5f, 0.25f, 31.0f)
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(4.5f, 0.25f, 7.0f)
 			},
 
 
 			{
-				Vector3(2.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(8.0f, 0.25f, 30.5f)
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(8.0f, 0.25f, 6.5f)
+			},
+
+
+			///////
+
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-8.0f, 0.25f,18.5f)
+			},
+
+			{
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-4.5f, 0.25f, 19.0f)
+			},
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 19.5f)
+			},
+
+			{
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(4.5f, 0.25f, 19.0f)
+			},
+
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(8.0f, 0.25f, 18.5f)
+			},
+
+			///////
+
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-8.0f, 0.25f, 30.5f)
+			},
+
+			{
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-4.5f, 0.25f, 31.0f)
+			},
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 0.25f, 31.5f)
+			},
+
+			{
+				Vec3(1.0f, 0.5f, 2.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(4.5f, 0.25f, 31.0f)
+			},
+
+
+			{
+				Vec3(2.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(8.0f, 0.25f, 30.5f)
 			},
 		};
 
@@ -303,7 +303,7 @@ namespace basecross {
 			AddGameObject<AttackBall>();
 		}
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>(Vector3(0.0f, 0.125f, 2.0f));
+		auto PlayerPtr = AddGameObject<Player>(Vec3(0.0f, 0.125f, 2.0f));
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
 	}
@@ -311,43 +311,43 @@ namespace basecross {
 	//敵の作成
 	void GameStage::CreateEnemy() {
 		auto MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap1");
-		vector< vector<Vector3> > Vec1 = {
+		vector< vector<Vec3> > vec1 = {
 			{
-				Vector3(0.25f, 0.25f, 0.25f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-2.5f, 0.125f, 9.0f)
+				Vec3(0.25f, 0.25f, 0.25f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-2.5f, 0.125f, 9.0f)
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec1) {
+		for (auto v : vec1) {
 			AddGameObject<Enemy>(MapPtr,v[0], v[1], v[2]);
 		}
 
 		MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap2");
-		vector< vector<Vector3> > Vec2 = {
+		vector< vector<Vec3> > vec2 = {
 			{
-				Vector3(0.25f, 0.25f, 0.25f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(4.5f, 0.125f, 21.0f)
+				Vec3(0.25f, 0.25f, 0.25f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(4.5f, 0.125f, 21.0f)
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec2) {
+		for (auto v : vec2) {
 			AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
 		}
 
 		//3つ目の敵
 
 		MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap3");
-		vector< vector<Vector3> > Vec3 = {
+		vector< vector<Vec3> > vec3 = {
 			{
-				Vector3(0.25f, 0.25f, 0.25f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(6.5f, 0.125f, 33.0f)
+				Vec3(0.25f, 0.25f, 0.25f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(6.5f, 0.125f, 33.0f)
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec3) {
+		for (auto v : vec3) {
 			//セルマップを変更する敵
 			AddGameObject<TestCellChangeEnemy>(MapPtr, v[0], v[1], v[2]);
 		}

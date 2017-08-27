@@ -14,8 +14,8 @@ namespace basecross {
 	class TriangleSprite : public ObjectInterface, public ShapeInterface {
 		///メッシュ
 		shared_ptr<MeshResource> m_TriangleMesh;
-		Vector3 m_Pos;					///<現在の位置
-		Vector3 m_MoveSpan;				///<位置変更値
+		Vec3 m_Pos;					///<現在の位置
+		Vec3 m_MoveSpan;				///<位置変更値
 		//コンスタントバッファ更新
 		void UpdateConstantBuffer();
 
@@ -31,8 +31,8 @@ namespace basecross {
 		///コンスタントバッファ
 		struct SpriteConstantBuffer
 		{
-			Matrix4X4 World;
-			Color4 Emissive;
+			Mat4x4 World;
+			Col4 Emissive;
 			SpriteConstantBuffer() {
 				memset(this, 0, sizeof(SpriteConstantBuffer));
 			};

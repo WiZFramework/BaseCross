@@ -23,9 +23,9 @@ namespace basecross {
 	void TriangleSprite::OnCreate() {
 		//頂点を作成するための配列
 		vector<VertexPositionColor> vertices = {
-			{ VertexPositionColor(Vector3(0.0f, 0.5f, 0.0f), Color4(1.0f,0.0f,0.0f,1.0f)) },
-			{ VertexPositionColor(Vector3(0.5f, -0.5f, 0.0f), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(-0.5f, -0.5f, 0.0f), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(0.0f, 0.5f, 0.0f), Col4(1.0f,0.0f,0.0f,1.0f)) },
+			{ VertexPositionColor(Vec3(0.5f, -0.5f, 0.0f), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-0.5f, -0.5f, 0.0f), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
 		};
 		m_TriangleMesh = MeshResource::CreateMeshResource(vertices, false);
 	}
@@ -42,9 +42,9 @@ namespace basecross {
 
 		//コンスタントバッファの準備
 		SpriteConstantBuffer sb;
-		sb.Emissive = Color4(0.0f, 0.0f, 0, 1.0f);
-		Matrix4X4 mat;
-		mat.TranslationFromVector(m_Pos);
+		sb.Emissive = Col4(0.0f, 0.0f, 0, 1.0f);
+		Mat4x4 mat;
+		mat.translation(m_Pos);
 		sb.World = mat;
 		//コンスタントバッファの更新
 		pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);

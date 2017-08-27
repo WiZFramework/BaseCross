@@ -11,9 +11,9 @@ namespace basecross {
 	//	用途: Implクラス
 	//--------------------------------------------------------------------------------------
 	struct Camera::Impl {
-		Vector3 m_Eye;	//カメラ位置
-		Vector3 m_At;	//注目点
-		Vector3 m_Up;   //カメラの傾き（アップ）
+		bsm::Vec3 m_Eye;	//カメラ位置
+		bsm::Vec3 m_At;	//注目点
+		bsm::Vec3 m_Up;   //カメラの傾き（アップ）
 		bool m_Pers;	//遠近法を使うかどうか
 		//カメラ代わりのオブジェクト
 		weak_ptr<GameObject> m_CameraObject;
@@ -26,8 +26,8 @@ namespace basecross {
 		float m_Near;	//手前の最小距離
 		float m_Far;	//奥の最大距離
 
-		Matrix4X4 m_ViewMatrix;
-		Matrix4X4 m_ProjMatrix;
+		bsm::Mat4x4 m_ViewMatrix;
+		bsm::Mat4x4 m_ProjMatrix;
 		Impl() :
 			m_Eye(0, 0.0f, -20.0f),	//デフォルトは後方
 			m_At(0, 0, 0),
@@ -72,33 +72,33 @@ namespace basecross {
 	Camera::~Camera() {}
 
 	//アクセサ
-	const Vector3& Camera::GetEye() const { return pImpl->m_Eye; }
-	void Camera::SetEye(const Vector3& Eye) { 
+	const bsm::Vec3& Camera::GetEye() const { return pImpl->m_Eye; }
+	void Camera::SetEye(const bsm::Vec3& Eye) { 
 		pImpl->m_Eye = Eye;
 		CalculateMatrix();
 	}
 	void Camera::SetEye(float x, float y, float z) { 
-		pImpl->m_Eye = Vector3(x, y, z); 
+		pImpl->m_Eye = bsm::Vec3(x, y, z); 
 		CalculateMatrix();
 	}
 
-	const Vector3& Camera::GetAt() const { return pImpl->m_At; }
-	void Camera::SetAt(const Vector3& At) { 
+	const bsm::Vec3& Camera::GetAt() const { return pImpl->m_At; }
+	void Camera::SetAt(const bsm::Vec3& At) { 
 		pImpl->m_At = At; 
 		CalculateMatrix();
 	}
 	void Camera::SetAt(float x, float y, float z) { 
-		pImpl->m_At = Vector3(x, y, z); 
+		pImpl->m_At = bsm::Vec3(x, y, z); 
 		CalculateMatrix();
 	}
 
-	const Vector3& Camera::GetUp() const { return pImpl->m_Up;}
-	void Camera::SetUp(const Vector3& Up) { 
+	const bsm::Vec3& Camera::GetUp() const { return pImpl->m_Up;}
+	void Camera::SetUp(const bsm::Vec3& Up) { 
 		pImpl->m_Up = Up; 
 		CalculateMatrix();
 	}
 	void Camera::SetUp(float x, float y, float z) { 
-		pImpl->m_Up = Vector3(x, y, z); 
+		pImpl->m_Up = bsm::Vec3(x, y, z); 
 		CalculateMatrix();
 	}
 
@@ -178,29 +178,29 @@ namespace basecross {
 			auto TransPtr = ShPtr->GetComponent<Transform>();
 			if (TransPtr) {
 				pImpl->m_Eye = TransPtr->GetWorldPosition();
-				pImpl->m_ViewMatrix.LookAtLH(pImpl->m_Eye, pImpl->m_At, pImpl->m_Up);
+				pImpl->m_ViewMatrix = XMMatrixLookAtLH(pImpl->m_Eye,pImpl->m_At,pImpl->m_Up);
 				if (pImpl->m_Pers) {
-					pImpl->m_ProjMatrix.PerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
+					pImpl->m_ProjMatrix = XMMatrixPerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
 				}
 				else {
-					pImpl->m_ProjMatrix.OrthographicLH(pImpl->m_Width, pImpl->m_Height, pImpl->m_Near, pImpl->m_Far);
+					pImpl->m_ProjMatrix = XMMatrixOrthographicLH(pImpl->m_Width, pImpl->m_Height, pImpl->m_Near, pImpl->m_Far);
 				}
 			}
 		}
 		else {
 			if (pImpl->m_Pers) {
-				pImpl->m_ViewMatrix.LookAtLH(pImpl->m_Eye, pImpl->m_At, pImpl->m_Up);
-				pImpl->m_ProjMatrix.PerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
+				pImpl->m_ViewMatrix = XMMatrixLookAtLH(pImpl->m_Eye, pImpl->m_At, pImpl->m_Up);
+				pImpl->m_ProjMatrix = XMMatrixPerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
 			}
 			else {
-				pImpl->m_ViewMatrix.Identity();
-				pImpl->m_ProjMatrix.OrthographicLH(pImpl->m_Width, pImpl->m_Height, pImpl->m_Near, pImpl->m_Far);
+				pImpl->m_ViewMatrix.identity();
+				pImpl->m_ProjMatrix = XMMatrixOrthographicLH(pImpl->m_Width, pImpl->m_Height, pImpl->m_Near, pImpl->m_Far);
 			}
 		}
 	}
 
-	const Matrix4X4& Camera::GetViewMatrix() const { return pImpl->m_ViewMatrix; }
-	const Matrix4X4& Camera::GetProjMatrix() const { return pImpl->m_ProjMatrix; }
+	const bsm::Mat4x4& Camera::GetViewMatrix() const { return pImpl->m_ViewMatrix; }
+	const bsm::Mat4x4& Camera::GetProjMatrix() const { return pImpl->m_ProjMatrix; }
 
 	void Camera::OnCreate() {
 		CalculateMatrix();
@@ -218,7 +218,7 @@ namespace basecross {
 	struct LookAtCamera::Impl {
 		weak_ptr<GameObject> m_TargetObject;	//目標となるオブジェクト
 		float m_ToTargetLerp;	//目標を追いかける際の補間値
-		Vector3 m_TargetToAt;	//目標から視点を調整する位置ベクトル
+		bsm::Vec3 m_TargetToAt;	//目標から視点を調整する位置ベクトル
 
 
 		float m_RadY;
@@ -307,7 +307,7 @@ namespace basecross {
 
 	void LookAtCamera::UpdateArmLengh() {
 		auto Vec = GetEye() - GetAt();
-		pImpl->m_ArmLen = Vec.Length();
+		pImpl->m_ArmLen = bsm::length(Vec);
 		if (pImpl->m_ArmLen >= pImpl->m_MaxArm) {
 			//m_MaxArm以上離れないようにする
 			pImpl->m_ArmLen = pImpl->m_MaxArm;
@@ -340,11 +340,11 @@ namespace basecross {
 		pImpl->m_RotSpeed = abs(f);
 	}
 
-	Vector3 LookAtCamera::GetTargetToAt() const {
+	bsm::Vec3 LookAtCamera::GetTargetToAt() const {
 		return pImpl->m_TargetToAt;
 
 	}
-	void LookAtCamera::SetTargetToAt(const Vector3& v) {
+	void LookAtCamera::SetTargetToAt(const bsm::Vec3& v) {
 		pImpl->m_TargetToAt = v;
 	}
 
@@ -372,20 +372,20 @@ namespace basecross {
 	}
 
 
-	void LookAtCamera::SetAt(const Vector3& At) {
+	void LookAtCamera::SetAt(const bsm::Vec3& At) {
 		Camera::SetAt(At);
-		Vector3 ArmVec = GetEye() - GetAt();
-		ArmVec.Normalize();
+		bsm::Vec3 ArmVec = GetEye() - GetAt();
+		ArmVec.normalize();
 		ArmVec *= pImpl->m_ArmLen;
-		Vector3 NewEye = GetAt() + ArmVec;
+		bsm::Vec3 NewEye = GetAt() + ArmVec;
 		SetEye(NewEye);
 	}
 	void LookAtCamera::SetAt(float x, float y, float z) {
 		Camera::SetAt(x,y,z);
-		Vector3 ArmVec = GetEye() - GetAt();
-		ArmVec.Normalize();
+		bsm::Vec3 ArmVec = GetEye() - GetAt();
+		ArmVec.normalize();
 		ArmVec *= pImpl->m_ArmLen;
-		Vector3 NewEye = GetAt() + ArmVec;
+		bsm::Vec3 NewEye = GetAt() + ArmVec;
 		SetEye(NewEye);
 
 	}
@@ -396,12 +396,12 @@ namespace basecross {
 		auto KeyData = App::GetApp()->GetInputDevice().GetKeyState();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vector3 NewEye = GetEye();
-		Vector3 NewAt = GetAt();
+		bsm::Vec3 NewEye = GetEye();
+		bsm::Vec3 NewAt = GetAt();
 		//計算に使うための腕角度（ベクトル）
-		Vector3 ArmVec = NewEye - NewAt;
+		bsm::Vec3 ArmVec = NewEye - NewAt;
 		//正規化しておく
-		ArmVec.Normalize();
+		ArmVec.normalize();
 		if (CntlVec[0].bConnected) {
 			//上下角度の変更
 			if (CntlVec[0].fThumbRY >= 0.1f || KeyData.m_bPushKeyTbl[VK_UP]) {
@@ -462,28 +462,28 @@ namespace basecross {
 				}
 			}
 			//クオータニオンでY回転（つまりXZベクトルの値）を計算
-			Quaternion QtXZ;
-			QtXZ.RotationAxis(Vector3(0, 1.0f, 0), pImpl->m_RadXZ);
-			QtXZ.Normalize();
+			bsm::Quat QtXZ;
+			QtXZ.rotation(pImpl->m_RadXZ, bsm::Vec3(0, 1.0f, 0));
+			QtXZ.normalize();
 			//移動先行の行列計算することで、XZの値を算出
-			Matrix4X4 Mat;
-			Mat.STRTransformation(
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, 0.0f, -1.0f),
+			bsm::Mat4x4 Mat;
+			Mat.strTransformation(
+				bsm::Vec3(1.0f, 1.0f, 1.0f),
+				bsm::Vec3(0.0f, 0.0f, -1.0f),
 				QtXZ
 			);
 
-			Vector3 PosXZ = Mat.PosInMatrixSt();
+			bsm::Vec3 PosXZ = Mat.transInMatrix();
 			//XZの値がわかったので腕角度に代入
 			ArmVec.x = PosXZ.x;
 			ArmVec.z = PosXZ.z;
 			//腕角度を正規化
-			ArmVec.Normalize();
+			ArmVec.normalize();
 
 			auto TargetPtr = GetTargetObject();
 			if (TargetPtr) {
 				//目指したい場所
-				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetWorldMatrix().PosInMatrixSt();
+				bsm::Vec3 ToAt = TargetPtr->GetComponent<Transform>()->GetWorldMatrix().transInMatrix();
 				ToAt += pImpl->m_TargetToAt;
 				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, 1.0, Lerp::Linear);
 			}
@@ -507,7 +507,7 @@ namespace basecross {
 				}
 			}
 			////目指したい場所にアームの値と腕ベクトルでEyeを調整
-			Vector3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
+			bsm::Vec3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
 			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
 		}
 		if (KeyData.m_bPressedKeyTbl[VK_LEFT]) {
@@ -761,7 +761,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct LightBase::Impl {
 		weak_ptr<Stage> m_Stage;
-		Color4 m_AmbientLightColor;
+		bsm::Col4 m_AmbientLightColor;
 		explicit Impl(const shared_ptr<Stage>& StagePtr) :
 			m_Stage(StagePtr),
 			m_AmbientLightColor(0, 0, 0, 0)
@@ -779,11 +779,11 @@ namespace basecross {
 
 	LightBase::~LightBase() {}
 
-	Color4 LightBase::GetAmbientLightColor()const {
+	bsm::Col4 LightBase::GetAmbientLightColor()const {
 		return pImpl->m_AmbientLightColor;
 	}
 
-	void LightBase::SetAmbientLightColor(const Color4& value) {
+	void LightBase::SetAmbientLightColor(const bsm::Col4& value) {
 		pImpl->m_AmbientLightColor = value;
 	}
 
@@ -837,9 +837,9 @@ namespace basecross {
 		{
 			m_LightVec.resize(3);
 			for (auto& v : m_LightVec) {
-				v.m_Directional = Vector3(0, -1, 0);
-				v.m_DiffuseColor = Color4(1, 1, 1, 1);
-				v.m_SpecularColor = Color4(1, 1, 1, 1);
+				v.m_Directional = bsm::Vec3(0, -1, 0);
+				v.m_DiffuseColor = bsm::Col4(1, 1, 1, 1);
+				v.m_SpecularColor = bsm::Col4(1, 1, 1, 1);
 			}
 		}
 		~Impl() {}
@@ -896,27 +896,27 @@ namespace basecross {
 	}
 
 	void MultiLight::SetDefaultLighting() {
-		static const Vector3 defaultDirections[3] =
+		static const bsm::Vec3 defaultDirections[3] =
 		{
 			{ -0.5265408f, -0.5735765f, -0.6275069f },
 			{ 0.7198464f,  0.3420201f,  0.6040227f },
 			{ 0.4545195f, -0.7660444f,  0.4545195f },
 		};
 
-		static const Color4 defaultDiffuse[3] =
+		static const bsm::Col4 defaultDiffuse[3] =
 		{
 			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
 			{ 0.9647059f, 0.7607844f, 0.4078432f,0.0f },
 			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
 		};
 
-		static const Color4 defaultSpecular[3] =
+		static const bsm::Col4 defaultSpecular[3] =
 		{
 			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
 			{ 0.0000000f, 0.0000000f, 0.0000000f,0.0f },
 			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
 		};
-		static const Color4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
+		static const bsm::Col4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
 		for (size_t i = 0; i < 3; i++) {
 			pImpl->m_LightVec[i].m_Directional = defaultDirections[i];
 			pImpl->m_LightVec[i].m_DiffuseColor = defaultDiffuse[i];
@@ -927,27 +927,27 @@ namespace basecross {
 	}
 
 	void MultiLight::SetDefaultLighting2() {
-		static const Vector3 defaultDirections[3] =
+		static const bsm::Vec3 defaultDirections[3] =
 		{
 			{ -0.5265408f, -0.5735765f, -0.6275069f },
 			{ 0.7198464f,  0.3420201f,  0.6040227f },
 			{ 0.4545195f, -0.7660444f,  0.4545195f },
 		};
 
-		static const Color4 defaultDiffuse[3] =
+		static const bsm::Col4 defaultDiffuse[3] =
 		{
 			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
 			{ 0.9647059f, 0.7607844f, 0.4078432f,0.0f },
 			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
 		};
 
-		static const Color4 defaultSpecular[3] =
+		static const bsm::Col4 defaultSpecular[3] =
 		{
 			{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
 			{ 0.0000000f, 0.0000000f, 0.0000000f,0.0f },
 			{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
 		};
-		static const Color4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
+		static const bsm::Col4 defaultAmbient = { 0.05333332f, 0.09882354f, 0.1819608f ,0.0f };
 		for (size_t i = 0; i < 3; i++) {
 			pImpl->m_LightVec[i].m_Directional = defaultDirections[i];
 			pImpl->m_LightVec[i].m_DiffuseColor = defaultDiffuse[i];
@@ -975,9 +975,9 @@ namespace basecross {
 	//	＊static呼び出しをする
 	//--------------------------------------------------------------------------------------
 	//スタティックメンバ
-	bool Steering::AccumulateForce(Vector3& Force, const Vector3& ForceToAdd, float MaxForce) {
+	bool Steering::AccumulateForce(bsm::Vec3& Force, const bsm::Vec3& ForceToAdd, float MaxForce) {
 		//現在の力の長さを得る
-		float MagnitudeSoFar = Force.Length();
+		float MagnitudeSoFar = bsm::length(Force);
 		//最大値との差を求める
 		float magnitudeRemaining = MaxForce - MagnitudeSoFar;
 		//差が0以下（つまり最大値を超えていたら）
@@ -986,84 +986,84 @@ namespace basecross {
 			return false;
 		}
 		//追加する力の大きさを求める
-		float MagnitudeToAdd = ForceToAdd.Length();
+		float MagnitudeToAdd = bsm::length(ForceToAdd);
 		//力の追加
 		if (MagnitudeToAdd < magnitudeRemaining) {
 			Force += ForceToAdd;
 		}
 		else {
-			Force += (Vector3EX::Normalize(ForceToAdd) * MagnitudeToAdd);
+			Force += (bsm::normalize(ForceToAdd) * MagnitudeToAdd);
 		}
 		//追加された指標を返す  
 		return true;
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Seek(const Vector3& Velocity, const Vector3& Target, const Vector3& Pos, float MaxSpeed) {
-		Vector3 DesiredVelocity
-			= Vector3EX::Normalize(Target - Pos) * MaxSpeed;
+	bsm::Vec3 Steering::Seek(const bsm::Vec3& Velocity, const bsm::Vec3& Target, const bsm::Vec3& Pos, float MaxSpeed) {
+		bsm::Vec3 DesiredVelocity
+			= bsm::normalize(Target - Pos) * MaxSpeed;
 		return (DesiredVelocity - Velocity);
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Flee(const Vector3& Velocity, const Vector3& Target,
-		const Vector3& Pos, float MaxSpeed, float PanicDistance) {
+	bsm::Vec3 Steering::Flee(const bsm::Vec3& Velocity, const bsm::Vec3& Target,
+		const bsm::Vec3& Pos, float MaxSpeed, float PanicDistance) {
 		float PanicDistanceSq = PanicDistance * PanicDistance;
-		if (Vector3EX::LengthSq(Pos - Target) > PanicDistanceSq) {
-			return Vector3(0, 0, 0);
+		if (bsm::lengthSqr(Pos - Target) > PanicDistanceSq) {
+			return bsm::Vec3(0, 0, 0);
 		}
-		Vector3 DesiredVelocity
-			= Vector3EX::Normalize(Pos - Target) * MaxSpeed;
+		bsm::Vec3 DesiredVelocity
+			= bsm::normalize(Pos - Target) * MaxSpeed;
 		return (DesiredVelocity - Velocity);
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Arrive(const Vector3& Velocity, const Vector3& Target, const Vector3& Pos, float MaxSpeed, float Decl) {
-		Vector3 ToTarget = Target - Pos;
-		float dist = ToTarget.Length();
+	bsm::Vec3 Steering::Arrive(const bsm::Vec3& Velocity, const bsm::Vec3& Target, const bsm::Vec3& Pos, float MaxSpeed, float Decl) {
+		bsm::Vec3 ToTarget = Target - Pos;
+		float dist = bsm::length(ToTarget);
 		if (dist > 0) {
 			const float DecelerationTweaker = 0.3f;
 			float speed = dist / (Decl * DecelerationTweaker);
 			speed = Util::Minimum(speed, MaxSpeed);
-			Vector3 DesiredVelocity = ToTarget * speed / dist;
+			bsm::Vec3 DesiredVelocity = ToTarget * speed / dist;
 			return (DesiredVelocity - Velocity);
 		}
-		return Vector3(0, 0, 0);
+		return bsm::Vec3(0, 0, 0);
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Pursuit(const Vector3& Velocity, const Vector3& Pos, const Vector3& Rot, float MaxSpeed,
-		const Vector3& TargetVelocity, const Vector3& Target, const Vector3& TargetRot) {
-		Vector3 ToEvader = Target - Pos;
-		double RelativeHeading = Rot.Dot(TargetRot);
-		if ((ToEvader.Dot(Rot) > 0) &&
+	bsm::Vec3 Steering::Pursuit(const bsm::Vec3& Velocity, const bsm::Vec3& Pos, const bsm::Vec3& Rot, float MaxSpeed,
+		const bsm::Vec3& TargetVelocity, const bsm::Vec3& Target, const bsm::Vec3& TargetRot) {
+		bsm::Vec3 ToEvader = Target - Pos;
+		double RelativeHeading = bsm::dot(Rot,TargetRot);
+		if ((bsm::dot(ToEvader,Rot) > 0) &&
 			(RelativeHeading < -0.95))  //acos(0.95)=18 degs
 		{
 			return Steering::Seek(Velocity, Target, Pos, MaxSpeed);
 		}
-		float LookAheadTime = ToEvader.Length() /
-			(MaxSpeed + TargetVelocity.Length());
+		float LookAheadTime = bsm::length(ToEvader) /
+			(MaxSpeed + bsm::length(TargetVelocity));
 		return Steering::Seek(Velocity, Target + TargetVelocity * LookAheadTime, Pos, MaxSpeed);
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Wander(const Matrix4X4 Matrix,
-		float WanderRadius, float WanderDistance, float WanderJitter, Vector3& WanderTarget) {
-		WanderTarget += Vector3(
+	bsm::Vec3 Steering::Wander(const bsm::Mat4x4 Matrix,
+		float WanderRadius, float WanderDistance, float WanderJitter, bsm::Vec3& WanderTarget) {
+		WanderTarget += bsm::Vec3(
 			(Util::RandZeroToOne(true) * 2.0f - 1.0f)  * WanderJitter,
 			0,
 			(Util::RandZeroToOne(true) * 2.0f - 1.0f)  * WanderJitter
 		);
-		WanderTarget.Normalize();
+		WanderTarget.normalize();
 		WanderTarget *= WanderRadius;
-		Vector3 target_Local = WanderTarget + Vector3(0, 0, WanderDistance);
-		Vector3 Scale,  Pos;
-		Quaternion Qt;
-		Matrix.Decompose(Scale, Qt, Pos);
-		Matrix4X4 mat;
-		mat.AffineTransformation(Scale, target_Local, Qt, Pos);
-		target_Local.Transform(Matrix);
-		return target_Local - Matrix.PosInMatrix();
+		bsm::Vec3 target_Local = WanderTarget + bsm::Vec3(0, 0, WanderDistance);
+		bsm::Vec3 Scale,  Pos;
+		bsm::Quat Qt;
+		Matrix.decompose(Scale, Qt, Pos);
+		bsm::Mat4x4 mat;
+		mat.affineTransformation(Scale, target_Local, Qt, Pos);
+		target_Local *= Matrix;
+		return target_Local - Matrix.transInMatrix();
 	}
 
 	struct ObstacleAvoidanceSphere {
@@ -1079,17 +1079,21 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::ObstacleAvoidance(const Matrix4X4 Matrix,
-		const Vector3& Velocity, float MaxSpeed, float Width, float Height,
+	bsm::Vec3 Steering::ObstacleAvoidance(const bsm::Mat4x4 Matrix,
+		const bsm::Vec3& Velocity, float MaxSpeed, float Width, float Height,
 		const vector<SPHERE>& SphereVec) {
 		//現在の速度と位置と道幅から、衝突判定OBBを作成する
-		Vector3 Scale(Width, Height, Velocity.Length());
-		Matrix4X4 ObbMat;
-		ObbMat.DefTransformation(Scale, Matrix.QtInMatrix(), Matrix.PosInMatrix() + Velocity / 2.0f);
-		OBB Obb(Vector3(1.0f, 1.0f, 1.0f), ObbMat);
+		bsm::Vec3 Scale(Width, Height, bsm::length(Velocity));
+		bsm::Mat4x4 ObbMat;
+		ObbMat.affineTransformation(
+			Scale, 
+			bsm::Vec3(0,0,0),
+			Matrix.quatInMatrix(), 
+			Matrix.transInMatrix() + Velocity / 2.0f);
+		OBB Obb(bsm::Vec3(1.0f, 1.0f, 1.0f), ObbMat);
 		vector<ObstacleAvoidanceSphere> ChangeVec;
 		for (size_t i = 0; i < SphereVec.size(); i++) {
-			float len = Vector3EX::Length(SphereVec[i].m_Center - Matrix.PosInMatrix());
+			float len = bsm::length(SphereVec[i].m_Center - Matrix.transInMatrix());
 			ObstacleAvoidanceSphere Sp(SphereVec[i], len);
 			ChangeVec.push_back(Sp);
 		}
@@ -1097,29 +1101,29 @@ namespace basecross {
 		std::sort(ChangeVec.begin(), ChangeVec.end(), SortSphereObstacleAvoidanceHandle);
 		//近い順に検査して何かと衝突していたら、ターゲットを決めSEEK
 		for (size_t i = 0; i < ChangeVec.size(); i++) {
-			Vector3 RetVec;
+			bsm::Vec3 RetVec;
 			if (HitTest::SPHERE_OBB(ChangeVec[i].m_Sp, Obb, RetVec)) {
 				//進行方向のOBBと衝突した
 				//OBB進行方向の線分とRetVecとの最近接点を求める
 				float t;
-				Vector3 d;
-				HitTest::ClosetPtPointSegment(RetVec, Matrix.PosInMatrix(), Matrix.PosInMatrix() + Velocity, t, d);
+				bsm::Vec3 d;
+				HitTest::ClosetPtPointSegment(RetVec, Matrix.transInMatrix(), Matrix.transInMatrix() + Velocity, t, d);
 				//退避方向を計算する
-				Vector3 AvoidanceVec = (d - RetVec);
+				bsm::Vec3 AvoidanceVec = (d - RetVec);
 				//正規化
-				AvoidanceVec.Normalize();
+				AvoidanceVec.normalize();
 				AvoidanceVec *= (Width + MaxSpeed);
 				return AvoidanceVec;
 			}
 		}
-		return Vector3(0, 0, 0);
+		return bsm::Vec3(0, 0, 0);
 	}
 
 	struct AvoidanceSegment {
-		Vector3 m_PointA;
-		Vector3 m_PointB;
+		bsm::Vec3 m_PointA;
+		bsm::Vec3 m_PointB;
 		AvoidanceSegment() {}
-		AvoidanceSegment(const Vector3& pa, const Vector3& pb) :
+		AvoidanceSegment(const bsm::Vec3& pa, const bsm::Vec3& pb) :
 			m_PointA(pa),
 			m_PointB(pb)
 		{
@@ -1127,49 +1131,49 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::WallAvoidance(const Matrix4X4 Matrix,
-		const Vector3& Velocity, float MaxSpeed, const vector<PLANE>& PlaneVec) {
+	bsm::Vec3 Steering::WallAvoidance(const bsm::Mat4x4 Matrix,
+		const bsm::Vec3& Velocity, float MaxSpeed, const vector<PLANE>& PlaneVec) {
 		//まず触覚になる線分配列を作成
-		float Len = Velocity.Length() * 0.5f;
+		float Len = bsm::length(Velocity) * 0.5f;
 		vector<AvoidanceSegment> Segments;
-		Segments.push_back(AvoidanceSegment(Vector3(0, 0, Len), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(cos(XM_PIDIV4) * Len, 0, sin(XM_PIDIV4) * Len), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(-cos(XM_PIDIV4) * Len, 0, sin(XM_PIDIV4) * Len), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(Len, 0, 0), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(-Len, 0, 0), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(cos(XM_PIDIV4) * Len, 0, -sin(XM_PIDIV4) * Len), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(-cos(XM_PIDIV4) * Len, 0, -sin(XM_PIDIV4) * Len), Vector3(0, 0, 0)));
-		Segments.push_back(AvoidanceSegment(Vector3(0, 0, -Len), Vector3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(0, 0, Len), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(cos(XM_PIDIV4) * Len, 0, sin(XM_PIDIV4) * Len), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(-cos(XM_PIDIV4) * Len, 0, sin(XM_PIDIV4) * Len), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(Len, 0, 0), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(-Len, 0, 0), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(cos(XM_PIDIV4) * Len, 0, -sin(XM_PIDIV4) * Len), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(-cos(XM_PIDIV4) * Len, 0, -sin(XM_PIDIV4) * Len), bsm::Vec3(0, 0, 0)));
+		Segments.push_back(AvoidanceSegment(bsm::Vec3(0, 0, -Len), bsm::Vec3(0, 0, 0)));
 		for (size_t i = 0; i < Segments.size(); i++) {
 			//触覚の各頂点に行列を計算して、ワールド座標に変換
-			Segments[i].m_PointA.Transform(Matrix);
-			Segments[i].m_PointB.Transform(Matrix);
+			Segments[i].m_PointA *= Matrix;
+			Segments[i].m_PointB *= Matrix;
 			//線分と壁の衝突判定
-			Vector3 RetVec;
+			bsm::Vec3 RetVec;
 			float t;
 			for (size_t j = 0; j < PlaneVec.size(); j++) {
-				if (HitTest::InsidePtPlane(Matrix.PosInMatrix(), PlaneVec[j])) {
+				if (HitTest::InsidePtPlane(Matrix.transInMatrix(), PlaneVec[j])) {
 					return PlaneVec[j].m_Normal * MaxSpeed;
 				}
 				if (HitTest::SEGMENT_PLANE(Segments[i].m_PointA, Segments[i].m_PointB, PlaneVec[j], t, RetVec)) {
 					//線分と面が衝突している
 					//面の法線の方向に現在の速度でフォースを返す
-					return PlaneVec[j].m_Normal * Velocity.Length();
+					return PlaneVec[j].m_Normal * bsm::length(Velocity);
 				}
 			}
 		}
-		return Vector3(0, 0, 0);
+		return bsm::Vec3(0, 0, 0);
 	}
 
 
 
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::FollowPath(Path& rPath,
+	bsm::Vec3 Steering::FollowPath(Path& rPath,
 		float WaypointSeekDist,
-		const Vector3& Pos, const Vector3& Velocity,
+		const bsm::Vec3& Pos, const bsm::Vec3& Velocity,
 		float MaxSpeed, float Decl) {
-		Vector3 Dis = Pos - rPath.GetCurWaypoint();
-		float DisSq = Dis.LengthSq();
+		bsm::Vec3 Dis = Pos - rPath.GetCurWaypoint();
+		float DisSq = bsm::lengthSqr(Dis);
 		float WaypointSeekDistSq = WaypointSeekDist * WaypointSeekDist;
 
 		if (DisSq < WaypointSeekDistSq) {
@@ -1183,18 +1187,18 @@ namespace basecross {
 		}
 	}
 
-	Vector3 Steering::Separation(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj) {
-		Vector3 SteeringForce(0, 0, 0);
+	bsm::Vec3 Steering::Separation(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj) {
+		bsm::Vec3 SteeringForce(0, 0, 0);
 		auto Vec = Group->GetGroupVector();
 		for (auto Ptr : Vec) {
 			if (!Ptr.expired()) {
 				auto PtrObj = Ptr.lock();
 				if (PtrObj != MyObj) {
 					PtrObj->GetComponent<Transform>();
-					Vector3 ToAgent
+					bsm::Vec3 ToAgent
 						= MyObj->GetComponent<Transform>()->GetWorldPosition()
 						- PtrObj->GetComponent<Transform>()->GetWorldPosition();
-					SteeringForce += Vector3EX::Normalize(ToAgent) / ToAgent.Length();
+					SteeringForce += bsm::normalize(ToAgent) / bsm::length(ToAgent);
 				}
 			}
 		}
@@ -1205,15 +1209,15 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	static Vector3 Alignment(
+	//	static bsm::Vec3 Alignment(
 	//	const shared_ptr<GameObjectGroup>& Group,	//設定するグループの配列
 	//	const shared_ptr<GameObject>& MyObj				//自分自身
 	//	);
 	//	用途: 整列行動
 	//	戻り値: フォース
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Alignment(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj) {
-		Vector3 AverageHeading(0, 0, 0);
+	bsm::Vec3 Steering::Alignment(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj) {
+		bsm::Vec3 AverageHeading(0, 0, 0);
 		auto Vec = Group->GetGroupVector();
 		int count = 0;
 		for (auto Ptr : Vec) {
@@ -1221,7 +1225,7 @@ namespace basecross {
 				auto PtrObj = Ptr.lock();
 				if (PtrObj != MyObj) {
 					auto PtrT = PtrObj->GetComponent<Transform>();
-					AverageHeading += QuaternionEX::GetRotation(PtrT->GetQuaternion());
+					AverageHeading += PtrT->GetQuaternion().toRotVec();
 					count++;
 				}
 			}
@@ -1229,27 +1233,27 @@ namespace basecross {
 		if (count > 0) {
 			AverageHeading /= (float)count;
 			auto PtrT = MyObj->GetComponent<Transform>();
-			AverageHeading -= QuaternionEX::GetRotation(PtrT->GetQuaternion());
+			AverageHeading -= PtrT->GetQuaternion().toRotVec();
 		}
 		return AverageHeading;
 	}
 
 	//--------------------------------------------------------------------------------------
-	//	static Vector3 Cohesion(
+	//	static bsm::Vec3 Cohesion(
 	//	const shared_ptr<GameObjectGroup>& Group,	//設定するグループの配列
 	//	const shared_ptr<GameObject>& MyObj			//自分自身
-	//	const Vector3& Velocity,	//現在の速度
+	//	const bsm::Vec3& Velocity,	//現在の速度
 	//	float MaxSpeed				//最高速度
 	//	);
 	//	用途: 結合行動
 	//	戻り値: フォース
 	//--------------------------------------------------------------------------------------
-	Vector3 Steering::Cohesion(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj,
-		const Vector3& Velocity, float MaxSpeed) {
+	bsm::Vec3 Steering::Cohesion(const shared_ptr<GameObjectGroup>& Group, const shared_ptr<GameObject>& MyObj,
+		const bsm::Vec3& Velocity, float MaxSpeed) {
 		auto Vec = Group->GetGroupVector();
-		Vector3 SteeringForce(0, 0, 0);
+		bsm::Vec3 SteeringForce(0, 0, 0);
 		//重心
-		Vector3 CenterOfMass(0, 0, 0);
+		bsm::Vec3 CenterOfMass(0, 0, 0);
 		int count = 0;
 		for (auto Ptr : Vec) {
 			if (!Ptr.expired()) {
@@ -1265,7 +1269,7 @@ namespace basecross {
 			CenterOfMass /= (float)count;
 			auto PtrT = MyObj->GetComponent<Transform>();
 			SteeringForce = Seek(Velocity, CenterOfMass, PtrT->GetWorldPosition(), MaxSpeed);
-			SteeringForce.Normalize();
+			SteeringForce.normalize();
 		}
 		return SteeringForce;
 	}

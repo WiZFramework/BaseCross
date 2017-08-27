@@ -14,7 +14,7 @@ namespace basecross{
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_StateChangeSize(5.0f)
@@ -127,9 +127,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	StaticModel::StaticModel(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -147,11 +147,12 @@ namespace basecross{
 		PtrTransform->SetRotation(m_Rotation);
 		PtrTransform->SetPosition(m_Position);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.28f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, -0.28f, 0.0f)
 		);
 
 		auto PtrColl = AddComponent<CollisionCapsule>();
@@ -178,9 +179,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -219,9 +220,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -246,8 +247,8 @@ namespace basecross{
 
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
-		PtrAction->AddMoveBy(5.0f, Vector3(5.0f, 5.0f, 0));
-		PtrAction->AddMoveBy(5.0f, Vector3(-5.0f, -5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(5.0f, 5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(-5.0f, -5.0f, 0));
 		//ループする
 		PtrAction->SetLooped(true);
 		//アクション開始
@@ -274,7 +275,7 @@ namespace basecross{
 	//	用途: 障害物球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{}
@@ -305,7 +306,7 @@ namespace basecross{
 	//	用途: 障害物カプセル
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	CapsuleObject::CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	CapsuleObject::CapsuleObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{}
@@ -342,12 +343,12 @@ namespace basecross{
 	void UnevenGroundData::OnCreate() {
 		vector<VertexPositionNormalTexture> vertices =
 		{
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(0.0f, 0.5f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(0.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-1.0f, 0.0f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(0.0f, 0.5f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.5f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-1.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(0.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.5f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(1.0f, 0.0f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(1.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(1.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = {
@@ -369,7 +370,7 @@ namespace basecross{
 			for (size_t i = 0; i < vertices.size(); i++) {
 				VertexPositionColor new_v;
 				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 				new_vertices.push_back(new_v);
 			}
 			//ワイアフレームメッシュをリソースに登録
@@ -399,9 +400,9 @@ namespace basecross{
 	//	用途: でこぼこ床
 	//--------------------------------------------------------------------------------------
 	UnevenGround::UnevenGround(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position) :
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),

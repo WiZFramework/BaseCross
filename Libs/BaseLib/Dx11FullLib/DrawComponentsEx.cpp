@@ -155,13 +155,13 @@ namespace basecross {
 		//オリジナルメッシュを使うかどうか
 		bool m_UseOriginalMeshResource;
 		//エミッシブ色
-		Color4 m_Emissive;
+		bsm::Col4 m_Emissive;
 		//デフューズ色
-		Color4 m_Diffuse;
+		bsm::Col4 m_Diffuse;
 		//透明度
 		float m_Alpha;
 		//スペキュラーとパワー色
-		Color4 m_SpecularColorAndPower;
+		bsm::Col4 m_SpecularColorAndPower;
 		//ライティングするかどうか
 		bool m_LightingEnabled;
 		//ピクセルライティングをするかどうか
@@ -169,17 +169,17 @@ namespace basecross {
 		//法線にバイアスをかけるかどうか
 		bool m_BiasedNormals;
 		//アンビエント
-		Color4 m_AmbientLightColor;
+		bsm::Col4 m_AmbientLightColor;
 		//ライトのMAX
 		static const int MaxDirectionalLights = 3;
 		//ライトが有効かどうか
 		bool m_LightEnabled[MaxDirectionalLights];
 		//ライトの向き
-		Vector3 m_LightDirection[MaxDirectionalLights];
+		bsm::Vec3 m_LightDirection[MaxDirectionalLights];
 		//ライトのデフューズ色
-		Color4 m_LightDiffuseColor[MaxDirectionalLights];
+		bsm::Col4 m_LightDiffuseColor[MaxDirectionalLights];
 		//ライトのスペキュラー色
-		Color4 m_LightSpecularColor[MaxDirectionalLights];
+		bsm::Col4 m_LightSpecularColor[MaxDirectionalLights];
 		//デフォルトのライティングを設定する
 		static void EnableDefaultLighting(BcStaticBaseDraw* Draw);
 		//フォグが有効かどうか
@@ -189,9 +189,9 @@ namespace basecross {
 		//フォグの終了位置
 		float m_FogEnd;
 		//フォグ色
-		Color4 m_FogColor;
+		bsm::Col4 m_FogColor;
 		//フォグベクトル
-		Vector3 m_FogVector;
+		bsm::Vec3 m_FogVector;
 		Impl() :
 			m_UseOriginalMeshResource(false),
 			m_Emissive(0.0f, 0.0f, 0.0f, 0.0),
@@ -209,7 +209,7 @@ namespace basecross {
 			m_FogVector(0.0, 0.0, 1.0f)
 		{
 			static const XMVECTORF32 defaultSpecular = { 1, 1, 1, 16 };
-			static const Vector3 defaultLightDirection = { 0, -1, 0 };
+			static const bsm::Vec3 defaultLightDirection = { 0, -1, 0 };
 			m_SpecularColorAndPower = defaultSpecular;
 			for (int i = 0; i < MaxDirectionalLights; i++)
 			{
@@ -267,25 +267,25 @@ namespace basecross {
 	}
 
 
-	Color4 BcStaticBaseDraw::GetEmissive() const {
-		return pImpl->m_Emissive;
+	bsm::Col4 BcStaticBaseDraw::GetEmissive() const {
+		return (bsm::Col4)pImpl->m_Emissive;
 	}
-	void BcStaticBaseDraw::SetEmissive(const Color4& col) {
+	void BcStaticBaseDraw::SetEmissive(const bsm::Col4& col) {
 		pImpl->m_Emissive = col;
 	}
-	Color4 BcStaticBaseDraw::GetDiffuse() const {
+	bsm::Col4 BcStaticBaseDraw::GetDiffuse() const {
 		return pImpl->m_Diffuse;
 	}
-	void BcStaticBaseDraw::SetDiffuse(const Color4& col) {
+	void BcStaticBaseDraw::SetDiffuse(const bsm::Col4& col) {
 		pImpl->m_Diffuse = col;
 	}
 
-	Color4 BcStaticBaseDraw::GetSpecularColor() const {
-		Color4 ret = pImpl->m_SpecularColorAndPower;
+	bsm::Col4 BcStaticBaseDraw::GetSpecularColor() const {
+		bsm::Col4 ret = pImpl->m_SpecularColorAndPower;
 		ret.w = 0.0f;
 		return ret;
 	}
-	void BcStaticBaseDraw::SetSpecularColor(const Color4& col) {
+	void BcStaticBaseDraw::SetSpecularColor(const bsm::Col4& col) {
 		pImpl->m_SpecularColorAndPower = XMVectorSelect(pImpl->m_SpecularColorAndPower, col, g_XMSelect1110);
 	}
 
@@ -304,10 +304,10 @@ namespace basecross {
 
 
 
-	Color4 BcStaticBaseDraw::GetSpecularColorAndPower() const {
+	bsm::Col4 BcStaticBaseDraw::GetSpecularColorAndPower() const {
 		return pImpl->m_SpecularColorAndPower;
 	}
-	void BcStaticBaseDraw::SetSpecularColorAndPower(const Color4& col) {
+	void BcStaticBaseDraw::SetSpecularColorAndPower(const bsm::Col4& col) {
 		pImpl->m_SpecularColorAndPower = col;
 	}
 
@@ -319,13 +319,13 @@ namespace basecross {
 		pImpl->m_Alpha = a;
 	}
 
-	Color4 BcStaticBaseDraw::GetColorAndAlpha() const {
-		Color4 ret = pImpl->m_Diffuse;
+	bsm::Col4 BcStaticBaseDraw::GetColorAndAlpha() const {
+		bsm::Col4 ret = pImpl->m_Diffuse;
 		ret.w = pImpl->m_Alpha;
 		return ret;
 	}
 
-	void BcStaticBaseDraw::SetColorAndAlpha(const Color4& col) {
+	void BcStaticBaseDraw::SetColorAndAlpha(const bsm::Col4& col) {
 		pImpl->m_Diffuse = col;
 		pImpl->m_Alpha = col.w;
 	}
@@ -392,11 +392,11 @@ namespace basecross {
 		pImpl->m_BiasedNormals = value;
 	}
 
-	Color4 BcStaticBaseDraw::GetAmbientLightColor()const {
+	bsm::Col4 BcStaticBaseDraw::GetAmbientLightColor()const {
 		return pImpl->m_AmbientLightColor;
 	}
 
-	void BcStaticBaseDraw::SetAmbientLightColor(const Color4& value) {
+	void BcStaticBaseDraw::SetAmbientLightColor(const bsm::Col4& value) {
 		pImpl->m_AmbientLightColor = value;
 	}
 	void BcStaticBaseDraw::ValidateLightIndex(int whichLight)
@@ -429,33 +429,33 @@ namespace basecross {
 		pImpl->m_LightEnabled[whichLight] = value;
 	}
 
-	Vector3 BcStaticBaseDraw::GetLightDirection(int whichLight) const {
+	bsm::Vec3 BcStaticBaseDraw::GetLightDirection(int whichLight) const {
 		ValidateLightIndex(whichLight);
 		return pImpl->m_LightDirection[whichLight];
 	}
 
-	void BcStaticBaseDraw::SetLightDirection(int whichLight, const Vector3& value) {
+	void BcStaticBaseDraw::SetLightDirection(int whichLight, const bsm::Vec3& value) {
 		ValidateLightIndex(whichLight);
 		pImpl->m_LightDirection[whichLight] = value;
 	}
 
-	Color4 BcStaticBaseDraw::GetLightDiffuseColor(int whichLight) const {
+	bsm::Col4 BcStaticBaseDraw::GetLightDiffuseColor(int whichLight) const {
 		ValidateLightIndex(whichLight);
 		return pImpl->m_LightDiffuseColor[whichLight];
 	}
 
 
-	void BcStaticBaseDraw::SetLightDiffuseColor(int whichLight, const Color4& value) {
+	void BcStaticBaseDraw::SetLightDiffuseColor(int whichLight, const bsm::Col4& value) {
 		ValidateLightIndex(whichLight);
 		pImpl->m_LightDiffuseColor[whichLight] = value;
 	}
 
-	Color4 BcStaticBaseDraw::GetLightSpecularColor(int whichLight) const {
+	bsm::Col4 BcStaticBaseDraw::GetLightSpecularColor(int whichLight) const {
 		ValidateLightIndex(whichLight);
 		return pImpl->m_LightSpecularColor[whichLight];
 	}
 
-	void BcStaticBaseDraw::SetLightSpecularColor(int whichLight, const Color4& value) {
+	void BcStaticBaseDraw::SetLightSpecularColor(int whichLight, const bsm::Col4& value) {
 		ValidateLightIndex(whichLight);
 		pImpl->m_LightSpecularColor[whichLight] = value;
 	}
@@ -491,10 +491,10 @@ namespace basecross {
 
 
 
-	Color4 BcStaticBaseDraw::GetFogColor() const {
+	bsm::Col4 BcStaticBaseDraw::GetFogColor() const {
 		return pImpl->m_FogColor;
 	}
-	void BcStaticBaseDraw::SetFogColor(const Color4& col) {
+	void BcStaticBaseDraw::SetFogColor(const bsm::Col4& col) {
 		pImpl->m_FogColor = col;
 	}
 
@@ -516,11 +516,11 @@ namespace basecross {
 		}
 		auto StageLight = GetGameObject()->OnGetDrawLight();
 		//ワールド行列
-		Matrix4X4 world = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
+		bsm::Mat4x4 world = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
 		//ビュー行列
-		Matrix4X4 view = CameraPtr->GetViewMatrix();
+		bsm::Mat4x4 view = CameraPtr->GetViewMatrix();
 		//射影行列
-		Matrix4X4 projection = CameraPtr->GetProjMatrix();
+		bsm::Mat4x4 projection = CameraPtr->GetProjMatrix();
 
 		//行列の設定
 		auto worldView = world * view;
@@ -606,24 +606,24 @@ namespace basecross {
 
 		//影用
 		if (shadowUse) {
-			Vector3 CalcLightDir = -1.0 * StageLight.m_Directional;
-			Vector3 LightAt = CameraPtr->GetAt();
-			Vector3 LightEye = CalcLightDir;
+			bsm::Vec3 CalcLightDir(StageLight.m_Directional * -1.0);
+			bsm::Vec3 LightAt(CameraPtr->GetAt());
+			bsm::Vec3 LightEye(CalcLightDir);
 			LightEye *= Shadowmap::GetLightHeight();
 			LightEye = LightAt + LightEye;
-			Vector4 LightEye4 = LightEye;
+			bsm::Vec4 LightEye4(LightEye,1.0f);
 			LightEye4.w = 1.0f;
 			BcCb.lightPos = LightEye4;
-			Vector4 eyePos4 = CameraPtr->GetEye();
+			bsm::Vec4 eyePos4(CameraPtr->GetEye(),1.0f);
 			eyePos4.w = 1.0f;
 			BcCb.eyePos = eyePos4;
-			Matrix4X4 LightView, LightProj;
+			bsm::Mat4x4 LightView, LightProj;
 			//ライトのビューと射影を計算
-			LightView.LookAtLH(LightEye, LightAt, Vector3(0, 1.0f, 0));
-			LightProj.OrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
+			LightView = XMMatrixLookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
+			LightProj = XMMatrixOrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
 				Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
-			BcCb.lightView = Matrix4X4EX::Transpose(LightView);
-			BcCb.lightProjection = Matrix4X4EX::Transpose(LightProj);
+			BcCb.lightView = bsm::transpose(LightView);
+			BcCb.lightProjection = bsm::transpose(LightProj);
 		}
 	}
 
@@ -1224,7 +1224,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				bsm::Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -1277,7 +1277,7 @@ namespace basecross {
 	//	BcPNTBoneModelDraw::Impl
 	//--------------------------------------------------------------------------------------
 	struct BcPNTBoneModelDraw::Impl {
-		vector<Matrix4X4> m_LocalBonesMatrix;
+		vector<bsm::Mat4x4> m_LocalBonesMatrix;
 		map<wstring, AnimationData> m_AnimationMap;
 		wstring m_CurrentAnimeName;
 		float m_CurrentAnimeTime;
@@ -1489,29 +1489,29 @@ namespace basecross {
 	}
 
 
-	void BcPNTBoneModelDraw::InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out) {
-		Vector3 Scale1, Pos1;
-		Quaternion Qt1;
-		m1.Decompose(Scale1, Qt1, Pos1);
-		Qt1.Normalize();
+	void BcPNTBoneModelDraw::InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
+		bsm::Vec3 Scale1, Pos1;
+		bsm::Quat Qt1;
+		m1.decompose(Scale1, Qt1, Pos1);
+		Qt1.normalize();
 
-		Vector3 Scale2, Pos2;
-		Quaternion Qt2;
+		bsm::Vec3 Scale2, Pos2;
+		bsm::Quat Qt2;
 
-		m2.Decompose(Scale2, Qt2, Pos2);
-		Qt2.Normalize();
+		m2.decompose(Scale2, Qt2, Pos2);
+		Qt2.normalize();
 
-		Vector3 ScaleOut, PosOut;
-		Quaternion QtOut;
+		bsm::Vec3 ScaleOut, PosOut;
+		bsm::Quat QtOut;
 
 		ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
 		PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
-		QtOut = QuaternionEX::Slerp(Qt1, Qt2, t);
-		out.DefTransformation(ScaleOut, QtOut, PosOut);
+		QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
+		out.affineTransformation(ScaleOut,bsm::Vec3(0,0,0), QtOut, PosOut);
 	}
 
 
-	const vector< Matrix4X4 >* BcPNTBoneModelDraw::GetVecLocalBonesPtr() const {
+	const vector< bsm::Mat4x4 >* BcPNTBoneModelDraw::GetVecLocalBonesPtr() const {
 		return &pImpl->m_LocalBonesMatrix;
 	}
 
@@ -1546,8 +1546,8 @@ namespace basecross {
 		size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
 		UINT cb_count = 0;
 		for (size_t b = 0; b < BoneSz; b++) {
-			Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-			mat.Transpose();
+			bsm::Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
+			mat.transpose();
 			BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
 			BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
 			BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
@@ -1668,7 +1668,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				bsm::Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -2091,7 +2091,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				bsm::Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -2145,7 +2145,7 @@ namespace basecross {
 	//	BcPNTnTBoneModelDraw::Impl
 	//--------------------------------------------------------------------------------------
 	struct BcPNTnTBoneModelDraw::Impl {
-		vector<Matrix4X4> m_LocalBonesMatrix;
+		vector<bsm::Mat4x4> m_LocalBonesMatrix;
 		map<wstring, AnimationData> m_AnimationMap;
 		wstring m_CurrentAnimeName;
 		float m_CurrentAnimeTime;
@@ -2355,29 +2355,29 @@ namespace basecross {
 	}
 
 
-	void BcPNTnTBoneModelDraw::InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out) {
-		Vector3 Scale1, Pos1;
-		Quaternion Qt1;
-		m1.Decompose(Scale1, Qt1, Pos1);
-		Qt1.Normalize();
+	void BcPNTnTBoneModelDraw::InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
+		bsm::Vec3 Scale1, Pos1;
+		bsm::Quat Qt1;
+		m1.decompose(Scale1, Qt1, Pos1);
+		Qt1.normalize();
 
-		Vector3 Scale2, Pos2;
-		Quaternion Qt2;
+		bsm::Vec3 Scale2, Pos2;
+		bsm::Quat Qt2;
 
-		m2.Decompose(Scale2, Qt2, Pos2);
-		Qt2.Normalize();
+		m2.decompose(Scale2, Qt2, Pos2);
+		Qt2.normalize();
 
-		Vector3 ScaleOut, PosOut;
-		Quaternion QtOut;
+		bsm::Vec3 ScaleOut, PosOut;
+		bsm::Quat QtOut;
 
 		ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
 		PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
-		QtOut = QuaternionEX::Slerp(Qt1, Qt2, t);
-		out.DefTransformation(ScaleOut, QtOut, PosOut);
+		QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
+		out.affineTransformation(ScaleOut, bsm::Vec3(0,0,0),QtOut, PosOut);
 	}
 
 
-	const vector< Matrix4X4 >* BcPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
+	const vector< bsm::Mat4x4 >* BcPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
 		return &pImpl->m_LocalBonesMatrix;
 	}
 
@@ -2480,7 +2480,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				bsm::Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -2488,8 +2488,8 @@ namespace basecross {
 			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
 			UINT cb_count = 0;
 			for (size_t b = 0; b < BoneSz; b++) {
-				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-				mat.Transpose();
+				bsm::Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
+				mat.transpose();
 				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
 				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
 				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];

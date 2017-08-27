@@ -13,7 +13,7 @@ namespace basecross{
 	//	用途: 頂点が変更されるボール
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	Ball::Ball(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	Ball::Ball(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr), m_StartPos(StartPos), m_Explode(0)
 	{}
 
@@ -25,7 +25,7 @@ namespace basecross{
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
-		PtrAction->AddRotateBy(1.0f, Vector3(0, XM_PI, 0));
+		PtrAction->AddRotateBy(1.0f, Vec3(0, XM_PI, 0));
 		//ループする
 		PtrAction->SetLooped(true);
 		//アクション開始
@@ -67,9 +67,9 @@ namespace basecross{
 		auto RenderStatePtr = Dev->GetRenderState();
 		//コンスタントバッファの設定
 		BallConstantBuffer Cb;
-		Cb.m_World = Matrix4X4EX::Transpose(PtrT->GetWorldMatrix());
-		Cb.m_View = Matrix4X4EX::Transpose(PtrCamera->GetViewMatrix());
-		Cb.m_Proj = Matrix4X4EX::Transpose(PtrCamera->GetProjMatrix());
+		Cb.m_World = transpose(PtrT->GetWorldMatrix());
+		Cb.m_View = transpose(PtrCamera->GetViewMatrix());
+		Cb.m_Proj = transpose(PtrCamera->GetProjMatrix());
 		Cb.m_LightDir = DrawLight.m_Directional;
 		Cb.m_Explode = abs(sin(m_Explode) / 2.0f);
 		//コンスタントバッファの更新

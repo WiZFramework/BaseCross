@@ -17,18 +17,18 @@ namespace basecross {
 		m_CamerUp(0, 1.0f, 0),
 		m_LightDir(0.5f, -1.0f, 0.5f, 1.0f)
 	{
-		m_LightDir.Normalize();
+		m_LightDir.normalize();
 	}
 
-	void Scene::GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const {
-		View.LookAtLH(m_CamerEye, m_CamerAt, m_CamerUp);
+	void Scene::GetViewProjMatrix(Mat4x4& View, Mat4x4& Proj)const {
+		View = XMMatrixLookAtLH(m_CamerEye, m_CamerAt, m_CamerUp);
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
 
 	}
 
-	void Scene::GetLightDir(Vector4& LightDir)const {
+	void Scene::GetLightDir(Vec4& LightDir)const {
 		LightDir = m_LightDir;
 	}
 
@@ -42,19 +42,19 @@ namespace basecross {
 
 		wstring strTexture = DataDir + L"sky.jpg";
 		//平面の作成
-		Quaternion(Vector3(1.0f, 0, 0), XM_PIDIV2);
+		Quat(Vec3(1.0f, 0, 0), XM_PIDIV2);
 		m_SquareObject = ObjectFactory::Create<SquareObject>(
 			GetThis<Scene>(),
 			strTexture,
-			Vector3(20.0f, 20.0f, 1.0f),
-			Quaternion(Vector3(1.0f, 0, 0), XM_PIDIV2),
-			Vector3(0.0f, 0.0f, 0.0f)
+			Vec3(20.0f, 20.0f, 1.0f),
+			Quat(Vec3(1.0f, 0, 0), XM_PIDIV2),
+			Vec3(0.0f, 0.0f, 0.0f)
 			);
 		strTexture = DataDir + L"trace.png";
 		//球の作成
 		m_SphereObject = ObjectFactory::Create<SphereObject>(
 			GetThis<Scene>(),
-			18, strTexture, true, Vector3(0.0f, 0.5f, 0.0f));
+			18, strTexture, true, Vec3(0.0f, 0.5f, 0.0f));
 	}
 
 	void Scene::OnUpdate() {
@@ -64,7 +64,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();

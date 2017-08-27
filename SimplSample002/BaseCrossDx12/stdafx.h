@@ -32,8 +32,8 @@
 #include <vector>
 #include <list>
 #include <map>
-#include <stack>
 #include <set>
+#include <stack>
 #include <functional>
 #include <algorithm>
 #include <iostream>
@@ -125,3 +125,4 @@ using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
 #include "../../Libs/BaseLib/Dx12Lib/Common.h"
+using namespace basecross::bsm;

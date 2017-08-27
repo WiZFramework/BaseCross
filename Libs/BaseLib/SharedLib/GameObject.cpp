@@ -366,11 +366,11 @@ namespace basecross {
 	}
 
 
-	void GameObject::OnGet2DDrawProjMatrix(Matrix4X4& ProjMatrix) const {
+	void GameObject::OnGet2DDrawProjMatrix(bsm::Mat4x4& ProjMatrix) const {
 		auto viewport = GetStage()->GetView()->GetTargetViewport();
 		float w = static_cast<float>(viewport.Width);
 		float h = static_cast<float>(viewport.Height);
-		ProjMatrix.OrthographicLH(w, h, viewport.MinDepth, viewport.MaxDepth);
+		ProjMatrix = XMMatrixOrthographicLH(w, h, viewport.MinDepth, viewport.MaxDepth);
 	}
 
 
@@ -446,7 +446,7 @@ namespace basecross {
 	struct Particle::Impl {
 		DrawOption m_DrawOption;		//表示オプション
 		vector<ParticleSprite> m_ParticleSpriteVec;	//保存しておくスプライトの配列
-		Vector3 m_EmitterPos;			//エミッター位置
+		bsm::Vec3 m_EmitterPos;			//エミッター位置
 		float m_TotalTime;				//タイマー制御する場合に使用する変数
 		float m_MaxTime;				//このパーティクル集合体の表示時間
 		weak_ptr<TextureResource> m_TextureResource;	//テクスチャ
@@ -479,10 +479,10 @@ namespace basecross {
 		pImpl->m_DrawOption = Option;
 	}
 
-	const Vector3& Particle::GetEmitterPos() const {
+	const bsm::Vec3& Particle::GetEmitterPos() const {
 		return pImpl->m_EmitterPos;
 	}
-	void Particle::SetEmitterPos(const Vector3& Pos) {
+	void Particle::SetEmitterPos(const bsm::Vec3& Pos) {
 		pImpl->m_EmitterPos = Pos;
 	}
 
@@ -536,7 +536,7 @@ namespace basecross {
 
 	void Particle::Reflesh(size_t Count, Particle::DrawOption Option) {
 		pImpl->m_DrawOption = Option;
-		pImpl->m_EmitterPos = Vector3(0, 0, 0);
+		pImpl->m_EmitterPos = bsm::Vec3(0, 0, 0);
 		pImpl->m_TotalTime = 0;
 		pImpl->m_MaxTime = 0;
 		pImpl->m_ParticleSpriteVec.clear();
@@ -748,73 +748,74 @@ namespace basecross {
 	}
 
 	void ParticleManager::AddParticle(const ParticleSprite& rParticleSprite, Particle::DrawOption Option,
-		const Vector3& EmitterPos, const shared_ptr<TextureResource>& TextureRes) {
+		const bsm::Vec3& EmitterPos, const shared_ptr<TextureResource>& TextureRes) {
 		auto DrawCom = GetComponent<PCTParticleDraw>();
 
 		auto StageView = GetStage()->GetView();
 
 		auto PtrCamera = StageView->GetTargetCamera();
 		//カメラの位置
-		Vector3 CameraEye = PtrCamera->GetEye();
-		Vector3 CameraAt = PtrCamera->GetAt();
+		bsm::Vec3 CameraEye = PtrCamera->GetEye();
+		bsm::Vec3 CameraAt = PtrCamera->GetAt();
 
 
-		Vector3 WorldPos = rParticleSprite.m_LocalPos + EmitterPos;
-		float ToCaneraLength = Vector3EX::Length(CameraEye - WorldPos);
+		bsm::Vec3 WorldPos = rParticleSprite.m_LocalPos + EmitterPos;
+		float ToCaneraLength = bsm::length(CameraEye - WorldPos);
 
-		Vector3 LocalScale;
+		bsm::Vec3 LocalScale;
 		LocalScale.x = rParticleSprite.m_LocalScale.x;
 		LocalScale.y = rParticleSprite.m_LocalScale.y;
 		LocalScale.z = 1.0f;
 
-		Vector3 Temp;
-		Quaternion Qt;
-		Matrix4X4 RotMatrix;
-		Vector4 dammi(0, 0, 0, 0);
-		Vector3 DefUp(0, 1.0f, 0);
+		bsm::Vec3 Temp;
+		bsm::Quat Qt;
+		bsm::Mat4x4 RotMatrix;
+	//	bsm::Vec4 dammi(0, 0, 0, 0);
+		bsm::Vec3 DefUp(0, 1.0f, 0);
 		switch (Option) {
 		case Particle::DrawOption::Billboard:
 		{
 			Temp = CameraAt - CameraEye;
-			Vector2 TempVec2(Temp.x, Temp.z);
-			if (Vector2EX::Length(TempVec2) < 0.1f) {
-				DefUp = Vector3(0, 0, 1.0f);
+			bsm::Vec2 TempVec2(Temp.x, Temp.z);
+			if (bsm::length(TempVec2) < 0.1f) {
+				DefUp = bsm::Vec3(0, 0, 1.0f);
 			}
-			Temp.Normalize();
-			RotMatrix.LookAtLH(Vector3(0, 0, 0), Temp, DefUp);
-			RotMatrix.Inverse(&dammi);
-			Qt = RotMatrix.QtInMatrix();
-			Qt.Normalize();
+			Temp.normalize();
+			RotMatrix = XMMatrixLookAtLH(bsm::Vec3(0, 0, 0), Temp, DefUp);
+			RotMatrix = bsm::inverse(RotMatrix);
+			Qt = RotMatrix.quatInMatrix();
+			Qt.normalize();
 		}
 		break;
 		case Particle::DrawOption::Faceing:
 		{
 			Temp = WorldPos - CameraEye;
-			Vector2 TempVec2(Temp.x, Temp.z);
-			if (Vector2EX::Length(TempVec2) < 0.1f) {
-				DefUp = Vector3(0, 0, 1.0f);
+			bsm::Vec2 TempVec2(Temp.x, Temp.z);
+			if (bsm::length(TempVec2) < 0.1f) {
+				DefUp = bsm::Vec3(0, 0, 1.0f);
 			}
-			RotMatrix.LookAtLH(Vector3(0, 0, 0), Temp, DefUp);
-			RotMatrix.Inverse(&dammi);
-			Qt = RotMatrix.QtInMatrix();
-			Qt.Normalize();
+			RotMatrix = XMMatrixLookAtLH(bsm::Vec3(0, 0, 0), Temp, DefUp);
+			RotMatrix = bsm::inverse(RotMatrix);
+			Qt = RotMatrix.quatInMatrix();
+			Qt.normalize();
 		}
 		break;
 		case Particle::DrawOption::FaceingY:
 			Temp = WorldPos - CameraEye;
-			Temp.Normalize();
-			Qt.RotationRollPitchYaw(0, atan2(Temp.x, Temp.z), 0);
-			Qt.Normalize();
+			Temp.normalize();
+			Qt = XMQuaternionRotationRollPitchYaw(0, atan2(Temp.x, Temp.z), 0);
+			Qt.normalize();
 			break;
 		case Particle::DrawOption::Normal:
 			Qt = rParticleSprite.m_LocalQt;
-			Qt.Normalize();
+			Qt.normalize();
 			break;
 		}
 
-		Matrix4X4 matrix;
-		matrix.DefTransformation(
+		bsm::Mat4x4 matrix;
+		matrix.affineTransformation(
 			LocalScale,
+			bsm::Vec3(0,0,0),
 			Qt,
 			WorldPos
 		);
@@ -895,6 +896,8 @@ namespace basecross {
 			if (v.m_Collision->IsHitObject(Src.m_Collision->GetGameObject())) {
 				continue;
 			}
+
+
 			//衝突判定(Destに呼んでもらう。ダブルデスパッチ呼び出し)
 			v.m_Collision->CollisionCall(Src.m_Collision);
 		}
@@ -929,10 +932,8 @@ namespace basecross {
 		auto func = [&](CillisionItem& Left, CillisionItem& Right)->bool {
 			auto PtrLeftVelo = Left.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
 			auto PtrRightVelo = Right.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
-
-
-			auto LeftLen = Vector3EX::Length(PtrLeftVelo);
-			auto RightLen = Vector3EX::Length(PtrRightVelo);
+			auto LeftLen = bsm::length(PtrLeftVelo);
+			auto RightLen = bsm::length(PtrRightVelo);
 
 			return (LeftLen < RightLen);
 		};
@@ -1393,7 +1394,7 @@ namespace basecross {
 
 		auto PtrCamera = pImpl->m_ViewBase->GetTargetCamera();
 		//カメラの位置
-		Vector3 CameraEye = PtrCamera->GetEye();
+		bsm::Vec3 CameraEye = PtrCamera->GetEye();
 		//透明の3Dオブジェクトをカメラからの距離でソート
 		//以下は、オブジェクトを引数に取りboolを返すラムダ式
 		//--------------------------------------------------------
@@ -1401,11 +1402,11 @@ namespace basecross {
 			auto PtrLeftTrans = Left->GetComponent<Transform>();
 			auto PtrRightTrans = Right->GetComponent<Transform>();
 
-			auto LeftPos = PtrLeftTrans->GetWorldMatrix().PosInMatrixSt();
-			auto RightPos = PtrRightTrans->GetWorldMatrix().PosInMatrixSt();
+			auto LeftPos = PtrLeftTrans->GetWorldMatrix().transInMatrix();
+			auto RightPos = PtrRightTrans->GetWorldMatrix().transInMatrix();
 
-			auto LeftLen = Vector3EX::Length(LeftPos - CameraEye);
-			auto RightLen = Vector3EX::Length(RightPos - CameraEye);
+			auto LeftLen = bsm::length(LeftPos - CameraEye);
+			auto RightLen = bsm::length(RightPos - CameraEye);
 
 			return (LeftLen > RightLen);
 		};
@@ -1437,8 +1438,8 @@ namespace basecross {
 			auto PtrLeftTrans = Left->GetComponent<Transform>();
 			auto PtrRightTrans = Right->GetComponent<Transform>();
 
-			auto LeftPos = PtrLeftTrans->GetWorldMatrix().PosInMatrixSt();
-			auto RightPos = PtrRightTrans->GetWorldMatrix().PosInMatrixSt();
+			auto LeftPos = PtrLeftTrans->GetWorldMatrix().transInMatrix();
+			auto RightPos = PtrRightTrans->GetWorldMatrix().transInMatrix();
 
 			float LeftZ = LeftPos.z;
 			float RightZ = RightPos.z;
@@ -1539,7 +1540,7 @@ namespace basecross {
 		//アクティブなステージ
 		shared_ptr<Stage> m_ActiveStage;
 		//クリアする色
-		Color4 m_ClearColor;
+		bsm::Col4 m_ClearColor;
 		Impl():
 			m_ActiveStage(),
 			m_ClearColor(0,0,0,1.0f)
@@ -1563,7 +1564,7 @@ namespace basecross {
 			VertexPositionNormalTangentTexture new_pntnt_v;
 
 			new_pc_v.position = vertices[i].position;
-			new_pc_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_pc_v.color = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 
 			new_pt_v.position = vertices[i].position;
 			new_pt_v.textureCoordinate = vertices[i].textureCoordinate;
@@ -1571,8 +1572,8 @@ namespace basecross {
 			new_pntnt_v.position = vertices[i].position;
 			new_pntnt_v.normal = vertices[i].normal;
 			new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
-			Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
-			new_pntnt_v.tangent = Vector4(n.x,n.y,n.z,0.0f);
+			bsm::Vec3 n = bsm::cross((bsm::Vec3)new_pntnt_v.normal, bsm::Vec3(0, 1, 0));
+			new_pntnt_v.tangent = bsm::Vec4(n.x,n.y,n.z,0.0f);
 			new_pntnt_v.tangent.w = 0.0f;
 
 			new_pc_vertices.push_back(new_pc_v);
@@ -1635,8 +1636,8 @@ namespace basecross {
 			vertices.clear();
 			indices.clear();
 
-			Vector3 PointA(0, -1.0f / 2.0f, 0);
-			Vector3 PointB(0, 1.0f / 2.0f, 0);
+			bsm::Vec3 PointA(0, -1.0f / 2.0f, 0);
+			bsm::Vec3 PointB(0, 1.0f / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCapsule(1.0f, PointA, PointB,18, vertices, indices);
 			ConvertVertex(vertices, new_pc_vertices, new_pt_vertices, new_pntnt_vertices);
@@ -1734,11 +1735,11 @@ namespace basecross {
 		pImpl->m_ActiveStage = stage;
 	}
 
-	Color4 SceneBase::GetClearColor() const {
+	bsm::Col4 SceneBase::GetClearColor() const {
 		return pImpl->m_ClearColor;
 
 	}
-	void SceneBase::SetClearColor(const Color4& col) {
+	void SceneBase::SetClearColor(const bsm::Col4& col) {
 		pImpl->m_ClearColor = col;
 	}
 
@@ -1786,11 +1787,31 @@ namespace basecross {
 			m_IsCellStringActive(false)
 		{}
 		~Impl() {}
-		void Init(const Vector3& MiniPos,
+		void Init(const bsm::Vec3& MiniPos,
 			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost);
 		void Create(const shared_ptr<MultiStringSprite>& StringPtr, const shared_ptr<Stage>& StagePtr);
+
+		bsm::Vec3 WorldToSCreen(const bsm::Vec3& v,const bsm::Mat4x4& m, float ViewWidth, float ViewHeight) {
+			Vec4 Pos4(v,1.0f);
+			Pos4.w = 1.0f;
+			//座標変換
+			Pos4 *= m;
+			//遠近
+			Pos4.x /= Pos4.w;
+			Pos4.y /= Pos4.w;
+			Pos4.z /= Pos4.w;
+			//座標単位の修正
+			Pos4.x += 1.0f;
+			Pos4.y += 1.0f;
+			Pos4.y = 2.0f - Pos4.y;
+			//ビューポート変換
+			Pos4.x *= (ViewWidth * 0.5f);
+			Pos4.y *= (ViewHeight * 0.5f);
+			return (Vec3)Pos4;
+		}
+
 	};
-	void StageCellMap::Impl::Init(const Vector3& MiniPos,
+	void StageCellMap::Impl::Init(const bsm::Vec3& MiniPos,
 		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost) {
 		m_PieceSize = PieceSize;
 		m_DefaultCost = DefaultCost;
@@ -1820,7 +1841,7 @@ namespace basecross {
 		m_MapAABB.m_Max.x = m_MapAABB.m_Min.x + m_PieceSize * (float)m_SizeX;
 		m_MapAABB.m_Max.y = m_MapAABB.m_Min.y + m_PieceSize;
 		m_MapAABB.m_Max.z = m_MapAABB.m_Min.z + m_PieceSize * (float)m_SizeZ;
-		Vector3 PieceVec(m_PieceSize, m_PieceSize, m_PieceSize);
+		bsm::Vec3 PieceVec(m_PieceSize, m_PieceSize, m_PieceSize);
 		//配列の初期化
 		m_CellVec.resize(m_SizeX);
 		for (UINT x = 0; x < m_SizeX; x++) {
@@ -1840,12 +1861,12 @@ namespace basecross {
 	}
 
 	void StageCellMap::Impl::Create(const shared_ptr<MultiStringSprite>& StringPtr, const shared_ptr<Stage>& StagePtr) {
-		Vector3 Min = m_MapAABB.m_Min;
-		Vector3 Max = m_MapAABB.m_Max;
-		Color4 Col(1.0f, 1.0f, 1.0f, 1.0f);
+		bsm::Vec3 Min = m_MapAABB.m_Min;
+		bsm::Vec3 Max = m_MapAABB.m_Max;
+		bsm::Col4 Col(1.0f, 1.0f, 1.0f, 1.0f);
 
-		Vector3 LineFrom(Min);
-		Vector3 LineTo(Min);
+		bsm::Vec3 LineFrom(Min);
+		bsm::Vec3 LineTo(Min);
 		LineTo.x = Max.x;
 
 		m_Vertices.clear();
@@ -1869,16 +1890,16 @@ namespace basecross {
 		m_LineMesh = MeshResource::CreateMeshResource(m_Vertices, false);
 
 		//スプライト文字列の初期化
-		Matrix4X4 World, View, Proj;
+		bsm::Mat4x4 World, View, Proj;
 
 		//ワールド行列の決定
-		Quaternion Qt;
-		Qt.Normalize();
-		World.AffineTransformation(
-			Vector3(1.0, 1.0, 1.0),			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+		bsm::Quat Qt;
+		Qt.normalize();
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			Qt,				//回転角度
-			Vector3(0, 0.01f, 0)				//位置
+			bsm::Vec3(0, 0.01f, 0)				//位置
 		);
 
 		auto PtrCamera = StagePtr->GetView()->GetTargetCamera();
@@ -1891,10 +1912,10 @@ namespace basecross {
 		StringPtr->ClearTextBlock();
 		for (UINT x = 0; x < m_CellVec.size(); x++) {
 			for (UINT z = 0; z < m_CellVec[x].size(); z++) {
-				Vector3 Pos = m_CellVec[x][z].m_PieceRange.GetCenter();
+				bsm::Vec3 Pos = m_CellVec[x][z].m_PieceRange.GetCenter();
 
 				Pos.y = m_CellVec[x][z].m_PieceRange.m_Min.y;
-				Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
+				WorldToSCreen(Pos,World, viewport.Width, viewport.Height);
 				Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 20);
 
 				wstring str(L"");
@@ -1919,7 +1940,7 @@ namespace basecross {
 
 
 
-	StageCellMap::StageCellMap(const shared_ptr<Stage>& StagePtr, const Vector3& MiniPos,
+	StageCellMap::StageCellMap(const shared_ptr<Stage>& StagePtr, const bsm::Vec3& MiniPos,
 		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost):
 		GameObject(StagePtr),
 		pImpl(new Impl())
@@ -1948,7 +1969,7 @@ namespace basecross {
 		SetDrawActive(false);
 	}
 
-	bool StageCellMap::FindCell(const Vector3& Pos, CellIndex& ret) {
+	bool StageCellMap::FindCell(const bsm::Vec3& Pos, CellIndex& ret) {
 		for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
 			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
 				if (pImpl->m_CellVec[x][z].m_PieceRange.PtInAABB(Pos)) {
@@ -1960,7 +1981,7 @@ namespace basecross {
 		return false;
 	}
 
-	void StageCellMap::FindNearCell(const Vector3& Pos, CellIndex& ret) {
+	void StageCellMap::FindNearCell(const bsm::Vec3& Pos, CellIndex& ret) {
 		if (FindCell(Pos, ret)) {
 			return;
 		}
@@ -1970,13 +1991,13 @@ namespace basecross {
 			for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
 				if (!isset) {
 					auto cellcenter = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
-					len = Vector3EX::Length(Pos - cellcenter);
+					len = bsm::length(Pos - cellcenter);
 					ret = pImpl->m_CellVec[x][z].m_Index;
 					isset = true;
 				}
 				else {
 					auto cellcenter = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
-					auto templen = Vector3EX::Length(Pos - cellcenter);
+					auto templen = bsm::length(Pos - cellcenter);
 					if (len > templen) {
 						len = templen;
 						ret = pImpl->m_CellVec[x][z].m_Index;
@@ -1999,7 +2020,7 @@ namespace basecross {
 		return false;
 	}
 
-	void StageCellMap::FindNearAABB(const Vector3& Pos, AABB& ret) {
+	void StageCellMap::FindNearAABB(const bsm::Vec3& Pos, AABB& ret) {
 		CellIndex retcell;
 		FindNearCell(Pos, retcell);
 		ret = pImpl->m_CellVec[retcell.x][retcell.z].m_PieceRange;
@@ -2010,7 +2031,7 @@ namespace basecross {
 		ret =  pImpl->m_MapAABB;
 	}
 
-	void StageCellMap::RefleshCellMap(const Vector3& MiniPos,
+	void StageCellMap::RefleshCellMap(const bsm::Vec3& MiniPos,
 		float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost) {
 		pImpl->Init(MiniPos,PieceSize,PieceCountX, PieceCountZ,DefaultCost);
 		pImpl->Create(GetComponent<MultiStringSprite>(), GetStage());
@@ -2021,8 +2042,8 @@ namespace basecross {
 	void  StageCellMap::OnUpdate() {
 		if (pImpl->m_IsCellStringActive) {
 			auto StringPtr = GetComponent<MultiStringSprite>();
-			Matrix4X4 World, View, Proj;
-			World.Identity();
+			Mat4x4 World, View, Proj;
+			World.identity();
 			auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
 			View = PtrCamera->GetViewMatrix();
 			Proj = PtrCamera->GetProjMatrix();
@@ -2034,9 +2055,9 @@ namespace basecross {
 			size_t count = 0;
 			for (UINT x = 0; x < pImpl->m_CellVec.size(); x++) {
 				for (UINT z = 0; z < pImpl->m_CellVec[x].size(); z++) {
-					Vector3 Pos = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
+					Vec3 Pos = pImpl->m_CellVec[x][z].m_PieceRange.GetCenter();
 					Pos.y = pImpl->m_CellVec[x][z].m_PieceRange.m_Min.y;
-					Pos.WorldToSCreen(World, viewport.Width, viewport.Height);
+					Pos = pImpl->WorldToSCreen(Pos, World, viewport.Width, viewport.Height);
 
 					Rect2D<float> rect(Pos.x, Pos.y, Pos.x + 50, Pos.y + 50);
 
@@ -2070,27 +2091,27 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 
 		//行列の定義
-		Matrix4X4 World, View, Proj;
+		bsm::Mat4x4 World, View, Proj;
 		//ワールド行列の決定
-		Quaternion Qt;
-		Qt.Normalize();
-		World.AffineTransformation(
-			Vector3(1.0, 1.0, 1.0),			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+		bsm::Quat Qt;
+		Qt.normalize();
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			Qt,				//回転角度
-			Vector3(0, 0.01f, 0)				//位置
+			bsm::Vec3(0, 0.01f, 0)				//位置
 		);
 		//転置する
-		World.Transpose();
+		World = bsm::transpose(World);
 		//カメラを得る
 		auto CameraPtr = OnGetDrawCamera();
 		//ビューと射影行列を得る
 		View = CameraPtr->GetViewMatrix();
 		//転置する
-		View.Transpose();
+		View = bsm::transpose(View);
 		//転置する
 		Proj = CameraPtr->GetProjMatrix();
-		Proj.Transpose();
+		Proj = bsm::transpose(Proj);
 
 		//コンスタントバッファの準備
 		SimpleConstants sb;
@@ -2098,8 +2119,8 @@ namespace basecross {
 		sb.View = View;
 		sb.Projection = Proj;
 		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
-		sb.Diffuse = Color4(1, 1, 1, 1);
+		sb.Emissive = bsm::Col4(0, 0, 0, 0);
+		sb.Diffuse = bsm::Col4(1, 1, 1, 1);
 		//コンスタントバッファの更新
 		pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 

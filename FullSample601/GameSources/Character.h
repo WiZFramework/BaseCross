@@ -12,17 +12,17 @@ namespace basecross{
 	//	用途: タイリングするプレート
 	//--------------------------------------------------------------------------------------
 	class TilingPlate : public GameObject {
-		Vector3 m_Scale;
-		Quaternion m_Qt;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Quat m_Qt;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
 		//構築と破棄
 		TilingPlate(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Quaternion& Qt,
-			const Vector3& Position,
+			const Vec3& Scale,
+			const Quat& Qt,
+			const Vec3& Position,
 			float UPic,
 			float VPic
 		);
@@ -36,17 +36,17 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class TilingFixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
 		//構築と破棄
 		TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position,
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position,
 			float UPic,
 			float VPic
 		);
@@ -62,7 +62,7 @@ namespace basecross{
 	///	敵１
 	//--------------------------------------------------------------------------------------
 	class Enemy1 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy1>>  m_StateMachine;
 		//NearとFarを切り替える値
@@ -75,7 +75,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy1(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos);
+		Enemy1(const shared_ptr<Stage>& StagePtr,const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -143,7 +143,7 @@ namespace basecross{
 	///	敵2
 	//--------------------------------------------------------------------------------------
 	class Enemy2 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy2>>  m_StateMachine;
 		//longとmediumを切り替える値
@@ -159,7 +159,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy2(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Enemy2(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -254,7 +254,7 @@ namespace basecross{
 	///	敵３
 	//--------------------------------------------------------------------------------------
 	class Enemy3 : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy3>>  m_StateMachine;
 		//defaultとnearを切り替える値
@@ -268,7 +268,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Enemy3(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Enemy3(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

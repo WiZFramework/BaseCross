@@ -22,15 +22,17 @@ namespace basecross{
 		m_ZRailBeforIndex(0)
 	{
 		m_ZRail = { 0, 2.0f, 4.0f, 6.0f, 8.0f };
-		m_ToAnimeMatrixLeft.DefTransformation(
-			Vector3(0.1f, 0.1f, 0.1f),
-			Vector3(0, 0, 0),
-			Vector3(0, -0.55f, 0.0f)
+		m_ToAnimeMatrixLeft.affineTransformation(
+			Vec3(0.1f, 0.1f, 0.1f),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0),
+			Vec3(0, -0.55f, 0.0f)
 		);
-		m_ToAnimeMatrixRight.DefTransformation(
-			Vector3(-0.1f, 0.1f, 0.1f),
-			Vector3(0, 0, 0),
-			Vector3(0, -0.55f, 0.0f)
+		m_ToAnimeMatrixRight.affineTransformation(
+			Vec3(-0.1f, 0.1f, 0.1f),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0),
+			Vec3(0, -0.55f, 0.0f)
 		);
 
 	}
@@ -46,7 +48,7 @@ namespace basecross{
 
 		auto PtrT = GetComponent<Transform>();
 		PtrT->SetScale(1.0f,1.0f,1.0f);
-		PtrT->SetPosition(Vector3(0, 0.5f, m_ZRail[m_ZRailIndex]));
+		PtrT->SetPosition(Vec3(0, 0.5f, m_ZRail[m_ZRailIndex]));
 		//親クラスのクリエイトを呼ぶ
 		SS5ssae::OnCreate();
 		//値は秒あたりのフレーム数
@@ -178,7 +180,7 @@ namespace basecross{
 		//減速する
 		Velo *= m_Decel;
 		//速度を設定する
-		Vector3 VecVelo(Velo, VeloY,0);
+		Vec3 VecVelo(Velo, VeloY,0);
 		PtrRedit->SetVelocity(VecVelo);
 		////回転の計算
 		//元となるオブジェクトからアニメーションオブジェクトへの行列の設定
@@ -222,7 +224,7 @@ namespace basecross{
 		auto PtrTrans = GetComponent<Transform>();
 		//重力
 		auto PtrGrav = GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 	//Aボタンでジャンプしている間の処理
 	//ジャンプ終了したらtrueを返す
@@ -318,7 +320,7 @@ namespace basecross{
 		PtrAction->SetUpdateActive(true);
 		//登録されているアクションをクリアする
 		PtrAction->AllActionClear();
-		PtrAction->AddMoveTo(1.0f, Vector3(NowPos.x, NowPos.y, m_ZRail[m_ZRailIndex]));
+		PtrAction->AddMoveTo(1.0f, Vec3(NowPos.x, NowPos.y, m_ZRail[m_ZRailIndex]));
 		//ループしない
 		PtrAction->SetLooped(false);
 		PtrAction->Run();
@@ -347,7 +349,7 @@ namespace basecross{
 		auto temp = m_ZRailIndex;
 		m_ZRailIndex = m_ZRailBeforIndex;
 		m_ZRailBeforIndex = temp;
-		PtrAction->AddMoveTo(0.5f, Vector3(NowPos.x, NowPos.y, m_ZRail[m_ZRailIndex]));
+		PtrAction->AddMoveTo(0.5f, Vec3(NowPos.x, NowPos.y, m_ZRail[m_ZRailIndex]));
 		//ループしない
 		PtrAction->SetLooped(false);
 		PtrAction->Run();

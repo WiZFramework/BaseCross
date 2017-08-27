@@ -57,7 +57,7 @@ namespace basecross{
 			//LookAtCameraである
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
@@ -161,7 +161,7 @@ namespace basecross{
 
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {

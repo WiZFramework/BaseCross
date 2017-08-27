@@ -13,9 +13,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct DiffuseSpriteConstantBuffer
 	{
-		Matrix4X4 World;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Col4 Emissive;
+		Col4 Diffuse;
 		DiffuseSpriteConstantBuffer() {
 			memset(this, 0, sizeof(DiffuseSpriteConstantBuffer));
 		};
@@ -90,8 +90,8 @@ namespace basecross {
 		shared_ptr<MeshResource> m_SquareMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
-		Vector2 m_Scale;				///<スケーリング
-		Vector2 m_Pos;				///<位置
+		Vec2 m_Scale;				///<スケーリング
+		Vec2 m_Pos;				///<位置
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -101,7 +101,7 @@ namespace basecross {
 		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		WallSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos);
+		WallSprite(const wstring& TextureFileName, bool Trace, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -147,8 +147,8 @@ namespace basecross {
 		vector<VertexPositionTexture> m_BackupVertices;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
-		Vector2 m_Scale;				///<スケーリング
-		Vector2 m_Pos;				///<位置
+		Vec2 m_Scale;				///<スケーリング
+		Vec2 m_Pos;				///<位置
 		float m_TotalTime;
 		//頂点の変更
 		void UpdateVertex(float ElapsedTime);
@@ -161,7 +161,7 @@ namespace basecross {
 		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		SquareSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos);
+		SquareSprite(const wstring& TextureFileName, bool Trace, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

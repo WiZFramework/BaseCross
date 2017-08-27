@@ -28,8 +28,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -48,21 +48,21 @@ namespace basecross {
 
 	//球の作成
 	void GameStage::CreateSphere() {
-		AddGameObject<PcSphere>(Vector3(-7.5f, 0.5f, 5.0f));
-		AddGameObject<PtSphere>(Vector3(-5.0f, 0.5f, 5.0f));
-		AddGameObject<PctSphere>(Vector3(-2.5f, 0.5f, 5.0f));
-		AddGameObject<PntSphere>(Vector3(0.0f, 0.5f, 5.0f), true);
-		AddGameObject<PntSphere>(Vector3(2.5f, 0.5f, 5.0f), false);
-		AddGameObject<PntSpSphere>(Vector3(5.0f, 0.5f, 5.0f), true);
-		AddGameObject<PntSpSphere>(Vector3(7.5f, 0.5f, 5.0f), false);
+		AddGameObject<PcSphere>(Vec3(-7.5f, 0.5f, 5.0f));
+		AddGameObject<PtSphere>(Vec3(-5.0f, 0.5f, 5.0f));
+		AddGameObject<PctSphere>(Vec3(-2.5f, 0.5f, 5.0f));
+		AddGameObject<PntSphere>(Vec3(0.0f, 0.5f, 5.0f), true);
+		AddGameObject<PntSphere>(Vec3(2.5f, 0.5f, 5.0f), false);
+		AddGameObject<PntSpSphere>(Vec3(5.0f, 0.5f, 5.0f), true);
+		AddGameObject<PntSpSphere>(Vec3(7.5f, 0.5f, 5.0f), false);
 
 	}
 
 
 	//キャラクターの作成
 	void GameStage::CreateChara() {
-		AddGameObject<StaticChara>(Vector3(2.5f, 0.0f, 0.0f));
-		AddGameObject<BoneChara>(Vector3(-2.5f, 0.0f, 0.0f));
+		AddGameObject<StaticChara>(Vec3(2.5f, 0.0f, 0.0f));
+		AddGameObject<BoneChara>(Vec3(-2.5f, 0.0f, 0.0f));
 
 	}
 

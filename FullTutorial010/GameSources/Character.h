@@ -12,14 +12,14 @@ namespace basecross{
 	//	用途: 剣
 	//--------------------------------------------------------------------------------------
 	class Sword : public GameObject {
-		Vector3 m_Scale;
+		Vec3 m_Scale;
 		wstring m_Tag;
 		//剣の強さ
 		float m_Strength;
 	public:
 		//構築と破棄
 		Sword(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
+			const Vec3& Scale,
 			const wstring& Tag
 		);
 		virtual ~Sword();
@@ -42,17 +42,17 @@ namespace basecross{
 	//	用途: タイリングするプレート
 	//--------------------------------------------------------------------------------------
 	class TilingPlate : public GameObject {
-		Vector3 m_Scale;
-		Quaternion m_Qt;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Quat m_Qt;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
 		//構築と破棄
 		TilingPlate(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Quaternion& Qt,
-			const Vector3& Position,
+			const Vec3& Scale,
+			const Quat& Qt,
+			const Vec3& Position,
 			float UPic,
 			float VPic
 		);
@@ -66,17 +66,17 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class TilingFixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
 		//構築と破棄
 		TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position,
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position,
 			float UPic,
 			float VPic
 		);
@@ -96,7 +96,7 @@ namespace basecross{
 		virtual ~MultiSpark();
 		//初期化
 		virtual void OnCreate() override;
-		void InsertSpark(const Vector3& Pos);
+		void InsertSpark(const Vec3& Pos);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ namespace basecross{
 		virtual ~MultiFire();
 		//初期化
 		virtual void OnCreate() override;
-		void InsertFire(const Vector3& Pos);
+		void InsertFire(const Vec3& Pos);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -118,9 +118,9 @@ namespace basecross{
 	class Enemy : public GameObject {
 	protected:
 		weak_ptr<StageCellMap> m_CelMap;
-		Vector3 m_Scale;
-		Vector3 m_StartRotation;
-		Vector3 m_StartPosition;
+		Vec3 m_Scale;
+		Vec3 m_StartRotation;
+		Vec3 m_StartPosition;
 		vector<CellIndex> m_CellPath;
 		shared_ptr<StateMachine<Enemy>> m_StateMachine;
 		//進行方向を向くようにする
@@ -139,9 +139,9 @@ namespace basecross{
 		//構築と破棄
 		Enemy(const shared_ptr<Stage>& StagePtr,
 			const shared_ptr<StageCellMap>& CellMap,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~Enemy();
 		//--------------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ namespace basecross{
 		@return	スタート位置
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetStartPosition()const {
+		const Vec3& GetStartPosition()const {
 			return m_StartPosition;
 		}
 		//--------------------------------------------------------------------------------------
@@ -302,10 +302,10 @@ namespace basecross{
 	//	HPのスクエア
 	//--------------------------------------------------------------------------------------
 	class HPSquare : public GameObject {
-		Color4 m_Color;
+		Col4 m_Color;
 	public:
 		//構築と破棄
-		HPSquare(const shared_ptr<Stage>& StagePtr,const Color4& Col);
+		HPSquare(const shared_ptr<Stage>& StagePtr,const Col4& Col);
 		virtual ~HPSquare();
 		//初期化
 		virtual void OnCreate() override;
@@ -320,7 +320,25 @@ namespace basecross{
 		weak_ptr<T> m_TargetObj;
 		weak_ptr<HPSquareBase> m_HPSquareBase;
 		weak_ptr<HPSquare> m_HPSquare;
-		Color4 m_Color;
+		Col4 m_Color;
+
+		Quat Billboard(const Vec3& Line) {
+			Vec3 Temp = Line;
+			Mat4x4 RotMatrix;
+			Vec3 DefUp(0, 1.0f, 0);
+			Vec2 TempVec2(Temp.x, Temp.z);
+			if (TempVec2.length() < 0.1f) {
+				DefUp = Vec3(0, 0, 1.0f);
+			}
+			Temp.normalize();
+			RotMatrix = XMMatrixLookAtLH(Vec3(0, 0, 0), Temp, DefUp);
+			RotMatrix.inverse();
+			Quat Qt;
+			Qt = RotMatrix.quatInMatrix();
+			Qt.normalize();
+			return Qt;
+		}
+
 
 		void UpdateHPTrans() {
 			auto ShTarget = m_TargetObj.lock();
@@ -341,16 +359,16 @@ namespace basecross{
 				auto Pos = TargetTrans->GetPosition();
 				Pos.y += 0.75f;
 				HPBaseTrans->SetPosition(Pos);
-				Pos = Vector3(0, 0, -0.001f);
+				Pos = Vec3(0, 0, -0.001f);
 				Pos.x -= 0.46f * 0.5f;
 				Pos.x += (0.46f * Width * 0.5f);
 				HPTrans->SetPosition(Pos);
 
 
  				auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
-				Quaternion Qt;
+				Quat Qt;
 				//向きをビルボードにする
-				Qt.Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
+				Qt = Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
 				HPBaseTrans->SetQuaternion(Qt);
 			}
 		}
@@ -358,7 +376,7 @@ namespace basecross{
 		//構築と破棄
 		HPManeger(const shared_ptr<Stage>& StagePtr,
 		const shared_ptr<T>& TargetObj,
-			const Color4& Col):
+			const Col4& Col):
 			GameObject(StagePtr),
 			m_TargetObj(TargetObj),
 			m_Color(Col)

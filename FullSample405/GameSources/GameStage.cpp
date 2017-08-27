@@ -28,8 +28,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(200.0f, 200.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -48,7 +48,7 @@ namespace basecross {
 
 	//球の作成
 	void GameStage::CreateSphere() {
-		AddGameObject<PntSphere>(Vector3(0.0f, 0.5f, 5.0f));
+		AddGameObject<PntSphere>(Vec3(0.0f, 0.5f, 5.0f));
 
 	}
 

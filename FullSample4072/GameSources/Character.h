@@ -14,7 +14,7 @@ namespace basecross{
 	//	用途: 頂点が変更されるボール
 	//--------------------------------------------------------------------------------------
 	class Ball : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		//飛び出す係数
 		float m_Explode;
 	public:
@@ -26,7 +26,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Ball(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		Ball(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ

@@ -902,7 +902,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnGet2DDrawProjMatrix(Matrix4X4& ProjMatrix) const;
+		virtual void OnGet2DDrawProjMatrix(bsm::Mat4x4& ProjMatrix) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	描画
@@ -989,13 +989,13 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct ParticleSprite {
 		bool m_Active;				//アクティブかどうか
-		Color4 m_Color;				//色（透けさせる場合はaを0にする）
-		Vector2 m_LocalScale;		//ローカルスケーリング（Zは1.0固定）		
-		Quaternion m_LocalQt;		//ローカル回転。手動のときのみ使用
-		Vector3 m_LocalPos;			//ローカル位置
-		Vector2 m_UVLeftTop;		//UVの左上
-		Vector2 m_UVRightBottom;	//UVの右下
-		Vector3 m_Velocity;			//速度(必要に応じて使用)
+		bsm::Col4 m_Color;				//色（透けさせる場合はaを0にする）
+		bsm::Vec2 m_LocalScale;		//ローカルスケーリング（Zは1.0固定）		
+		bsm::Quat m_LocalQt;		//ローカル回転。手動のときのみ使用
+		bsm::Vec3 m_LocalPos;			//ローカル位置
+		bsm::Vec2 m_UVLeftTop;		//UVの左上
+		bsm::Vec2 m_UVRightBottom;	//UVの右下
+		bsm::Vec3 m_Velocity;			//速度(必要に応じて使用)
 		ParticleSprite() :
 			m_Active(true),
 			m_Color(1.0f, 1.0f, 1.0f, 1.0f),
@@ -1008,13 +1008,13 @@ namespace basecross {
 		{}
 		void Reflesh() {
 			m_Active = true;
-			m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-			m_LocalScale = Vector2(1.0f, 1.0f);
-			m_LocalQt.Identity();
-			m_LocalPos = Vector3(0, 0, 0);
-			m_UVLeftTop = Vector2(0, 0);
-			m_UVRightBottom = Vector2(1.0f, 1.0f);
-			m_Velocity = Vector3(0, 0, 0);
+			m_Color = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_LocalScale = bsm::Vec2(1.0f, 1.0f);
+			m_LocalQt.identity();
+			m_LocalPos = bsm::Vec3(0, 0, 0);
+			m_UVLeftTop = bsm::Vec2(0, 0);
+			m_UVRightBottom = bsm::Vec2(1.0f, 1.0f);
+			m_Velocity = bsm::Vec3(0, 0, 0);
 		}
 	};
 	class ParticleManager;
@@ -1109,7 +1109,7 @@ namespace basecross {
 		@return	エミッター位置
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetEmitterPos() const;
+		const bsm::Vec3& GetEmitterPos() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッター位置を設定する
@@ -1117,7 +1117,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmitterPos(const Vector3& Pos);
+		void SetEmitterPos(const bsm::Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	トータルの時間を得る
@@ -1364,7 +1364,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void AddParticle(const ParticleSprite& rParticleSprite, Particle::DrawOption Option,
-			const Vector3& EmitterPos, const shared_ptr<TextureResource>& TextureRes);
+			const bsm::Vec3& EmitterPos, const shared_ptr<TextureResource>& TextureRes);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 更新処理
@@ -1452,7 +1452,7 @@ namespace basecross {
 		@param[in]	DefaultCost	デフォルトのコスト
 		*/
 		//--------------------------------------------------------------------------------------
-		StageCellMap(const shared_ptr<Stage>& StagePtr,const Vector3& MiniPos,
+		StageCellMap(const shared_ptr<Stage>& StagePtr,const bsm::Vec3& MiniPos,
 			float PieceSize, UINT PieceCountX, UINT PieceCountZ,int DefaultCost = 1);
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1483,7 +1483,7 @@ namespace basecross {
 		@return	セルが検索出来たらtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool FindCell(const Vector3& Pos,CellIndex& ret);
+		bool FindCell(const bsm::Vec3& Pos,CellIndex& ret);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	位置情報から一番近いセルを検索する
@@ -1492,7 +1492,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void FindNearCell(const Vector3& Pos, CellIndex& ret);
+		void FindNearCell(const bsm::Vec3& Pos, CellIndex& ret);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	セルインデックスからAABBを検索する
@@ -1510,7 +1510,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void FindNearAABB(const Vector3& Pos, AABB& ret);
+		void FindNearAABB(const bsm::Vec3& Pos, AABB& ret);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	マップのAABBを検索する
@@ -1537,7 +1537,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void RefleshCellMap(const Vector3& MiniPos,
+		void RefleshCellMap(const bsm::Vec3& MiniPos,
 			float PieceSize, UINT PieceCountX, UINT PieceCountZ, int DefaultCost = 1);
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2031,7 +2031,7 @@ namespace basecross {
 		@return	画面をクリアする色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetClearColor() const;
+		bsm::Col4 GetClearColor() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	画面をクリアする色を設定する
@@ -2039,7 +2039,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetClearColor(const Color4& col);
+		void SetClearColor(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	指定の型の現在のステージを得る

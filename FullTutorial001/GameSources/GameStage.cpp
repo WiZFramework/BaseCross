@@ -19,8 +19,8 @@ namespace basecross {
 		auto PtrView = CreateView<SingleView>();
 		//ビューのカメラの設定
 		auto PtrCamera = PtrView->GetCamera();
-		PtrCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//シングルライトの作成
 		auto PtrSingleLight = CreateLight<SingleLight>();
 		//ライトの設定

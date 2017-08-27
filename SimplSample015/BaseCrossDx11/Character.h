@@ -11,6 +11,28 @@ namespace basecross {
 	class Scene;
 
 	//--------------------------------------------------------------------------------------
+	///	このプロジェクトで使うユーティリティネームスペース
+	//--------------------------------------------------------------------------------------
+	namespace ProjUtil {
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief スライドさせる
+		@param[in]	Base	元のベクトル
+		@param[in]	Normal	計算に使う法線
+		@return	スライドさせたベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		inline Vec3 Slide(const Vec3& Base, const Vec3& Normal) {
+			//Baseと法線から直行線の長さ（内積で求める）
+			float Len = dot(Base, Normal);
+			//その長さに伸ばす
+			Vec3 Contact = Normal * Len;
+			//スライドする方向は現在のベクトルから引き算
+			return (Base - Contact);
+		}
+	}
+
+	//--------------------------------------------------------------------------------------
 	///	平面
 	//--------------------------------------------------------------------------------------
 	class SquareObject : public ObjectInterface, public ShapeInterface {
@@ -19,9 +41,9 @@ namespace basecross {
 		shared_ptr<MeshResource> m_SquareMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 頂点の作成
@@ -43,7 +65,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		SquareObject(const shared_ptr<Scene> PtrScene,
-			const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos);
+			const wstring& TextureFileName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -85,16 +107,16 @@ namespace basecross {
 		UINT m_Division;				///<分割数
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
+		Vec3 m_Scale;				///<スケーリング
 		float m_BaseY;				///<スケーリングベースの最下地点
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
-		Vector3 m_Velocity;		//速度
-		Vector3 m_Gravity;		//自由落下加速度
-		Vector3 m_GravityVelocity;		//自由落下による速度
+		Vec3 m_Velocity;		//速度
+		Vec3 m_Gravity;		//自由落下加速度
+		Vec3 m_GravityVelocity;		//自由落下による速度
 		bool m_JumpLock;	//ジャンプのロック
-		Vector3 m_BeforePos;	//1つ前の位置
+		Vec3 m_BeforePos;	//1つ前の位置
 		float m_Mass;
 
 		//--------------------------------------------------------------------------------------
@@ -104,14 +126,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void CollisionWithBoxes(const Vector3& BeforePos);
+		void CollisionWithBoxes(const Vec3& BeforePos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コントローラから方向ベクトルを得る
 		@return	方向ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetMoveVector() const;
+		Vec3 GetMoveVector() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 進行方向を向く
@@ -132,7 +154,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		SphereObject(const shared_ptr<Scene> PtrScene,
-			UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
+			UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -152,7 +174,7 @@ namespace basecross {
 		@return	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetPosition() const {
+		Vec3 GetPosition() const {
 			return m_Pos;
 		}
 		//--------------------------------------------------------------------------------------
@@ -161,7 +183,7 @@ namespace basecross {
 		@return	1つ前の位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetBeforePos()const {
+		Vec3 GetBeforePos()const {
 			return m_BeforePos;
 		}
 		//--------------------------------------------------------------------------------------
@@ -255,9 +277,9 @@ namespace basecross {
 		shared_ptr<MeshResource> m_BoxMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
 	public:
 		//--------------------------------------------------------------------------------------
@@ -273,9 +295,9 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		BoxObject(const shared_ptr<Scene> PtrScene,
 			const wstring& TextureFileName, bool Trace,
-			const Vector3& Scale, 
-			const Quaternion& Qt,
-			const Vector3& Pos);
+			const Vec3& Scale, 
+			const Quat& Qt,
+			const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -321,15 +343,15 @@ namespace basecross {
 		shared_ptr<MeshResource> m_MoveBoxMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
 
-		Vector3 m_Velocity;			//速度
+		Vec3 m_Velocity;			//速度
 		float m_Mass;	//質量
 		float m_Speed;	//追いかけるスピード
-		Vector3 m_BeforePos;	//1つ前の位置
+		Vec3 m_BeforePos;	//1つ前の位置
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	プレイヤーを追いかける速度を設定する
@@ -344,7 +366,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void CollisionWithBoxes(const Vector3& BeforePos);
+		void CollisionWithBoxes(const Vec3& BeforePos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 進行方向を向く
@@ -367,9 +389,9 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		MoveBoxObject(const shared_ptr<Scene> PtrScene,
 			const wstring& TextureFileName, bool Trace,
-			const Vector3& Scale,
-			const Quaternion& Qt,
-			const Vector3& Pos);
+			const Vec3& Scale,
+			const Quat& Qt,
+			const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -389,7 +411,7 @@ namespace basecross {
 		@return	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetPosition() const {
+		Vec3 GetPosition() const {
 			return m_Pos;
 		}
 		//--------------------------------------------------------------------------------------
@@ -398,7 +420,7 @@ namespace basecross {
 		@return	1つ前の位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetBeforePos()const {
+		Vec3 GetBeforePos()const {
 			return m_BeforePos;
 		}
 
@@ -409,7 +431,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetVelocity(const Vector3& Velocity) {
+		void SetVelocity(const Vec3& Velocity) {
 			m_Velocity = Velocity;
 		}
 		//--------------------------------------------------------------------------------------
@@ -457,7 +479,7 @@ namespace basecross {
 	struct DrawObject {
 		shared_ptr<MeshResource> m_MeshRes;
 		shared_ptr<TextureResource> m_TextureRes;
-		Matrix4X4 m_WorldMatrix;
+		Mat4x4 m_WorldMatrix;
 		bool m_Trace;
 		bool m_Wrap;
 		DrawObject():
@@ -503,7 +525,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
 			const shared_ptr<TextureResource>& TextureRes,
-			const Matrix4X4& WorldMat,
+			const Mat4x4& WorldMat,
 			bool Trace,bool Wrap = false);
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -539,9 +561,9 @@ namespace basecross {
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector2 m_Scale;				///<スケーリング
+		Vec2 m_Scale;				///<スケーリング
 		float m_Rot;				///<回転
-		Vector2 m_Pos;				///<位置
+		Vec2 m_Pos;				///<位置
 		UINT m_XWrap;		//X方向のラップ数
 		UINT m_YWrap;		//Y方向のラップ数
 		float m_TotalTime;	//頂点変更に使用するタイム
@@ -566,8 +588,8 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		WrappedSprite(const wstring& TextureFileName, bool Trace,
-			const Vector2& StartScale,
-			const Vector2& StartPos,
+			const Vec2& StartScale,
+			const Vec2& StartPos,
 			UINT XWrap,UINT YWrap);
 		//--------------------------------------------------------------------------------------
 		/*!

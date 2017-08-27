@@ -12,10 +12,10 @@ namespace basecross {
 	class Scene : public SceneInterface {
 		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
 		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
-		Vector3 m_CamerEye;			///<カメラ位置
-		Vector3 m_CamerAt;			///<カメラ視点
-		Vector3 m_CamerUp;			///<カメラ傾き
-		Vector4 m_LightDir;			///<ライト向き
+		Vec3 m_CamerEye;			///<カメラ位置
+		Vec3 m_CamerAt;			///<カメラ視点
+		Vec3 m_CamerUp;			///<カメラ傾き
+		Vec4 m_LightDir;			///<ライト向き
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -37,7 +37,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const;
+		void GetViewProjMatrix(Mat4x4& View, Mat4x4& Proj)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief ライト向きの取得
@@ -45,7 +45,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetLightDir(Vector4& LightDir)const;
+		void GetLightDir(Vec4& LightDir)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

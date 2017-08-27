@@ -22,15 +22,15 @@ namespace basecross {
 	void CubeObjectGroup::CreateBuffers() {
 		//Cubeの作成
 		float HelfSize = 0.5f;
-		vector<Vector3> PosVec = {
-			{ Vector3(-HelfSize, HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, HelfSize, -HelfSize) },
-			{ Vector3(-HelfSize, -HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, -HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, HelfSize, HelfSize) },
-			{ Vector3(-HelfSize, HelfSize, HelfSize) },
-			{ Vector3(HelfSize, -HelfSize, HelfSize) },
-			{ Vector3(-HelfSize, -HelfSize, HelfSize) },
+		vector<Vec3> PosVec = {
+			{ Vec3(-HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, HelfSize, HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, HelfSize) },
 		};
 		vector<UINT> PosIndeces = {
 			0, 1, 2, 3,
@@ -42,13 +42,13 @@ namespace basecross {
 		};
 
 
-		vector<Vector3> FaceNormalVec = {
-			{ Vector3(0, 0, -1.0f) },
-			{ Vector3(1.0f, 0, 0) },
-			{ Vector3(0, 0, 1.0f) },
-			{ Vector3(-1.0f, 0, 0) },
-			{ Vector3(0, 1.0f, 0) },
-			{ Vector3(0, -1.0f, 0) }
+		vector<Vec3> FaceNormalVec = {
+			{ Vec3(0, 0, -1.0f) },
+			{ Vec3(1.0f, 0, 0) },
+			{ Vec3(0, 0, 1.0f) },
+			{ Vec3(-1.0f, 0, 0) },
+			{ Vec3(0, 1.0f, 0) },
+			{ Vec3(0, -1.0f, 0) }
 		};
 
 		vector<VertexPositionNormalTexture> vertices;
@@ -61,16 +61,16 @@ namespace basecross {
 				Data.normal = FaceNormalVec[i];
 				switch (j) {
 				case 0:
-					Data.textureCoordinate = Vector2(0, 0);
+					Data.textureCoordinate = Vec2(0, 0);
 					break;
 				case 1:
-					Data.textureCoordinate = Vector2(1.0f, 0);
+					Data.textureCoordinate = Vec2(1.0f, 0);
 					break;
 				case 2:
-					Data.textureCoordinate = Vector2(0, 1.0f);
+					Data.textureCoordinate = Vec2(0, 1.0f);
 					break;
 				case 3:
-					Data.textureCoordinate = Vector2(1.0f, 1.0f);
+					Data.textureCoordinate = Vec2(1.0f, 1.0f);
 					break;
 				}
 				vertices.push_back(Data);
@@ -89,9 +89,9 @@ namespace basecross {
 		m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 		//インスタンス行列バッファの作成
 		//Max値で作成する
-		vector<Matrix4X4> matrices(m_MaxInstance);
+		vector<Mat4x4> matrices(m_MaxInstance);
 		for (auto& m : matrices) {
-			m = Matrix4X4();
+			m = Mat4x4();
 		}
 		MeshResource::CreateDynamicVertexBuffer(m_MatrixBuffer, matrices);
 	}
@@ -121,10 +121,10 @@ namespace basecross {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		for (auto& v : m_CubeObjectVec) {
 			v.m_Posision += v.m_Velocity * ElapsedTime;
-			Quaternion QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
+			Quat QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
 			v.m_Quaternion *= QtSpan;
-			v.m_Quaternion.Normalize();
-			if (v.m_Posision.Length() >= 2.0f) {
+			v.m_Quaternion.normalize();
+			if (v.m_Posision.length() >= 2.0f) {
 				v.Refresh();
 			}
 		}
@@ -146,18 +146,18 @@ namespace basecross {
 			);
 		}
 		//行列の変更
-		auto* matrices = (Matrix4X4*)mappedBuffer.pData;
-		Matrix4X4 World;
+		auto* matrices = (Mat4x4*)mappedBuffer.pData;
+		Mat4x4 World;
 		for (size_t i = 0; i < m_CubeObjectVec.size(); i++) {
 			//ワールド行列の決定
-			World.AffineTransformation(
+			World.affineTransformation(
 				m_CubeObjectVec[i].m_Scale,			//スケーリング
-				Vector3(0, 0, 0),		//回転の中心（重心）
+				Vec3(0, 0, 0),		//回転の中心（重心）
 				m_CubeObjectVec[i].m_Quaternion,		//回転角度
 				m_CubeObjectVec[i].m_Posision		//位置
 			);
 			//転置する
-			World.Transpose();
+			World.transpose();
 			matrices[i] = World;
 		}
 		//アンマップ
@@ -171,7 +171,7 @@ namespace basecross {
 
 		//ストライドとオフセット
 		//形状の頂点バッファと行列バッファを設定
-		UINT stride[2] = { sizeof(VertexPositionNormalTexture), sizeof(Matrix4X4) };
+		UINT stride[2] = { sizeof(VertexPositionNormalTexture), sizeof(Mat4x4) };
 		UINT offset[2] = { 0, 0 };
 
 		ID3D11Buffer* pBuf[2] = { m_CubeMesh->GetVertexBuffer().Get(), m_MatrixBuffer.Get() };
@@ -202,29 +202,29 @@ namespace basecross {
 		pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 
 		//ビュー行列の決定
-		Matrix4X4 View, Proj;
-		View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+		Mat4x4 View, Proj;
+		View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//コンスタントバッファの準備
 		PNTStaticConstantBuffer sb;
-		sb.World = Matrix4X4();	//ワールド行列はダミー
+		sb.World = Mat4x4();	//ワールド行列はダミー
 		sb.View = View;
 		sb.Projection = Proj;
 		//ライティング
-		Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
-		LightDir.Normalize();
+		Vec4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+		LightDir.normalize();
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算。
-		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		//コンスタントバッファの更新
 		pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 

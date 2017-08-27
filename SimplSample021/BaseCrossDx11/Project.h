@@ -5,12 +5,13 @@
 
 #pragma once
 
-using namespace basecross::bsm;
 
 #include "resource.h"
 #include "ProjectShader.h"
+#include "ProjectBehavior.h"
 #include "Scene.h"
 #include "Character.h"
+#include "Player.h"
 #include "GameStage.h"
 
 

@@ -12,7 +12,7 @@ namespace basecross{
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-		const Vector2& StartScale, const Vector3& StartPos) :
+		const Vec2& StartScale, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_Trace(Trace),
 		m_StartScale(StartScale),
@@ -24,10 +24,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列
 		m_BackupVertices = {
-			{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0.0f,0.0f,0.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 0.0f)) },
-			{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 0.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 0.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,0.0f,0.0f,0.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 0.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 0.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 0, 0.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -47,7 +47,7 @@ namespace basecross{
 		}
 		vector<VertexPositionColor> NewVertices;
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-			Color4 col = m_BackupVertices[i].color;
+			Col4 col = m_BackupVertices[i].color;
 			col.w = sin(m_TotalTime);
 			auto v = VertexPositionColor(
 				m_BackupVertices[i].position,
@@ -65,7 +65,7 @@ namespace basecross{
 	///	壁模様のスプライト
 	//--------------------------------------------------------------------------------------
 	WallSprite::WallSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-		const Vector2& StartScale, const Vector3& StartPos) :
+		const Vec2& StartScale, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -78,10 +78,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列(縦横5個ずつ表示)
 		vector<VertexPositionColorTexture> vertices = {
-			{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,1.0f,1.0f,1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 1.0f, 1.0f), Vector2(5.0f, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f), Vector2(0.0f, 5.0f)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 1.0f), Vector2(5.0f, 5.0f)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 1.0f, 1.0f), Vec2(5.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f), Vec2(0.0f, 5.0f)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 0, 1.0f), Vec2(5.0f, 5.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -103,7 +103,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	ScrollSprite::ScrollSprite(const shared_ptr<Stage>& StagePtr,
 		const wstring& TextureKey, bool Trace,
-		const Vector2& StartScale, const Vector3& StartPos) :
+		const Vec2& StartScale, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -117,10 +117,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列
 		m_BackupVertices = {
-			{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(4.0f, 0.0f)) },
-			{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(4.0f, 1.0f)) },
+			{ VertexPositionTexture(Vec3(-HelfSize, HelfSize, 0), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionTexture(Vec3(HelfSize, HelfSize, 0), Vec2(4.0f, 0.0f)) },
+			{ VertexPositionTexture(Vec3(-HelfSize, -HelfSize, 0), Vec2(0.0f, 1.0f)) },
+			{ VertexPositionTexture(Vec3(HelfSize, -HelfSize, 0), Vec2(4.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -143,7 +143,7 @@ namespace basecross{
 		}
 		vector<VertexPositionTexture> NewVertices;
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-			Vector2 UV = m_BackupVertices[i].textureCoordinate;
+			Vec2 UV = m_BackupVertices[i].textureCoordinate;
 			if (UV.x == 0.0f) {
 				UV.x = m_TotalTime;
 			}
@@ -165,7 +165,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	ScoreSprite::ScoreSprite(const shared_ptr<Stage>& StagePtr, UINT NumberOfDigits,
 		const wstring& TextureKey, bool Trace,
-		const Vector2& StartScale, const Vector3& StartPos) :
+		const Vec2& StartScale, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_NumberOfDigits(NumberOfDigits),
 		m_TextureKey(TextureKey),
@@ -186,19 +186,19 @@ namespace basecross{
 			float Vertex1 = Vertex0 + XPiecesize;
 			//0
 			m_BackupVertices.push_back(
-				VertexPositionTexture(Vector3(Vertex0, HelfSize, 0), Vector2(0.0f, 0.0f))
+				VertexPositionTexture(Vec3(Vertex0, HelfSize, 0), Vec2(0.0f, 0.0f))
 			);
 			//1
 			m_BackupVertices.push_back(
-				VertexPositionTexture(Vector3(Vertex1, HelfSize, 0), Vector2(0.1f, 0.0f))
+				VertexPositionTexture(Vec3(Vertex1, HelfSize, 0), Vec2(0.1f, 0.0f))
 			);
 			//2
 			m_BackupVertices.push_back(
-				VertexPositionTexture(Vector3(Vertex0, -HelfSize, 0), Vector2(0.0f, 1.0f))
+				VertexPositionTexture(Vec3(Vertex0, -HelfSize, 0), Vec2(0.0f, 1.0f))
 			);
 			//3
 			m_BackupVertices.push_back(
-				VertexPositionTexture(Vector3(Vertex1, -HelfSize, 0), Vector2(0.1f, 1.0f))
+				VertexPositionTexture(Vec3(Vertex1, -HelfSize, 0), Vec2(0.1f, 1.0f))
 			);
 			indices.push_back(i * 4 + 0);
 			indices.push_back(i * 4 + 1);
@@ -228,7 +228,7 @@ namespace basecross{
 			UINT Base = (UINT)pow(10, i);
 			Num = ((UINT)m_Score) % Base;
 			Num = Num / (Base / 10);
-			Vector2 UV0 = m_BackupVertices[VerNum].textureCoordinate;
+			Vec2 UV0 = m_BackupVertices[VerNum].textureCoordinate;
 			UV0.x = (float)Num / 10.0f;
 			auto v = VertexPositionTexture(
 				m_BackupVertices[VerNum].position,
@@ -236,7 +236,7 @@ namespace basecross{
 			);
 			NewVertices.push_back(v);
 
-			Vector2 UV1 = m_BackupVertices[VerNum + 1].textureCoordinate;
+			Vec2 UV1 = m_BackupVertices[VerNum + 1].textureCoordinate;
 			UV1.x = UV0.x + 0.1f;
 			v = VertexPositionTexture(
 				m_BackupVertices[VerNum + 1].position,
@@ -244,7 +244,7 @@ namespace basecross{
 			);
 			NewVertices.push_back(v);
 
-			Vector2 UV2 = m_BackupVertices[VerNum + 2].textureCoordinate;
+			Vec2 UV2 = m_BackupVertices[VerNum + 2].textureCoordinate;
 			UV2.x = UV0.x;
 
 			v = VertexPositionTexture(
@@ -253,7 +253,7 @@ namespace basecross{
 			);
 			NewVertices.push_back(v);
 
-			Vector2 UV3 = m_BackupVertices[VerNum + 3].textureCoordinate;
+			Vec2 UV3 = m_BackupVertices[VerNum + 3].textureCoordinate;
 			UV3.x = UV0.x + 0.1f;
 
 			v = VertexPositionTexture(

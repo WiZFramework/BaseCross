@@ -13,8 +13,8 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	void Scene::OnCreate() {
 		//立方体の作成
-		m_CubeObject1 = ObjectFactory::Create<CubeObject>(Vector3(-1.0f, 0, 0), false);
-		m_CubeObject2 = ObjectFactory::Create<CubeObject>(Vector3(1.0f, 0, 0), true);
+		m_CubeObject1 = ObjectFactory::Create<CubeObject>(Vec3(-1.0f, 0, 0), false);
+		m_CubeObject2 = ObjectFactory::Create<CubeObject>(Vec3(1.0f, 0, 0), true);
 	}
 
 	void Scene::OnUpdate() {
@@ -24,7 +24,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_CubeObject1->OnDraw();

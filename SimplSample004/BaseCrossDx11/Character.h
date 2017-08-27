@@ -12,12 +12,12 @@ namespace basecross {
 	///	四角形スプライトの構造体
 	//--------------------------------------------------------------------------------------
 	struct SquareSprite {
-		Vector2 m_LocalScale;		///<ローカルスケーリング
+		Vec2 m_LocalScale;		///<ローカルスケーリング
 		float m_LocalRot;				///<ローカル回転角度
 		float m_LocalRotVelocity;		///<ローカル回転速度
-		Vector2 m_LocalPos;				///<ローカル位置
-		Vector2 m_LocalVelocity;		///<ローカル速度
-		Vector2 m_LocalGravityVelocity;		///<ローカル加速速度
+		Vec2 m_LocalPos;				///<ローカル位置
+		Vec2 m_LocalVelocity;		///<ローカル速度
+		Vec2 m_LocalGravityVelocity;		///<ローカル加速速度
 
 		SquareSprite() :
 			m_LocalScale(64.0f, 64.0f),

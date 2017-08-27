@@ -19,9 +19,9 @@ namespace basecross {
 
 		UINT m_Division;				///<分割数
 		wstring m_TextureFileName;		///<テクスチャファイル名
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
 		void CreateBuffers();
 		void UpdateConstantBuffer();
@@ -39,12 +39,12 @@ namespace basecross {
 		///コンスタントバッファ
 		struct StaticConstantBuffer
 		{
-			Matrix4X4 World;
-			Matrix4X4 View;
-			Matrix4X4 Projection;
-			Vector4 LightDir;
-			Color4 Emissive;
-			Color4 Diffuse;
+			Mat4x4 World;
+			Mat4x4 View;
+			Mat4x4 Projection;
+			Vec4 LightDir;
+			Col4 Emissive;
+			Col4 Diffuse;
 			StaticConstantBuffer() {
 				memset(this, 0, sizeof(StaticConstantBuffer));
 			};
@@ -92,7 +92,7 @@ namespace basecross {
 		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
+		SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

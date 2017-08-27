@@ -14,10 +14,10 @@ namespace basecross {
 	class SquareSprite : public ObjectInterface, public ShapeInterface {
 		///メッシュ
 		shared_ptr<MeshResource> m_SquareMesh;
-		Vector2 m_Scale;				///<スケーリング
+		Vec2 m_Scale;				///<スケーリング
 		float m_Rot;				///<回転角度
-		Vector2 m_Pos;				///<位置
-		Vector2 m_PosSpan;				///<位置変更間隔
+		Vec2 m_Pos;				///<位置
+		Vec2 m_PosSpan;				///<位置変更間隔
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

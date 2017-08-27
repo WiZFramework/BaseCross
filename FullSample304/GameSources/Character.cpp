@@ -15,9 +15,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//ç\ízÇ∆îjä¸
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),

@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -32,8 +32,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt(Vec3(1.0f, 0, 0), XM_PIDIV2);
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -56,7 +56,7 @@ namespace basecross {
 		//オブジェクトのグループを作成する
 		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 0, 0.125f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
@@ -78,32 +78,32 @@ namespace basecross {
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 10.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 10.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(14.0f, 0.25f, 10.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(14.0f, 0.25f, 10.0f)
 			},
 
 			{
-				Vector3(2.0f, 1.0f, 2.0f),
-				Vector3(0, 0, 0),
-				Vector3(10.0f, 0.5f, 10.0f)
+				Vec3(2.0f, 1.0f, 2.0f),
+				Vec3(0, 0, 0),
+				Vec3(10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(4.0f, 1.0f, 4.0f),
-				Vector3(0, 0, 0),
-				Vector3(-10.0f, 0.5f, 10.0f)
+				Vec3(4.0f, 1.0f, 4.0f),
+				Vec3(0, 0, 0),
+				Vec3(-10.0f, 0.5f, 10.0f)
 			},
 			{
-				Vector3(10.0f, 0.5f, 10.0f),
-				Vector3(-0.5f, 0.0f, -0.5f),
-				Vector3(-10.0f, 0.25f, 10.0f)
+				Vec3(10.0f, 0.5f, 10.0f),
+				Vec3(-0.5f, 0.0f, -0.5f),
+				Vec3(-10.0f, 0.25f, 10.0f)
 			},
 		};
 		//オブジェクトの作成
@@ -131,16 +131,16 @@ namespace basecross {
 	void GameStage::CreateMoveBox() {
 		CreateSharedObjectGroup(L"MoveBox");
 		AddGameObject<MoveBox>(
-			Vector3(5.0f, 0.5f, 5.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.5f, 20.0f)
+			Vec3(5.0f, 0.5f, 5.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, -0.5f, 20.0f)
 			);
 	}
 
 	//ヒットする球体の作成
 	void GameStage::CreateSphere() {
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 20.0f, 0, 25.0f },
 			{ 20.0f, 0, 0.0f },
 		};
@@ -154,53 +154,53 @@ namespace basecross {
 	//半透明のスプライト作成
 	void GameStage::CreateTraceSprite() {
 		AddGameObject<TraceSprite>( true,
-			Vector2(200.0f, 200.0f), Vector3(-500.0f, -280.0f,0.0f));
+			Vec2(200.0f, 200.0f), Vec3(-500.0f, -280.0f,0.0f));
 	}
 
 
 	//壁模様のスプライト作成
 	void GameStage::CreateWallSprite() {
 		AddGameObject<WallSprite>(L"WALL_TX", false,
-			Vector2(200.0f, 200.0f), Vector2(500.0f, -280.0f));
+			Vec2(200.0f, 200.0f), Vec2(500.0f, -280.0f));
 	}
 
 
 	//スクロールするスプライト作成
 	void GameStage::CreateScrollSprite() {
 		AddGameObject<ScrollSprite>(L"TRACE_TX",true,
-			Vector2(160.0f, 40.0f),Vector2(500.0f,-280.0f));
+			Vec2(160.0f, 40.0f),Vec2(500.0f,-280.0f));
 	}
 
 	//左上で回転する立方体
 	void GameStage::CreateRollingCube() {
-		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
+		Quat Qt(Vec3(0.0f, 0.0, 1.0), XM_PIDIV4);
 		AddGameObject<RollingCube>(true,
-			Vector3(64.0f,64.0f,64.0f), 
+			Vec3(64.0f,64.0f,64.0f), 
 			Qt,
-			Vector3(-440,320,100.0f)
+			Vec3(-440,320,100.0f)
 			);
 
 	}
 
 	//左上で回転するWall立方体
 	void GameStage::CreateRollingWallCube() {
-		Quaternion Qt(Vector3(0.0f, 0.0, 1.0), XM_PIDIV4);
+		Quat Qt(Vec3(0.0f, 0.0, 1.0), XM_PIDIV4);
 		AddGameObject<RollingWallCube>(
 			L"WALL_TX",
 			false,
-			Vector3(64.0f, 64.0f, 64.0f),
+			Vec3(64.0f, 64.0f, 64.0f),
 			Qt,
-			Vector3(-320, 320, 100.0f)
+			Vec3(-320, 320, 100.0f)
 			);
 
 	}
 	//白い立方体
 	void GameStage::CreateWhiteCube() {
-		Quaternion Qt(Vector3(0.0f, 1.0, 1.0), 0);
+		Quat Qt(Vec3(0.0f, 1.0, 1.0), 0);
 		AddGameObject<WhiteCube>(
-			Vector3(1.0f, 1.0f, 1.0f),
+			Vec3(1.0f, 1.0f, 1.0f),
 			Qt,
-			Vector3(0.0f,1.0f, 10.0f)
+			Vec3(0.0f,1.0f, 10.0f)
 			);
 
 	}
@@ -209,9 +209,9 @@ namespace basecross {
 		AddGameObject<TransSphere>(
 			L"WALL_TX",
 			false,
-			Vector3(1.0f, 1.0f, 1.0f),
-			Quaternion(),
-			Vector3(10.0f, 2.0f, 10.0f)
+			Vec3(1.0f, 1.0f, 1.0f),
+			Quat(),
+			Vec3(10.0f, 2.0f, 10.0f)
 			);
 	}
 
@@ -220,71 +220,71 @@ namespace basecross {
 		//でこぼこ床のデータの作成
 		AddGameObject<UnevenGroundData>();
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 5.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 5.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 7.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 5.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 7.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 9.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 9.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 11.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 11.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 13.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 15.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 15.0f)
 			},
 
 

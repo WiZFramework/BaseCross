@@ -12,7 +12,7 @@ namespace basecross {
 	///	平面実体
 	//--------------------------------------------------------------------------------------
 	SquareObject::SquareObject(const shared_ptr<Scene> PtrScene,
-		const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos) :
+		const wstring& TextureFileName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos) :
 		m_Scene(PtrScene),
 		ObjectInterface(),
 		ShapeInterface(),
@@ -26,10 +26,10 @@ namespace basecross {
 	void SquareObject::CreateBuffers(float WrapX, float WrapY) {
 		float HelfSize = 0.5f;
 		vector<VertexPositionNormalTexture> vertices = {
-			{ VertexPositionNormalTexture(Vector3(-HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(WrapX, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, WrapY)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(WrapX, WrapY)) },
+			{ VertexPositionNormalTexture(Vec3(-HelfSize, HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(HelfSize, HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(WrapX, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-HelfSize, -HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(0.0f, WrapY)) },
+			{ VertexPositionNormalTexture(Vec3(HelfSize, -HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(WrapX, WrapY)) },
 
 		};
 
@@ -55,11 +55,11 @@ namespace basecross {
 			return;
 		}
 		//行列の定義
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
@@ -78,7 +78,7 @@ namespace basecross {
 	///	球実体
 	//--------------------------------------------------------------------------------------
 	SphereObject::SphereObject(const shared_ptr<Scene> PtrScene,
-		UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos) :
+		UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos) :
 		m_Scene(PtrScene),
 		ObjectInterface(),
 		ShapeInterface(),
@@ -98,13 +98,13 @@ namespace basecross {
 	{}
 	SphereObject::~SphereObject() {}
 
-	Vector3 SphereObject::GetMoveVector() const {
-		Vector3 Angle(0, 0, 0);
+	Vec3 SphereObject::GetMoveVector() const {
+		Vec3 Angle(0, 0, 0);
 		auto ShPtrScene = m_Scene.lock();
 		if (!ShPtrScene) {
 			return Angle;
 		}
-		Vector3 CameraEye, CameraAt;
+		Vec3 CameraEye, CameraAt;
 		ShPtrScene->GetCameraEyeAt(CameraEye, CameraAt);
 
 		//コントローラの取得
@@ -113,24 +113,24 @@ namespace basecross {
 			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
 				float MoveLength = 0;	//動いた時のスピード
 										//進行方向の向きを計算
-				Vector3 Front = m_Pos - CameraEye;
+				Vec3 Front = m_Pos - CameraEye;
 				Front.y = 0;
-				Front.Normalize();
+				Front.normalize();
 				//進行方向向きからの角度を算出
 				float FrontAngle = atan2(Front.z, Front.x);
 				//コントローラの向き計算
 				float MoveX = CntlVec[0].fThumbLX;
 				float MoveZ = CntlVec[0].fThumbLY;
-				Vector2 MoveVec(MoveX, MoveZ);
-				float MoveSize = MoveVec.Length();
+				Vec2 MoveVec(MoveX, MoveZ);
+				float MoveSize = MoveVec.length();
 				//コントローラの向きから角度を計算
 				float CntlAngle = atan2(-MoveX, MoveZ);
 				//トータルの角度を算出
 				float TotalAngle = FrontAngle + CntlAngle;
 				//角度からベクトルを作成
-				Angle = Vector3(cos(TotalAngle), 0, sin(TotalAngle));
+				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
 				//正規化する
-				Angle.Normalize();
+				Angle.normalize();
 				//移動サイズを設定。
 				Angle *= MoveSize;
 				//Y軸は変化させない
@@ -141,6 +141,8 @@ namespace basecross {
 	}
 
 
+
+
 	SPHERE SphereObject::GetSPHERE()const {
 		SPHERE sp;
 		sp.m_Center = m_Pos;
@@ -148,7 +150,7 @@ namespace basecross {
 		return sp;
 	}
 
-	void SphereObject::CollisionWithBoxes(const Vector3& BeforePos) {
+	void SphereObject::CollisionWithBoxes(const Vec3& BeforePos) {
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//衝突判定
@@ -159,54 +161,55 @@ namespace basecross {
 			Sp.m_Center = BeforePos;
 			float HitTime;
 			//相手の速度
-			Vector3 DestVelocity(0, 0, 0);
+			Vec3 DestVelocity(0, 0, 0);
 			auto MovBoxPtr = dynamic_pointer_cast<MoveBoxObject>(v);
 			if (MovBoxPtr) {
 				DestVelocity = MovBoxPtr->GetPosition() - MovBoxPtr->GetBeforePos();
 				Obb.m_Center = MovBoxPtr->GetBeforePos();
 			}
-			Vector3 SrcVelocity = m_Pos - BeforePos;
+			Vec3 SrcVelocity = m_Pos - BeforePos;
 
-			Vector3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
+			Vec3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
 			if (HitTest::CollisionTestSphereObb(Sp, CollisionVelosity, Obb, 0, ElapsedTime, HitTime)) {
 				m_JumpLock = false;
 				m_Pos = BeforePos + CollisionVelosity * HitTime;
 				float SpanTime = ElapsedTime - HitTime;
 				//m_Posが動いたのでSPHEREを再取得
 				Sp = GetSPHERE();
-				Vector3 HitPoint;
+				Vec3 HitPoint;
 				//最近接点を得るための判定
 				HitTest::SPHERE_OBB(Sp, Obb, HitPoint);
 				//衝突法線をHitPointとm_Posから導く
-				Vector3 Normal = m_Pos - HitPoint;
-				Normal.Normalize();
-				if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) <= 0.01f) {
+				Vec3 Normal = m_Pos - HitPoint;
+				Normal.normalize();
+				Vec3 angle(XMVector3AngleBetweenNormals(Normal, Vec3(0, 1, 0)));
+				if (angle.x <= 0.01f) {
 					//平面の上
-					m_GravityVelocity = Vector3(0, 0, 0);
+					m_GravityVelocity = Vec3(0, 0, 0);
 				}
 				else {
 					//重力をスライドさせて設定する
 					//これで、斜めのボックスを滑り落ちるようになる
-					m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+					m_GravityVelocity = ProjUtil::Slide(m_GravityVelocity, Normal);
 				}
 				if (MovBoxPtr) {
 					//お互いに反発する
-					Vector3 TgtVelo = CollisionVelosity * 0.5f;
-					if (TgtVelo.Length() < 1.0f) {
+					Vec3 TgtVelo = CollisionVelosity * 0.5f;
+					if (TgtVelo.length() < 1.0f) {
 						//衝突時の速度が小さかったら、速度を作り出す
 						TgtVelo = MovBoxPtr->GetPosition() - m_Pos;
-						TgtVelo.Normalize();
+						TgtVelo.normalize();
 						TgtVelo *= 2.0f;
 					}
-					Vector3 DestVelo = Vector3EX::Reflect(-TgtVelo, Normal);
+					Vec3 DestVelo(XMVector3Reflect(-TgtVelo, Normal));
 					DestVelo.y = 0;
 					MovBoxPtr->SetVelocity(DestVelo);
 					//速度を反発させて設定する
-					m_Velocity = Vector3EX::Reflect(TgtVelo, -Normal);
+					m_Velocity = XMVector3Reflect(TgtVelo, -Normal);
 				}
 				else {
 					//速度をスライドさせて設定する
-					m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+					m_Velocity = ProjUtil::Slide(m_Velocity, Normal);
 				}
 				//Y方向は重力に任せる
 				m_Velocity.y = 0;
@@ -218,8 +221,8 @@ namespace basecross {
 				Sp = GetSPHERE();
 				if (HitTest::SPHERE_OBB(Sp, Obb, HitPoint)) {
 					//衝突していたら追い出し処理
-					Vector3 EscapeNormal = Sp.m_Center - HitPoint;
-					EscapeNormal.Normalize();
+					Vec3 EscapeNormal = Sp.m_Center - HitPoint;
+					EscapeNormal.normalize();
 					m_Pos = HitPoint + EscapeNormal * Sp.m_Radius;
 				}
 			}
@@ -254,12 +257,12 @@ namespace basecross {
 				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
 					m_BeforePos.y += 0.01f;
 					m_Pos.y += 0.01f;
-					m_GravityVelocity = Vector3(0, 4.0f, 0);
+					m_GravityVelocity = Vec3(0, 4.0f, 0);
 					m_JumpLock = true;
 				}
 			}
-			Vector3 Direction = GetMoveVector();
-			if (Direction.Length() < 0.1f) {
+			Vec3 Direction = GetMoveVector();
+			if (Direction.length() < 0.1f) {
 				m_Velocity *= 0.9f;
 			}
 			else {
@@ -271,7 +274,7 @@ namespace basecross {
 		m_Pos += m_GravityVelocity * ElapsedTime;
 		if (m_Pos.y <= m_BaseY) {
 			m_Pos.y = m_BaseY;
-			m_GravityVelocity = Vector3(0, 0, 0);
+			m_GravityVelocity = Vec3(0, 0, 0);
 			m_JumpLock = false;
 		}
 	}
@@ -288,18 +291,18 @@ namespace basecross {
 		}
 		//回転の更新
 		//Velocityの値で、回転を変更する
-		Vector3 Temp = m_Velocity;
-		Temp.Normalize();
+		Vec3 Temp = m_Velocity;
+		Temp.normalize();
 		float ToAngle = atan2(Temp.x, Temp.z);
-		Quaternion Qt;
-		Qt.RotationRollPitchYaw(0, ToAngle, 0);
-		Qt.Normalize();
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+		Qt.normalize();
 		//現在と目標を補間
 		if (LerpFact >= 1.0f) {
 			m_Qt = Qt;
 		}
 		else {
-			m_Qt.Slerp(m_Qt, Qt, LerpFact);
+			m_Qt = XMQuaternionSlerp(m_Qt, Qt, LerpFact);
 		}
 	}
 
@@ -316,11 +319,11 @@ namespace basecross {
 			return;
 		}
 		//行列の定義
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
@@ -337,9 +340,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	BoxObject::BoxObject(const shared_ptr<Scene> PtrScene,
 		const wstring& TextureFileName, bool Trace, 
-		const Vector3& Scale,
-		const Quaternion& Qt,
-		const Vector3& Pos) :
+		const Vec3& Scale,
+		const Quat& Qt,
+		const Vec3& Pos) :
 		BoxBase(),
 		m_Scene(PtrScene),
 		m_TextureFileName(TextureFileName),
@@ -351,15 +354,15 @@ namespace basecross {
 	BoxObject::~BoxObject() {}
 
 	OBB BoxObject::GetOBB()const {
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
-		OBB obb(Vector3(1.0f, 1.0f, 1.0f), World);
+		OBB obb(Vec3(1.0f, 1.0f, 1.0f), World);
 		return obb;
 	}
 
@@ -383,11 +386,11 @@ namespace basecross {
 			return;
 		}
 		//行列の定義
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
@@ -404,9 +407,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	MoveBoxObject::MoveBoxObject(const shared_ptr<Scene> PtrScene,
 		const wstring& TextureFileName, bool Trace,
-		const Vector3& Scale,
-		const Quaternion& Qt,
-		const Vector3& Pos) :
+		const Vec3& Scale,
+		const Quat& Qt,
+		const Vec3& Pos) :
 		BoxBase(),
 		m_Scene(PtrScene),
 		m_TextureFileName(TextureFileName),
@@ -422,15 +425,15 @@ namespace basecross {
 	MoveBoxObject::~MoveBoxObject() {}
 
 	OBB MoveBoxObject::GetOBB()const {
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
-		OBB obb(Vector3(1.0f, 1.0f, 1.0f), World);
+		OBB obb(Vec3(1.0f, 1.0f, 1.0f), World);
 		return obb;
 	}
 
@@ -451,9 +454,9 @@ namespace basecross {
 			return;
 		}
 		//フォース（力）
-		Vector3 Force(0, 0, 0);
+		Vec3 Force(0, 0, 0);
 		//プレイヤーを向く方向ベクトル
-		Vector3 ToPlayerVec = 
+		Vec3 ToPlayerVec = 
 			ShPtrScene->GetSphereObject()->GetPosition() - m_Pos;
 		//縦方向は計算しない
 		ToPlayerVec.y = 0;
@@ -461,14 +464,14 @@ namespace basecross {
 		//力を掛ける方向を決める
 		Force = ToPlayerVec - m_Velocity;
 		//力と質量から加速を求める
-		Vector3 Accel = Force / m_Mass;
+		Vec3 Accel = Force / m_Mass;
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//速度を加速する
 		m_Velocity += Accel * ElapsedTime;
 	}
 
-	void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
+	void MoveBoxObject::CollisionWithBoxes(const Vec3& BeforePos) {
 		//前回のターンからの経過時間を求める
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//衝突判定
@@ -482,20 +485,20 @@ namespace basecross {
 			OBB SrcObb = GetOBB();
 			SrcObb.m_Center = BeforePos;
 			float HitTime;
-			Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
+			Vec3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
 			if (HitTest::CollisionTestObbObb(SrcObb, CollisionVelosity, DestObb, 0, ElapsedTime, HitTime)) {
 				m_Pos = BeforePos + CollisionVelosity * HitTime;
 				float SpanTime = ElapsedTime - HitTime;
 				//m_Posが動いたのでOBBを再取得
 				SrcObb = GetOBB();
-				Vector3 HitPoint;
+				Vec3 HitPoint;
 				//最近接点を得るための判定
 				HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
 				//衝突法線をHitPointとm_Posから導く
-				Vector3 Normal = m_Pos - HitPoint;
-				Normal.Normalize();
+				Vec3 Normal = m_Pos - HitPoint;
+				Normal.normalize();
 				//速度をスライドさせて設定する
-				m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+				m_Velocity = ProjUtil::Slide(m_Velocity, Normal);
 				//Y方向はなし
 				m_Velocity.y = 0;
 				//最後に衝突点から余った時間分だけ新しい値で移動させる
@@ -514,9 +517,9 @@ namespace basecross {
 						//最近接点を得るための判定
 						HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
 						//衝突していたら追い出し処理
-						Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+						Vec3 EscapeNormal = SrcObb.m_Center - HitPoint;
 						EscapeNormal.y = 0;
-						EscapeNormal.Normalize();
+						EscapeNormal.normalize();
 						m_Pos = m_Pos + EscapeNormal * MiniSpan;
 					}
 					else {
@@ -535,18 +538,18 @@ namespace basecross {
 		}
 		//回転の更新
 		//Velocityの値で、回転を変更する
-		Vector3 Temp = m_Velocity;
-		Temp.Normalize();
+		Vec3 Temp = m_Velocity;
+		Temp.normalize();
 		float ToAngle = atan2(Temp.x, Temp.z);
-		Quaternion Qt;
-		Qt.RotationRollPitchYaw(0, ToAngle, 0);
-		Qt.Normalize();
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+		Qt.normalize();
 		//現在と目標を補間
 		if (LerpFact >= 1.0f) {
 			m_Qt = Qt;
 		}
 		else {
-			m_Qt.Slerp(m_Qt, Qt, LerpFact);
+			m_Qt = XMQuaternionSlerp(m_Qt, Qt, LerpFact);
 		}
 	}
 
@@ -579,11 +582,11 @@ namespace basecross {
 			return;
 		}
 		//行列の定義
-		Matrix4X4 World;
+		Mat4x4 World;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
@@ -606,7 +609,7 @@ namespace basecross {
 
 	void PNTDrawObject::AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
 		const shared_ptr<TextureResource>& TextureRes,
-		const Matrix4X4& WorldMat,
+		const Mat4x4& WorldMat,
 		bool Trace, bool Wrap) {
 		DrawObject Obj;
 		Obj.m_MeshRes = MeshRes;
@@ -646,31 +649,31 @@ namespace basecross {
 		UINT stride = sizeof(VertexPositionNormalTexture);
 		UINT offset = 0;
 		//行列の定義
-		Matrix4X4 View, Proj;
+		Mat4x4 View, Proj;
 		//ライティング
-		Vector4 LightDir;
+		Vec4 LightDir;
 		auto ShPtrScene = m_Scene.lock();
 		ShPtrScene->GetViewProjMatrix(View, Proj);
 		ShPtrScene->GetLightDir(LightDir);
 		//ビュー行列の決定
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//コンスタントバッファの準備
 		PNTStaticConstantBuffer sb;
 		sb.View = View;
 		sb.Projection = Proj;
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算。
-		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		//個別処理
 		for (auto& v : m_DrawObjectVec) {
 			//転置する
-			v.m_WorldMatrix.Transpose();
+			v.m_WorldMatrix.transpose();
 			//ワールド行列の決定
 			sb.World = v.m_WorldMatrix;
 			//コンスタントバッファの更新
@@ -727,7 +730,7 @@ namespace basecross {
 	///	ラッピング処理されたスプライト
 	//--------------------------------------------------------------------------------------
 	WrappedSprite::WrappedSprite(const wstring& TextureFileName, bool Trace, 
-		const Vector2& StartScale, const Vector2& StartPos,
+		const Vec2& StartScale, const Vec2& StartPos,
 		UINT XWrap, UINT YWrap) :
 		ObjectInterface(),
 		ShapeInterface(),
@@ -745,10 +748,10 @@ namespace basecross {
 		float HelfSize = 0.5f;
 		//頂点配列(縦横10個ずつ表示)
 		m_BackupVertices = {
-			{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0,0,1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), Color4(0, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), Color4(0, 0, 1.0f, 1.0f), Vector2(0.0f, (float)m_YWrap)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, (float)m_YWrap)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,0,0,1.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), Col4(0, 1.0f, 0, 1.0f), Vec2((float)m_XWrap, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), Col4(0, 0, 1.0f, 1.0f), Vec2(0.0f, (float)m_YWrap)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), Col4(1.0f, 1.0f, 0, 1.0f), Vec2((float)m_XWrap, (float)m_YWrap)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -784,7 +787,7 @@ namespace basecross {
 		VertexPositionColorTexture* vertices
 			= (VertexPositionColorTexture*)mappedBuffer.pData;
 		for (size_t i = 0; i < m_SquareMesh->GetNumVertices(); i++) {
-			Vector2 UV = m_BackupVertices[i].textureCoordinate;
+			Vec2 UV = m_BackupVertices[i].textureCoordinate;
 			if (UV.x == 0.0f) {
 				UV.x = m_TotalTime;
 			}
@@ -821,25 +824,25 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 
 		//行列の定義
-		Matrix4X4 World, Proj;
+		Mat4x4 World, Proj;
 		//ワールド行列の決定
-		World.AffineTransformation2D(
+		World.affineTransformation2D(
 			m_Scale,			//スケーリング
-			Vector2(0, 0),		//回転の中心（重心）
+			Vec2(0, 0),		//回転の中心（重心）
 			m_Rot,				//回転角度
 			m_Pos				//位置
 		);
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.OrthographicLH(w, h, -1.0, 1.0f);
+		Proj = XMMatrixOrthographicLH(w, h, -1.0, 1.0f);
 		//行列の合成
 		World *= Proj;
 
 		//コンスタントバッファの準備
 		SpriteConstantBuffer sb;
 		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
+		sb.Emissive = Col4(0, 0, 0, 0);
 		//行列の設定
 		sb.World = World;
 		//コンスタントバッファの更新

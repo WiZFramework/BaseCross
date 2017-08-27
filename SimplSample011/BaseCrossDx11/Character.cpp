@@ -13,7 +13,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	立方体実体
 	//--------------------------------------------------------------------------------------
-	CubeObject::CubeObject(const wstring& TextureFileName, bool Trace, const Vector3& Pos, bool Flat) :
+	CubeObject::CubeObject(const wstring& TextureFileName, bool Trace, const Vec3& Pos, bool Flat) :
 		ObjectInterface(),
 		ShapeInterface(),
 		m_TextureFileName(TextureFileName),
@@ -25,15 +25,15 @@ namespace basecross {
 
 	void CubeObject::CreateBuffers() {
 		float HelfSize = 0.5f;
-		vector<Vector3> PosVec = {
-			{ Vector3(-HelfSize, HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, HelfSize, -HelfSize) },
-			{ Vector3(-HelfSize, -HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, -HelfSize, -HelfSize) },
-			{ Vector3(HelfSize, HelfSize, HelfSize) },
-			{ Vector3(-HelfSize, HelfSize, HelfSize) },
-			{ Vector3(HelfSize, -HelfSize, HelfSize) },
-			{ Vector3(-HelfSize, -HelfSize, HelfSize) },
+		vector<Vec3> PosVec = {
+			{ Vec3(-HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, HelfSize, HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, HelfSize) },
 		};
 		vector<UINT> PosIndeces = {
 			0, 1, 2, 3,
@@ -45,13 +45,13 @@ namespace basecross {
 		};
 
 
-		vector<Vector3> FaceNormalVec = {
-			{ Vector3(0, 0, -1.0f) },
-			{ Vector3(1.0f, 0, 0) },
-			{ Vector3(0, 0, 1.0f) },
-			{ Vector3(-1.0f, 0, 0) },
-			{ Vector3(0, 1.0f, 0) },
-			{ Vector3(0, -1.0f, 0) }
+		vector<Vec3> FaceNormalVec = {
+			{ Vec3(0, 0, -1.0f) },
+			{ Vec3(1.0f, 0, 0) },
+			{ Vec3(0, 0, 1.0f) },
+			{ Vec3(-1.0f, 0, 0) },
+			{ Vec3(0, 1.0f, 0) },
+			{ Vec3(0, -1.0f, 0) }
 		};
 
 		vector<VertexPositionNormalTexture> vertices;
@@ -64,7 +64,7 @@ namespace basecross {
 				if (m_Flat) {
 					//フラット表示の場合は法線は頂点方向にする
 					Data.normal = Data.position;
-					Data.normal.Normalize();
+					Data.normal.normalize();
 				}
 				else {
 					//フラット表示しない場合は、法線は面の向き
@@ -72,16 +72,16 @@ namespace basecross {
 				}
 				switch (j) {
 				case 0:
-					Data.textureCoordinate = Vector2(0, 0);
+					Data.textureCoordinate = Vec2(0, 0);
 					break;
 				case 1:
-					Data.textureCoordinate = Vector2(1.0f, 0);
+					Data.textureCoordinate = Vec2(1.0f, 0);
 					break;
 				case 2:
-					Data.textureCoordinate = Vector2(0, 1.0f);
+					Data.textureCoordinate = Vec2(0, 1.0f);
 					break;
 				case 3:
-					Data.textureCoordinate = Vector2(1.0f, 1.0f);
+					Data.textureCoordinate = Vec2(1.0f, 1.0f);
 					break;
 				}
 				vertices.push_back(Data);
@@ -106,14 +106,14 @@ namespace basecross {
 		CreateBuffers();
 		//テクスチャの作成
 		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
-		m_Qt.Identity();
+		m_Scale = Vec3(1.0f, 1.0f, 1.0f);
+		m_Qt.identity();
 	}
 	void CubeObject::OnUpdate() {
-		Quaternion QtSpan;
-		QtSpan.RotationAxis(Vector3(0, 1.0f, 0), 0.02f);
+		Quat QtSpan;
+		QtSpan.rotation(0.02f, Vec3(0, 1.0f, 0));
 		m_Qt *= QtSpan;
-		m_Qt.Normalize();
+		m_Qt.normalize();
 	}
 	void CubeObject::OnDraw() {
 		auto Dev = App::GetApp()->GetDeviceResources();
@@ -121,39 +121,39 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 
 		//行列の定義
-		Matrix4X4 World, View, Proj;
+		Mat4x4 World, View, Proj;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
 		//転置する
-		World.Transpose();
+		World.transpose();
 		//ビュー行列の決定
-		View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+		View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//コンスタントバッファの準備
 		PNTStaticConstantBuffer sb;
 		sb.World = World;
 		sb.View = View;
 		sb.Projection = Proj;
 		//ライティング
-		Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
-		LightDir.Normalize();
+		Vec4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+		LightDir.normalize();
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算。
-		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		//コンスタントバッファの更新
 		pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 

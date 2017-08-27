@@ -10,9 +10,9 @@ namespace basecross{
 
 	//ç\ízÇ∆îjä¸
 	TilingPlate::TilingPlate(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Quaternion& Qt,
-		const Vector3& Position,
+		const Vec3& Scale,
+		const Quat& Qt,
+		const Vec3& Position,
 		float UPic,
 		float VPic
 	) :
@@ -77,9 +77,9 @@ namespace basecross{
 
 
 	TilingFixedBox::TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position,
 		float UPic,
 		float VPic
 	) :
@@ -130,7 +130,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	///	ìGÇP
 	//--------------------------------------------------------------------------------------
-	Enemy1::Enemy1(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos):
+	Enemy1::Enemy1(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos):
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_NearFarChange(5.0f)
@@ -234,7 +234,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	///	ìG2
 	//--------------------------------------------------------------------------------------
-	Enemy2::Enemy2(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	Enemy2::Enemy2(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_LongMediumChange(10.0f),
@@ -302,7 +302,7 @@ namespace basecross{
 	void Enemy2::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
 		if (m_StateMachine->GetCurrentState() == Enemy2MediumState::Instance()) {
 			auto PtrGrav = GetBehavior<Gravity>();
-			PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+			PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 		}
 	}
 
@@ -337,7 +337,7 @@ namespace basecross{
 
 	void Enemy2MediumState::Enter(const shared_ptr<Enemy2>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void Enemy2MediumState::Execute(const shared_ptr<Enemy2>& Obj) {
@@ -375,7 +375,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	///	ìGÇR
 	//--------------------------------------------------------------------------------------
-	Enemy3::Enemy3(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	Enemy3::Enemy3(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_DefaultNearChange(7.0f)
@@ -463,7 +463,7 @@ namespace basecross{
 
 	void Enemy3NearState::Enter(const shared_ptr<Enemy3>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void Enemy3NearState::Execute(const shared_ptr<Enemy3>& Obj) {

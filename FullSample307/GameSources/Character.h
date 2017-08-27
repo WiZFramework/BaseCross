@@ -13,9 +13,9 @@ namespace basecross{
 	//	用途: タイリングするプレート
 	//--------------------------------------------------------------------------------------
 	class TilingPlate : public GameObject {
-		Vector3 m_Scale;
-		Quaternion m_Qt;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Quat m_Qt;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
@@ -31,9 +31,9 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class TilingFixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 		float m_UPic;
 		float m_VPic;
 	public:
@@ -49,9 +49,9 @@ namespace basecross{
 	///	フレームボックス
 	//--------------------------------------------------------------------------------------
 	class FrameBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		FrameBox(const shared_ptr<Stage>& StagePtr, IXMLDOMNodePtr pNode);

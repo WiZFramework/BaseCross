@@ -69,7 +69,7 @@ namespace basecross {
 		bool m_IsSkining;
 		UINT m_BoneCount;	//ボーンの数
 		UINT m_SampleCount;	//サンプリング数
-		vector<Matrix4X4> m_SampleMatrixVec;	//サンプリングされたボーン行列
+		vector<bsm::Mat4x4> m_SampleMatrixVec;	//サンプリングされたボーン行列
 	protected:
 		//派生クラスからのみアクセスできるアクセサ
 		//--------------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ namespace basecross {
 		@return	サンプリングされた行列の配列の参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const vector<Matrix4X4>& GetSampleMatrixVec() const {
+		const vector<bsm::Mat4x4>& GetSampleMatrixVec() const {
 			return m_SampleMatrixVec;
 		}
 		//リソース構築
@@ -531,7 +531,7 @@ namespace basecross {
 		static void ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
 			vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
 			vector<uint16_t>& indices, vector<MaterialEx>& materials,
-			vector<Matrix4X4>& bonematrix, UINT& BoneCount, UINT& SampleCount);
+			vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（スタティックメッシュ）
@@ -1035,7 +1035,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearDefaultViews(const Color4& col = Color4(0, 0, 0, 1.0f));
+		virtual void ClearDefaultViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f));
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	通常描画の開始
@@ -1331,7 +1331,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) = 0;
+		virtual void ClearViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f)) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	レンダリングターゲットを開始する純粋仮想関数
@@ -1414,7 +1414,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) override;
+		virtual void ClearViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f)) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	レンダリングターゲットを開始する
@@ -1488,7 +1488,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) override;
+		virtual void ClearViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f)) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	レンダリングターゲットを開始する

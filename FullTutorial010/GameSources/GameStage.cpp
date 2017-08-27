@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -41,24 +41,24 @@ namespace basecross {
 			//0行目をトークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
 			Util::WStrToTokenVector(Tokens, LineVec[0], L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			Vector3 Scale(
+			Vec3 Scale(
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str()),
 				(float)_wtof(Tokens[3].c_str())
 			);
-			Vector3 Rot;
+			Vec3 Rot;
 			//回転は「XM_PIDIV2」の文字列になっている場合がある
 			Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
 			Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
 			Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
-			Vector3 Pos(
+			Vec3 Pos(
 				(float)_wtof(Tokens[7].c_str()),
 				(float)_wtof(Tokens[8].c_str()),
 				(float)_wtof(Tokens[9].c_str())
 			);
 			//プレートの回転の引数はクオータニオンになっているので変換
-			Quaternion Qt;
-			Qt.RotationRollPitchYawFromVector(Rot);
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Rot);
 			//ステージへのゲームオブジェクトの追加
 			AddGameObject<TilingPlate>(Scale, Qt, Pos, 1.0f, 1.0f);
 		}
@@ -67,7 +67,7 @@ namespace basecross {
 	//セルマップの作成
 	void GameStage::CreateStageCellMap() {
 		float  PieceSize = 1.0f;
-		auto Ptr = AddGameObject<StageCellMap>(Vector3(-5.0f, 0, -5.0f), PieceSize, 10, 10);
+		auto Ptr = AddGameObject<StageCellMap>(Vec3(-5.0f, 0, -5.0f), PieceSize, 10, 10);
 		//セルマップの区画を表示する場合は以下の設定
 		//Ptr->SetDrawActive(true);
 		//さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -90,17 +90,17 @@ namespace basecross {
 			//トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
 			Util::WStrToTokenVector(Tokens, v, L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			Vector3 Scale(
+			Vec3 Scale(
 				(float)_wtof(Tokens[1].c_str()), 
 				(float)_wtof(Tokens[2].c_str()), 
 				(float)_wtof(Tokens[3].c_str())
 			);
-			Vector3 Rot;
+			Vec3 Rot;
 			//回転は「XM_PIDIV2」の文字列になっている場合がある
 			Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
 			Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
 			Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
-			Vector3 Pos(
+			Vec3 Pos(
 				(float)_wtof(Tokens[7].c_str()),
 				(float)_wtof(Tokens[8].c_str()),
 				(float)_wtof(Tokens[9].c_str())
@@ -164,7 +164,7 @@ namespace basecross {
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
 		auto SwordPtr = AddGameObject<Sword>(
-			Vector3(0.2, 0.5, 0.2),
+			Vec3(0.2, 0.5, 0.2),
 			L"PlayerSword"
 			);
 		SetSharedGameObject(L"PlayerSword", SwordPtr);
@@ -173,29 +173,29 @@ namespace basecross {
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
 		//HPバー
-		AddGameObject<HPManeger<Player>>(PlayerPtr,Color4(0,1,0,1));
+		AddGameObject<HPManeger<Player>>(PlayerPtr,Col4(0,1,0,1));
 	}
 
 	//敵の作成
 	void GameStage::CreateEnemy() {
 		auto MapPtr = GetSharedGameObject<StageCellMap>(L"StageCellMap");
-		vector< vector<Vector3> > Vec1 = {
+		vector< vector<Vec3> > Vec1 = {
 			{
-				Vector3(0.5f, 0.5f, 0.5f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-3.5f, 0.25f, 3.5f)
+				Vec3(0.5f, 0.5f, 0.5f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-3.5f, 0.25f, 3.5f)
 			},
 		};
 		//オブジェクトの作成
 		for (auto v : Vec1) {
 			auto SwordPtr = AddGameObject<Sword>(
-				Vector3(0.2, 0.7, 0.2),
+				Vec3(0.2, 0.7, 0.2),
 				L"EnemySword"
 				);
 			SetSharedGameObject(L"EnemySword", SwordPtr);
 			auto EnemyPtr = AddGameObject<Enemy>(MapPtr, v[0], v[1], v[2]);
 			//HPバー
-			AddGameObject<HPManeger<Enemy>>(EnemyPtr, Color4(1, 0, 0, 1));
+			AddGameObject<HPManeger<Enemy>>(EnemyPtr, Col4(1, 0, 0, 1));
 		}
 	}
 

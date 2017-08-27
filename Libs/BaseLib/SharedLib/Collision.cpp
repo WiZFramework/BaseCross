@@ -27,6 +27,14 @@ namespace basecross {
 		vector<shared_ptr<GameObject>> m_HitObjectVec;	//ヒットしたオブジェクト
 		vector<shared_ptr<GameObject>> m_TempHitObjectVec;	//汎用ヒットしたオブジェクト
 
+		inline  bsm::Vec3 Slide(const bsm::Vec3& Vec, const bsm::Vec3& Norm) {
+			//thisと法線から直行線の長さ（内積で求める）
+			float Len = bsm::dot(Vec, Norm);
+			//その長さに伸ばす
+			bsm::Vec3 Contact = Norm * Len;
+			//スライドする方向は現在のベクトルから引き算
+			return (Vec - Contact);
+		}
 
 
 		Impl() :
@@ -236,15 +244,16 @@ namespace basecross {
 		pImpl->m_IsHitAction = HitAction;
 	}
 
-	void Collision::AfterCollision(const shared_ptr<Collision>& DestColl, const Vector3& SrcVelocity, const Vector3& DestVelocity, 
-		const Vector3& HitNormal,float AfterHitTime) {
+	void Collision::AfterCollision(const shared_ptr<Collision>& DestColl, const bsm::Vec3& SrcVelocity, const bsm::Vec3& DestVelocity, 
+		const bsm::Vec3& HitNormal,float AfterHitTime) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		//親の速度
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		auto DestVelo = PtrDestTransform->GetWorldMatrix().PosInMatrixSt() - PtrDestTransform->GetBeforeWorldMatrix().PosInMatrixSt();
+		auto DestVelo = PtrDestTransform->GetWorldMatrix().transInMatrix() 
+			- PtrDestTransform->GetBeforeWorldMatrix().transInMatrix();
 
 		//スライドする方向を計算
-		Vector3 Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+		bsm::Vec3 Slide = pImpl->Slide(SrcVelocity, HitNormal);
 		PtrTransform->SetToBefore();
 		if (GetIsHitAction() != IsHitAction::Stop && GetIsHitAction() != IsHitAction::None) {
 			auto WorldPos = PtrTransform->GetWorldPosition() + Slide * AfterHitTime;
@@ -254,8 +263,9 @@ namespace basecross {
 		bool horizontal = false;
 		if (GetGameObject()->FindBehavior<Gravity>()) {
 			auto Grav = GetGameObject()->GetBehavior<Gravity>()->GetGravity();
-			Grav.Normalize();
-			if (Vector3EX::AngleBetweenNormals(Grav, HitNormal) <= XM_PIDIV4) {
+			Grav.normalize();
+			bsm::Vec3 v = (bsm::Vec3)XMVector3AngleBetweenNormals(Grav, HitNormal);
+			if (v.x <= XM_PIDIV4) {
 				horizontal = true;
 			}
 		}
@@ -266,7 +276,7 @@ namespace basecross {
 			case IsHitAction::Slide:
 			{
 				auto DestVelocity = PtrDestTransform->GetVelocity();
-				Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+				Slide = pImpl->Slide(SrcVelocity, HitNormal);
 				PtrRigid->SetVelocity(Slide);
 				//重力は0にする
 				PtrRigid->SetGravityVelocityZero();
@@ -275,7 +285,7 @@ namespace basecross {
 			case IsHitAction::Auto:
 				if (horizontal) {
 					//乗っているときはスライドさせる
-					Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+					Slide = pImpl->Slide(SrcVelocity, HitNormal);
 					PtrRigid->SetVelocity(Slide);
 					//何かに乗ったときは重力は0にする
 					PtrRigid->SetGravityVelocityZero();
@@ -285,14 +295,14 @@ namespace basecross {
 					auto DestRigid = DestColl->GetGameObject()->GetComponent<Rigidbody>(false);
 					float ResultPower = -(1.0f + PtrRigid->GetReflection());
 					if (DestRigid) {
-						Vector3 RelativeVelo = SrcVelocity - DestVelocity;
-						ResultPower = (-(1.0f + PtrRigid->GetReflection()) * Vector3EX::Dot(RelativeVelo, HitNormal)) /
-							(Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
+						bsm::Vec3 RelativeVelo = SrcVelocity - DestVelocity;
+						ResultPower = (-(1.0f + PtrRigid->GetReflection()) * bsm::dot(RelativeVelo, HitNormal)) /
+							(bsm::dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
 					}
 					else {
-						Vector3 RelativeVelo = SrcVelocity;
-						ResultPower = (-(1.0f + PtrRigid->GetReflection()) * Vector3EX::Dot(RelativeVelo, HitNormal)) /
-							(Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
+						bsm::Vec3 RelativeVelo = SrcVelocity;
+						ResultPower = (-(1.0f + PtrRigid->GetReflection()) * bsm::dot(RelativeVelo, HitNormal)) /
+							(bsm::dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
 					}
 					auto Velo = PtrRigid->GetVelocity();
 					Velo += (HitNormal * ResultPower) / PtrRigid->GetMass();
@@ -370,17 +380,17 @@ namespace basecross {
 
 	SPHERE CollisionSphere::GetSphere() const {
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Matrix4X4 MatBase;
-		MatBase.Scaling(pImpl->m_MakedDiameter, pImpl->m_MakedDiameter, pImpl->m_MakedDiameter);
+		bsm::Mat4x4 MatBase;
+		MatBase.scale(bsm::Vec3(pImpl->m_MakedDiameter, pImpl->m_MakedDiameter, pImpl->m_MakedDiameter));
 		MatBase *= TransPtr->GetWorldMatrix();
 		//このオブジェクトのSPHEREを作成
-		SPHERE Ret(MatBase.PosInMatrixSt(), MatBase.ScaleInMatrix().x * 0.5f);
+		SPHERE Ret(MatBase.transInMatrix(), MatBase.scaleInMatrix().x * 0.5f);
 		switch (pImpl->m_CalcScaling) {
 		case CalcScaling::YScale:
-			Ret.m_Radius = MatBase.ScaleInMatrix().y * 0.5f;
+			Ret.m_Radius = MatBase.scaleInMatrix().y * 0.5f;
 			break;
 		case CalcScaling::ZScale:
-			Ret.m_Radius = MatBase.ScaleInMatrix().z * 0.5f;
+			Ret.m_Radius = MatBase.scaleInMatrix().z * 0.5f;
 			break;
 		default:
 			break;
@@ -389,17 +399,17 @@ namespace basecross {
 	}
 	SPHERE CollisionSphere::GetBeforeSphere() const {
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Matrix4X4 MatBase;
-		MatBase.Scaling(pImpl->m_MakedDiameter, pImpl->m_MakedDiameter, pImpl->m_MakedDiameter);
+		bsm::Mat4x4 MatBase;
+		MatBase.scale(bsm::Vec3(pImpl->m_MakedDiameter, pImpl->m_MakedDiameter, pImpl->m_MakedDiameter));
 		MatBase *= TransPtr->GetBeforeWorldMatrix();
 		//このオブジェクトのSPHEREを作成
-		SPHERE Ret(MatBase.PosInMatrixSt(), MatBase.ScaleInMatrix().x * 0.5f);
+		SPHERE Ret(MatBase.transInMatrix(), MatBase.scaleInMatrix().x * 0.5f);
 		switch (pImpl->m_CalcScaling) {
 		case CalcScaling::YScale:
-			Ret.m_Radius = MatBase.ScaleInMatrix().y * 0.5f;
+			Ret.m_Radius = MatBase.scaleInMatrix().y * 0.5f;
 			break;
 		case CalcScaling::ZScale:
-			Ret.m_Radius = MatBase.ScaleInMatrix().z * 0.5f;
+			Ret.m_Radius = MatBase.scaleInMatrix().z * 0.5f;
 			break;
 		default:
 			break;
@@ -416,8 +426,8 @@ namespace basecross {
 		//Sphere同士はCillisionWrappedSphere()は呼び出さない
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -427,7 +437,7 @@ namespace basecross {
 		//相手のCollisionSphere
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereSphere(SrcBeforSphere, SpanVelocity, DestBeforeSphere, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionSphere, CollisionSphere>
@@ -442,8 +452,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -454,7 +464,7 @@ namespace basecross {
 		CAPSULE DestCap = DestColl->GetCapsule();
 		CAPSULE DestBeforeCap = DestColl->GetBeforeCapsule();
 
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereCapsule(SrcBeforSphere, SpanVelocity, DestBeforeCap, 0, ElapsedTime, HitTime)) {
 
@@ -472,8 +482,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -483,7 +493,7 @@ namespace basecross {
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
 
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereObb(SrcBeforSphere, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionSphere, CollisionObb>
@@ -494,8 +504,8 @@ namespace basecross {
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -505,7 +515,7 @@ namespace basecross {
 		//相手まずはAABBで調査
 		AABB WrapAABB = DestColl->GetWrappedAABB();
 		//ラッピングAABBは静止している
-		Vector3 SpanVelocity = SrcVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity;
 		float HitTime = 0;
 		if (!HitTest::CollisionTestSphereAabb(SrcBeforSphere, SpanVelocity, WrapAABB, 0, ElapsedTime, HitTime)) {
 			//ラッピングAABBと衝突していなければこれ以上検査しない
@@ -530,8 +540,8 @@ namespace basecross {
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -542,7 +552,7 @@ namespace basecross {
 		COLRECT DestRect = DestColl->GetColRect();
 		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
 
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereRect(SrcBeforSphere, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionSphere, CollisionRect>
@@ -552,73 +562,73 @@ namespace basecross {
 
 
 
-	void CollisionSphere::BackToBefore(const Vector3 TotalVelocoty, float SpanTime) {
+	void CollisionSphere::BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime) {
 		//すべて移動以外変化なしとする
 		SPHERE SrcSphere = GetSphere();
 		SPHERE SrcBeforSphere = GetBeforeSphere();
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = SrcBeforSphere.m_Center + TotalVelocoty * SpanTime;
+		bsm::Vec3 Pos = SrcBeforSphere.m_Center + TotalVelocoty * SpanTime;
 		PtrTransform->ResetWorldPosition(Pos);
 	}
 
 
-	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const {
+	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const {
 		SPHERE sp = GetSphere();
 		SPHERE sp2 = DestColl->GetSphere();
 		//接点へのベクトル
 		Ret = sp2.m_Center - sp.m_Center;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const {
+	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const {
 		SPHERE sp = GetSphere();
 		CAPSULE cap = DestColl->GetCapsule();
-		Vector3 RetPoint;
+		bsm::Vec3 RetPoint;
 		HitTest::SPHERE_CAPSULE(sp, cap, RetPoint);
 		//接点へのベクトル
 		Ret = RetPoint - sp.m_Center;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const {
+	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const {
 		SPHERE sp = GetSphere();
 		OBB obb = DestColl->GetObb();
-		Vector3 RetPoint;
+		bsm::Vec3 RetPoint;
 		HitTest::SPHERE_OBB(sp, obb, RetPoint);
 		//接点へのベクトル
 		Ret = RetPoint - sp.m_Center;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
-	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const {
+	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const {
 		SPHERE sp = GetSphere();
 		vector<TRIANGLE> trivec;
 		DestColl->GetTriangles(trivec);
 		Ret = -trivec[pImpl->m_IsHitVolumeIndex].GetNormal();
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
-	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const {
+	void CollisionSphere::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const {
 		SPHERE sp = GetSphere();
 		COLRECT DestRect = DestColl->GetColRect();
 		//面のベクトル
 		PLANE p = DestRect.GetPLANE();
 		Ret = p.m_Normal;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 	void CollisionSphere::CollisionEscape(const shared_ptr<CollisionSphere>& DestColl) {
 		SPHERE SrcSphere = GetSphere();
 		SPHERE DestSphere = DestColl->GetSphere();
 		if (HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
-			Vector3 Normal = SrcSphere.m_Center - DestSphere.m_Center;
-			Normal.Normalize();
+			bsm::Vec3 Normal = SrcSphere.m_Center - DestSphere.m_Center;
+			Normal.normalize();
 			float Span = SrcSphere.m_Radius + DestSphere.m_Radius;
 			Normal *= Span;
 			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-			Vector3 Pos = DestSphere.m_Center + Normal;
+			bsm::Vec3 Pos = DestSphere.m_Center + Normal;
 			//エスケープはリセット
 			PtrTransform->ResetWorldPosition(Pos);
 		}
@@ -627,11 +637,11 @@ namespace basecross {
 	void CollisionSphere::CollisionEscape(const shared_ptr<CollisionCapsule>& DestColl) {
 		SPHERE SrcSphere = GetSphere();
 		CAPSULE DestCap = DestColl->GetCapsule();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret);
 		if (Ishit) {
-			Vector3 span = SrcSphere.m_Center - Ret;
-			span.Normalize();
+			bsm::Vec3 span = SrcSphere.m_Center - Ret;
+			span.normalize();
 			span *= 0.02f;
 			int count = 0;
 			auto Center = SrcSphere.m_Center;
@@ -656,11 +666,11 @@ namespace basecross {
 	void CollisionSphere::CollisionEscape(const shared_ptr<CollisionObb>& DestColl) {
 		SPHERE SrcSphere = GetSphere();
 		OBB DestObb = DestColl->GetObb();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret);
 		if (Ishit) {
-			Vector3 span = SrcSphere.m_Center - Ret;
-			span.Normalize();
+			bsm::Vec3 span = SrcSphere.m_Center - Ret;
+			span.normalize();
 			span *= SrcSphere.m_Radius;
 			span += Ret;
 			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
@@ -673,12 +683,12 @@ namespace basecross {
 		SPHERE SrcSphere = GetSphere();
 		vector<TRIANGLE> trivec;
 		DestColl->GetTriangles(trivec);
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::HitTest::SPHERE_TRIANGLE(SrcSphere, trivec[pImpl->m_IsHitVolumeIndex], Ret);
 		if (Ishit) {
-			Vector3 span = Vector3EX::Cross(trivec[pImpl->m_IsHitVolumeIndex].m_B - trivec[pImpl->m_IsHitVolumeIndex].m_A,
+			bsm::Vec3 span = bsm::cross(trivec[pImpl->m_IsHitVolumeIndex].m_B - trivec[pImpl->m_IsHitVolumeIndex].m_A,
 				trivec[pImpl->m_IsHitVolumeIndex].m_C - trivec[pImpl->m_IsHitVolumeIndex].m_A);
-			span.Normalize();
+			span.normalize();
 			span *= 0.0005f;
 			int count = 0;
 			auto Center = SrcSphere.m_Center;
@@ -704,11 +714,11 @@ namespace basecross {
 	void CollisionSphere::CollisionEscape(const shared_ptr<CollisionRect>& DestColl) {
 		SPHERE SrcSphere = GetSphere();
 		COLRECT DestRect = DestColl->GetColRect();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::HitTest::SPHERE_COLRECT(SrcSphere, DestRect, Ret);
 		if (Ishit) {
 			auto Norm = SrcSphere.m_Center - Ret;
-			Norm.Normalize();
+			Norm.normalize();
 			Norm *= SrcSphere.m_Radius;
 			Norm += Ret;
 			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
@@ -725,7 +735,7 @@ namespace basecross {
 		return Src;
 	}
 
-	bool CollisionSphere::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+	bool CollisionSphere::HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) {
 		return false;
 	}
 
@@ -734,31 +744,31 @@ namespace basecross {
 		return SrcSphere.GetWrappedAABB();
 	}
 
-	Vector3 CollisionSphere::GetCenterPosition()const {
+	bsm::Vec3 CollisionSphere::GetCenterPosition()const {
 		SPHERE SrcSphere = GetSphere();
 		return SrcSphere.m_Center;
 	}
 
 	void CollisionSphere::OnDraw() {
 		GenericDraw Draw;
-		Matrix4X4 MeshToTransformMatrix;
+		bsm::Mat4x4 MeshToTransformMatrix;
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto Scale = PtrTransform->GetScale();
-		Vector3 CollScale(Scale.x, Scale.x, Scale.x);
+		bsm::Vec3 CollScale(Scale.x, Scale.x, Scale.x);
 		switch (pImpl->m_CalcScaling) {
 		case CalcScaling::YScale:
-			CollScale = Vector3(Scale.y, Scale.y, Scale.y);
+			CollScale = bsm::Vec3(Scale.y, Scale.y, Scale.y);
 			break;
 		case CalcScaling::ZScale:
-			CollScale = Vector3(Scale.z, Scale.z, Scale.z);
+			CollScale = bsm::Vec3(Scale.z, Scale.z, Scale.z);
 			break;
 		default:
 			break;
 		}
-		Vector3 ColcScale(CollScale.x / Scale.x, CollScale.y / Scale.y, CollScale.z / Scale.z);
-		Matrix4X4 mat;
-		mat.ScalingFromVector(ColcScale);
+		bsm::Vec3 ColcScale(CollScale.x / Scale.x, CollScale.y / Scale.y, CollScale.z / Scale.z);
+		bsm::Mat4x4 mat;
+		mat.scale(ColcScale);
 
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_SPHERE"),
 			mat);
@@ -774,8 +784,8 @@ namespace basecross {
 		//配列ボリュームと衝突時に衝突した配列を特定するインデックス
 		size_t m_IsHitVolumeIndex;
 
-		Matrix4X4 m_BeforeWorldMatrix;
-		Matrix4X4 m_WorldMatrix;
+		bsm::Mat4x4 m_BeforeWorldMatrix;
+		bsm::Mat4x4 m_WorldMatrix;
 		CAPSULE m_BeforeWorldCapsule;
 		CAPSULE m_WorldCapsule;
 
@@ -840,8 +850,8 @@ namespace basecross {
 			pImpl->m_WorldMatrix = PtrT->GetWorldMatrix();
 			pImpl->m_WorldCapsule = CAPSULE(
 				pImpl->m_MakedDiameter * 0.5f,
-				Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
-				Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
+				bsm::Vec3(0, pImpl->m_MakedHeight * -0.5f, 0),
+				bsm::Vec3(0, pImpl->m_MakedHeight * 0.5f, 0),
 				pImpl->m_WorldMatrix);
 			pImpl->m_FirstCalc = false;
 		}
@@ -854,8 +864,8 @@ namespace basecross {
 			pImpl->m_BeforeWorldMatrix = PtrT->GetBeforeWorldMatrix();
 			pImpl->m_BeforeWorldCapsule = CAPSULE(
 				pImpl->m_MakedDiameter * 0.5f,
-				Vector3(0, pImpl->m_MakedHeight * -0.5f, 0),
-				Vector3(0, pImpl->m_MakedHeight * 0.5f, 0),
+				bsm::Vec3(0, pImpl->m_MakedHeight * -0.5f, 0),
+				bsm::Vec3(0, pImpl->m_MakedHeight * 0.5f, 0),
 				pImpl->m_BeforeWorldMatrix);
 			pImpl->m_FirstBeforeCalc = false;
 		}
@@ -873,8 +883,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -885,7 +895,7 @@ namespace basecross {
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
 		//SPHEREとCAPSULEの扱いが逆になる
-		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
+		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereCapsule(DestBeforeSphere, SpanVelocity, SrcBeforCapsule, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionSphere>
@@ -900,8 +910,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -911,7 +921,7 @@ namespace basecross {
 		//相手のCollisionCapsule
 		CAPSULE DestCapsule = DestColl->GetCapsule();
 		CAPSULE DestBeforeCapsule = DestColl->GetBeforeCapsule();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleCapsule(SrcBeforCapsule, SpanVelocity, DestBeforeCapsule, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionCapsule>
@@ -926,8 +936,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -937,7 +947,7 @@ namespace basecross {
 		//相手のCollisionObb
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleObb(SrcBeforCapsule, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionCapsule, CollisionObb>
@@ -948,8 +958,8 @@ namespace basecross {
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionTriangles>& DestColl) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -959,7 +969,7 @@ namespace basecross {
 		//相手まずはAABBで調査
 		AABB WrapAABB = DestColl->GetWrappedAABB();
 		//ラッピングAABBは静止している
-		Vector3 SpanVelocity = SrcVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity;
 		float HitTime = 0;
 		if (!HitTest::CollisionTestCapsuleAabb(SrcBeforCapsule, SpanVelocity, WrapAABB, 0, ElapsedTime, HitTime)) {
 			//ラッピングAABBと衝突していなければこれ以上検査しない
@@ -987,8 +997,8 @@ namespace basecross {
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
@@ -998,7 +1008,7 @@ namespace basecross {
 		//相手のCollisionRect
 		COLRECT DestRect = DestColl->GetColRect();
 		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleRect(SrcBeforCapsule, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionCapsule, CollisionRect>
@@ -1006,72 +1016,72 @@ namespace basecross {
 		}
 	}
 
-	void CollisionCapsule::BackToBefore(const Vector3 TotalVelocoty, float SpanTime) {
+	void CollisionCapsule::BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime) {
 		//すべて移動以外変化なしとする
 		CAPSULE SrcCapsule = GetCapsule();
 		CAPSULE SrcBeforCapsule = GetBeforeCapsule();
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = SrcBeforCapsule.GetCenter() + TotalVelocoty * SpanTime;
+		bsm::Vec3 Pos = SrcBeforCapsule.GetCenter() + TotalVelocoty * SpanTime;
 		PtrTransform->ResetWorldPosition(Pos);
 	}
 
-	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const {
+	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const {
 		CAPSULE cap = GetCapsule();
 		SPHERE sp = DestColl->GetSphere();
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		HitTest::SPHERE_CAPSULE(sp, cap, RetVec);
 		//接点へのベクトル
 		Ret = sp.m_Center - RetVec;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const {
+	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const {
 		CAPSULE SrcCap = GetCapsule();
 		CAPSULE DestCap = DestColl->GetCapsule();
-		Vector3 RetVec1, RetVec2;
+		bsm::Vec3 RetVec1, RetVec2;
 		HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, RetVec1, RetVec2);
 		//接点へのベクトル
 		//DestCapの線分とRetVec1の線分上の最近接点とRetVec1の法線
-		Vector3 Start = DestCap.m_PointBottom;
-		Vector3 End = DestCap.m_PointTop;
+		bsm::Vec3 Start = DestCap.m_PointBottom;
+		bsm::Vec3 End = DestCap.m_PointTop;
 		float t;
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		HitTest::ClosetPtPointSegment(RetVec1,
 			Start, End, t, RetVec);
 		Ret = RetVec - RetVec1;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
-	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const {
+	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const {
 		CAPSULE SrcCap = GetCapsule();
 		OBB DestObb = DestColl->GetObb();
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		HitTest::CAPSULE_OBB(SrcCap, DestObb, RetVec);
 		//接点へのベクトル
 		float t;
-		Vector3 SegPoint;
+		bsm::Vec3 SegPoint;
 		HitTest::ClosetPtPointSegment(RetVec, SrcCap.m_PointBottom, SrcCap.m_PointTop, t, SegPoint);
 		Ret = RetVec - SegPoint;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const {
+	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const {
 		CAPSULE SrcCap = GetCapsule();
 
 		vector<TRIANGLE> trivec;
 		DestColl->GetTriangles(trivec);
 		Ret = -trivec[pImpl->m_IsHitVolumeIndex].GetNormal();
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
-	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const {
+	void CollisionCapsule::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const {
 		CAPSULE SrcCap = GetCapsule();
 		COLRECT DestRect = DestColl->GetColRect();
 		PLANE p = DestRect.GetPLANE();
 		Ret = p.m_Normal;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
@@ -1079,10 +1089,10 @@ namespace basecross {
 		CAPSULE SrcCap = GetCapsule();
 		auto Center = SrcCap.GetCenter();
 		SPHERE DestSphere = DestColl->GetSphere();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		if (HitTest::SPHERE_CAPSULE(DestSphere, SrcCap, Ret)) {
 			int count = 0;
-			Vector3 span = DestSphere.m_Center - Ret;
+			bsm::Vec3 span = DestSphere.m_Center - Ret;
 			span *= 0.02f;
 			while (1) {
 				Center += span;
@@ -1105,14 +1115,14 @@ namespace basecross {
 		CAPSULE SrcCap = GetCapsule();
 		auto Center = SrcCap.GetCenter();
 		CAPSULE DestCap = DestColl->GetCapsule();
-		Vector3 Ret1,Ret2;
+		bsm::Vec3 Ret1,Ret2;
 		if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1,Ret2)) {
 			int count = 0;
 			//接点へのベクトル
 			float t;
-			Vector3 SegPoint;
+			bsm::Vec3 SegPoint;
 			HitTest::ClosetPtPointSegment(Ret1, SrcCap.m_PointBottom, SrcCap.m_PointTop, t, SegPoint);
-			Vector3 span = SegPoint - Ret1;
+			bsm::Vec3 span = SegPoint - Ret1;
 			span *= 0.02f;
 			while (1) {
 				Center += span;
@@ -1135,14 +1145,14 @@ namespace basecross {
 		CAPSULE SrcCap = GetCapsule();
 		auto Center = SrcCap.GetCenter();
 		OBB DestObb = DestColl->GetObb();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		if (HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret)) {
 			int count = 0;
 			//接点へのベクトル
 			float t;
-			Vector3 SegPoint;
+			bsm::Vec3 SegPoint;
 			HitTest::ClosetPtPointSegment(Ret, SrcCap.m_PointBottom, SrcCap.m_PointTop, t, SegPoint);
-			Vector3 span = SegPoint - Ret;
+			bsm::Vec3 span = SegPoint - Ret;
 			span *= 0.02f;
 			while (1) {
 				Center += span;
@@ -1166,11 +1176,11 @@ namespace basecross {
 		auto Center = SrcCap.GetCenter();
 		vector<TRIANGLE> trivec;
 		DestColl->GetTriangles(trivec);
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::HitTest::CAPSULE_TRIANGLE(SrcCap, trivec[pImpl->m_IsHitVolumeIndex], Ret);
 		if (Ishit) {
-			Vector3 span = trivec[pImpl->m_IsHitVolumeIndex].GetNormal();
-			span.Normalize();
+			bsm::Vec3 span = trivec[pImpl->m_IsHitVolumeIndex].GetNormal();
+			span.normalize();
 			span *= 0.02f;
 			int count = 0;
 			while (1) {
@@ -1194,11 +1204,11 @@ namespace basecross {
 	void CollisionCapsule::CollisionEscape(const shared_ptr<CollisionRect>& DestColl) {
 		CAPSULE SrcCap = GetCapsule();
 		COLRECT DestRect = DestColl->GetColRect();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		if (HitTest::CAPSULE_COLRECT(SrcCap, DestRect, Ret)) {
 			PLANE p = DestRect.GetPLANE();
-			Vector3 span = p.m_Normal;
-			span.Normalize();
+			bsm::Vec3 span = p.m_Normal;
+			span.normalize();
 			span *= -0.02f;
 			int count = 0;
 			auto Center = SrcCap.GetCenter();
@@ -1228,7 +1238,7 @@ namespace basecross {
 		return Src;
 	}
 
-	bool CollisionCapsule::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+	bool CollisionCapsule::HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) {
 		return false;
 	}
 
@@ -1237,7 +1247,7 @@ namespace basecross {
 		return SrcCapsule.GetWrappedAABB();
 	}
 
-	Vector3 CollisionCapsule::GetCenterPosition()const {
+	bsm::Vec3 CollisionCapsule::GetCenterPosition()const {
 		CAPSULE SrcCapsule = GetCapsule();
 		return SrcCapsule.GetCenter();
 	}
@@ -1258,8 +1268,8 @@ namespace basecross {
 		float m_Size;					//作成時のサイズ
 		float m_ChkOnUnderLaySize;
 
-		Matrix4X4 m_BeforeWorldMatrix;
-		Matrix4X4 m_WorldMatrix;
+		bsm::Mat4x4 m_BeforeWorldMatrix;
+		bsm::Mat4x4 m_WorldMatrix;
 		OBB m_BeforeWorldObb;
 		OBB m_WorldObb;
 
@@ -1309,10 +1319,10 @@ namespace basecross {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
 		if (pImpl->m_FirstCalc || !PtrT->IsSameWorldMatrix(pImpl->m_WorldMatrix)) {
 			pImpl->m_WorldMatrix = PtrT->GetWorldMatrix();
-			Matrix4X4 MatBase;
-			MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
+			bsm::Mat4x4 MatBase;
+			MatBase.scale(bsm::Vec3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size));
 			MatBase *= pImpl->m_WorldMatrix;
-			pImpl->m_WorldObb = OBB(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
+			pImpl->m_WorldObb = OBB(bsm::Vec3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
 			pImpl->m_FirstCalc = false;
 		}
 		return pImpl->m_WorldObb;
@@ -1321,10 +1331,10 @@ namespace basecross {
 		auto PtrT = GetGameObject()->GetComponent<Transform>();
 		if (pImpl->m_FirstBeforeCalc || !PtrT->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)) {
 			pImpl->m_BeforeWorldMatrix = PtrT->GetBeforeWorldMatrix();
-			Matrix4X4 MatBase;
-			MatBase.Scaling(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size);
+			bsm::Mat4x4 MatBase;
+			MatBase.scale(bsm::Vec3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size));
 			MatBase *= pImpl->m_BeforeWorldMatrix;
-			pImpl->m_BeforeWorldObb = OBB(Vector3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
+			pImpl->m_BeforeWorldObb = OBB(bsm::Vec3(pImpl->m_Size, pImpl->m_Size, pImpl->m_Size), MatBase);
 			pImpl->m_FirstBeforeCalc = false;
 		}
 		return pImpl->m_BeforeWorldObb;
@@ -1341,8 +1351,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -1352,7 +1362,7 @@ namespace basecross {
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
 		//SPHEREとOBBの扱いが逆になる
-		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
+		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereObb(DestBeforeSphere, SpanVelocity, SrcBeforeObb, 0, ElapsedTime, HitTime)) {
 
@@ -1370,8 +1380,8 @@ namespace basecross {
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -1381,7 +1391,7 @@ namespace basecross {
 		CAPSULE DestCapsule = DestColl->GetCapsule();
 		CAPSULE DestBeforeCapsule = DestColl->GetBeforeCapsule();
 		//SPHEREとOBBの扱いが逆になる
-		Vector3 SpanVelocity = DestVelocity - SrcVelocity;
+		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleObb(DestBeforeCapsule, SpanVelocity, SrcBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionObb, CollisionCapsule>
@@ -1398,8 +1408,8 @@ namespace basecross {
 		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -1408,7 +1418,7 @@ namespace basecross {
 		//相手
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestObbObb(SrcBeforObb, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_1<CollisionObb, CollisionObb>
@@ -1425,8 +1435,8 @@ namespace basecross {
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
-		Vector3 SrcVelocity = PtrTransform->GetVelocity();
-		Vector3 DestVelocity = PtrDestTransform->GetVelocity();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -1435,7 +1445,7 @@ namespace basecross {
 		//相手
 		COLRECT DestRect = DestColl->GetColRect();
 		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
-		Vector3 SpanVelocity = SrcVelocity - DestVelocity;
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestObbRect(SrcBeforObb, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
 			AfterCollisionTmpl_2<CollisionObb, CollisionRect>
@@ -1445,78 +1455,78 @@ namespace basecross {
 
 
 
-	void CollisionObb::BackToBefore(const Vector3 TotalVelocoty, float SpanTime) {
+	void CollisionObb::BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime) {
 		//すべて移動以外変化なしとする
 		OBB SrcObb = GetObb();
 		OBB SrcBeforObb = GetBeforeObb();
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = SrcBeforObb.m_Center + TotalVelocoty * SpanTime;
+		bsm::Vec3 Pos = SrcBeforObb.m_Center + TotalVelocoty * SpanTime;
 		PtrTransform->ResetWorldPosition(Pos);
 	}
 
-	void CollisionObb::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const {
+	void CollisionObb::GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const {
 		OBB obb = GetObb();
 		SPHERE sp = DestColl->GetSphere();
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		HitTest::SPHERE_OBB(sp, obb, RetVec);
 		//接点へのベクトル
 		//逆になる
 		Ret = sp.m_Center - RetVec;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionObb::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const {
+	void CollisionObb::GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const {
 		OBB obb = GetObb();
 		CAPSULE cap = DestColl->GetCapsule();
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		HitTest::CAPSULE_OBB(cap, obb, RetVec);
 		//接点へのベクトル
 		//逆になる
 		Ret = cap.GetCenter() - RetVec;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
-	void CollisionObb::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const {
+	void CollisionObb::GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const {
 		OBB obb = GetObb();
 		OBB obb2 = DestColl->GetObb();
-		Vector3 RetVec;
+		bsm::Vec3 RetVec;
 		//SrcのOBBとDestの最近接点を得る
 		HitTest::ClosestPtPointOBB(obb.m_Center, obb2, RetVec);
 		//接点へのベクトル
 		Ret = RetVec - obb.m_Center;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
 
-	void CollisionObb::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const {
+	void CollisionObb::GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const {
 		//OBBと三角形配列は未対応
 	}
 
-	void CollisionObb::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const {
+	void CollisionObb::GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const {
 		OBB obb = GetObb();
 		COLRECT rect = DestColl->GetColRect();
 		//Rectのベクトル
 		Ret = DestColl->GetColRect().GetPLANE().m_Normal;
-		Ret.Normalize();
+		Ret.normalize();
 	}
 
 
 	void CollisionObb::CollisionEscape(const shared_ptr<CollisionSphere>& DestColl) {
 		OBB SrcObb = GetObb();
 		SPHERE DestSphere = DestColl->GetSphere();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret);
 		if (Ishit) {
-			Vector3 NowSpan = Ret - DestSphere.m_Center;
-			Vector3 NewSpan = NowSpan;
-			NewSpan.Normalize();
+			bsm::Vec3 NowSpan = Ret - DestSphere.m_Center;
+			bsm::Vec3 NewSpan = NowSpan;
+			NewSpan.normalize();
 			NewSpan *= (DestSphere.m_Radius);
 			auto MoveSpan = NewSpan - NowSpan;
 			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-			auto Pos = PtrTransform->GetWorldMatrix().PosInMatrixSt();
+			auto Pos = PtrTransform->GetWorldMatrix().transInMatrix();
 			Pos += MoveSpan;
 			//エスケープはリセット
 			PtrTransform->ResetWorldPosition(Pos);
@@ -1528,15 +1538,15 @@ namespace basecross {
 		OBB SrcObb = GetObb();
 		auto Center = SrcObb.m_Center;
 		CAPSULE DestCapsule = DestColl->GetCapsule();
-		Vector3 Ret;
+		bsm::Vec3 Ret;
 		bool Ishit = HitTest::CAPSULE_OBB(DestCapsule, SrcObb,Ret);
 		if (Ishit) {
 			int count = 0;
 			//接点へのベクトル
 			float t;
-			Vector3 SegPoint;
+			bsm::Vec3 SegPoint;
 			HitTest::ClosetPtPointSegment(Ret, DestCapsule.m_PointBottom, DestCapsule.m_PointTop, t, SegPoint);
-			Vector3 span = Ret - SegPoint;
+			bsm::Vec3 span = Ret - SegPoint;
 			span *= 0.02f;
 			while (1) {
 				Center += span;
@@ -1561,11 +1571,11 @@ namespace basecross {
 		OBB DestObb = DestColl->GetObb();
 		bool Ishit = HitTest::OBB_OBB(SrcObb, DestObb);
 		if (Ishit) {
-			Vector3 Ret;
+			bsm::Vec3 Ret;
 			//SrcのOBBとDestの最近接点を得る
 			HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, Ret);
-			Vector3 span = SrcObb.m_Center - Ret;
-			span.Normalize();
+			bsm::Vec3 span = SrcObb.m_Center - Ret;
+			span.normalize();
 			span *= 0.02f;
 			auto Center = SrcObb.m_Center;
 			int count = 0;
@@ -1597,8 +1607,8 @@ namespace basecross {
 		COLRECT DestRect = DestColl->GetColRect();
 		bool Ishit = HitTest::OBB_COLRECT(SrcObb, DestRect);
 		if (Ishit) {
-			Vector3 span = DestColl->GetColRect().GetPLANE().m_Normal;
-			span.Normalize();
+			bsm::Vec3 span = DestColl->GetColRect().GetPLANE().m_Normal;
+			span.normalize();
 			span *= -0.02f;
 			auto Center = SrcObb.m_Center;
 			int count = 0;
@@ -1627,7 +1637,7 @@ namespace basecross {
 		return Src;
 	}
 
-	bool CollisionObb::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+	bool CollisionObb::HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) {
 		return false;
 	}
 
@@ -1636,7 +1646,7 @@ namespace basecross {
 		return SrcObb.GetWrappedAABB();
 	}
 
-	Vector3 CollisionObb::GetCenterPosition()const {
+	bsm::Vec3 CollisionObb::GetCenterPosition()const {
 		OBB SrcObb = GetObb();
 		return SrcObb.m_Center;
 	}
@@ -1657,8 +1667,8 @@ namespace basecross {
 		vector<TRIANGLE> m_WorldTriangles;
 		vector<TRIANGLE> m_BeforWorldTriangles;
 
-		Matrix4X4 m_BeforeWorldMatrix;
-		Matrix4X4 m_WorldMatrix;
+		bsm::Mat4x4 m_BeforeWorldMatrix;
+		bsm::Mat4x4 m_WorldMatrix;
 		bool m_FirstBeforeCalc;
 		bool m_FirstCalc;
 
@@ -1671,7 +1681,7 @@ namespace basecross {
 			m_WorldMatrix(),
 			m_FirstBeforeCalc(true),
 			m_FirstCalc(true),
-			m_WrappedAABB(Vector3(0, 0, 0), Vector3(0, 0, 0))
+			m_WrappedAABB(bsm::Vec3(0, 0, 0), bsm::Vec3(0, 0, 0))
 		{}
 		~Impl() {}
 	};
@@ -1743,7 +1753,7 @@ namespace basecross {
 
 	void CollisionTriangles::GetBeforeTriangles(vector<TRIANGLE>& trivec) const {
 		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
-		if (pImpl->m_FirstBeforeCalc || !TrasnsPtr->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)){
+		if (pImpl->m_FirstBeforeCalc || !TrasnsPtr->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix)) {
 			pImpl->m_BeforeWorldMatrix = TrasnsPtr->GetBeforeWorldMatrix();
 			if (!pImpl->m_MakedTriangles.empty()) {
 				pImpl->m_BeforWorldTriangles.clear();
@@ -1763,12 +1773,12 @@ namespace basecross {
 	AABB CollisionTriangles::GetWrappedAABB()const {
 		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
 		if (
-			pImpl->m_FirstBeforeCalc || pImpl->m_FirstCalc || 
+			pImpl->m_FirstBeforeCalc || pImpl->m_FirstCalc ||
 			!TrasnsPtr->IsSameBeforeWorldMatrix(pImpl->m_BeforeWorldMatrix) ||
 			!TrasnsPtr->IsSameWorldMatrix(pImpl->m_WorldMatrix)
 			) {
-			Vector3 min_v(0, 0, 0);
-			Vector3 max_v(0, 0, 0);
+			Vec3 min_v(0, 0, 0);
+			Vec3 max_v(0, 0, 0);
 			vector<TRIANGLE> trivec;
 			trivec.clear();
 			GetBeforeTriangles(trivec);
@@ -1808,19 +1818,19 @@ namespace basecross {
 	SPHERE  CollisionTriangles::GetEnclosingSphere()const {
 		AABB aabb = GetWrappedAABB();
 		SPHERE src;
-		src.m_Radius = (aabb.m_Max - aabb.m_Min).Length();
+		src.m_Radius = bsm::length(aabb.m_Max - aabb.m_Min);
 		src.m_Center = aabb.GetCenter();
 		return src;
 	}
 
-	bool CollisionTriangles::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+	bool CollisionTriangles::HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) {
 		//CollisionTrianglesは常にヒットしない
 		return false;
 	}
 
 	AABB CollisionTriangles::GetWrappingAABB()const {
-		Vector3 min_v(0, 0, 0);
-		Vector3 max_v(0, 0, 0);
+		bsm::Vec3 min_v(0, 0, 0);
+		bsm::Vec3 max_v(0, 0, 0);
 		vector<TRIANGLE> trivec;
 		GetTriangles(trivec);
 		if (!trivec.empty()) {
@@ -1833,7 +1843,7 @@ namespace basecross {
 		return AABB(min_v, max_v);
 	}
 
-	Vector3 CollisionTriangles::GetCenterPosition()const {
+	bsm::Vec3 CollisionTriangles::GetCenterPosition()const {
 		return GetWrappedAABB().GetCenter();
 	}
 
@@ -1925,7 +1935,7 @@ namespace basecross {
 		return Src;
 	}
 
-	bool CollisionRect::HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) {
+	bool CollisionRect::HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) {
 		return false;
 	}
 
@@ -1934,7 +1944,7 @@ namespace basecross {
 		return SrcColRect.GetWrappedAABB();
 	}
 
-	Vector3 CollisionRect::GetCenterPosition()const {
+	bsm::Vec3 CollisionRect::GetCenterPosition()const {
 		COLRECT SrcColRect = GetColRect();
 		return SrcColRect.m_Center;
 	}

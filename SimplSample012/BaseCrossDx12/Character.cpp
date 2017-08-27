@@ -10,7 +10,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	球実体
 	//--------------------------------------------------------------------------------------
-	SphereObject::SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos) :
+	SphereObject::SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos) :
 		ObjectInterface(),
 		ShapeInterface(),
 		m_Division(Division),
@@ -43,12 +43,12 @@ namespace basecross {
 				float Longitude = j * XM_2PI / Horizontal;
 				float Dx = sin(Longitude) * Dxz;
 				float Dz = cos(Longitude) * Dxz;
-				Vector3 normal(Dx, Dy, Dz);
+				Vec3 normal(Dx, Dy, Dz);
 				VertexPositionNormalTexture Data;
 				Data.position = normal * Radius;
 				Data.normal = normal;
-				Data.normal.Normalize();
-				Data.textureCoordinate = Vector2(u, v);
+				Data.normal.normalize();
+				Data.textureCoordinate = Vec2(u, v);
 				vertices.push_back(Data);
 			}
 		}
@@ -75,35 +75,35 @@ namespace basecross {
 
 	void SphereObject::UpdateConstantBuffer() {
 		//行列の定義
-		Matrix4X4 World, View, Proj;
+		Mat4x4 World, View, Proj;
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
 		//転置する
-		World.Transpose();
+		World.transpose();
 		//ビュー行列の決定
-		View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+		View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+		Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//ライティング
-		Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
-		LightDir.Normalize();
+		Vec4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+		LightDir.normalize();
 		m_StaticConstantBuffer.World = World;
 		m_StaticConstantBuffer.View = View;
 		m_StaticConstantBuffer.Projection = Proj;
 		m_StaticConstantBuffer.LightDir = LightDir;
-		m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_StaticConstantBuffer.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		m_StaticConstantBuffer.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_StaticConstantBuffer.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		//更新
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_StaticConstantBuffer),
 			sizeof(m_StaticConstantBuffer));
@@ -305,8 +305,8 @@ namespace basecross {
 		CreateBuffers();
 		//テクスチャの作成
 		m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
-		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
-		m_Qt.Identity();
+		m_Scale = Vec3(1.0f, 1.0f, 1.0f);
+		m_Qt.identity();
 		///各初期化関数呼び出し
 		///ルートシグネチャ作成
 		CreateRootSignature();
@@ -326,10 +326,10 @@ namespace basecross {
 		UpdateConstantBuffer();
 	}
 	void SphereObject::OnUpdate() {
-		Quaternion QtSpan;
-		QtSpan.RotationAxis(Vector3(0, 1.0f, 0), 0.02f);
+		Quat QtSpan;
+		QtSpan.rotation(0.02f, Vec3(0, 1.0f, 0));
 		m_Qt *= QtSpan;
-		m_Qt.Normalize();
+		m_Qt.normalize();
 	}
 	void SphereObject::OnDraw() {
 		//コンスタントバッファの更新

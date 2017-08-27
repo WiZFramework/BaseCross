@@ -17,9 +17,9 @@ namespace basecross {
 		UINT m_Division;				///<分割数
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
 		void CreateBuffers();
 	public:
@@ -32,7 +32,7 @@ namespace basecross {
 		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
+		SphereObject(UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

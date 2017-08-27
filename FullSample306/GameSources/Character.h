@@ -12,7 +12,7 @@ namespace basecross{
 	///	球
 	//--------------------------------------------------------------------------------------
 	class Ball : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		bool isOne;
 		//文字列の表示
 		void DrawStrings();
@@ -24,7 +24,7 @@ namespace basecross{
 		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		Ball(const shared_ptr<Stage>& StagePtr,const Vector3& StartPos,bool isone);
+		Ball(const shared_ptr<Stage>& StagePtr,const Vec3& StartPos,bool isone);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -59,15 +59,15 @@ namespace basecross{
 	//	用途: 固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		FixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~FixedBox();
 		//初期化

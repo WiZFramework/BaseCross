@@ -10,12 +10,12 @@ namespace basecross {
 	//PNStatic
 	struct PNStaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Vector4 LightDir;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Vec4 LightDir;
+		Col4 Emissive;
+		Col4 Diffuse;
 		PNStaticConstantBuffer() {
 			memset(this, 0, sizeof(PNStaticConstantBuffer));
 		};

@@ -58,7 +58,7 @@ namespace basecross{
 			//LookAtCameraである
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
@@ -94,10 +94,11 @@ namespace basecross{
 			if (v->FindTag(L"FrameBox")) {
 				auto PtrSrcColl = GetComponent<CollisionSphere>();
 				auto PtrDestColl = v->GetComponent<CollisionObb>();
-				Vector3 RetVec;
+				Vec3 RetVec;
 				PtrSrcColl->GetHitNormal(PtrDestColl, RetVec);
-				RetVec.Normalize();
-				if (RetVec.AngleBetweenVectors(Vector3(0, -1.0f, 0)) <= 0.01f) {
+				RetVec.normalize();
+				Vec3 angle(XMVector3AngleBetweenVectors(RetVec, Vec3(0, -1.0f, 0)));
+				if (angle.x <= 0.01f) {
 					GetComponent<Collision>()->SetIsHitAction(IsHitAction::None);
 					m_IsOnFrameBox = true;
 					return;
@@ -180,7 +181,7 @@ namespace basecross{
 
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {

@@ -80,8 +80,6 @@ using namespace std;
 #include <DirectXColors.h>
 #include <DirectXCollision.h>
 #include <DirectXTex.h>
-//#define FBXSDK_NEW_API
-//#include <fbxsdk.h>
 
 // XInput includes
 #include <xinput.h>
@@ -128,6 +126,7 @@ using namespace Microsoft::WRL::Details;
 
 #include "../../Libs/BaseLib/Dx11Lib/Common.h"
 #include "../../Libs/BaseLib/Dx11FullLib/FullCommon.h"
+using namespace basecross::bsm;
 
 #include "resource.h"
 

@@ -238,7 +238,7 @@ namespace basecross {
 	///	平面実体
 	//--------------------------------------------------------------------------------------
 	SquareObject::SquareObject(const shared_ptr<Scene> PtrScene,
-		const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos) :
+		const wstring& TextureFileName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos) :
 		m_Scene(PtrScene),
 		ObjectInterface(),
 		ShapeInterface(),
@@ -252,10 +252,10 @@ namespace basecross {
 	void SquareObject::CreateBuffers() {
 		float HelfSize = 0.5f;
 		vector<VertexPositionNormalTexture> vertices = {
-			{ VertexPositionNormalTexture(Vector3(-HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(1.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), Vector3(0, 0, -1.0f), Vector2(1.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-HelfSize, HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(HelfSize, HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(1.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-HelfSize, -HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(0.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(HelfSize, -HelfSize, 0), Vec3(0, 0, -1.0f), Vec2(1.0f, 1.0f)) },
 
 		};
 
@@ -276,30 +276,30 @@ namespace basecross {
 	}
 	void SquareObject::OnDraw() {
 		//行列の定義
-		Matrix4X4 World, View, Proj;
+		Mat4x4 World, View, Proj;
 		//ライティング
-		Vector4 LightDir;
+		Vec4 LightDir;
 		auto ShPtrScene = m_Scene.lock();
 		if (!ShPtrScene) {
 			return;
 		}
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
 		//転置する
-		World.Transpose();
+		World.transpose();
 		ShPtrScene->GetViewProjMatrix(View, Proj);
 		ShPtrScene->GetLightDir(LightDir);
 		//ビュー行列の決定
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//コンスタントバッファの準備
 		PNTStaticConstantBuffer sb;
 		sb.World = World;
@@ -308,9 +308,9 @@ namespace basecross {
 		//ライティング
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算。
-		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		m_PNTStaticDraw->UpdateConstantBuffer(sb);
 		m_PNTStaticDraw->DrawObject(m_SquareMesh);
 	}
@@ -321,7 +321,7 @@ namespace basecross {
 	///	球実体
 	//--------------------------------------------------------------------------------------
 	SphereObject::SphereObject(const shared_ptr<Scene> PtrScene,
-		UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos) :
+		UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos) :
 		m_Scene(PtrScene),
 		ObjectInterface(),
 		ShapeInterface(),
@@ -355,12 +355,12 @@ namespace basecross {
 				float Longitude = j * XM_2PI / Horizontal;
 				float Dx = sin(Longitude) * Dxz;
 				float Dz = cos(Longitude) * Dxz;
-				Vector3 normal(Dx, Dy, Dz);
+				Vec3 normal(Dx, Dy, Dz);
 				VertexPositionNormalTexture Data;
 				Data.position = normal * Radius;
 				Data.normal = normal;
-				Data.normal.Normalize();
-				Data.textureCoordinate = Vector2(u, v);
+				Data.normal.normalize();
+				Data.textureCoordinate = Vec2(u, v);
 				vertices.push_back(Data);
 			}
 		}
@@ -388,8 +388,8 @@ namespace basecross {
 
 	void SphereObject::OnCreate() {
 		CreateBuffers();
-		m_Scale = Vector3(1.0f, 1.0f, 1.0f);
-		m_Qt.Identity();
+		m_Scale = Vec3(1.0f, 1.0f, 1.0f);
+		m_Qt.identity();
 		m_PNTStaticDraw = ObjectFactory::Create<PNTStaticDraw>(m_TextureFileName, m_Trace);
 	}
 	void SphereObject::OnUpdate() {
@@ -400,7 +400,7 @@ namespace basecross {
 		//キーボードとマウスの取得
 		auto Key = App::GetApp()->GetInputDevice().GetKeyState();
 		//位置情報の退避
-		Vector3 TempPos = m_Pos;
+		Vec3 TempPos = m_Pos;
 		if (CntlVec[0].bConnected) {
 			if (CntlVec[0].fThumbLX != 0) {
 				m_Pos.x += (CntlVec[0].fThumbLX * ElapsedTime * 5.0f);
@@ -422,40 +422,40 @@ namespace basecross {
 			m_Pos.z -= ElapsedTime * 5.0f;
 		}
 		TempPos = m_Pos - TempPos;
-		if (TempPos.Length() > 0) {
+		if (TempPos.length() > 0) {
 			//移動した
-			TempPos.Normalize();
+			TempPos.normalize();
 			float Angle = atan2(TempPos.x, TempPos.z);
-			m_Qt.RotationAxis(Vector3(0, 1.0f, 0), Angle);
-			m_Qt.Normalize();
+			m_Qt.rotation(Angle, Vec3(0, 1.0f, 0));
+			m_Qt.normalize();
 		}
 	}
 	void SphereObject::OnDraw() {
 		//行列の定義
-		Matrix4X4 World, View, Proj;
+		Mat4x4 World, View, Proj;
 		//ライティング
-		Vector4 LightDir;
+		Vec4 LightDir;
 		auto ShPtrScene = m_Scene.lock();
 		if (!ShPtrScene) {
 			return;
 		}
 		//ワールド行列の決定
-		World.AffineTransformation(
+		World.affineTransformation(
 			m_Scale,			//スケーリング
-			Vector3(0, 0, 0),		//回転の中心（重心）
+			Vec3(0, 0, 0),		//回転の中心（重心）
 			m_Qt,				//回転角度
 			m_Pos				//位置
 		);
 		//転置する
-		World.Transpose();
+		World.transpose();
 		ShPtrScene->GetViewProjMatrix(View, Proj);
 		ShPtrScene->GetLightDir(LightDir);
 		//ビュー行列の決定
 		//転置する
-		View.Transpose();
+		View.transpose();
 		//射影行列の決定
 		//転置する
-		Proj.Transpose();
+		Proj.transpose();
 		//コンスタントバッファの準備
 		PNTStaticConstantBuffer sb;
 		sb.World = World;
@@ -463,9 +463,9 @@ namespace basecross {
 		sb.Projection = Proj;
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算。
-		sb.Emissive = Color4(0.4f, 0.4f, 0.4f, 0);
+		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
 		m_PNTStaticDraw->UpdateConstantBuffer(sb);
 		m_PNTStaticDraw->DrawObject(m_SphereMesh);
 	}

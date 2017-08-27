@@ -23,7 +23,7 @@ namespace basecross{
 	}
 
 
-	void MultiSpark::InsertSpark(const Vector3& Pos) {
+	void MultiSpark::InsertSpark(const Vec3& Pos) {
 		auto ParticlePtr = InsertParticle(4);
 		ParticlePtr->SetEmitterPos(Pos);
 		ParticlePtr->SetTextureResource(L"SPARK_TX");
@@ -34,13 +34,13 @@ namespace basecross{
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
 			//各パーティクルの移動速度を指定
-			rParticleSprite.m_Velocity = Vector3(
+			rParticleSprite.m_Velocity = Vec3(
 				rParticleSprite.m_LocalPos.x * 5.0f,
 				rParticleSprite.m_LocalPos.y * 5.0f,
 				rParticleSprite.m_LocalPos.z * 5.0f
 			);
 			//色の指定
-			rParticleSprite.m_Color = Color4(1.0f, 0.0f, 0.0f, 1.0f);
+			rParticleSprite.m_Color = Col4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 	}
 
@@ -60,7 +60,7 @@ namespace basecross{
 		SetAddType(true);
 	}
 
-	void MultiFire::InsertFire(const Vector3& Pos) {
+	void MultiFire::InsertFire(const Vec3& Pos) {
 		auto ParticlePtr = InsertParticle(4);
 		ParticlePtr->SetEmitterPos(Pos);
 		ParticlePtr->SetTextureResource(L"FIRE_TX");
@@ -71,13 +71,13 @@ namespace basecross{
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
 			//各パーティクルの移動速度を指定
-			rParticleSprite.m_Velocity = Vector3(
+			rParticleSprite.m_Velocity = Vec3(
 				rParticleSprite.m_LocalPos.x * 5.0f,
 				rParticleSprite.m_LocalPos.y * 5.0f,
 				rParticleSprite.m_LocalPos.z * 5.0f
 			);
 			//色の指定
-			rParticleSprite.m_Color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			rParticleSprite.m_Color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -86,7 +86,7 @@ namespace basecross{
 	///	半透明のスプライト
 	//--------------------------------------------------------------------------------------
 	TraceSprite::TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-		const Vector2& StartScale, const Vector3& StartPos):
+		const Vec2& StartScale, const Vec3& StartPos):
 		GameObject(StagePtr),
 		m_Trace(Trace),
 		m_StartScale(StartScale),
@@ -98,10 +98,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列
 		m_BackupVertices = {
-			{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0.0f,0.0f,0.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 0.0f)) },
-			{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 0.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 0.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,0.0f,0.0f,0.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 0.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 0.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 0, 0.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -121,7 +121,7 @@ namespace basecross{
 		}
 		vector<VertexPositionColor> NewVertices;
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-			Color4 col = m_BackupVertices[i].color;
+			Col4 col = m_BackupVertices[i].color;
 			col.w = sin(m_TotalTime);
 			auto v = VertexPositionColor(
 				m_BackupVertices[i].position,
@@ -139,7 +139,7 @@ namespace basecross{
 	///	壁模様のスプライト
 	//--------------------------------------------------------------------------------------
 	WallSprite::WallSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-		const Vector2& StartScale, const Vector2& StartPos):
+		const Vec2& StartScale, const Vec2& StartPos):
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -152,10 +152,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列(縦横5個ずつ表示)
 		vector<VertexPositionColorTexture> vertices = {
-			{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,1.0f,1.0f,1.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 1.0f, 1.0f), Vector2(5.0f, 0.0f)) },
-			{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f), Vector2(0.0f, 5.0f)) },
-			{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 1.0f), Vector2(5.0f, 5.0f)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 1.0f, 1.0f), Vec2(5.0f, 0.0f)) },
+			{ VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f), Vec2(0.0f, 5.0f)) },
+			{ VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 0, 1.0f), Vec2(5.0f, 5.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -177,7 +177,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	ScrollSprite::ScrollSprite(const shared_ptr<Stage>& StagePtr,
 		const wstring& TextureKey, bool Trace, 
-		const Vector2& StartScale, const Vector2& StartPos):
+		const Vec2& StartScale, const Vec2& StartPos):
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -191,10 +191,10 @@ namespace basecross{
 		float HelfSize = 0.5f;
 		//頂点配列
 		m_BackupVertices = {
-			{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(4.0f, 0.0f)) },
-			{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(4.0f, 1.0f)) },
+			{ VertexPositionTexture(Vec3(-HelfSize, HelfSize, 0), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionTexture(Vec3(HelfSize, HelfSize, 0), Vec2(4.0f, 0.0f)) },
+			{ VertexPositionTexture(Vec3(-HelfSize, -HelfSize, 0), Vec2(0.0f, 1.0f)) },
+			{ VertexPositionTexture(Vec3(HelfSize, -HelfSize, 0), Vec2(4.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -216,7 +216,7 @@ namespace basecross{
 		}
 		vector<VertexPositionTexture> NewVertices;
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-			Vector2 UV = m_BackupVertices[i].textureCoordinate;
+			Vec2 UV = m_BackupVertices[i].textureCoordinate;
 			if (UV.x == 0.0f) {
 				UV.x = m_TotalTime;
 			}
@@ -238,7 +238,7 @@ namespace basecross{
 	///	左上で回転する立方体
 	//--------------------------------------------------------------------------------------
 	RollingCube::RollingCube(const shared_ptr<Stage>& StagePtr, bool Trace,
-		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos):
+		const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos):
 		GameObject(StagePtr),
 		m_Trace(Trace),
 		m_StartScale(StartScale),
@@ -279,16 +279,16 @@ namespace basecross{
 			new_v.position = vertices[i].position;
 			switch (i % 3) {
 			case 0:
-				new_v.color = Color4(1.0f, 0, 0, 1.0f);
+				new_v.color = Col4(1.0f, 0, 0, 1.0f);
 				break;
 			case 1:
-				new_v.color = Color4(0.0f, 1.0, 0, 1.0f);
+				new_v.color = Col4(0.0f, 1.0, 0, 1.0f);
 				break;
 			case 2:
-				new_v.color = Color4(0.0f, 0, 1.0, 1.0f);
+				new_v.color = Col4(0.0f, 0, 1.0, 1.0f);
 				break;
 			default:
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 				break;
 			}
 			m_BackupVertices.push_back(new_v);
@@ -304,7 +304,7 @@ namespace basecross{
 
 	void RollingCube::OnUpdate() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+		Quat QtSpan(Vec3(0, 1.0f, 0), ElapsedTime * 5.0f);
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
@@ -326,7 +326,7 @@ namespace basecross{
 	///	左上で回転するWall立方体
 	//--------------------------------------------------------------------------------------
 	RollingWallCube::RollingWallCube(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos) :
+		const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -384,7 +384,7 @@ namespace basecross{
 
 	void RollingWallCube::OnUpdate() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+		Quat QtSpan(Vec3(0, 1.0f, 0), ElapsedTime * 5.0f);
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
@@ -401,7 +401,7 @@ namespace basecross{
 	///	白い立方体
 	//--------------------------------------------------------------------------------------
 	WhiteCube::WhiteCube(const shared_ptr<Stage>& StagePtr,
-		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos):
+		const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos):
 		GameObject(StagePtr),
 		m_StartScale(StartScale),
 		m_StartQt(StartQt),
@@ -438,7 +438,7 @@ namespace basecross{
 	}
 	void WhiteCube::OnUpdate() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+		Quat QtSpan(Vec3(0, 1.0f, 0), ElapsedTime * 5.0f);
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
@@ -461,7 +461,7 @@ namespace basecross{
 	///	形状が変わる球体
 	//--------------------------------------------------------------------------------------
 	TransSphere::TransSphere(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-		const Vector3& StartScale, const Quaternion& StartQt, const Vector3& StartPos) :
+		const Vec3& StartScale, const Quat& StartQt, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_TextureKey(TextureKey),
 		m_Trace(Trace),
@@ -491,7 +491,7 @@ namespace basecross{
 			VertexPositionColorTexture new_v;
 			new_v.position = vertices[i].position;
 			new_v.textureCoordinate = vertices[i].textureCoordinate;
-			new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_BackupVertices.push_back(new_v);
 			m_RuntimeVertices.push_back(new_v);
 
@@ -510,7 +510,7 @@ namespace basecross{
 
 	void TransSphere::OnUpdate() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Quaternion QtSpan(Vector3(0, 1.0f, 0), ElapsedTime * 5.0f);
+		Quat QtSpan(Vec3(0, 1.0f, 0), ElapsedTime * 5.0f);
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
@@ -538,7 +538,7 @@ namespace basecross{
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_StateChangeSize(5.0f)
@@ -687,19 +687,19 @@ namespace basecross{
 			float from = ((float)m_Number) / 10.0f;
 			float to = from + (1.0f / 10.0f);
 			//左上頂点
-			vertices[0].textureCoordinate = Vector2(from, 0);
+			vertices[0].textureCoordinate = Vec2(from, 0);
 			//右上頂点
-			vertices[1].textureCoordinate = Vector2(to, 0);
+			vertices[1].textureCoordinate = Vec2(to, 0);
 			//左下頂点
-			vertices[2].textureCoordinate = Vector2(from, 1.0f);
+			vertices[2].textureCoordinate = Vec2(from, 1.0f);
 			//右下頂点
-			vertices[3].textureCoordinate = Vector2(to, 1.0f);
+			vertices[3].textureCoordinate = Vec2(to, 1.0f);
 			//頂点の型を変えた新しい頂点を作成
 			vector<VertexPositionColorTexture> new_vertices;
 			for (auto& v : vertices) {
 				VertexPositionColorTexture nv;
 				nv.position = v.position;
-				nv.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				nv.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 				nv.textureCoordinate = v.textureCoordinate;
 				new_vertices.push_back(nv);
 			}
@@ -731,16 +731,9 @@ namespace basecross{
 
 			auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
 
-			Quaternion Qt;
+			Quat Qt;
 			//向きをビルボードにする
-			Qt.Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
-
-			//向きをフェイシングにする場合は以下のようにする
-			// Qt.Facing(Pos - PtrCamera->GetEye());
-			//向きをフェイシングYにする場合は以下のようにする
-			// Qt.FacingY(Pos - PtrCamera->GetEye());
-			//向きをシークオブジェクトと同じにする場合は以下のようにする
-			// Qt = SeekTransPtr->GetQuaternion();
+			Qt = Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
 
 			PtrTransform->SetQuaternion(Qt);
 
@@ -756,9 +749,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -797,9 +790,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -824,8 +817,8 @@ namespace basecross{
 
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
-		PtrAction->AddMoveBy(5.0f, Vector3(5.0f, 5.0f, 0));
-		PtrAction->AddMoveBy(5.0f, Vector3(-5.0f, -5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(5.0f, 5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(-5.0f, -5.0f, 0));
 		//ループする
 		PtrAction->SetLooped(true);
 		//アクション開始
@@ -854,7 +847,7 @@ namespace basecross{
 	//	用途: 障害物球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{}
@@ -892,12 +885,12 @@ namespace basecross{
 	void UnevenGroundData::OnCreate() {
 		vector<VertexPositionNormalTexture> vertices =
 		{
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(0.0f, 0.5f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.0f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(0.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(0.5f, 1.0f)) },
-			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f, 0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 0.0f)) },
-			{ VertexPositionNormalTexture(Vector3(1.0f, 0.0f,-0.5f), Vector3(0.0f, 1.0f,0.0f), Vector2(1.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-1.0f, 0.0f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(0.0f, 0.5f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.5f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(-1.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.0f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(0.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(0.5f, 1.0f)) },
+			{ VertexPositionNormalTexture(Vec3(1.0f, 0.0f, 0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(1.0f, 0.0f)) },
+			{ VertexPositionNormalTexture(Vec3(1.0f, 0.0f,-0.5f), Vec3(0.0f, 1.0f,0.0f), Vec2(1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = {
@@ -919,7 +912,7 @@ namespace basecross{
 			for (size_t i = 0; i < vertices.size(); i++) {
 				VertexPositionColor new_v;
 				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 				new_vertices.push_back(new_v);
 			}
 			//ワイアフレームメッシュをリソースに登録
@@ -949,9 +942,9 @@ namespace basecross{
 	//	用途: でこぼこ床
 	//--------------------------------------------------------------------------------------
 	UnevenGround::UnevenGround(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position) :
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),

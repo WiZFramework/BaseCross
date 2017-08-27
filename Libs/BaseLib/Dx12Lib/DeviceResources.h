@@ -367,8 +367,8 @@ namespace basecross {
 		static shared_ptr<MeshResource> CreateCapsule(float Diameter, float Height, size_t Tessellation, bool AccessWrite = false) {
 			vector<VertexPositionNormalTexture> vertices;
 			vector<uint16_t> indices;
-			Vector3 PointA(0, -Height / 2.0f, 0);
-			Vector3 PointB(0, Height / 2.0f, 0);
+			bsm::Vec3 PointA(0, -Height / 2.0f, 0);
+			bsm::Vec3 PointB(0, Height / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCapsule(Diameter, PointA, PointB, Tessellation, vertices, indices);
 			return CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -907,7 +907,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearDefaultViews(const Color4& col = Color4(0, 0, 0, 1.0f));
+		virtual void ClearDefaultViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f));
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 通常描画の開始（未定義）
@@ -1005,7 +1005,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) = 0;
+		virtual void ClearViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f)) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	レンダリングターゲットを開始する純粋仮想関数
@@ -1064,7 +1064,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void ClearViews(const Color4& col = Color4(0, 0, 0, 1.0f)) override;
+		virtual void ClearViews(const bsm::Col4& col = bsm::Col4(0, 0, 0, 1.0f)) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	レンダリングターゲットを開始する

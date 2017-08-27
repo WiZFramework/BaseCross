@@ -244,8 +244,8 @@ namespace basecross {
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
 			vector<uint16_t> indices;
-			Vector3 PointA(0, -Height / 2.0f, 0);
-			Vector3 PointB(0, Height / 2.0f, 0);
+			bsm::Vec3 PointA(0, -Height / 2.0f, 0);
+			bsm::Vec3 PointB(0, Height / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCapsule(Diameter, PointA, PointB, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -531,7 +531,7 @@ namespace basecross {
 	void MeshResource::ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
 		vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
 		vector<uint16_t>& indices, vector<MaterialEx>& materials,
-		vector<Matrix4X4>& bonematrix, UINT& BoneCount, UINT& SampleCount) {
+		vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount) {
 		vertices.clear();
 		vertices_withtan.clear();
 		indices.clear();
@@ -706,7 +706,7 @@ namespace basecross {
 		auto pAnimeMatrix = Reader.ReadArray<MatrixPOD>((size_t)MatrixSize);
 		for (UINT i = 0; i < MatrixSize; i++) {
 			//ボーン単位ではなく行列単位で読み込む
-			Matrix4X4 mat;
+			bsm::Mat4x4 mat;
 			for (int u = 0; u < 4; u++) {
 				for (int v = 0; v < 4; v++) {
 					mat(u, v) = pAnimeMatrix->m_Mat[u][v];
@@ -775,7 +775,7 @@ namespace basecross {
 					new_pntnt_v.position = vertices[i].position;
 					new_pntnt_v.normal = vertices[i].normal;
 					new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
-					Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
+					bsm::Vec3 n = bsm::cross((bsm::Vec3)new_pntnt_v.normal, bsm::Vec3(0, 1, 0));
 					new_pntnt_v.tangent = XMFLOAT4(0, 0, 0, 0);
 					new_pntnt_vertices.push_back(new_pntnt_v);
 				}
@@ -807,7 +807,7 @@ namespace basecross {
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			//サンプリング行列
-			vector<Matrix4X4> SampleMatrices;
+			vector<bsm::Mat4x4> SampleMatrices;
 			//ボーン数
 			UINT BoneCount;
 			//サンプル数
@@ -848,7 +848,7 @@ namespace basecross {
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			//サンプリング行列
-			vector<Matrix4X4> SampleMatrices;
+			vector<bsm::Mat4x4> SampleMatrices;
 			//ボーン数
 			UINT BoneCount;
 			//サンプル数
@@ -1684,7 +1684,7 @@ namespace basecross {
 		auto ShadowTarget = GetShadowMapRenderTarget();
 		ShadowTarget->EndRenderTarget();
 	}
-	void DeviceResources::ClearDefaultViews(const Color4& col) {
+	void DeviceResources::ClearDefaultViews(const bsm::Col4& col) {
 		auto DefaultTarget = GetDefaultRenderTarget();
 		DefaultTarget->ClearViews(col);
 	}
@@ -2364,7 +2364,7 @@ namespace basecross {
 
 
 	//レンダリングターゲットをクリアする
-	void ShadowMapRenderTarget::ClearViews(const Color4& col) {
+	void ShadowMapRenderTarget::ClearViews(const bsm::Col4& col) {
 		//シャドウマップはcolは未使用
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11Device = Dev->GetD3DDevice();
@@ -2560,7 +2560,7 @@ namespace basecross {
 
 	//操作
 	//スクリーン全体を指定の色でクリアする
-	void DefaultRenderTarget::ClearViews(const Color4& col) {
+	void DefaultRenderTarget::ClearViews(const bsm::Col4& col) {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11Device = Dev->GetD3DDevice();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();

@@ -25,23 +25,23 @@ namespace basecross{
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			m_Scale = Vector3(
+			m_Scale = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
 			);
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, RotStr, L',');
-			Vector3 Rot;
+			Vec3 Rot;
 			//回転は「XM_PIDIV2」の文字列になっている場合がある
 			Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
 			Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
 			Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 			//プレートの回転の引数はクオータニオンになっているので変換
-			m_Qt.RotationRollPitchYawFromVector(Rot);
+			m_Qt.rotationRollPitchYawFromVector(Rot);
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, PosStr, L',');
-			m_Position = Vector3(
+			m_Position = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
@@ -106,7 +106,7 @@ namespace basecross{
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 		//各トークン（カラム）をスケール、回転、位置に読み込む
-		m_Scale = Vector3(
+		m_Scale = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -119,7 +119,7 @@ namespace basecross{
 		m_Rotation.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		m_Position = Vector3(
+		m_Position = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -183,7 +183,7 @@ namespace basecross{
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			m_Scale = Vector3(
+			m_Scale = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
@@ -196,7 +196,7 @@ namespace basecross{
 			m_Rotation.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, PosStr, L',');
-			m_Position = Vector3(
+			m_Position = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())

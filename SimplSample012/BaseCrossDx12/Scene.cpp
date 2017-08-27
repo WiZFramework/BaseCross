@@ -20,10 +20,10 @@ namespace basecross {
 
 		wstring strTexture = DataDir + L"sky.jpg";
 		//球の作成
-		m_SphereObject1 = ObjectFactory::Create<SphereObject>(18, strTexture, false, Vector3(0.0f, 0, 2.0f));
+		m_SphereObject1 = ObjectFactory::Create<SphereObject>(18, strTexture, false, Vec3(0.0f, 0, 2.0f));
 		strTexture = DataDir + L"trace.png";
 		//球の作成
-		m_SphereObject2 = ObjectFactory::Create<SphereObject>(18, strTexture, true, Vector3(0.0f, 0, 0.0f));
+		m_SphereObject2 = ObjectFactory::Create<SphereObject>(18, strTexture, true, Vec3(0.0f, 0, 0.0f));
 	}
 
 	void Scene::OnUpdate() {
@@ -33,7 +33,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_SphereObject1->OnDraw();

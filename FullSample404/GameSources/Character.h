@@ -12,10 +12,10 @@ namespace basecross{
 	///	PC‹…
 	//--------------------------------------------------------------------------------------
 	class PcSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		PcSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		PcSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~PcSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -28,10 +28,10 @@ namespace basecross{
 	///	PT‹…
 	//--------------------------------------------------------------------------------------
 	class PtSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		PtSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		PtSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~PtSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -43,10 +43,10 @@ namespace basecross{
 	///	PCT‹…
 	//--------------------------------------------------------------------------------------
 	class PctSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		PctSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		PctSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~PctSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -61,11 +61,11 @@ namespace basecross{
 	///	Pnt‹…
 	//--------------------------------------------------------------------------------------
 	class PntSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		bool m_TextureUse;
 	public:
 		//\’z‚Æ”jŠü
-		PntSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos,bool TextureUse);
+		PntSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos,bool TextureUse);
 		virtual ~PntSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -75,11 +75,11 @@ namespace basecross{
 	///	PntƒXƒyƒLƒ…ƒ‰[‹…
 	//--------------------------------------------------------------------------------------
 	class PntSpSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		bool m_TextureUse;
 	public:
 		//\’z‚Æ”jŠü
-		PntSpSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TextureUse);
+		PntSpSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TextureUse);
 		virtual ~PntSpSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -90,11 +90,11 @@ namespace basecross{
 	///	StaticƒLƒƒƒ‰
 	//--------------------------------------------------------------------------------------
 	class StaticChara : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		StaticChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TamgentUse);
+		StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~StaticChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -105,11 +105,11 @@ namespace basecross{
 	///	BoneƒLƒƒƒ‰
 	//--------------------------------------------------------------------------------------
 	class BoneChara : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		BoneChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos, bool TamgentUse);
+		BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~BoneChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;

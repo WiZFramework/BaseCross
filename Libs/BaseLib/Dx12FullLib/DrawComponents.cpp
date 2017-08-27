@@ -60,7 +60,7 @@ namespace basecross {
 		DepthStencilState m_DepthStencilState;
 		RasterizerState m_RasterizerState;
 		SamplerState m_SamplerState;
-		Matrix4X4 m_MeshToTransformMatrix;
+		bsm::Mat4x4 m_MeshToTransformMatrix;
 		Impl() :
 			m_MeshToTransformMatrix() {}
 	};
@@ -103,10 +103,10 @@ namespace basecross {
 		pImpl->m_SamplerState = state;
 	}
 
-	const Matrix4X4& DrawComponent::GetMeshToTransformMatrix() const {
+	const bsm::Mat4x4& DrawComponent::GetMeshToTransformMatrix() const {
 		return pImpl->m_MeshToTransformMatrix;
 	}
-	void DrawComponent::SetMeshToTransformMatrix(const Matrix4X4& Mat) {
+	void DrawComponent::SetMeshToTransformMatrix(const bsm::Mat4x4& Mat) {
 		pImpl->m_MeshToTransformMatrix = Mat;
 	}
 
@@ -134,10 +134,10 @@ namespace basecross {
 		// コンスタントバッファ
 		struct ShadowConstantBuffer
 		{
-			Matrix4X4 mWorld;
-			Matrix4X4 mView;
-			Matrix4X4 mProj;
-			Vector4 Bones[3 * 72];	//Bone用
+			bsm::Mat4x4 mWorld;
+			bsm::Mat4x4 mView;
+			bsm::Mat4x4 mProj;
+			bsm::Vec4 Bones[3 * 72];	//Bone用
 			ShadowConstantBuffer() {
 				memset(this, 0, sizeof(ShadowConstantBuffer));
 			};
@@ -405,7 +405,7 @@ namespace basecross {
 		auto PtrMeshResource = GetMeshResource();
 
 		//行列の定義
-		Matrix4X4 World, LightView, LightProj;
+		bsm::Mat4x4 World, LightView, LightProj;
 		//行列の定義
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
 		//ワールド行列の決定
@@ -414,16 +414,16 @@ namespace basecross {
 		auto StageView = PtrStage->GetView();
 		//ライトの取得
 		auto StageLight = PtrStage->GetLight();
-		Vector3 LightDir = -1.0 * StageLight->GetTargetLight().m_Directional;
-		Vector3 LightAt = StageView->GetTargetCamera()->GetAt();
-		Vector3 LightEye = LightAt + (LightDir * GetLightHeight());
+		bsm::Vec3 LightDir = -1.0 * StageLight->GetTargetLight().m_Directional;
+		bsm::Vec3 LightAt = StageView->GetTargetCamera()->GetAt();
+		bsm::Vec3 LightEye = LightAt + (LightDir * GetLightHeight());
 		//ライトのビューと射影を計算
-		LightView.LookAtLH(LightEye, LightAt, Vector3(0, 1.0f, 0));
+		LightView.LookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
 		LightProj.OrthographicLH(GetViewWidth(), GetViewHeight(), GetLightNear(), GetLightFar());
 
-		pImpl->m_ShadowConstantBuffer.mWorld = Matrix4X4EX::Transpose(World);
-		pImpl->m_ShadowConstantBuffer.mView = Matrix4X4EX::Transpose(LightView);
-		pImpl->m_ShadowConstantBuffer.mProj = Matrix4X4EX::Transpose(LightProj);
+		pImpl->m_ShadowConstantBuffer.mWorld = bsm::Mat4x4EX::Transpose(World);
+		pImpl->m_ShadowConstantBuffer.mView = bsm::Mat4x4EX::Transpose(LightView);
+		pImpl->m_ShadowConstantBuffer.mProj = bsm::Mat4x4EX::Transpose(LightProj);
 
 		pImpl->UpdateConstantBuffer();
 		pImpl->DrawObject();
@@ -434,14 +434,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct StaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Color4 Emissive;
-		Color4 Diffuse;
+		bsm::Mat4x4 World;
+		bsm::Mat4x4 View;
+		bsm::Mat4x4 Projection;
+		bsm::Col4 Emissive;
+		bsm::Col4 Diffuse;
 		StaticConstantBuffer() {
 			memset(this, 0, sizeof(StaticConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 
@@ -453,7 +453,7 @@ namespace basecross {
 		//パーティクルのカメラまでの距離
 		float m_ToCaneraLength;
 		//ワールド行列
-		Matrix4X4 m_WorldMatrix;
+		bsm::Mat4x4 m_WorldMatrix;
 		//テクスチャ
 		shared_ptr<TextureResource> m_TextureRes;
 		DrawParticleSprite() :
@@ -537,13 +537,13 @@ namespace basecross {
 	void PCTParticleDraw::Impl::CreateParticleBuffers() {
 		try {
 			float HelfSize = 0.5f;
-			Vector4 col(1.0f, 1.0f, 1.0f, 1.0f);
+			bsm::Vec4 col(1.0f, 1.0f, 1.0f, 1.0f);
 			//頂点配列
 			vector<VertexPositionColorTexture> vertices = {
-				{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),  col,Vector2(0.0f, 0.0f)) },
-				{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), col, Vector2(1.0f, 0.0f)) },
-				{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0),  col,Vector2(0.0f, 1.0f)) },
-				{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0),  col, Vector2(1.0f, 1.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(-HelfSize, HelfSize, 0),  col,bsm::Vec2(0.0f, 0.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(HelfSize, HelfSize, 0), col, bsm::Vec2(1.0f, 0.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(-HelfSize, -HelfSize, 0),  col,bsm::Vec2(0.0f, 1.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(HelfSize, -HelfSize, 0),  col, bsm::Vec2(1.0f, 1.0f)) },
 			};
 			//インデックス配列
 			vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -552,7 +552,7 @@ namespace basecross {
 
 			//インスタンス行列バッファの作成
 			//Max値で作成する
-			vector<Matrix4X4> matrices(m_MaxInstance, Matrix4X4());
+			vector<bsm::Mat4x4> matrices(m_MaxInstance, bsm::Mat4x4());
 			//インスタンス描画用の行列のメッシュ（内容変更できる）
 			m_InstanceMatrixMesh = MeshResource::CreateMeshResource(matrices, true);
 		}
@@ -711,7 +711,7 @@ namespace basecross {
 
 	void PCTParticleDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr) {
 		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
+		bsm::Mat4x4 World, ViewMat, ProjMat;
 
 		//カメラを得る
 		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
@@ -725,13 +725,13 @@ namespace basecross {
 
 		//コンスタントバッファの準備
 		StaticConstantBuffer cb;
-		cb.World = Matrix4X4();	//ワールド行列はダミー
+		cb.World = bsm::Mat4x4();	//ワールド行列はダミー
 		cb.View = ViewMat;
 		cb.Projection = ProjMat;
 		//ディフューズ
-		cb.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+		cb.Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		//エミッシブ加算は行わない。
-		cb.Emissive = Color4(0, 0, 0, 0);
+		cb.Emissive = bsm::Col4(0, 0, 0, 0);
 		//更新
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&cb),
 			sizeof(StaticConstantBuffer));
@@ -747,9 +747,9 @@ namespace basecross {
 		};
 		std::sort(m_DrawParticleSpriteVec.begin(), m_DrawParticleSpriteVec.end(), func);
 		//行列の変更
-		vector<Matrix4X4> MatVec;
+		vector<bsm::Mat4x4> MatVec;
 		for (auto& v : m_DrawParticleSpriteVec) {
-			Matrix4X4 World = v.m_WorldMatrix;
+			bsm::Mat4x4 World = v.m_WorldMatrix;
 			//転置する
 			World.Transpose();
 			MatVec.push_back(World);
@@ -784,7 +784,7 @@ namespace basecross {
 		CommandList::Reset(m_PipelineState, m_CommandList);
 
 		m_MeshResource->UpdateResources<VertexPositionColorTexture>(m_CommandList);
-		m_InstanceMatrixMesh->UpdateResources<Matrix4X4>(m_CommandList);
+		m_InstanceMatrixMesh->UpdateResources<bsm::Mat4x4>(m_CommandList);
 
 		auto Dev = App::GetApp()->GetDeviceResources();
 		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
@@ -855,7 +855,7 @@ namespace basecross {
 	}
 	PCTParticleDraw::~PCTParticleDraw() {}
 
-	void PCTParticleDraw::AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes) {
+	void PCTParticleDraw::AddParticle(float ToCaneraLength, const bsm::Mat4x4& WorldMatrix, const shared_ptr<TextureResource>& TextureRes) {
 		DrawParticleSprite Item;
 		Item.m_ToCaneraLength = ToCaneraLength;
 		Item.m_WorldMatrix = WorldMatrix;
@@ -955,9 +955,9 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_SpriteMesh;
 		//エミッシブ色
-		Color4 m_Emissive;
+		bsm::Col4 m_Emissive;
 		//デフューズ色
-		Color4 m_Diffuse;
+		bsm::Col4 m_Diffuse;
 		Impl() :
 			m_Emissive(0, 0, 0, 0),
 			m_Diffuse(1.0f, 1.0f, 1.0f, 1.0f)
@@ -982,17 +982,17 @@ namespace basecross {
 	}
 
 
-	Color4 SpriteBaseDraw::GetEmissive() const {
+	bsm::Col4 SpriteBaseDraw::GetEmissive() const {
 		return pImpl->m_Emissive;
 	}
-	void SpriteBaseDraw::SetEmissive(const Color4& col) {
+	void SpriteBaseDraw::SetEmissive(const bsm::Col4& col) {
 		pImpl->m_Emissive = col;
 	}
 
-	Color4 SpriteBaseDraw::GetDiffuse() const {
+	bsm::Col4 SpriteBaseDraw::GetDiffuse() const {
 		return pImpl->m_Diffuse;
 	}
-	void SpriteBaseDraw::SetDiffuse(const Color4& col) {
+	void SpriteBaseDraw::SetDiffuse(const bsm::Col4& col) {
 		pImpl->m_Diffuse = col;
 	}
 
@@ -1001,12 +1001,12 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct SpriteConstantBuffer
 	{
-		Matrix4X4 World;
-		Color4 Emissive;
-		Color4 Diffuse;
+		bsm::Mat4x4 World;
+		bsm::Col4 Emissive;
+		bsm::Col4 Diffuse;
 		SpriteConstantBuffer() {
 			memset(this, 0, sizeof(SpriteConstantBuffer));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 
@@ -1043,7 +1043,7 @@ namespace basecross {
 		void CreateCommandList();
 		//コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes,bool Trace);
 		Impl():
@@ -1121,20 +1121,20 @@ namespace basecross {
 	}
 
 	void PCSpriteDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
-		Vector2 Scale, Pos, Pivot;
+		bsm::Vec2 Scale, Pos, Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
 		Pos.x = PtrTrans->GetPosition().x;
 		Pos.y = PtrTrans->GetPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
-		Vector3 Rot = PtrTrans->GetRotation();
+		bsm::Vec3 Rot = PtrTrans->GetRotation();
 
 		//行列の定義
-		Matrix4X4 World, Proj;
+		bsm::Mat4x4 World, Proj;
 		//ワールド行列の決定
 		World.AffineTransformation2D(
 			Scale,			//スケーリング
@@ -1301,10 +1301,10 @@ namespace basecross {
 			float HelfSize = 0.5f;
 			//頂点配列
 			vector<VertexPositionColor> Vertices = {
-				{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f)) },
-				{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f)) },
-				{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f)) },
-				{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f)) },
+				{ VertexPositionColor(bsm::Vec3(-HelfSize, HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f)) },
+				{ VertexPositionColor(bsm::Vec3(HelfSize, HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f)) },
+				{ VertexPositionColor(bsm::Vec3(-HelfSize, -HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f)) },
+				{ VertexPositionColor(bsm::Vec3(HelfSize, -HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f)) },
 			};
 			//インデックス配列
 			vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -1384,7 +1384,7 @@ namespace basecross {
 		void CreateCommandList();
 		///コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
 			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
@@ -1509,20 +1509,20 @@ namespace basecross {
 
 	///コンスタントバッファ更新
 	void PTSpriteDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
-		Vector2 Scale, Pos, Pivot;
+		bsm::Vec2 Scale, Pos, Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
 		Pos.x = PtrTrans->GetPosition().x;
 		Pos.y = PtrTrans->GetPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
-		Vector3 Rot = PtrTrans->GetRotation();
+		bsm::Vec3 Rot = PtrTrans->GetRotation();
 
 		//行列の定義
-		Matrix4X4 World, Proj;
+		bsm::Mat4x4 World, Proj;
 		//ワールド行列の決定
 		World.AffineTransformation2D(
 			Scale,			//スケーリング
@@ -1703,10 +1703,10 @@ namespace basecross {
 			float HelfSize = 0.5f;
 			//頂点配列
 			vector<VertexPositionTexture> Vertices = {
-				{ VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), Vector2(0.0f, 0.0f)) },
-				{ VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), Vector2(1.0f, 0.0f)) },
-				{ VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), Vector2(0.0f, 1.0f)) },
-				{ VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), Vector2(1.0f, 1.0f)) },
+				{ VertexPositionTexture(bsm::Vec3(-HelfSize, HelfSize, 0), bsm::Vec2(0.0f, 0.0f)) },
+				{ VertexPositionTexture(bsm::Vec3(HelfSize, HelfSize, 0), bsm::Vec2(1.0f, 0.0f)) },
+				{ VertexPositionTexture(bsm::Vec3(-HelfSize, -HelfSize, 0), bsm::Vec2(0.0f, 1.0f)) },
+				{ VertexPositionTexture(bsm::Vec3(HelfSize, -HelfSize, 0), bsm::Vec2(1.0f, 1.0f)) },
 			};
 			//インデックス配列
 			vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -1794,7 +1794,7 @@ namespace basecross {
 		void CreateCommandList();
 		///コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
 			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
@@ -1919,20 +1919,20 @@ namespace basecross {
 
 	///コンスタントバッファ更新
 	void PCTSpriteDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
-		Vector2 Scale, Pos, Pivot;
+		bsm::Vec2 Scale, Pos, Pivot;
 		Scale.x = PtrTrans->GetScale().x;
 		Scale.y = PtrTrans->GetScale().y;
 		Pos.x = PtrTrans->GetPosition().x;
 		Pos.y = PtrTrans->GetPosition().y;
 		Pivot.x = PtrTrans->GetPivot().x;
 		Pivot.y = PtrTrans->GetPivot().y;
-		Vector3 Rot = PtrTrans->GetRotation();
+		bsm::Vec3 Rot = PtrTrans->GetRotation();
 
 		//行列の定義
-		Matrix4X4 World, Proj;
+		bsm::Mat4x4 World, Proj;
 		//ワールド行列の決定
 		World.AffineTransformation2D(
 			Scale,			//スケーリング
@@ -2112,10 +2112,10 @@ namespace basecross {
 			float HelfSize = 0.5f;
 			//頂点配列
 			vector<VertexPositionColorTexture> vertices = {
-				{ VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,1.0f,1.0f,1.0f), Vector2(0.0f, 0.0f)) },
-				{ VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f), Vector2(1.0f, 0.0f)) },
-				{ VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f), Vector2(0.0f, 1.0f)) },
-				{ VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f,1.0f,1.0f,1.0f), Vector2(1.0f, 1.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(-HelfSize, HelfSize, 0),bsm::Col4(1.0f,1.0f,1.0f,1.0f), bsm::Vec2(0.0f, 0.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(HelfSize, HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f), bsm::Vec2(1.0f, 0.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(-HelfSize, -HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f), bsm::Vec2(0.0f, 1.0f)) },
+				{ VertexPositionColorTexture(bsm::Vec3(HelfSize, -HelfSize, 0), bsm::Col4(1.0f,1.0f,1.0f,1.0f), bsm::Vec2(1.0f, 1.0f)) },
 			};
 			//インデックス配列
 			vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -2170,13 +2170,13 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct Base3DDraw::Impl {
 		//エミッシブ色
-		Color4 m_Emissive;
+		bsm::Col4 m_Emissive;
 		//デフューズ色
-		Color4 m_Diffuse;
+		bsm::Col4 m_Diffuse;
 		//ビュー行列
-		Matrix4X4 m_ViewMatrix;
+		bsm::Mat4x4 m_ViewMatrix;
 		//射影行列
-		Matrix4X4 m_ProjMatrix;
+		bsm::Mat4x4 m_ProjMatrix;
 		Impl() :
 			m_Emissive(0, 0, 0, 0),
 			m_Diffuse(1.0f, 1.0f, 1.0f, 1.0f),
@@ -2193,29 +2193,29 @@ namespace basecross {
 		pImpl(new Impl())
 	{}
 	Base3DDraw::~Base3DDraw() {}
-	Color4 Base3DDraw::GetEmissive() const {
+	bsm::Col4 Base3DDraw::GetEmissive() const {
 		return pImpl->m_Emissive;
 	}
-	void Base3DDraw::SetEmissive(const Color4& col) {
+	void Base3DDraw::SetEmissive(const bsm::Col4& col) {
 		pImpl->m_Emissive = col;
 	}
-	Color4 Base3DDraw::GetDiffuse() const {
+	bsm::Col4 Base3DDraw::GetDiffuse() const {
 		return pImpl->m_Diffuse;
 	}
-	void Base3DDraw::SetDiffuse(const Color4& col) {
+	void Base3DDraw::SetDiffuse(const bsm::Col4& col) {
 		pImpl->m_Diffuse = col;
 	}
 
-	const Matrix4X4& Base3DDraw::GetViewMatrix() const {
+	const bsm::Mat4x4& Base3DDraw::GetViewMatrix() const {
 		return pImpl->m_ViewMatrix;
 	}
-	void Base3DDraw::SetViewMatrix(const Matrix4X4& mat) {
+	void Base3DDraw::SetViewMatrix(const bsm::Mat4x4& mat) {
 		pImpl->m_ViewMatrix = mat;
 	}
-	const Matrix4X4& Base3DDraw::GetProjMatrix() const {
+	const bsm::Mat4x4& Base3DDraw::GetProjMatrix() const {
 		return pImpl->m_ProjMatrix;
 	}
-	void Base3DDraw::SetProjMatrix(const Matrix4X4& mat) {
+	void Base3DDraw::SetProjMatrix(const bsm::Mat4x4& mat) {
 		pImpl->m_ProjMatrix = mat;
 	}
 
@@ -2284,7 +2284,7 @@ namespace basecross {
 		void CreateCommandList();
 		///コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace);
 		Impl() :
@@ -2364,11 +2364,11 @@ namespace basecross {
 
 	///コンスタントバッファ更新
 	void PCDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
 		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
+		bsm::Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
 		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
 		//転置する
@@ -2577,7 +2577,7 @@ namespace basecross {
 		void CreateCommandList();
 		///コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
 			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
@@ -2702,11 +2702,11 @@ namespace basecross {
 
 	///コンスタントバッファ更新
 	void PTDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
 		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
+		bsm::Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
 		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
 		//転置する
@@ -2946,7 +2946,7 @@ namespace basecross {
 		void CreateCommandList();
 		///コンスタントバッファ更新
 		void UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-			const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix);
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix);
 		///描画処理
 		void DrawObject(const shared_ptr<MeshResource>& MeshRes, bool Trace,
 			const shared_ptr<TextureResource>& TextureRes, bool WrapSampler);
@@ -3071,11 +3071,11 @@ namespace basecross {
 
 	///コンスタントバッファ更新
 	void PCTDynamicDraw::Impl::UpdateConstantBuffer(const shared_ptr<GameObject>& GameObjectPtr,
-		const Color4& Emissive, const Color4& Diffuse, const Matrix4X4& MeshToTransformMatrix) {
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix) {
 		//行列の定義
 		auto PtrTrans = GameObjectPtr->GetComponent<Transform>();
 		//行列の定義
-		Matrix4X4 World, ViewMat, ProjMat;
+		bsm::Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
 		World = MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
 		//転置する
@@ -3469,12 +3469,12 @@ namespace basecross {
 		///コンスタントバッファ
 		struct StaticConstantBuffer
 		{
-			Matrix4X4 World;
-			Matrix4X4 View;
-			Matrix4X4 Projection;
-			Vector4 LightDir;
-			Color4 Emissive;
-			Color4 Diffuse;
+			bsm::Mat4x4 World;
+			bsm::Mat4x4 View;
+			bsm::Mat4x4 Projection;
+			bsm::Vec4 LightDir;
+			bsm::Col4 Emissive;
+			bsm::Col4 Diffuse;
 			StaticConstantBuffer() {
 				memset(this, 0, sizeof(StaticConstantBuffer));
 			};
@@ -3484,17 +3484,17 @@ namespace basecross {
 		///影付きコンスタントバッファ
 		struct StaticConstantBufferWithShadow
 		{
-			Matrix4X4 World;
-			Matrix4X4 View;
-			Matrix4X4 Projection;
-			Vector4 LightDir;
-			Color4 Emissive;
-			Color4 Diffuse;
-			Vector4 LightPos;
-			Vector4 EyePos;
+			bsm::Mat4x4 World;
+			bsm::Mat4x4 View;
+			bsm::Mat4x4 Projection;
+			bsm::Vec4 LightDir;
+			bsm::Col4 Emissive;
+			bsm::Col4 Diffuse;
+			bsm::Vec4 LightPos;
+			bsm::Vec4 EyePos;
 			XMUINT4 ActiveFlg;			//テクスチャ=xがアクティブかどうか
-			Matrix4X4 LightView;
-			Matrix4X4 LightProjection;
+			bsm::Mat4x4 LightView;
+			bsm::Mat4x4 LightProjection;
 			StaticConstantBufferWithShadow() {
 				memset(this, 0, sizeof(StaticConstantBufferWithShadow));
 			};
@@ -3537,11 +3537,11 @@ namespace basecross {
 		{
 			//各行列をIdentityに初期化
 			ZeroMemory(&m_StaticConstantBuffer, sizeof(m_StaticConstantBuffer));
-			m_StaticConstantBuffer.World = Matrix4X4EX::Identity();
-			m_StaticConstantBuffer.View = Matrix4X4EX::Identity();
-			m_StaticConstantBuffer.Projection = Matrix4X4EX::Identity();
-			m_StaticConstantBuffer.Emissive = Color4(0.0f, 0.0f, 0.0f, 0.0f);
-			m_StaticConstantBuffer.Diffuse = Color4(1.0000000f, 0.9607844f, 0.8078432f, 1.0f);
+			m_StaticConstantBuffer.World = bsm::Mat4x4EX::Identity();
+			m_StaticConstantBuffer.View = bsm::Mat4x4EX::Identity();
+			m_StaticConstantBuffer.Projection = bsm::Mat4x4EX::Identity();
+			m_StaticConstantBuffer.Emissive = bsm::Col4(0.0f, 0.0f, 0.0f, 0.0f);
+			m_StaticConstantBuffer.Diffuse = bsm::Col4(1.0000000f, 0.9607844f, 0.8078432f, 1.0f);
 		}
 		~Impl() {}
 	};
@@ -4053,10 +4053,10 @@ namespace basecross {
 		return pImpl->m_TextureResource.lock();
 	}
 
-	Color4 PNTStaticDraw::GetEmissive() const {
+	bsm::Col4 PNTStaticDraw::GetEmissive() const {
 		return pImpl->m_StaticConstantBuffer.Emissive;
 	}
-	void PNTStaticDraw::SetEmissive(const Color4& col) {
+	void PNTStaticDraw::SetEmissive(const bsm::Col4& col) {
 		pImpl->m_StaticConstantBuffer.Emissive = col;
 	}
 
@@ -4150,9 +4150,9 @@ namespace basecross {
 
 
 
-		Vector3 CalcLightDir = -1.0 * StageLight->GetTargetLight().m_Directional;
-		Vector3 LightAt = StageView->GetTargetCamera()->GetAt();
-		Vector3 LightEye = CalcLightDir;
+		bsm::Vec3 CalcLightDir = -1.0 * StageLight->GetTargetLight().m_Directional;
+		bsm::Vec3 LightAt = StageView->GetTargetCamera()->GetAt();
+		bsm::Vec3 LightEye = CalcLightDir;
 		LightEye *= Shadowmap::GetLightHeight();
 		LightEye = LightAt + LightEye;
 
@@ -4163,13 +4163,13 @@ namespace basecross {
 		pImpl->m_StaticConstantBufferWithShadow.EyePos.w = 1.0f;
 		pImpl->m_StaticConstantBufferWithShadow.ActiveFlg.x = 1;
 
-		Matrix4X4 LightView, LightProj;
+		bsm::Mat4x4 LightView, LightProj;
 		//ライトのビューと射影を計算
-		LightView.LookAtLH(LightEye, LightAt, Vector3(0, 1.0f, 0));
+		LightView.LookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
 		LightProj.OrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
 			Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
-		pImpl->m_StaticConstantBufferWithShadow.LightView = Matrix4X4EX::Transpose(LightView);
-		pImpl->m_StaticConstantBufferWithShadow.LightProjection = Matrix4X4EX::Transpose(LightProj);
+		pImpl->m_StaticConstantBufferWithShadow.LightView = bsm::Mat4x4EX::Transpose(LightView);
+		pImpl->m_StaticConstantBufferWithShadow.LightProjection = bsm::Mat4x4EX::Transpose(LightProj);
 
 		//更新
 		pImpl->UpdateConstantBuffer(true);

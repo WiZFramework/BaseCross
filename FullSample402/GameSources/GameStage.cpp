@@ -21,21 +21,21 @@ namespace basecross {
 	//半透明のスプライト作成
 	void GameStage::CreateTraceSprite() {
 		AddGameObject<TraceSprite>(true,
-			Vector2(320.0f, 320.0f), Vector3(-400.0f, 0.0f, 0.0f));
+			Vec2(320.0f, 320.0f), Vec3(-400.0f, 0.0f, 0.0f));
 	}
 
 
 	//壁模様のスプライト作成
 	void GameStage::CreateWallSprite() {
 		AddGameObject<WallSprite>(L"WALL_TX", false,
-			Vector2(320.0f, 320.0f), Vector3(400.0f, 0.0f ,0.1f));
+			Vec2(320.0f, 320.0f), Vec3(400.0f, 0.0f ,0.1f));
 	}
 
 
 	//スクロールするスプライト作成
 	void GameStage::CreateScrollSprite() {
 		AddGameObject<ScrollSprite>(L"TRACE_TX", true,
-			Vector2(240.0f, 60.0f), Vector3(400.0f, 0.0f,0.0f));
+			Vec2(240.0f, 60.0f), Vec3(400.0f, 0.0f,0.0f));
 	}
 
 	//スコアスプライト作成
@@ -43,8 +43,8 @@ namespace basecross {
 		AddGameObject<ScoreSprite>(4,
 			L"NUMBER_TX",
 			true,
-			Vector2(320.0f, 80.0f),
-			Vector3(0.0f, 0.0f,0.0f));
+			Vec2(320.0f, 80.0f),
+			Vec3(0.0f, 0.0f,0.0f));
 	}
 
 

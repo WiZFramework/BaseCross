@@ -199,13 +199,13 @@ namespace basecross {
 		///描画インデックスカウント
 		UINT m_IndexCount;
 		/// デフィーズ（物体の色）
-		Color4 m_Diffuse;
+		bsm::Col4 m_Diffuse;
 		/// スペキュラー（反射光）
-		Color4 m_Specular;
+		bsm::Col4 m_Specular;
 		/// アンビエント（環境色）
-		Color4 m_Ambient;
+		bsm::Col4 m_Ambient;
 		/// エミッシブ（放射光）
-		Color4 m_Emissive;
+		bsm::Col4 m_Emissive;
 		/// シェーダリソースビュー（テクスチャリソース）
 		shared_ptr<TextureResource> m_TextureResource;
 	};

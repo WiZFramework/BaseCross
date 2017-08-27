@@ -13,7 +13,7 @@ namespace basecross{
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_BaseY(0.125f),
@@ -123,9 +123,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -167,9 +167,9 @@ namespace basecross{
 	FixedNormalBox::FixedNormalBox(const shared_ptr<Stage>& StagePtr,
 		const wstring& TexKey,
 		const wstring& NormalTexKey,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_TexKey(TexKey),
@@ -203,7 +203,7 @@ namespace basecross{
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetFogEnabled(true);
 		//フォグはきつめに
-		PtrDraw->SetFogColor(Color4(0.3f, 0.3f, 0.3f, 1.0f));
+		PtrDraw->SetFogColor(Col4(0.3f, 0.3f, 0.3f, 1.0f));
 		PtrDraw->SetFogStart(-10.0f);
 		PtrDraw->SetFogEnd(-30.0f);
 		PtrDraw->SetTextureResource(m_TexKey);
@@ -218,9 +218,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -246,8 +246,8 @@ namespace basecross{
 
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
-		PtrAction->AddMoveBy(5.0f, Vector3(5.0f, 5.0f, 0));
-		PtrAction->AddMoveBy(5.0f, Vector3(-5.0f, -5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(5.0f, 5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(-5.0f, -5.0f, 0));
 		//ループする
 		PtrAction->SetLooped(true);
 		//アクション開始
@@ -262,7 +262,7 @@ namespace basecross{
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetFogEnabled(true);
 		//フォグはきつめに
-		PtrDraw->SetFogColor(Color4(0.3f, 0.3f, 0.3f, 1.0f));
+		PtrDraw->SetFogColor(Col4(0.3f, 0.3f, 0.3f, 1.0f));
 		PtrDraw->SetFogStart(-10.0f);
 		PtrDraw->SetFogEnd(-30.0f);
 		PtrDraw->SetTextureResource(L"RED_TX");
@@ -277,7 +277,7 @@ namespace basecross{
 	//	用途: 障害物球
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SphereObject::SphereObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{}
@@ -316,12 +316,12 @@ namespace basecross{
 	void UnevenGroundData::OnCreate() {
 		vector<VertexPositionNormalTangentTexture> vertices =
 		{
-			{ VertexPositionNormalTangentTexture(Vector3(-1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.0f, 0.0f)) },
-			{ VertexPositionNormalTangentTexture(Vector3( 0.0f, 0.5f, 0.5f), Vector3( 0.0f, 1.0f,0.0f), Vector4(0.0f,0.0f,0.0f,1.0f),Vector2( 0.5f, 0.0f)) },
-			{ VertexPositionNormalTangentTexture(Vector3(-1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.0f, 1.0f)) },
-			{ VertexPositionNormalTangentTexture(Vector3( 0.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 0.5f, 1.0f)) },
-			{ VertexPositionNormalTangentTexture(Vector3( 1.0f, 0.0f, 0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 1.0f, 0.0f)) },
-			{ VertexPositionNormalTangentTexture(Vector3( 1.0f, 0.0f,-0.5f), Vector3( 0.0f, 1.0f,0.0f),Vector4(0.0f,0.0f,0.0f,1.0f), Vector2( 1.0f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3(-1.0f, 0.0f, 0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 0.0f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3( 0.0f, 0.5f, 0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 0.5f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3(-1.0f, 0.0f,-0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 0.0f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3( 0.0f, 0.0f,-0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 0.5f, 1.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3( 1.0f, 0.0f, 0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 1.0f, 0.0f)) },
+			{ VertexPositionNormalTangentTexture(Vec3( 1.0f, 0.0f,-0.5f), Vec3( 0.0f, 1.0f,0.0f),Vec4(0.0f,0.0f,0.0f,1.0f), Vec2( 1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = {
@@ -344,7 +344,7 @@ namespace basecross{
 			for (size_t i = 0; i < vertices.size(); i++) {
 				VertexPositionColor new_v;
 				new_v.position = vertices[i].position;
-				new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+				new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 				new_vertices.push_back(new_v);
 			}
 			//ワイアフレームメッシュをリソースに登録
@@ -374,9 +374,9 @@ namespace basecross{
 	//	用途: でこぼこ床
 	//--------------------------------------------------------------------------------------
 	UnevenGround::UnevenGround(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position):
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position):
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),
@@ -403,7 +403,7 @@ namespace basecross{
 		PtrDraw->SetTextureResource(L"BROWN2_TX");
 		PtrDraw->SetNormalMapTextureResource(L"WALL2_NORMAL_TX");
 		//スペキュラー弱め
-		PtrDraw->SetSpecularColor(Color4(0.3f, 0.3f, 0.3f, 0));
+		PtrDraw->SetSpecularColor(Col4(0.3f, 0.3f, 0.3f, 0));
 		PtrDraw->SetFogEnabled(true);
 		PtrDraw->SetOwnShadowActive(true);
 

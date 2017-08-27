@@ -22,7 +22,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_CubeObject->OnDraw();

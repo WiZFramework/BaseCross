@@ -18,8 +18,8 @@ namespace basecross {
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector2 m_Scale;				///<スケーリング
-		Vector2 m_Pos;				///<位置
+		Vec2 m_Scale;				///<スケーリング
+		Vec2 m_Pos;				///<位置
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -29,7 +29,7 @@ namespace basecross {
 		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		WallSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos);
+		WallSprite(const wstring& TextureFileName, bool Trace, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -72,8 +72,8 @@ namespace basecross {
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector2 m_Scale;				///<スケーリング
-		Vector2 m_Pos;				///<位置
+		Vec2 m_Scale;				///<スケーリング
+		Vec2 m_Pos;				///<位置
 		float m_TotalTime;
 		//頂点の変更
 		void UpdateVertex(float ElapsedTime);
@@ -86,7 +86,7 @@ namespace basecross {
 		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		SquareSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos);
+		SquareSprite(const wstring& TextureFileName, bool Trace, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

@@ -66,9 +66,9 @@ namespace basecross{
 	//	独自の描画コンポーネントで描画する8面体
 	//--------------------------------------------------------------------------------------
 	class CustomDrawOctahedron : public GameObject {
-		Vector3 m_StartScale;
-		Vector3 m_StartRotation;
-		Vector3 m_StartPos;
+		Vec3 m_StartScale;
+		Vec3 m_StartRotation;
+		Vec3 m_StartPos;
 		//バックアップ用の頂点配列
 		vector<VertexPositionNormalColor> m_BackupVertices;
 		//頂点の変更
@@ -77,7 +77,7 @@ namespace basecross{
 		float m_TotalTime;
 	public:
 		//構築と破棄
-		CustomDrawOctahedron(shared_ptr<Stage>& StagePtr, const Vector3& StartScale, const Vector3& StartRotation, const Vector3& StartPos);
+		CustomDrawOctahedron(shared_ptr<Stage>& StagePtr, const Vec3& StartScale, const Vec3& StartRotation, const Vec3& StartPos);
 		virtual ~CustomDrawOctahedron();
 		//アクセサ
 

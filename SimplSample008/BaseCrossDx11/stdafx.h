@@ -125,3 +125,4 @@ using namespace Microsoft::WRL::Details;
 
 
 #include "../../Libs/BaseLib/Dx11Lib/Common.h"
+using namespace basecross::bsm;

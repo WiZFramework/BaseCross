@@ -66,22 +66,22 @@ namespace basecross {
 	//コンスタントバッファ更新
 	void SquareSprite::UpdateConstantBuffer() {
 		//行列の定義
-		Matrix4X4 World, Proj;
+		Mat4x4 World, Proj;
 		//ワールド行列の決定
-		World.AffineTransformation2D(
+		World.affineTransformation2D(
 			m_LocalScale,			//スケーリング
-			Vector2(0, 0),		//回転の中心（重心）
+			Vec2(0, 0),		//回転の中心（重心）
 			m_LocalRot,				//回転角度
 			m_LocalPos				//位置
 		);
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.OrthographicLH(w, h, -1.0, 1.0f);
+		Proj = XMMatrixOrthographicLH(w, h, -1.0, 1.0f);
 		//行列の合成
 		World *= Proj;
 		//コンスタントバッファの準備
-		m_SpriteConstantBuffer.Emissive = Color4(0.0f, 0.0f, 0, 1.0f);
+		m_SpriteConstantBuffer.Emissive = Col4(0.0f, 0.0f, 0, 1.0f);
 		m_SpriteConstantBuffer.World = World;
 		//更新
 		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SpriteConstantBuffer),
@@ -185,10 +185,10 @@ namespace basecross {
 		float HelfSize = 0.5f;
 		//頂点配列
 		vector<VertexPositionColor> vertices = {
-			{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0), Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, HelfSize, 0), Col4(1.0f, 0.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -200,9 +200,9 @@ namespace basecross {
 		for (auto& v : m_SquareSpriteVec) {
 			v.m_LocalRot = Util::RandZeroToOne(true);
 			v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-			v.m_LocalPos = Vector2(0, 0);
-			v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 100 + Util::RandZeroToOne(true) * 100.0f);
-			v.m_LocalGravityVelocity = Vector2(0, 0);
+			v.m_LocalPos = Vec2(0, 0);
+			v.m_LocalVelocity = Vec2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 100 + Util::RandZeroToOne(true) * 100.0f);
+			v.m_LocalGravityVelocity = Vec2(0, 0);
 		}
 		///ルートシグネチャ作成
 		CreateRootSignature();
@@ -225,14 +225,14 @@ namespace basecross {
 			if (v.m_LocalPos.y < -h) {
 				v.m_LocalRot = Util::RandZeroToOne(true);
 				v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-				v.m_LocalPos = Vector2(0, 0);
-				v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 100 + Util::RandZeroToOne(true) * 100.0f);
-				v.m_LocalGravityVelocity = Vector2(0, 0);
+				v.m_LocalPos = Vec2(0, 0);
+				v.m_LocalVelocity = Vec2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 100 + Util::RandZeroToOne(true) * 100.0f);
+				v.m_LocalGravityVelocity = Vec2(0, 0);
 			}
 			else {
 				v.m_LocalRot += v.m_LocalRotVelocity * ElapsedTime;
 				v.m_LocalPos += v.m_LocalVelocity * ElapsedTime;
-				v.m_LocalGravityVelocity += Vector2(0, -98.0f) * ElapsedTime;
+				v.m_LocalGravityVelocity += Vec2(0, -98.0f) * ElapsedTime;
 				v.m_LocalPos += v.m_LocalGravityVelocity * ElapsedTime;
 			}
 		}

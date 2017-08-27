@@ -76,7 +76,7 @@ namespace basecross {
 		@return	追いかける位置との距離
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const Vector3& TargetPos);
+		float Execute(const bsm::Vec3& TargetPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -127,7 +127,7 @@ namespace basecross {
 		@return	追いかける位置との距離
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const Vector3& TargetPos);
+		float Execute(const bsm::Vec3& TargetPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -170,7 +170,7 @@ namespace basecross {
 		@return	追いかける位置との距離
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const Vector3& TargetPos, const Vector3& TargetVelocity, const Vector3& TargetRotation);
+		float Execute(const bsm::Vec3& TargetPos, const bsm::Vec3& TargetVelocity, const bsm::Vec3& TargetRotation);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -207,7 +207,7 @@ namespace basecross {
 		@return	徘徊の中心
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetWanderTarget() const;
+		const bsm::Vec3& GetWanderTarget() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目標の中心を設定する
@@ -215,7 +215,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetWanderTarget(const Vector3& target);
+		void SetWanderTarget(const bsm::Vec3& target);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	徘徊の半径を得る
@@ -315,7 +315,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetPlaneVec(const vector<Plane>& planevec);
+		void SetPlaneVec(const vector<bsm::Plane4>& planevec);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -431,7 +431,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetPathList(const list<Vector3>& pathlist);
+		void SetPathList(const list<bsm::Vec3>& pathlist);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	パスについた場合の減速値を得る

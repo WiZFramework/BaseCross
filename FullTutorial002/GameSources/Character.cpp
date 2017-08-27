@@ -12,7 +12,7 @@ namespace basecross{
 	///	ボックス
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	Box::Box(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	Box::Box(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_TotalTime(0)
@@ -23,9 +23,9 @@ namespace basecross{
 	//初期化
 	void Box::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(m_StartPos);
 

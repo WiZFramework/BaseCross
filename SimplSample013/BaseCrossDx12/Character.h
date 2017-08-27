@@ -11,12 +11,12 @@ namespace basecross {
 	//コンスタントバッファ構造体
 	struct PNTStaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Vector4 LightDir;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Vec4 LightDir;
+		Col4 Emissive;
+		Col4 Diffuse;
 		PNTStaticConstantBuffer() {
 			memset(this, 0, sizeof(PNTStaticConstantBuffer));
 		};
@@ -98,9 +98,9 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_SquareMesh;
 		wstring m_TextureFileName;		///<テクスチャファイル名
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		void CreateBuffers();
 	public:
 		//--------------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		SquareObject(const shared_ptr<Scene> PtrScene,
-			const wstring& TextureFileName, const Vector3& Scale, const Quaternion& Qt, const Vector3& Pos);
+			const wstring& TextureFileName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -157,9 +157,9 @@ namespace basecross {
 		UINT m_Division;				///<分割数
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		//shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		bool m_Trace;					///<透明処理するかどうか
 		void CreateBuffers();
 	public:
@@ -174,7 +174,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		SphereObject(const shared_ptr<Scene> PtrScene,
-			UINT Division, const wstring& TextureFileName, bool Trace, const Vector3& Pos);
+			UINT Division, const wstring& TextureFileName, bool Trace, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

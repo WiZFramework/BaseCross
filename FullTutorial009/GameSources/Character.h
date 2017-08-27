@@ -13,15 +13,15 @@ namespace basecross{
 	///	固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedBox : public GameObject {
-		Vector3 m_Scale;
-		Vector3 m_Rotation;
-		Vector3 m_Position;
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
 	public:
 		//構築と破棄
 		FixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~FixedBox();
 		//初期化
@@ -35,9 +35,9 @@ namespace basecross{
 	class Enemy : public GameObject {
 	protected:
 		weak_ptr<StageCellMap> m_CelMap;
-		Vector3 m_Scale;
-		Vector3 m_StartRotation;
-		Vector3 m_StartPosition;
+		Vec3 m_Scale;
+		Vec3 m_StartRotation;
+		Vec3 m_StartPosition;
 		vector<CellIndex> m_CellPath;
 		//現在の自分のセルインデックス
 		int m_CellIndex;
@@ -52,9 +52,9 @@ namespace basecross{
 		//構築と破棄
 		Enemy(const shared_ptr<Stage>& StagePtr,
 			const shared_ptr<StageCellMap>& CellMap,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~Enemy();
 		//プレイヤーの検索
@@ -111,9 +111,9 @@ namespace basecross{
 		//構築と破棄
 		TestCellChangeEnemy(const shared_ptr<Stage>& StagePtr,
 			const shared_ptr<StageCellMap>& CellMap,
-			const Vector3& Scale,
-			const Vector3& Rotation,
-			const Vector3& Position
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
 		);
 		virtual ~TestCellChangeEnemy();
 		//デフォルト行動

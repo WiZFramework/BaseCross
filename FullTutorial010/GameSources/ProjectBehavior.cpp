@@ -12,8 +12,8 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	プレイヤーの行動クラス
 	//--------------------------------------------------------------------------------------
-	Vector3 PlayerBehavior::GetMoveVector() const {
-		Vector3 Angle(0, 0, 0);
+	Vec3 PlayerBehavior::GetMoveVector() const {
+		Vec3 Angle(0, 0, 0);
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
 		if (CntlVec[0].bConnected) {
@@ -22,24 +22,24 @@ namespace basecross {
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				auto PtrCamera = GetGameObject()->OnGetDrawCamera();
 				//進行方向の向きを計算
-				Vector3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+				Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
 				Front.y = 0;
-				Front.Normalize();
+				Front.normalize();
 				//進行方向向きからの角度を算出
 				float FrontAngle = atan2(Front.z, Front.x);
 				//コントローラの向き計算
 				float MoveX = CntlVec[0].fThumbLX;
 				float MoveZ = CntlVec[0].fThumbLY;
-				Vector2 MoveVec(MoveX, MoveZ);
-				float MoveSize = MoveVec.Length();
+				Vec2 MoveVec(MoveX, MoveZ);
+				float MoveSize = MoveVec.length();
 				//コントローラの向きから角度を計算
 				float CntlAngle = atan2(-MoveX, MoveZ);
 				//トータルの角度を算出
 				float TotalAngle = FrontAngle + CntlAngle;
 				//角度からベクトルを作成
-				Angle = Vector3(cos(TotalAngle), 0, sin(TotalAngle));
+				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
 				//正規化する
-				Angle.Normalize();
+				Angle.normalize();
 				//移動サイズを設定。
 				Angle *= MoveSize;
 				//Y軸は変化させない
@@ -51,11 +51,11 @@ namespace basecross {
 
 	void PlayerBehavior::MovePlayer() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vector3 Angle = GetMoveVector();
+		Vec3 Angle = GetMoveVector();
 		//Rigidbodyを取り出す
 		auto PtrRedit = GetGameObject()->GetComponent<Rigidbody>();
 		auto Velo = PtrRedit->GetVelocity();
-		if (Angle.Length() <= 0.0f && Velo.y == 0.0f) {
+		if (Angle.length() <= 0.0f && Velo.y == 0.0f) {
 			//コントローラを離したとき対策
 			PtrRedit->SetVelocityZero();
 			return;
@@ -77,7 +77,7 @@ namespace basecross {
 		//速度を設定する
 		PtrRedit->SetVelocity(Velo);
 		//回転の計算
-		if (Angle.Length() > 0.0f) {
+		if (Angle.length() > 0.0f) {
 			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
 			UtilPtr->RotToHead(Angle, 0.2f);
 		}

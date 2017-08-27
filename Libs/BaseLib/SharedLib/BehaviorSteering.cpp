@@ -48,18 +48,18 @@ namespace basecross {
 	SeekSteering::~SeekSteering() {}
 
 
-	float  SeekSteering::Execute(const Vector3& TargetPos) {
+	float  SeekSteering::Execute(const bsm::Vec3& TargetPos) {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Seek(RigidPtr->GetVelocity(), TargetPos,
 			TransPtr->GetWorldPosition(), RigidPtr->GetMaxSpeed()) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
 
 		auto Pos = TransPtr->GetWorldPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+		return bsm::length(Pos - TargetPos);
 	}
 
 	float SeekSteering::Execute(const wstring& TargetKey) {
@@ -93,17 +93,17 @@ namespace basecross {
 	float ArriveSteering::GetDecl() const { return pImpl->m_Decl; }
 	void ArriveSteering::SetDecl(float f) { pImpl->m_Decl = f; }
 
-	float  ArriveSteering::Execute(const Vector3& TargetPos) {
+	float  ArriveSteering::Execute(const bsm::Vec3& TargetPos) {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Arrive(RigidPtr->GetVelocity(), TargetPos,
 			TransPtr->GetWorldPosition(), RigidPtr->GetMaxSpeed(), pImpl->m_Decl) *  GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
 		auto Pos = TransPtr->GetWorldPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+		return bsm::length(Pos - TargetPos);
 	}
 
 	float ArriveSteering::Execute(const wstring& TargetKey) {
@@ -122,17 +122,17 @@ namespace basecross {
 	{}
 	PursuitSteering::~PursuitSteering() {}
 
-	float PursuitSteering::Execute(const Vector3& TargetPos, const Vector3& TargetVelocity, const Vector3& TargetRotation) {
+	float PursuitSteering::Execute(const bsm::Vec3& TargetPos, const bsm::Vec3& TargetVelocity, const bsm::Vec3& TargetRotation) {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Pursuit(RigidPtr->GetVelocity(), TransPtr->GetWorldPosition(), TransPtr->GetRotation(), RigidPtr->GetMaxSpeed(),
 			TargetVelocity, TargetPos, TargetRotation) *  GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
 		auto Pos = TransPtr->GetWorldPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+		return bsm::length(Pos - TargetPos);
 
 	}
 
@@ -147,7 +147,7 @@ namespace basecross {
 	//	struct WanderSteering::Impl;
 	//--------------------------------------------------------------------------------------
 	struct WanderSteering::Impl {
-		Vector3 m_WanderTarget;	//úpújñ⁄ïWÇÃâÒì]åWêîÅiëÄë«Ç…ÇÊÇ¡ÇƒèëÇ´ä∑Ç¶ÇÁÇÍÇÈÅj
+		bsm::Vec3 m_WanderTarget;	//úpújñ⁄ïWÇÃâÒì]åWêîÅiëÄë«Ç…ÇÊÇ¡ÇƒèëÇ´ä∑Ç¶ÇÁÇÍÇÈÅj
 		float m_WanderRadius;	//úpújîºåa
 		float m_WanderDistance;	//úpújâ~Ç‹Ç≈ÇÃãóó£
 		float m_WanderJitter;	//ÉâÉìÉ_ÉÄïœàŸÇÃç≈ëÂíl
@@ -169,10 +169,10 @@ namespace basecross {
 	{}
 	WanderSteering::~WanderSteering() {}
 	//ÉAÉNÉZÉT
-	const Vector3& WanderSteering::GetWanderTarget() const {
+	const bsm::Vec3& WanderSteering::GetWanderTarget() const {
 		return pImpl->m_WanderTarget;
 	}
-	void WanderSteering::SetWanderTarget(const Vector3& target) {
+	void WanderSteering::SetWanderTarget(const bsm::Vec3& target) {
 		pImpl->m_WanderTarget = target;
 	}
 	float WanderSteering::GetWanderRadius() const {
@@ -198,8 +198,8 @@ namespace basecross {
 	void WanderSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Wander(TransPtr->GetWorldMatrix(),
 			pImpl->m_WanderRadius, pImpl->m_WanderDistance, pImpl->m_WanderJitter, pImpl->m_WanderTarget) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
@@ -236,7 +236,7 @@ namespace basecross {
 			pImpl->m_PlaneVec.push_back(v);
 		}
 	}
-	void WallAvoidanceSteering::SetPlaneVec(const vector<Plane>& planevec) {
+	void WallAvoidanceSteering::SetPlaneVec(const vector<bsm::Plane4>& planevec) {
 		//ïKÇ∏ÉNÉäÉAÇ∑ÇÈ
 		pImpl->m_PlaneVec.clear();
 		for (auto& v : planevec) {
@@ -249,13 +249,13 @@ namespace basecross {
 	bool WallAvoidanceSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce(0, 0, 0);
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce(0, 0, 0);
 		WorkForce = Steering::WallAvoidance(TransPtr->GetWorldMatrix(),
 			RigidPtr->GetVelocity(), RigidPtr->GetMaxSpeed(), pImpl->m_PlaneVec) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
-		if (WorkForce.Length() > 0.0f) {
+		if (WorkForce.length() > 0.0f) {
 			//ï«Ç…è’ìÀÇµÇƒÇ¢ÇÈ
 			return true;
 		}
@@ -317,8 +317,8 @@ namespace basecross {
 	void ObstacleAvoidanceSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce(0, 0, 0);
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce(0, 0, 0);
 		WorkForce = Steering::ObstacleAvoidance(TransPtr->GetWorldMatrix(),
 			RigidPtr->GetVelocity(), RigidPtr->GetMaxSpeed(), pImpl->m_RoadWidth, pImpl->m_RoadHeight,
 			pImpl->m_ObstacleSphereVec) * GetWeight();
@@ -352,7 +352,7 @@ namespace basecross {
 	FollowPathSteering::~FollowPathSteering() {}
 
 	//ÉAÉNÉZÉT
-	void FollowPathSteering::SetPathList(const list<Vector3>& pathlist) {
+	void FollowPathSteering::SetPathList(const list<bsm::Vec3>& pathlist) {
 		pImpl->m_Path.SetList(pathlist);
 	}
 
@@ -387,8 +387,8 @@ namespace basecross {
 	bool FollowPathSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce(0, 0, 0);
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce(0, 0, 0);
 		WorkForce = Steering::FollowPath(pImpl->m_Path,
 			pImpl->m_WaypointSpan,
 			TransPtr->GetWorldPosition(),
@@ -441,8 +441,8 @@ namespace basecross {
 	void AlignmentSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Alignment(GetGameObjectGroup(), GetGameObject()) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
@@ -488,8 +488,8 @@ namespace basecross {
 	void CohesionSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Cohesion(GetGameObjectGroup(), GetGameObject(),
 			RigidPtr->GetVelocity(), RigidPtr->GetMaxSpeed()) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
@@ -540,8 +540,8 @@ namespace basecross {
 	void SeparationSteering::Execute() {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 WorkForce;
+		bsm::Vec3 Force = RigidPtr->GetForce();
+		bsm::Vec3 WorkForce;
 		WorkForce = Steering::Separation(GetGameObjectGroup(), GetGameObject()) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);

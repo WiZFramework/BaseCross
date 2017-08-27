@@ -231,7 +231,7 @@ namespace basecross {
 		@return	最初のスケール
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetStartScale() const;
+		const bsm::Vec3& GetStartScale() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初のスケールを設定する
@@ -239,7 +239,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetStartScale(const Vector3& StartScale);
+		void SetStartScale(const bsm::Vec3& StartScale);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初のスケールを設定する
@@ -256,7 +256,7 @@ namespace basecross {
 		@return	目的のスケール
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetTargetScale() const;
+		const bsm::Vec3& GetTargetScale() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的のスケールを設定する
@@ -264,7 +264,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetTargetScale(const Vector3& TargetScale);
+		void SetTargetScale(const bsm::Vec3& TargetScale);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的のスケールを設定する
@@ -282,7 +282,7 @@ namespace basecross {
 		@return	現在スケール
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetNowScale() const;
+		bsm::Vec3 GetNowScale() const;
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -332,7 +332,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& TargetScale, Lerp::rate Rate = Lerp::Linear);
+		void SetParams(float TotalTime, const bsm::Vec3& TargetScale, Lerp::rate Rate = Lerp::Linear);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ namespace basecross {
 		@return	目的の相対スケール
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetLocalScale() const;
+		const bsm::Vec3& GetLocalScale() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対スケールを設定する
@@ -369,7 +369,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLocalScale(const Vector3& LocalScale);
+		void SetLocalScale(const bsm::Vec3& LocalScale);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対スケールを設定する
@@ -389,7 +389,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& LocalScale, Lerp::rate Rate = Lerp::Linear);
+		void SetParams(float TotalTime, const bsm::Vec3& LocalScale, Lerp::rate Rate = Lerp::Linear);
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -431,15 +431,15 @@ namespace basecross {
 		@return	最初のクオータニオン
 		*/
 		//--------------------------------------------------------------------------------------
-		const Quaternion& GetStartQuaternion() const;
+		const bsm::Quat& GetStartQuaternion() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初のクオータニオンを設定する
-		@param[in]	StartQuaternion	最初のクオータニオン
+		@param[in]	Startbsm::Quat	最初のクオータニオン
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetStartQuaternion(const Quaternion& StartQuaternion);
+		void SetStartQuaternion(const bsm::Quat& StartQuaternion);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初の回転ベクトルを計算して得る。<br />
@@ -447,7 +447,7 @@ namespace basecross {
 		@return	最初の回転ベクトルを計算して返す
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetStartRotate() const;
+		bsm::Vec3 GetStartRotate() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初の回転ベクトルを設定する。<br />
@@ -456,7 +456,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetStartRotate(const Vector3& StartRotate);
+		void SetStartRotate(const bsm::Vec3& StartRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初の回転ベクトルを設定する。<br />
@@ -474,15 +474,15 @@ namespace basecross {
 		@return	目的のクオータニオン
 		*/
 		//--------------------------------------------------------------------------------------
-		const Quaternion& GetTargetQuaternion() const;
+		const bsm::Quat& GetTargetQuaternion() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的のクオータニオンを設定する
-		@param[in]	TargetQuaternion	目的のクオータニオン
+		@param[in]	Targetbsm::Quat	目的のクオータニオン
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetTargetQuaternion(const Quaternion& TargetQuaternion);
+		void SetTargetQuaternion(const bsm::Quat& TargetQuaternion);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の回転ベクトルを計算して得る。<br />
@@ -490,7 +490,7 @@ namespace basecross {
 		@return	目的の回転ベクトルを計算して返す
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetTargetRotate() const;
+		bsm::Vec3 GetTargetRotate() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の回転ベクトルを設定する。<br />
@@ -499,7 +499,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetTargetRotate(const Vector3& TargetRotate);
+		void SetTargetRotate(const bsm::Vec3& TargetRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の回転ベクトルを設定する。<br />
@@ -519,7 +519,7 @@ namespace basecross {
 		@return	現在の回転ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetNowRotate() const;
+		bsm::Vec3 GetNowRotate() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の回転クオータニオンを計算して返す。回転は線形補間のみ対応する<br />
@@ -527,7 +527,7 @@ namespace basecross {
 		@return	現在の回転クオータニオンを
 		*/
 		//--------------------------------------------------------------------------------------
-		Quaternion GetNowQuaternion() const;
+		bsm::Quat GetNowQuaternion() const;
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -577,16 +577,16 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& TargetRotate);
+		void SetParams(float TotalTime, const bsm::Vec3& TargetRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	パラメータを設定する
 		@param[in]	TotalTime	トータル時間
-		@param[in]	TargetQuaternion	目的の回転クオータニオン
+		@param[in]	Targetbsm::Quat	目的の回転クオータニオン
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Quaternion& TargetQuaternion);
+		void SetParams(float TotalTime, const bsm::Quat& TargetQuaternion);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -615,15 +615,15 @@ namespace basecross {
 		@return	目的の相対クオータニオン
 		*/
 		//--------------------------------------------------------------------------------------
-		const Quaternion& GetLocalQuaternion() const;
+		const bsm::Quat& GetLocalQuaternion() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対クオータニオンを設定する
-		@param[in]	LocalQuaternion	目的の相対クオータニオン
+		@param[in]	Localbsm::Quat	目的の相対クオータニオン
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLocalQuaternion(const Quaternion& LocalQuaternion);
+		void SetLocalQuaternion(const bsm::Quat& LocalQuaternion);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対回転ベクトルを計算して得る。<br />
@@ -631,7 +631,7 @@ namespace basecross {
 		@return	目的の相対回転ベクトルを計算して返す
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetLocalRotate() const;
+		bsm::Vec3 GetLocalRotate() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対回転ベクトルを設定する。<br />
@@ -640,7 +640,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLocalRotate(const Vector3& LocalRotate);
+		void SetLocalRotate(const bsm::Vec3& LocalRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対回転ベクトルを設定する。<br />
@@ -661,16 +661,16 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& LocalRotate);
+		void SetParams(float TotalTime, const bsm::Vec3& LocalRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	パラメータを設定する
 		@param[in]	TotalTime	トータル時間
-		@param[in]	LocalQuaternion	目的の相対回転クオータニオン
+		@param[in]	Localbsm::Quat	目的の相対回転クオータニオン
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Quaternion& LocalQuaternion);
+		void SetParams(float TotalTime, const bsm::Quat& LocalQuaternion);
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -694,7 +694,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class MoveComponent : public ActionComponent {
 		void CalcVelocity();
-		Vector3 CalcVelocitySub(float NowTime);
+		bsm::Vec3 CalcVelocitySub(float NowTime);
 	protected:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -781,7 +781,7 @@ namespace basecross {
 		@return	最初の位置
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetStartPosition() const;
+		const bsm::Vec3& GetStartPosition() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初の位置を設定する
@@ -789,7 +789,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetStartPosition(const Vector3& StartPosition);
+		void SetStartPosition(const bsm::Vec3& StartPosition);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	最初の位置を設定する
@@ -806,7 +806,7 @@ namespace basecross {
 		@return	目的の位置
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetTargetPosition() const;
+		const bsm::Vec3& GetTargetPosition() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の位置を設定する
@@ -814,7 +814,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetTargetPosition(const Vector3& TargetPosition);
+		void SetTargetPosition(const bsm::Vec3& TargetPosition);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の位置を設定する
@@ -832,7 +832,7 @@ namespace basecross {
 		@return	現在速度
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetVelocity()const;
+		bsm::Vec3 GetVelocity()const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在位置を計算して返す。<br />
@@ -840,7 +840,7 @@ namespace basecross {
 		@return	現在速度
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetNowPosition() const;
+		bsm::Vec3 GetNowPosition() const;
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -890,7 +890,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& TargetPosition, Lerp::rate Rate = Lerp::Linear);
+		void SetParams(float TotalTime, const bsm::Vec3& TargetPosition, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	パラメータを設定する
@@ -902,7 +902,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& TargetPosition, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
+		void SetParams(float TotalTime, const bsm::Vec3& TargetPosition, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -931,7 +931,7 @@ namespace basecross {
 		@return	目的の相対方向
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetLocalVector() const;
+		const bsm::Vec3& GetLocalVector() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の位置を設定する
@@ -939,7 +939,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetLocalVector(const Vector3& LocalVector);
+		void SetLocalVector(const bsm::Vec3& LocalVector);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	目的の相対方向を設定する
@@ -959,7 +959,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& LocalVector, Lerp::rate Rate = Lerp::Linear);
+		void SetParams(float TotalTime, const bsm::Vec3& LocalVector, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	パラメータを設定する
@@ -971,7 +971,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParams(float TotalTime, const Vector3& LocalVector, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
+		void SetParams(float TotalTime, const bsm::Vec3& LocalVector, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1053,11 +1053,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の速度を得る<br />
-		Moveコンポーネントがない場合はVector3(0,0,0)を返す
+		Moveコンポーネントがない場合はbsm::Vec3(0,0,0)を返す
 		@return	現在の速度
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetVelocity() const;
+		bsm::Vec3 GetVelocity() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スケーリングアクションの現在のインデックスを得る<br />
@@ -1091,7 +1091,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<ScaleTo> AddScaleTo(float TotalTime, const Vector3& TargetScale, Lerp::rate Rate = Lerp::Linear);
+		shared_ptr<ScaleTo> AddScaleTo(float TotalTime, const bsm::Vec3& TargetScale, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ScaleByアクションを追加する
@@ -1101,7 +1101,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<ScaleBy> AddScaleBy(float TotalTime, const Vector3& LocalScale, Lerp::rate Rate = Lerp::Linear);
+		shared_ptr<ScaleBy> AddScaleBy(float TotalTime, const bsm::Vec3& LocalScale, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief ScaleIntervalアクションを追加する
@@ -1156,16 +1156,16 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<RotateTo> AddRotateTo(float TotalTime, const Vector3& TargetRotate);
+		shared_ptr<RotateTo> AddRotateTo(float TotalTime, const bsm::Vec3& TargetRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	RotateToアクションを追加する
 		@param[in]	TotalTime	かける時間
-		@param[in]	TargetQuaternion	目的の回転クオータニオン
+		@param[in]	Targetbsm::Quat	目的の回転クオータニオン
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<RotateTo> AddRotateTo(float TotalTime, const Quaternion& TargetQuaternion);
+		shared_ptr<RotateTo> AddRotateTo(float TotalTime, const bsm::Quat& TargetQuaternion);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	RotateByアクションを追加する<br/>
@@ -1175,16 +1175,16 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<RotateBy> AddRotateBy(float TotalTime, const Vector3& LocalRotate);
+		shared_ptr<RotateBy> AddRotateBy(float TotalTime, const bsm::Vec3& LocalRotate);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief　RotateByアクションを追加する
 		@param[in]	TotalTime	かける時間
-		@param[in]	LocalQuaternion	目的の相対回転クオータニオン
+		@param[in]	Localbsm::Quat	目的の相対回転クオータニオン
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<RotateBy> AddRotateBy(float TotalTime, const Quaternion& LocalQuaternion);
+		shared_ptr<RotateBy> AddRotateBy(float TotalTime, const bsm::Quat& LocalQuaternion);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief RotateIntervalアクションを追加する
@@ -1239,7 +1239,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<MoveTo> AddMoveTo(float TotalTime, const Vector3& TargetPosition, Lerp::rate Rate = Lerp::Linear);
+		shared_ptr<MoveTo> AddMoveTo(float TotalTime, const bsm::Vec3& TargetPosition, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	MoveToアクションを追加する
@@ -1251,7 +1251,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<MoveTo> AddMoveTo(float TotalTime, const Vector3& TargetPosition, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
+		shared_ptr<MoveTo> AddMoveTo(float TotalTime, const bsm::Vec3& TargetPosition, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	MoveByアクションを追加する
@@ -1261,7 +1261,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<MoveBy> AddMoveBy(float TotalTime, const Vector3& LocalVector, Lerp::rate Rate = Lerp::Linear);
+		shared_ptr<MoveBy> AddMoveBy(float TotalTime, const bsm::Vec3& LocalVector, Lerp::rate Rate = Lerp::Linear);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	MoveByアクションを追加する
@@ -1273,7 +1273,7 @@ namespace basecross {
 		@return	追加したアクションのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<MoveBy> AddMoveBy(float TotalTime, const Vector3& LocalVector, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
+		shared_ptr<MoveBy> AddMoveBy(float TotalTime, const bsm::Vec3& LocalVector, Lerp::rate RateX, Lerp::rate RateY, Lerp::rate RateZ);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	MoveIntervalアクションを追加する

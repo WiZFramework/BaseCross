@@ -14,10 +14,10 @@ namespace basecross {
 	//PCStatic
 	struct PCStaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Color4 Emissive;
+		Mat4x4 World;
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Col4 Emissive;
 		PCStaticConstantBuffer() {
 			memset(this, 0, sizeof(PCStaticConstantBuffer));
 		};

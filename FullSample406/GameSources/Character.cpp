@@ -21,11 +21,11 @@ namespace basecross{
 	//初期化
 	void RollingBoxGroup::OnCreate() {
 		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-		Quaternion Qt;
-		Qt.Identity();
+		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat Qt;
+		Qt.identity();
 		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(Vector3(0, 0, 0));
+		PtrTrans->SetPosition(Vec3(0, 0, 0));
 		//影をつける(自己影用のシェーダを使うための理由)
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//描画コンポーネント
@@ -44,9 +44,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	RollingBox::RollingBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position,
 		float RotParam
 	) :
 		GameObject(StagePtr),
@@ -87,7 +87,7 @@ namespace basecross{
 
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
-		Quaternion QtSpan(Vector3(0, 1, 0), ElapsedTime * m_RotParam);
+		Quat QtSpan(Vec3(0, 1, 0), ElapsedTime * m_RotParam);
 		Qt *= QtSpan;
 		PtrTransform->SetQuaternion(Qt);
 		auto GroupPtr = GetStage()->GetSharedGameObject<RollingBoxGroup>(L"RollingBoxGroup");

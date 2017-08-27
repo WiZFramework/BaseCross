@@ -17,10 +17,10 @@ namespace basecross {
 		wstring m_TextureFileName;		///<テクスチャファイル名
 		bool m_Trace;					///<透明処理するかどうか
 		shared_ptr<TextureResource> m_TextureResource;	///<テクスチャリソース
-		Vector2 m_Scale;				///<スケーリング
+		Vec2 m_Scale;				///<スケーリング
 		float m_Rot;				///<回転角度
-		Vector2 m_Pos;				///<位置
-		Vector2 m_PosSpan;				///<位置変更間隔
+		Vec2 m_Pos;				///<位置
+		Vec2 m_PosSpan;				///<位置変更間隔
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -30,7 +30,7 @@ namespace basecross {
 		@param[in]	StartPos	初期位置
 		*/
 		//--------------------------------------------------------------------------------------
-		SquareSprite(const wstring& TextureFileName, bool Trace, const Vector2& StartPos);
+		SquareSprite(const wstring& TextureFileName, bool Trace, const Vec2& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

@@ -15,9 +15,9 @@ namespace basecross {
 	class CubeObject : public ObjectInterface, public ShapeInterface {
 		//メッシュ
 		shared_ptr<MeshResource> m_CubeMesh;
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 		void CreateBuffers();
 	public:
 		//--------------------------------------------------------------------------------------

@@ -13,12 +13,12 @@ namespace basecross {
 	//PNTStatic
 	struct PNTStaticConstantBuffer
 	{
-		Matrix4X4 World;
-		Matrix4X4 View;
-		Matrix4X4 Projection;
-		Vector4 LightDir;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Mat4x4 View;
+		Mat4x4 Projection;
+		Vec4 LightDir;
+		Col4 Emissive;
+		Col4 Diffuse;
 		PNTStaticConstantBuffer() {
 			memset(this, 0, sizeof(PNTStaticConstantBuffer));
 		};
@@ -31,8 +31,8 @@ namespace basecross {
 	//スプライト用コンスタントバッファ構造体
 	struct SpriteConstantBuffer
 	{
-		Matrix4X4 World;
-		Color4 Emissive;
+		Mat4x4 World;
+		Col4 Emissive;
 		SpriteConstantBuffer() {
 			memset(this, 0, sizeof(SpriteConstantBuffer));
 		};

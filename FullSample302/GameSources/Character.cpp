@@ -9,7 +9,7 @@
 namespace basecross{
 
 	//構築と破棄
-	ActionObject::ActionObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	ActionObject::ActionObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr), m_StartPos(StartPos) {
 	}
 	ActionObject::~ActionObject() {}
@@ -24,14 +24,14 @@ namespace basecross{
 
 		//アクションの登録
 		auto PtrAction = AddComponent<Action>();
-		PtrAction->AddRotateBy(1.0f, Vector3(0, XM_PI, 0));
+		PtrAction->AddRotateBy(1.0f, Vec3(0, XM_PI, 0));
 		PtrAction->AddRotateInterval(1.0f);
-		PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));
-		PtrAction->AddMoveBy(0.5f, Vector3(0, 1.0f, -1.0f), Lerp::Linear, Lerp::EaseOut, Lerp::Linear);
-		PtrAction->AddMoveBy(0.5f, Vector3(0, -1.0f, -1.0f), Lerp::Linear, Lerp::Easein, Lerp::Linear);
-		PtrAction->AddMoveBy(2.0f, Vector3(-4.0f, 0, 0));
-		PtrAction->AddMoveBy(1.0f, Vector3(0, 0, 2.0f));
-		PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));
+		PtrAction->AddMoveBy(1.0f, Vec3(2.0f, 0, 0));
+		PtrAction->AddMoveBy(0.5f, Vec3(0, 1.0f, -1.0f), Lerp::Linear, Lerp::EaseOut, Lerp::Linear);
+		PtrAction->AddMoveBy(0.5f, Vec3(0, -1.0f, -1.0f), Lerp::Linear, Lerp::Easein, Lerp::Linear);
+		PtrAction->AddMoveBy(2.0f, Vec3(-4.0f, 0, 0));
+		PtrAction->AddMoveBy(1.0f, Vec3(0, 0, 2.0f));
+		PtrAction->AddMoveBy(1.0f, Vec3(2.0f, 0, 0));
 
 		//ループする
 		PtrAction->SetLooped(true);

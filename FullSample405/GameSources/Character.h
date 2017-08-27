@@ -12,10 +12,10 @@ namespace basecross{
 	///	Pnt‹…
 	//--------------------------------------------------------------------------------------
 	class PntSphere : public GameObject {
-		Vector3 m_StartPos;
+		Vec3 m_StartPos;
 	public:
 		//\’z‚Æ”jŠü
-		PntSphere(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos);
+		PntSphere(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
 		virtual ~PntSphere();
 		//‰Šú‰»
 		virtual void OnCreate() override;

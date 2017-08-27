@@ -11,8 +11,8 @@ namespace basecross {
 	//スプライト用コンスタントバッファ構造体
 	struct SpriteConstantBuffer
 	{
-		Matrix4X4 World;
-		Color4 Emissive;
+		Mat4x4 World;
+		Col4 Emissive;
 		SpriteConstantBuffer() {
 			memset(this, 0, sizeof(SpriteConstantBuffer));
 		};
@@ -22,9 +22,9 @@ namespace basecross {
 	// Diffuse入りコンスタントバッファ
 	struct DiffuseSpriteConstantBuffer
 	{
-		Matrix4X4 World;
-		Color4 Emissive;
-		Color4 Diffuse;
+		Mat4x4 World;
+		Col4 Emissive;
+		Col4 Diffuse;
 		DiffuseSpriteConstantBuffer() {
 			memset(this, 0, sizeof(DiffuseSpriteConstantBuffer));
 		};

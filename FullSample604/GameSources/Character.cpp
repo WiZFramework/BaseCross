@@ -25,23 +25,23 @@ namespace basecross{
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			m_Scale = Vector3(
+			m_Scale = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
 			);
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, RotStr, L',');
-			Vector3 Rot;
+			Vec3 Rot;
 			//回転は「XM_PIDIV2」の文字列になっている場合がある
 			Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
 			Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
 			Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 			//プレートの回転の引数はクオータニオンになっているので変換
-			m_Qt.RotationRollPitchYawFromVector(Rot);
+			m_Qt.rotationRollPitchYawFromVector(Rot);
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, PosStr, L',');
-			m_Position = Vector3(
+			m_Position = Vec3(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
@@ -106,7 +106,7 @@ namespace basecross{
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 		//各トークン（カラム）をスケール、回転、位置に読み込む
-		m_Scale = Vector3(
+		m_Scale = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -119,7 +119,7 @@ namespace basecross{
 		m_Rotation.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		m_Position = Vector3(
+		m_Position = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -176,7 +176,7 @@ namespace basecross{
 		//トークン（カラム）の配列
 		vector<wstring> Tokens;
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		m_StartPos = Vector3(
+		m_StartPos = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -291,7 +291,7 @@ namespace basecross{
 		//トークン（カラム）の配列
 		vector<wstring> Tokens;
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		m_StartPos = Vector3(
+		m_StartPos = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -359,7 +359,7 @@ namespace basecross{
 	void Enemy2::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
 		if (m_StateMachine->GetCurrentState() == Enemy2MediumState::Instance()) {
 			auto PtrGrav = GetBehavior<Gravity>();
-			PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+			PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 		}
 	}
 
@@ -392,7 +392,7 @@ namespace basecross{
 
 	void Enemy2MediumState::Enter(const shared_ptr<Enemy2>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void Enemy2MediumState::Execute(const shared_ptr<Enemy2>& Obj) {
@@ -438,7 +438,7 @@ namespace basecross{
 		//トークン（カラム）の配列
 		vector<wstring> Tokens;
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		m_StartPos = Vector3(
+		m_StartPos = Vec3(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
@@ -527,7 +527,7 @@ namespace basecross{
 
 	void Enemy3NearState::Enter(const shared_ptr<Enemy3>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void Enemy3NearState::Execute(const shared_ptr<Enemy3>& Obj) {

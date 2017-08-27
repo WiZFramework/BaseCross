@@ -12,15 +12,15 @@ namespace basecross {
 	//	用途: コンポーネントImplクラス
 	//--------------------------------------------------------------------------------------
 	struct Rigidbody::Impl {
-		Vector3 m_Velocity;				//速度
-		Vector3 m_GravityVelocity;		//重力速度
+		bsm::Vec3 m_Velocity;				//速度
+		bsm::Vec3 m_GravityVelocity;		//重力速度
 		float m_MaxSpeed;				//最高速度(フォースで使用)
-		Vector3 m_MinVelocity;			//最低速度（XYZを指定できる）
-		Vector3 m_AngularVelocity;		//回転速度
+		bsm::Vec3 m_MinVelocity;			//最低速度（XYZを指定できる）
+		bsm::Vec3 m_AngularVelocity;		//回転速度
 
 		float m_Mass;					//質量（キログラム）
 		float m_Reflection;				//反発係数
-		Vector3 m_Force;				//現在のフォース（ステアリング系コンポーネントで変更される）
+		bsm::Vec3 m_Force;				//現在のフォース（ステアリング系コンポーネントで変更される）
 		float m_FrictionForce;			//減速のフォース（速度の逆向きに働く）
 		float m_MaxForce;				//最高フォース
 		Impl() :
@@ -50,10 +50,10 @@ namespace basecross {
 	{}
 	Rigidbody::~Rigidbody() {}
 
-	const Vector3& Rigidbody::GetVelocity() const { return pImpl->m_Velocity; }
-	void Rigidbody::SetVelocity(const Vector3& Velocity) {
-		if (Velocity.IsNaN() || Velocity.IsInfinite()) {
-			pImpl->m_Velocity = Vector3(0,0,0);
+	const bsm::Vec3& Rigidbody::GetVelocity() const { return pImpl->m_Velocity; }
+	void Rigidbody::SetVelocity(const bsm::Vec3& Velocity) {
+		if (XMVector3IsNaN(Velocity) || XMVector3IsInfinite(Velocity)) {
+			pImpl->m_Velocity = bsm::Vec3(0,0,0);
 		}
 		else {
 			pImpl->m_Velocity = Velocity;
@@ -69,47 +69,47 @@ namespace basecross {
 		}
 	}
 	void Rigidbody::SetVelocity(float x, float y, float z) {
-		SetVelocity(Vector3(x, y, z));
+		SetVelocity(bsm::Vec3(x, y, z));
 	}
 	void Rigidbody::SetVelocityZero() {
-		SetVelocity(Vector3(0, 0, 0));
+		SetVelocity(bsm::Vec3(0, 0, 0));
 	}
-	const Vector3& Rigidbody::GetGravityVelocity() const {
+	const bsm::Vec3& Rigidbody::GetGravityVelocity() const {
 		return pImpl->m_GravityVelocity;
 	}
-	void Rigidbody::SetGravityVelocity(const Vector3& Velocity) {
-		if (Velocity.IsNaN() || Velocity.IsInfinite()) {
-			pImpl->m_GravityVelocity = Vector3(0, 0, 0);
+	void Rigidbody::SetGravityVelocity(const bsm::Vec3& Velocity) {
+		if (XMVector3IsNaN(Velocity) || XMVector3IsInfinite(Velocity)) {
+			pImpl->m_GravityVelocity = bsm::Vec3(0, 0, 0);
 		}
 		else {
 			pImpl->m_GravityVelocity = Velocity;
 		}
 	}
 	void Rigidbody::SetGravityVelocity(float x, float y, float z) {
-		SetGravityVelocity(Vector3(x, y, z));
+		SetGravityVelocity(bsm::Vec3(x, y, z));
 
 	}
 	void Rigidbody::SetGravityVelocityZero() {
-		SetGravityVelocity(Vector3(0, 0, 0));
+		SetGravityVelocity(bsm::Vec3(0, 0, 0));
 	}
 
 	float Rigidbody::GetMaxSpeed() const { return pImpl->m_MaxSpeed; }
 	void Rigidbody::SetMaxSpeed(float f) { pImpl->m_MaxSpeed = f; }
 
-	const Vector3& Rigidbody::GetMinVelocity() const {
+	const bsm::Vec3& Rigidbody::GetMinVelocity() const {
 		return pImpl->m_MinVelocity;
 	}
-	void Rigidbody::SetMinVelocity(const Vector3& Velocity) {
+	void Rigidbody::SetMinVelocity(const bsm::Vec3& Velocity) {
 		pImpl->m_MinVelocity = Velocity;
 	}
 	void Rigidbody::SetMinVelocity(float x, float y, float z) {
-		SetMinVelocity(Vector3(x, y, z));
+		SetMinVelocity(bsm::Vec3(x, y, z));
 	}
 
 
-	const Vector3& Rigidbody::GetAngularVelocity() const { return pImpl->m_AngularVelocity; }
-	void Rigidbody::SetAngularVelocity(const Vector3& AngularVelocity) { pImpl->m_AngularVelocity = AngularVelocity; }
-	void Rigidbody::SetAngularVelocity(float x, float y, float z) { pImpl->m_AngularVelocity = Vector3(x, y, z); }
+	const bsm::Vec3& Rigidbody::GetAngularVelocity() const { return pImpl->m_AngularVelocity; }
+	void Rigidbody::SetAngularVelocity(const bsm::Vec3& AngularVelocity) { pImpl->m_AngularVelocity = AngularVelocity; }
+	void Rigidbody::SetAngularVelocity(float x, float y, float z) { pImpl->m_AngularVelocity = bsm::Vec3(x, y, z); }
 
 
 	float Rigidbody::GetMass() const { return pImpl->m_Mass; }
@@ -131,9 +131,9 @@ namespace basecross {
 		pImpl->m_Reflection = f;
 	}
 
-	const Vector3& Rigidbody::GetForce() const { return pImpl->m_Force; }
-	void Rigidbody::SetForce(const Vector3& Force) { pImpl->m_Force = Force; }
-	void Rigidbody::SetForce(float x, float y, float z) { pImpl->m_Force = Vector3(x, y, z); }
+	const bsm::Vec3& Rigidbody::GetForce() const { return pImpl->m_Force; }
+	void Rigidbody::SetForce(const bsm::Vec3& Force) { pImpl->m_Force = Force; }
+	void Rigidbody::SetForce(float x, float y, float z) { pImpl->m_Force = bsm::Vec3(x, y, z); }
 
 	float Rigidbody::GetFrictionForce() const {
 		return pImpl->m_FrictionForce;
@@ -148,21 +148,21 @@ namespace basecross {
 
 	void Rigidbody::UpdateFromTime(float CalcTime) {
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-		Vector3 Pos = PtrTransform->GetWorldPosition();
-		Quaternion Qt = PtrTransform->GetQuaternion();
+		bsm::Vec3 Pos = PtrTransform->GetWorldPosition();
+		bsm::Quat Qt = PtrTransform->GetQuaternion();
 		//フォースが変更されていたら
-		if (pImpl->m_Force.Length() > 0) {
+		if (bsm::length(pImpl->m_Force) > 0) {
 			//フォースが0以上なら
-			pImpl->m_Force.ClampLength(0, pImpl->m_MaxForce);
+			pImpl->m_Force = XMVector3ClampLength(pImpl->m_Force, 0.0f, pImpl->m_MaxForce);
 			//質量を計算して加速を求める
-			Vector3 Accel = pImpl->m_Force / pImpl->m_Mass;
+			bsm::Vec3 Accel = pImpl->m_Force / pImpl->m_Mass;
 			pImpl->m_Velocity += Accel * CalcTime;
 		}
 
 		//摩擦加速を求める
-		Vector3 FrictionForce = pImpl->m_Velocity * -1.0f;
+		bsm::Vec3 FrictionForce = pImpl->m_Velocity * -1.0f;
 		FrictionForce *= pImpl->m_FrictionForce;
-		Vector3 FrictionAccel = FrictionForce / pImpl->m_Mass;
+		bsm::Vec3 FrictionAccel = FrictionForce / pImpl->m_Mass;
 		pImpl->m_Velocity += FrictionAccel * CalcTime;
 
 		if (abs(pImpl->m_Velocity.x) < abs(pImpl->m_MinVelocity.x)) {
@@ -174,10 +174,10 @@ namespace basecross {
 		if (abs(pImpl->m_Velocity.z) < abs(pImpl->m_MinVelocity.z)) {
 			pImpl->m_Velocity.z = 0;
 		}
-		Quaternion QtSpan;
-		QtSpan.RotationRollPitchYawFromVector(pImpl->m_AngularVelocity * CalcTime);
+		bsm::Quat QtSpan;
+		QtSpan = XMQuaternionRotationRollPitchYawFromVector(pImpl->m_AngularVelocity * CalcTime);
 		Qt *= QtSpan;
-		Qt.Normalize();
+		Qt.normalize();
 		Pos += pImpl->m_Velocity * CalcTime;
 		Pos += pImpl->m_GravityVelocity * CalcTime;
 		PtrTransform->SetQuaternion(Qt);

@@ -11,7 +11,7 @@ namespace basecross{
 	///	Staticキャラ
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	StaticChara::StaticChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	StaticChara::StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -25,11 +25,12 @@ namespace basecross{
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(m_StartPos);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, 0.0f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
 		);
 
 		//影をつける（シャドウマップを描画する）
@@ -50,7 +51,7 @@ namespace basecross{
 	///	Boneキャラ
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	BoneChara::BoneChara(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	BoneChara::BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos)
 	{
@@ -65,11 +66,12 @@ namespace basecross{
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
 		Ptr->SetPosition(m_StartPos);
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, 0.0f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
 		);
 
 		//影をつける（シャドウマップを描画する）

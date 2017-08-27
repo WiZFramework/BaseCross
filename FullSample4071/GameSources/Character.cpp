@@ -28,34 +28,35 @@ namespace basecross{
 		auto PtrCamera = PtrGameObject->OnGetDrawCamera();
 
 
-		Matrix4X4 RealWorldMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
+		Mat4x4 RealWorldMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
 
 
 		//ライトの取得
-		Matrix4X4 LightView, LightProj;
+		Mat4x4 LightView, LightProj;
 
-		Vector3 LightDir = -1.0 * DrawLight.m_Directional;
-		Vector3 LightAt = PtrCamera->GetAt();
-		Vector3 LightEye = LightAt + (LightDir * GetLightHeight());
+		Vec3 LightDir = -1.0 * DrawLight.m_Directional;
+		Vec3 LightAt = PtrCamera->GetAt();
+		Vec3 LightEye = LightAt + (LightDir * GetLightHeight());
 
 		//ライトのビューと射影を計算
-		LightView.LookAtLH(LightEye, LightAt, Vector3(0, 1.0f, 0));
-		LightProj.OrthographicLH(GetViewWidth(), GetViewHeight(), GetLightNear(), GetLightFar());
-
+		LightView = XMMatrixLookAtLH(LightEye, LightAt, Vec3(0, 1.0f, 0));
+		LightProj = XMMatrixOrthographicLH(GetViewWidth(), GetViewHeight(), GetLightNear(), GetLightFar());
 		CustomShadowmapConstantBuffer Cb;
 
-		Cb.mWorld[0] = Matrix4X4EX::Transpose(RealWorldMatrix);
-		Matrix4X4 Left = Matrix4X4EX::Translation(-5.0f, 0, 0);
+		Cb.mWorld[0] = transpose(RealWorldMatrix);
+		Mat4x4 Left;
+		Left.translation(Vec3(-5.0f, 0, 0));
 		Left = RealWorldMatrix * Left;
-		Cb.mWorld[1] = Matrix4X4EX::Transpose(Left);
-		Matrix4X4 Right = Matrix4X4EX::Translation(5.0f, 0, 0);
+		Cb.mWorld[1] = transpose(Left);
+		Mat4x4 Right;
+		Right.translation(Vec3(5.0f, 0, 0));
 		Right = RealWorldMatrix * Right;
-		Cb.mWorld[2] = Matrix4X4EX::Transpose(Right);
-		Cb.mView = Matrix4X4EX::Transpose(LightView);
-		Cb.mProj = Matrix4X4EX::Transpose(LightProj);
+		Cb.mWorld[2] = transpose(Right);
+		Cb.mView = transpose(LightView);
+		Cb.mProj = transpose(LightProj);
 		//これより描画処理
 		//コンスタントバッファの更新
 		pID3D11DeviceContext->UpdateSubresource(CBCustomShadowmap::GetPtr()->GetBuffer(), 0, nullptr, &Cb, 0, 0);
@@ -123,22 +124,24 @@ namespace basecross{
 		//カメラを得る
 		auto PtrCamera = PtrGameObject->OnGetDrawCamera();
 		//カメラの取得
-		Matrix4X4 View, Proj, WorldViewProj;
+		Mat4x4 View, Proj, WorldViewProj;
 		View = PtrCamera->GetViewMatrix();
 		Proj = PtrCamera->GetProjMatrix();
 
 		//コンスタントバッファの設定
 		CustomDrawConstantBuffer cb1;
 		//行列の設定(転置する)
-		cb1.World[0] = Matrix4X4EX::Transpose(PtrT->GetWorldMatrix());
-		Matrix4X4 Left = Matrix4X4EX::Translation(-5.0f, 0, 0);
+		cb1.World[0] = transpose(PtrT->GetWorldMatrix());
+		Mat4x4 Left;
+		Left.translation(Vec3(-5.0f, 0, 0));
 		Left = PtrT->GetWorldMatrix() * Left;
-		cb1.World[1] = Matrix4X4EX::Transpose(Left);
-		Matrix4X4 Right = Matrix4X4EX::Translation(5.0f, 0, 0);
+		cb1.World[1] = transpose(Left);
+		Mat4x4 Right;
+		Right.translation(Vec3(5.0f, 0, 0));
 		Right = PtrT->GetWorldMatrix() * Right;
-		cb1.World[2] = Matrix4X4EX::Transpose(Right);
-		cb1.View = Matrix4X4EX::Transpose(View);
-		cb1.Projection = Matrix4X4EX::Transpose(Proj);
+		cb1.World[2] = transpose(Right);
+		cb1.View = transpose(View);
+		cb1.Projection = transpose(Proj);
 		//ライトの設定
 		auto PtrLight = PtrGameObject->OnGetDrawLight();
 		cb1.LightDir = PtrLight.m_Directional;
@@ -199,7 +202,7 @@ namespace basecross{
 		}
 		vector<VertexPositionNormalColor> newvec;
 		for (size_t i = 0; i < m_BackupVertices.size(); i++) {
-			Vector3 Pos = m_BackupVertices[i].position;
+			Vec3 Pos = m_BackupVertices[i].position;
 			if (Pos.y > 0) {
 				//サインを使っていったり来たりするようにする
 				Pos.y += sin(m_TotalTime);
@@ -218,7 +221,7 @@ namespace basecross{
 
 	//構築と破棄
 	CustomDrawOctahedron::CustomDrawOctahedron(shared_ptr<Stage>& StagePtr, 
-		const Vector3& StartScale, const Vector3& StartRotation, const Vector3& StartPos) :
+		const Vec3& StartScale, const Vec3& StartRotation, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartScale(StartScale),
 		m_StartRotation(StartRotation),
@@ -241,7 +244,7 @@ namespace basecross{
 			VertexPositionNormalColor new_v;
 			new_v.position = vertices[i].position;
 			new_v.normal = vertices[i].normal;
-			new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 			m_BackupVertices.push_back(new_v);
 		}
 		auto PtrDraw = AddComponent<CustomPNCStaticDraw>();
@@ -258,8 +261,8 @@ namespace basecross{
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto PtrTransform = GetComponent<Transform>();
 		auto Qt = PtrTransform->GetQuaternion();
-		Quaternion Span;
-		Span.RotationRollPitchYawFromVector(Vector3(0, ElapsedTime, 0));
+		Quat Span;
+		Span.rotationRollPitchYawFromVector(Vec3(0, ElapsedTime, 0));
 		Qt *= Span;
 		PtrTransform->SetQuaternion(Qt);
 	}

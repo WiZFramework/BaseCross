@@ -41,7 +41,7 @@ namespace basecross {
 		weak_ptr<Sword> m_SwordWeak;
 		//相手の剣に当たったときの変数
 		//相手の場所
-		Vector3 m_HitBase;
+		Vec3 m_HitBase;
 		//ひるむ時間
 		float m_HitSwordTime;
 		//倒れた処理用
@@ -94,9 +94,9 @@ namespace basecross {
 			auto SwordTransPtr = SwordPtr->GetComponent<Transform>();
 			//剣の親にする
 			SwordTransPtr->SetParent(GetGameObject());
-			Vector3 Pos(0, 0, -0.2f);
+			Vec3 Pos(0, 0, -0.2f);
 			SwordTransPtr->SetPosition(Pos);
-			Quaternion Qt(Vector3(0, 1, 0), 0);
+			Quat Qt(Vec3(0, 1, 0), 0);
 			SwordTransPtr->SetQuaternion(Qt);
 			//剣のコリジョンは無効にする
 			auto SowdCollPtr = SwordPtr->GetComponent<Collision>();
@@ -114,10 +114,10 @@ namespace basecross {
 		void StartShakeSword() {
 			auto SwordPtr = m_SwordWeak.lock();
 			if (SwordPtr) {
-				Vector3 Pos(sin(0.0f + XM_PIDIV2) * 0.5f, 0.0f, cos(0.0f + XM_PIDIV2) * 0.5f);
+				Vec3 Pos(sin(0.0f + XM_PIDIV2) * 0.5f, 0.0f, cos(0.0f + XM_PIDIV2) * 0.5f);
 				auto SwordTransPtr = SwordPtr->GetComponent<Transform>();
 				SwordTransPtr->ResetPosition(Pos);
-				Quaternion Qt(Vector3(0, 0, 1), XM_PIDIV2);
+				Quat Qt(Vec3(0, 0, 1), XM_PIDIV2);
 				SwordTransPtr->SetQuaternion(Qt);
 				m_RotationShakeRad = 0;
 				//剣のコリジョンを有効にする
@@ -139,11 +139,11 @@ namespace basecross {
 				float ElapsedTime = App::GetApp()->GetElapsedTime();
 				float RotSpan = -ElapsedTime * 10.0f;
 				m_RotationShakeRad += RotSpan;
-				Quaternion QtSpan(Vector3(0, 1, 0), RotSpan);
+				Quat QtSpan(Vec3(0, 1, 0), RotSpan);
 				auto Qt = SwordTransPtr->GetQuaternion();
 				Qt *= QtSpan;
 				SwordTransPtr->SetQuaternion(Qt);
-				Vector3 Pos(sin(m_RotationShakeRad + XM_PIDIV2) * 0.5f, 0.0f, cos(m_RotationShakeRad + XM_PIDIV2) * 0.5f);
+				Vec3 Pos(sin(m_RotationShakeRad + XM_PIDIV2) * 0.5f, 0.0f, cos(m_RotationShakeRad + XM_PIDIV2) * 0.5f);
 				SwordTransPtr->SetPosition(Pos);
 				if (abs(m_RotationShakeRad) >= XM_PI) {
 					m_RotationShakeRad = 0;
@@ -159,7 +159,7 @@ namespace basecross {
 			//剣が取得できなければ常に「回転修了」
 			return true;
 		}
-		Vector3 m_PokeStart;
+		Vec3 m_PokeStart;
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -174,7 +174,7 @@ namespace basecross {
 
 				m_PokeStart = SwordTransPtr->GetPosition();
 
-				Vector3 Pos(sin(0.0f) * 1.0f, 0.0f, cos(0.0f) * 1.0f);
+				Vec3 Pos(sin(0.0f) * 1.0f, 0.0f, cos(0.0f) * 1.0f);
 				SwordTransPtr->ResetPosition(Pos);
 				//剣のコリジョンを有効にする
 				auto SowdCollPtr = SwordPtr->GetComponent<Collision>();
@@ -193,7 +193,7 @@ namespace basecross {
 				auto SwordTransPtr = SwordPtr->GetComponent<Transform>();
 				float ElapsedTime = App::GetApp()->GetElapsedTime();
 				float PokeSpan = ElapsedTime * 5.0f;
-				Vector3 Pos = SwordTransPtr->GetPosition();
+				Vec3 Pos = SwordTransPtr->GetPosition();
 				Pos.y -= PokeSpan;
 				SwordTransPtr->SetPosition(Pos);
 				if (Pos.y <= (m_PokeStart.y - 2.5f)) {
@@ -220,7 +220,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetHitBase(const Vector3& pos) {
+		void SetHitBase(const Vec3& pos) {
 			m_HitBase = pos;
 		}
 		//--------------------------------------------------------------------------------------
@@ -231,9 +231,9 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void HitSwordBehavior() {
 			CAPSULE SrcCap = GetGameObject()->GetComponent<CollisionCapsule>()->GetCapsule();
-			Vector3 HitVelo = SrcCap.GetCenter() - m_HitBase;
+			Vec3 HitVelo = SrcCap.GetCenter() - m_HitBase;
 			HitVelo.y = 0;
-			HitVelo.Normalize();
+			HitVelo.normalize();
 			HitVelo *= 6.0f;
 			auto PtrRig = GetGameObject()->GetComponent<Rigidbody>();
 			PtrRig->SetVelocity(HitVelo);
@@ -250,10 +250,10 @@ namespace basecross {
 			m_HitSwordTime += ElapsedTime;
 			auto PtrDraw = GetGameObject()->GetComponent<BcPNTStaticDraw>();
 			float val = abs(sin(m_HitSwordTime * 10.0f));
-			Color4 Col(val, val, val, 0);
+			Col4 Col(val, val, val, 0);
 			PtrDraw->SetEmissive(Col);
 			if (m_HitSwordTime >= 0.7f) {
-				PtrDraw->SetEmissive(Color4(0,0,0,1));
+				PtrDraw->SetEmissive(Col4(0,0,0,1));
 				return true;
 			}
 			return false;
@@ -293,7 +293,7 @@ namespace basecross {
 				{
 					m_DieRot += ElapsedTime;
 					auto Qt = GetGameObject()->GetComponent<Transform>()->GetQuaternion();
-					Quaternion SpanQt(Vector3(1, 0, 0), ElapsedTime);
+					Quat SpanQt(Vec3(1, 0, 0), ElapsedTime);
 					Qt *= SpanQt;
 					GetGameObject()->GetComponent<Transform>()->SetQuaternion(Qt);
 					if (m_DieRot >= XM_PIDIV2) {
@@ -308,7 +308,7 @@ namespace basecross {
 						Pos.y -= ElapsedTime;
 						GetGameObject()->GetComponent<Transform>()->SetPosition(Pos);
 					}
-					Color4 Col = GetGameObject()->GetComponent<BcPNTStaticDraw>()->GetDiffuse();
+					Col4 Col = GetGameObject()->GetComponent<BcPNTStaticDraw>()->GetDiffuse();
 					Col.x -= 0.05f;
 					if (Col.x <= 0.0f) {
 						Col.x = 0.0f;
@@ -340,7 +340,7 @@ namespace basecross {
 				{
 					m_DieRot -= ElapsedTime * 2.0f;
 					auto Qt = GetGameObject()->GetComponent<Transform>()->GetQuaternion();
-					Quaternion SpanQt(Vector3(1, 0, 0), -ElapsedTime * 2.0f);
+					Quat SpanQt(Vec3(1, 0, 0), -ElapsedTime * 2.0f);
 					Qt *= SpanQt;
 					GetGameObject()->GetComponent<Transform>()->SetQuaternion(Qt);
 					auto Pos = GetGameObject()->GetComponent<Transform>()->GetPosition();
@@ -349,10 +349,10 @@ namespace basecross {
 						GetGameObject()->GetComponent<Transform>()->SetPosition(Pos);
 					}
 					if (m_DieRot <= 0) {
-						GetGameObject()->GetComponent<BcPNTStaticDraw>()->SetDiffuse(Color4(1.0f,1.0f,1.0f,0.0f));
+						GetGameObject()->GetComponent<BcPNTStaticDraw>()->SetDiffuse(Col4(1.0f,1.0f,1.0f,0.0f));
 						return true;
 					}
-					Color4 Col = GetGameObject()->GetComponent<BcPNTStaticDraw>()->GetDiffuse();
+					Col4 Col = GetGameObject()->GetComponent<BcPNTStaticDraw>()->GetDiffuse();
 					Col.x += 0.05f;
 					if (Col.x >= 1.0f) {
 						Col.x = 1.0f;
@@ -426,7 +426,7 @@ namespace basecross {
 		@return	セル上に見つかったらtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool Search(const Vector3& TargetPos) {
+		bool Search(const Vec3& TargetPos) {
 			auto MapPtr = m_CelMap.lock();
 			if (MapPtr) {
 				auto PathPtr = GetGameObject()->GetComponent<PathSearch>();
@@ -463,7 +463,7 @@ namespace basecross {
 		@return	Seekできればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		CellSearchFlg SeekBehavior(const Vector3& TargetPos) {
+		CellSearchFlg SeekBehavior(const Vec3& TargetPos) {
 			auto MyPos = GetGameObject()->GetComponent<Transform>()->GetPosition();
 			auto MapPtr = m_CelMap.lock();
 			if (Search(TargetPos)) {
@@ -505,7 +505,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void ArriveBehavior(const Vector3& TargetPos) {
+		void ArriveBehavior(const Vec3& TargetPos) {
 			auto PtrArrive = GetGameObject()->GetBehavior<ArriveSteering>();
 			PtrArrive->Execute(TargetPos);
 		}
@@ -526,7 +526,7 @@ namespace basecross {
 		@return	方向ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		Vector3 GetMoveVector() const;
+		Vec3 GetMoveVector() const;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

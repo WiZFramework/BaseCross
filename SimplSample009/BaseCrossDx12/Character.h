@@ -15,9 +15,9 @@ namespace basecross {
 	class CubeObject : public ObjectInterface, public ShapeInterface {
 		//メッシュ
 		shared_ptr<MeshResource> m_CubeMesh;
-		Vector3 m_Scale;				///<スケーリング
-		Quaternion m_Qt;			///<回転
-		Vector3 m_Pos;				///<位置
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
 
 		///ルートシグネチャ
 		ComPtr<ID3D12RootSignature> m_RootSignature;
@@ -30,10 +30,10 @@ namespace basecross {
 		// コンスタントバッファ
 		struct StaticConstantBuffer
 		{
-			Matrix4X4 World;
-			Matrix4X4 View;
-			Matrix4X4 Projection;
-			Color4 Emissive;
+			Mat4x4 World;
+			Mat4x4 View;
+			Mat4x4 Projection;
+			Col4 Emissive;
 			StaticConstantBuffer() {
 				memset(this, 0, sizeof(StaticConstantBuffer));
 			};

@@ -64,14 +64,14 @@ namespace basecross {
 	struct SpriteConstants
 	{
 		/// ワールド行列
-		Matrix4X4 World;
+		bsm::Mat4x4 World;
 		/// エミッシブ色
-		Color4 Emissive;
+		bsm::Col4 Emissive;
 		/// デフューズ色
-		Color4 Diffuse;
+		bsm::Col4 Diffuse;
 		SpriteConstants() {
 			memset(this, 0, sizeof(SpriteConstants));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 	/// スプライトコンスタントバッファ
@@ -94,34 +94,34 @@ namespace basecross {
 	struct SimpleConstants
 	{
 		/// ワールド行列
-		Matrix4X4 World;
+		bsm::Mat4x4 World;
 		/// ビュー行列
-		Matrix4X4 View;
+		bsm::Mat4x4 View;
 		/// 射影行列
-		Matrix4X4 Projection;
+		bsm::Mat4x4 Projection;
 		/// エミッシブ色
-		Color4 Emissive;
+		bsm::Col4 Emissive;
 		/// デフューズ色
-		Color4 Diffuse;
+		bsm::Col4 Diffuse;
 		/// スペキュラー
-		Color4 Specular;
+		bsm::Col4 Specular;
 		/// テクスチャ=xがアクティブかどうか
 		XMUINT4 ActiveFlg;
 		/// ライイト方向
-		Vector4 LightDir;
+		bsm::Vec4 LightDir;
 		/// ライト位置
-		Vector4 LightPos;
+		bsm::Vec4 LightPos;
 		/// Eyeの位置
-		Vector4 EyePos;
+		bsm::Vec4 EyePos;
 		/// ライトビュー行列
-		Matrix4X4 LightView;
+		bsm::Mat4x4 LightView;
 		/// ライト射影行列
-		Matrix4X4 LightProjection;
+		bsm::Mat4x4 LightProjection;
 		/// Bone配列
 		XMVECTOR Bones[3 * 72];
 		SimpleConstants() {
 			memset(this, 0, sizeof(SimpleConstants));
-			Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
 	//CBSimple
@@ -273,7 +273,7 @@ namespace basecross {
 		@return	メッシュとワールド行列の間を補完する行列
 		*/
 		//--------------------------------------------------------------------------------------
-		const Matrix4X4& GetMeshToTransformMatrix() const;
+		const bsm::Mat4x4& GetMeshToTransformMatrix() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュとワールド行列の間を補完する行列の取得<br />
@@ -283,7 +283,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetMeshToTransformMatrix(const Matrix4X4& Mat);
+		void SetMeshToTransformMatrix(const bsm::Mat4x4& Mat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	各オブジェクトごとにボーンを所持しておくポインタ<br />
@@ -292,7 +292,7 @@ namespace basecross {
 		@return	ボーン行列の配列のポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const { return nullptr; }
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const { return nullptr; }
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -480,8 +480,8 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddParticle(float ToCaneraLength, const Matrix4X4& WorldMatrix, 
-			const shared_ptr<TextureResource>& TextureRes,const Color4& Diffuse = Color4(1,1,1,1));
+		void AddParticle(float ToCaneraLength, const bsm::Mat4x4& WorldMatrix, 
+			const shared_ptr<TextureResource>& TextureRes,const bsm::Col4& Diffuse = bsm::Col4(1,1,1,1));
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理
@@ -596,7 +596,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -604,14 +604,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の取得
 		@return	デフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bsm::Col4 GetDiffuse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の設定
@@ -619,7 +619,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetDiffuse(const bsm::Col4& col);
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -876,7 +876,7 @@ namespace basecross {
 		@return	エミッシブ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetEmissive() const;
+		bsm::Col4 GetEmissive() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	エミッシブ色の設定
@@ -884,14 +884,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetEmissive(const Color4& col);
+		void SetEmissive(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の取得
 		@return	デフューズ色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetDiffuse() const;
+		bsm::Col4 GetDiffuse() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デフューズ色の設定
@@ -899,14 +899,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetDiffuse(const Color4& col);
+		void SetDiffuse(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラー色の取得
 		@return	スペキュラー色
 		*/
 		//--------------------------------------------------------------------------------------
-		Color4 GetSpecular() const;
+		bsm::Col4 GetSpecular() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スペキュラー色の設定
@@ -914,7 +914,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetSpecular(const Color4& col);
+		void SetSpecular(const bsm::Col4& col);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュを使うかどうか
@@ -1190,7 +1190,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddMatrix(const Matrix4X4& NewMat);
+		void AddMatrix(const bsm::Mat4x4& NewMat);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	同時描画の行列を完全に更新する
@@ -1198,14 +1198,14 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void UpdateMultiMatrix(const vector<Matrix4X4>& NewMatVec);
+		void UpdateMultiMatrix(const vector<bsm::Mat4x4>& NewMatVec);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	同時描画の行列の配列を取得する
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		vector<Matrix4X4>& GetMatrixVec() const;
+		vector<bsm::Mat4x4>& GetMatrixVec() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	同時描画の行列をクリアする
@@ -1285,7 +1285,7 @@ namespace basecross {
 
 			//ストライドとオフセット
 			//形状の頂点バッファと行列バッファを設定
-			UINT stride[2] = { MeshRes->GetNumStride(), sizeof(Matrix4X4) };
+			UINT stride[2] = { MeshRes->GetNumStride(), sizeof(bsm::Mat4x4) };
 			UINT offset[2] = { 0, 0 };
 			ID3D11Buffer* pBuf[2] = { MeshRes->GetVertexBuffer().Get(), GetMatrixBuffer().Get() };
 			//頂点バッファのセット
@@ -1985,7 +1985,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void InterpolationMatrix(const Matrix4X4& m1, const Matrix4X4& m2, float t, Matrix4X4& out);
+		void InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	アニメーションを追加する
@@ -2029,7 +2029,7 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
 		//操作
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2093,7 +2093,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void DrawWireFrame(const shared_ptr<GameObject>& GameObj,
-			const shared_ptr<MeshResource>& Mesh,const Matrix4X4& MeshToTransformMatrix = Matrix4X4());
+			const shared_ptr<MeshResource>& Mesh,const bsm::Mat4x4& MeshToTransformMatrix = bsm::Mat4x4());
 	};
 
 

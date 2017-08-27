@@ -18,11 +18,11 @@ namespace basecross {
 		float m_TextBlockWidth;
 		float m_TextBlockHeight;
 		wstring m_FontName;
-		Color4 m_FontColor;
+		bsm::Col4 m_FontColor;
 		Point2D<float> m_StartPosition;
 		StringSprite::TextAlignment m_TextAlignment;
 
-		Color4 m_BackColor;		//îwåiêF
+		bsm::Col4 m_BackColor;		//îwåiêF
 		Point2D<float> m_BackTextMargin;	//îwåiêFÇìhÇËÇ¬Ç‘Ç∑ÉeÉLÉXÉgÇÃÉ}Å[ÉWÉì(ç∂âEÇ∆è„â∫)
 
 		DWRITE_TEXT_METRICS m_textMetrics;
@@ -40,10 +40,10 @@ namespace basecross {
 			m_TextBlockWidth(128.0f),
 			m_TextBlockHeight(32.0f),
 			m_FontName(L"ÇlÇrÉSÉVÉbÉN"),
-			m_FontColor(Color4(1.0f, 1.0f, 1.0f, 1.0f)),
+			m_FontColor(bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f)),
 			m_StartPosition{16.0f,16.0f},
 			m_TextAlignment(StringSprite::TextAlignment::m_Left),
-			m_BackColor(Color4(0.0f, 0.0f, 0.0f, 0.0f)),
+			m_BackColor(bsm::Col4(0.0f, 0.0f, 0.0f, 0.0f)),
 			m_BackTextMargin(4.0f,0.0f)
 			{}
 		~Impl(){}
@@ -94,17 +94,17 @@ namespace basecross {
 	}
 
 
-	const Color4& StringSprite::GetFontColor() const{
+	const bsm::Col4& StringSprite::GetFontColor() const{
 		return pImpl->m_FontColor;
 	}
-	void StringSprite::SetFontColor(const Color4& Col){
+	void StringSprite::SetFontColor(const bsm::Col4& Col){
 
 	}
 
-	const Color4& StringSprite::GetBackColor() const{
+	const bsm::Col4& StringSprite::GetBackColor() const{
 		return pImpl->m_BackColor;
 	}
-	void StringSprite::SetBackColor(const Color4& Col){
+	void StringSprite::SetBackColor(const bsm::Col4& Col){
 	}
 
 	Point2D<float> StringSprite::GetBackTextMargin() const{

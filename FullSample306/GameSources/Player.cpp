@@ -22,8 +22,8 @@ namespace basecross{
 	{}
 
 
-	Vector3 Player::GetMoveVector() const {
-		Vector3 Angle(0, 0, 0);
+	Vec3 Player::GetMoveVector() const {
+		Vec3 Angle(0, 0, 0);
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
 		if (CntlVec[0].bConnected) {
@@ -32,24 +32,24 @@ namespace basecross{
 				auto PtrTransform = GetComponent<Transform>();
 				auto PtrCamera = OnGetDrawCamera();
 				//進行方向の向きを計算
-				Vector3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+				Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
 				Front.y = 0;
-				Front.Normalize();
+				Front.normalize();
 				//進行方向向きからの角度を算出
 				float FrontAngle = atan2(Front.z, Front.x);
 				//コントローラの向き計算
 				float MoveX = CntlVec[0].fThumbLX;
 				float MoveZ = CntlVec[0].fThumbLY;
-				Vector2 MoveVec(MoveX, MoveZ);
-				float MoveSize = MoveVec.Length();
+				Vec2 MoveVec(MoveX, MoveZ);
+				float MoveSize = MoveVec.length();
 				//コントローラの向きから角度を計算
 				float CntlAngle = atan2(-MoveX, MoveZ);
 				//トータルの角度を算出
 				float TotalAngle = FrontAngle + CntlAngle;
 				//角度からベクトルを作成
-				Angle = Vector3(cos(TotalAngle), 0, sin(TotalAngle));
+				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
 				//正規化する
-				Angle.Normalize();
+				Angle.normalize();
 				//移動サイズを設定。
 				Angle *= MoveSize;
 				//Y軸は変化させない
@@ -62,7 +62,7 @@ namespace basecross{
 
 	void Player::MovePlayer() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vector3 Angle = GetMoveVector();
+		Vec3 Angle = GetMoveVector();
 		//Transform
 		auto PtrTransform = GetComponent<Transform>();
 		//Rigidbodyを取り出す
@@ -86,17 +86,17 @@ namespace basecross{
 		PtrRedit->SetVelocity(Velo);
 		//回転の計算
 		float YRot = PtrTransform->GetRotation().y;
-		Quaternion Qt;
-		Qt.Identity();
-		if (Angle.Length() > 0.0f) {
+		Quat Qt;
+		Qt.identity();
+		if (Angle.length() > 0.0f) {
 			//ベクトルをY軸回転に変換
 			float PlayerAngle = atan2(Angle.x, Angle.z);
-			Qt.RotationRollPitchYaw(0, PlayerAngle, 0);
-			Qt.Normalize();
+			Qt.rotationRollPitchYawFromVector(Vec3(0, PlayerAngle, 0));
+			Qt.normalize();
 		}
 		else {
-			Qt.RotationRollPitchYaw(0, YRot, 0);
-			Qt.Normalize();
+			Qt.rotationRollPitchYawFromVector(Vec3(0, YRot, 0));
+			Qt.normalize();
 		}
 		//Transform
 		PtrTransform->SetQuaternion(Qt);
@@ -138,7 +138,7 @@ namespace basecross{
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			//注目点をオブジェクト位置から少し上方にする
-			PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 	}
 
@@ -146,7 +146,7 @@ namespace basecross{
 	void  Player::OnPushA() {
 		auto TargetPtr = GetStage()->GetSharedObject(L"Ball1");
 		auto TargetRidgid = TargetPtr->GetComponent<Rigidbody>();
-		TargetRidgid->SetVelocity(Vector3(4.0, 0, 0.0f));
+		TargetRidgid->SetVelocity(Vec3(4.0, 0, 0.0f));
 
 	}
 

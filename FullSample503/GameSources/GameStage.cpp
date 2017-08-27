@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -32,8 +32,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -53,8 +53,8 @@ namespace basecross {
 
 	//キャラクターの作成
 	void GameStage::CreateChara() {
-		AddGameObject<StaticChara>(Vector3(2.5f, 0.0f, 5.0f));
-		AddGameObject<BoneChara>(Vector3(-2.5f, 0.0f, 5.0f));
+		AddGameObject<StaticChara>(Vec3(2.5f, 0.0f, 5.0f));
+		AddGameObject<BoneChara>(Vec3(-2.5f, 0.0f, 5.0f));
 	}
 
 

@@ -17,15 +17,15 @@ namespace basecross {
 		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
 		shared_ptr<WrappedSprite> m_WallSprite;		///<スプライト
 
-		Vector3 m_CamerEye;			///<カメラ位置
-		Vector3 m_CamerAt;			///<カメラ視点
-		Vector3 m_CamerUp;			///<カメラ傾き
+		Vec3 m_CamerEye;			///<カメラ位置
+		Vec3 m_CamerAt;			///<カメラ視点
+		Vec3 m_CamerUp;			///<カメラ傾き
 		float m_FovY;				///<画角
 		float m_CameraXZRad;			//カメラのXZラジアン
 		float m_CameraYRad;				//カメラのYラジアン
 		float m_CameraArmLen;		//カメラの腕の長さ
 
-		Vector4 m_LightDir;			///<ライト向き
+		Vec4 m_LightDir;			///<ライト向き
 
 
 	public:
@@ -85,7 +85,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetViewProjMatrix(Matrix4X4& View, Matrix4X4& Proj)const;
+		void GetViewProjMatrix(Mat4x4& View, Mat4x4& Proj)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief カメラのEyeとAtを取得
@@ -94,7 +94,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetCameraEyeAt(Vector3& Eye, Vector3& At)const {
+		void GetCameraEyeAt(Vec3& Eye, Vec3& At)const {
 			Eye = m_CamerEye;
 			At = m_CamerAt;
 		}
@@ -105,7 +105,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetLightDir(Vector4& LightDir)const;
+		void GetLightDir(Vec4& LightDir)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

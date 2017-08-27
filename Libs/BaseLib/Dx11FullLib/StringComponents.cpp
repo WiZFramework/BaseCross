@@ -18,11 +18,11 @@ namespace basecross {
 		float m_TextBlockWidth;
 		float m_TextBlockHeight;
 		wstring m_FontName;
-		Color4 m_FontColor;
+		bsm::Col4 m_FontColor;
 		Point2D<float> m_StartPosition;
 		StringSprite::TextAlignment m_TextAlignment;
 
-		Color4 m_BackColor;		//背景色
+		bsm::Col4 m_BackColor;		//背景色
 		Point2D<float> m_BackTextMargin;	//背景色を塗りつぶすテキストのマージン(左右と上下)
 
 		DWRITE_TEXT_METRICS m_textMetrics;
@@ -40,10 +40,10 @@ namespace basecross {
 			m_TextBlockWidth(128.0f),
 			m_TextBlockHeight(32.0f),
 			m_FontName(L"ＭＳゴシック"),
-			m_FontColor(Color4(1.0f, 1.0f, 1.0f, 1.0f)),
+			m_FontColor(bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f)),
 			m_StartPosition{16.0f,16.0f},
 			m_TextAlignment(StringSprite::TextAlignment::m_Left),
-			m_BackColor(Color4(0.0f, 0.0f, 0.0f, 0.0f)),
+			m_BackColor(bsm::Col4(0.0f, 0.0f, 0.0f, 0.0f)),
 			m_BackTextMargin(4.0f,0.0f)
 			{}
 		~Impl(){}
@@ -197,10 +197,10 @@ namespace basecross {
 	}
 
 
-	const Color4& StringSprite::GetFontColor() const{
+	const bsm::Col4& StringSprite::GetFontColor() const{
 		return pImpl->m_FontColor;
 	}
-	void StringSprite::SetFontColor(const Color4& Col){
+	void StringSprite::SetFontColor(const bsm::Col4& Col){
 		pImpl->m_FontColor = Col;
 		auto ColBrush = D2D1::ColorF(pImpl->m_FontColor.x, pImpl->m_FontColor.y, pImpl->m_FontColor.z, pImpl->m_FontColor.w);
 		// デバイスに依存するリソースを作成します。
@@ -218,10 +218,10 @@ namespace basecross {
 
 	}
 
-	const Color4& StringSprite::GetBackColor() const{
+	const bsm::Col4& StringSprite::GetBackColor() const{
 		return pImpl->m_BackColor;
 	}
-	void StringSprite::SetBackColor(const Color4& Col){
+	void StringSprite::SetBackColor(const bsm::Col4& Col){
 		pImpl->m_BackColor = Col;
 		auto ColBrush = D2D1::ColorF(pImpl->m_BackColor.x, pImpl->m_BackColor.y, pImpl->m_BackColor.z, pImpl->m_BackColor.w);
 		// デバイスに依存するリソースを作成します。
@@ -432,10 +432,10 @@ namespace basecross {
 		// テキスト レンダリングに関連するリソース。
 		float m_FoneSize;
 		wstring m_FontName;
-		Color4 m_FontColor;
+		bsm::Col4 m_FontColor;
 		StringSprite::TextAlignment m_TextAlignment;
 
-		Color4 m_BackColor;		//背景色
+		bsm::Col4 m_BackColor;		//背景色
 		Point2D<float> m_BackTextMargin;	//背景色を塗りつぶすテキストのマージン(左右と上下)
 
 		ComPtr<ID2D1SolidColorBrush>    m_Brush;
@@ -450,9 +450,9 @@ namespace basecross {
 		Impl() :
 			m_FoneSize(16.0f),
 			m_FontName(L"ＭＳゴシック"),
-			m_FontColor(Color4(1.0f, 1.0f, 1.0f, 1.0f)),
+			m_FontColor(bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f)),
 			m_TextAlignment(StringSprite::TextAlignment::m_Left),
-			m_BackColor(Color4(0.0f, 0.0f, 0.0f, 0.0f)),
+			m_BackColor(bsm::Col4(0.0f, 0.0f, 0.0f, 0.0f)),
 			m_BackTextMargin(4.0f, 0.0f)
 		{}
 		~Impl() {}
@@ -587,10 +587,10 @@ namespace basecross {
 	}
 
 
-	const Color4& MultiStringSprite::GetFontColor() const {
+	const bsm::Col4& MultiStringSprite::GetFontColor() const {
 		return pImpl->m_FontColor;
 	}
-	void MultiStringSprite::SetFontColor(const Color4& Col) {
+	void MultiStringSprite::SetFontColor(const bsm::Col4& Col) {
 		pImpl->m_FontColor = Col;
 		auto ColBrush = D2D1::ColorF(pImpl->m_FontColor.x, pImpl->m_FontColor.y, pImpl->m_FontColor.z, pImpl->m_FontColor.w);
 		// デバイスに依存するリソースを作成します。
@@ -608,10 +608,10 @@ namespace basecross {
 
 	}
 
-	const Color4& MultiStringSprite::GetBackColor() const {
+	const bsm::Col4& MultiStringSprite::GetBackColor() const {
 		return pImpl->m_BackColor;
 	}
-	void MultiStringSprite::SetBackColor(const Color4& Col) {
+	void MultiStringSprite::SetBackColor(const bsm::Col4& Col) {
 		pImpl->m_BackColor = Col;
 		auto ColBrush = D2D1::ColorF(pImpl->m_BackColor.x, pImpl->m_BackColor.y, pImpl->m_BackColor.z, pImpl->m_BackColor.w);
 		// デバイスに依存するリソースを作成します。

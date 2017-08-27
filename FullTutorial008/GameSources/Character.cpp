@@ -22,11 +22,12 @@ namespace basecross{
 	void EggAnime::OnCreate() {
 		//元となるオブジェクトからアニメーションオブジェクトへの行列の設定
 		//作成されたグラフィックとの調整に使用
-		Matrix4X4 mat;
-		mat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0, 0, 0),
-			Vector3(0, 0, 0)
+		Mat4x4 mat;
+		mat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0)
 		);
 		SetToAnimeMatrix(mat);
 
@@ -36,7 +37,7 @@ namespace basecross{
 		//それに合わせてスケーリングする
 		PtrT->SetScale(-8.0f, 8.0f, 1.0f);
 		//ポジションはピクセル単位センター合わせ（固定）
-		PtrT->SetPosition(Vector3(0, -250.0f, 0.0f));
+		PtrT->SetPosition(Vec3(0, -250.0f, 0.0f));
 		//親クラスのOnCreateを必ず呼ぶ
 		SS5ssae::OnCreate();
 		//値は秒あたりのフレーム数
@@ -69,9 +70,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),

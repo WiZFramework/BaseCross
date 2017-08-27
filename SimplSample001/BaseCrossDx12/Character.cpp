@@ -42,9 +42,9 @@ namespace basecross {
 	void TriangleObject::OnCreate() {
 		//í∏ì_ÇçÏê¨Ç∑ÇÈÇΩÇﬂÇÃîzóÒ
 		vector<VertexPositionColor> vertices = {
-			{ Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
-			{ Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
-			{ Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
+			{ Vec3(0.0f, 0.5f , 0.0f),Col4(1.0f, 0.0f, 0.0f, 1.0f) },
+			{ Vec3(0.5f, -0.5f, 0.5f),Col4(0.0f, 1.0f, 0.0f, 1.0f) },
+			{ Vec3(-0.5f, -0.5f, 0.5f),Col4(0.0f, 0.0f, 1.0f, 1.0f) }
 		};
 		m_TriangleMesh = MeshResource::CreateMeshResource(vertices,false);
 		CreateRootSignature();

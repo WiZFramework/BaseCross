@@ -109,19 +109,19 @@ namespace basecross {
 			FbxPropertyT<FbxDouble3>	color;
 			color = pPhong->Ambient;
 			//アンビエントは使用しない
-			material.m_Ambient = Color4(0,0,0,0);
-//			material.m_Ambient = Color4(0.5f, 0.5f, 0.5f, 1.0f);
+			material.m_Ambient = Col4(0,0,0,0);
+//			material.m_Ambient = Col4(0.5f, 0.5f, 0.5f, 1.0f);
 			//			material.m_Ambient = Color4((float)color.Get()[ 0 ], (float)color.Get()[ 1 ], (float)color.Get()[ 2 ], 1.0f);
 			color = pPhong->Diffuse;
 			//デフィーズはテクスチャを使うのでフル
-			material.m_Diffuse = Color4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
-			//			material.m_Specular = Color4(0.0f,0.0f,0.0f,0.4f);
-			material.m_Specular = Color4((float)color.Get()[0] * 0.5f, (float)color.Get()[1] * 0.5f, (float)color.Get()[2] * 0.5f, 0.4f);
+			material.m_Diffuse = Col4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
+			//			material.m_Specular = Col4(0.0f,0.0f,0.0f,0.4f);
+			material.m_Specular = Col4((float)color.Get()[0] * 0.5f, (float)color.Get()[1] * 0.5f, (float)color.Get()[2] * 0.5f, 0.4f);
 			color = pPhong->Emissive;
 			//エミッシブはDirectXTKデフォルト
-			//material.m_Emissive = Color4(0.05333332f,0.09882354f,0.1819608f,1.0f);
-			material.m_Emissive = Color4(0,0,0,0);
-//			material.m_Emissive = Color4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
+			//material.m_Emissive = Col4(0.05333332f,0.09882354f,0.1819608f,1.0f);
+			material.m_Emissive = Col4(0,0,0,0);
+//			material.m_Emissive = Col4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
 
 			//マテリアルに関連付けられているテクスチャを読み込む
 			const FbxProperty	fbxProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
@@ -196,14 +196,14 @@ namespace basecross {
 					VertexPositionNormalTexture(
 						//頂点の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						Vec3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
 						//法線の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-//						XMFLOAT3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
-						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+//						Vec3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						Vec3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
-						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
+						Vec2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
 					);
 
 				int tangentCount = pImpl->m_FbxMesh->GetElementTangentCount();
@@ -280,7 +280,7 @@ namespace basecross {
 				pImpl->m_FbxMesh->GetPolygonVertexUV(i, j, sUVSetName, vUV, bUnmapped);
 
 
-				Vector4 Tan(0,0,0,0);
+				Vec4 Tan(0,0,0,0);
 				if (TanPtr) {
 					Tan.x = (float)TanPtr->GetDirectArray().GetAt(iIndex)[0];
 					Tan.y = (float)TanPtr->GetDirectArray().GetAt(iIndex)[1];
@@ -292,16 +292,16 @@ namespace basecross {
 					VertexPositionNormalTangentTexture(
 						//頂点の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						Vec3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
 						//法線の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
 						//XMFLOAT3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
-						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						Vec3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//タンジェントの設定
 						Tan,
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
-						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
+						Vec2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
 					);
 
 				int tangentCount = pImpl->m_FbxMesh->GetElementTangentCount();
@@ -421,13 +421,13 @@ namespace basecross {
 					VertexPositionNormalTextureSkinning(
 						//頂点の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						Vec3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
 						//法線の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						Vec3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
-						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1])),
+						Vec2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1])),
 						//ブレンドインデックスはとりあえず0
 						temp,
 						//ブレンドウエイトはとりあえず0
@@ -528,14 +528,13 @@ namespace basecross {
 				}
 			}
 
-			Matrix4X4	mMirror, mBindInverse;
-			mMirror.Identity();
+			Mat4x4	mMirror, mBindInverse;
+			mMirror.identity();
 			mMirror(2, 2) = -1.0f;
 
 			bone.m_BindPose *= mMirror;
 			bone.m_CurrentPose *= mMirror;
-			Vector4 temp4;
-			mBindInverse = Matrix4X4EX::Inverse(&temp4, bone.m_BindPose);
+			mBindInverse = inverse(bone.m_BindPose);
 			bone.m_ConbinedPose = mBindInverse * bone.m_CurrentPose;
 
 			Bones.push_back(bone);
@@ -591,7 +590,7 @@ namespace basecross {
 				uint32_t temp[4] = { 0, 0, 0, 0 };
 				float tempf[4] = { 0, 0, 0, 0 };
 
-				Vector4 Tan(0, 0, 0, 0);
+				Vec4 Tan(0, 0, 0, 0);
 				if (TanPtr) {
 					Tan.x = (float)TanPtr->GetDirectArray().GetAt(iIndex)[0];
 					Tan.y = (float)TanPtr->GetDirectArray().GetAt(iIndex)[1];
@@ -603,15 +602,15 @@ namespace basecross {
 					VertexPositionNormalTangentTextureSkinning(
 						//頂点の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
+						Vec3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
 						//法線の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-						XMFLOAT3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
+						Vec3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//タンジェントの設定
 						Tan,
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
-						XMFLOAT2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1])),
+						Vec2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1])),
 						//ブレンドインデックスはとりあえず0
 						temp,
 						//ブレンドウエイトはとりあえず0
@@ -712,14 +711,13 @@ namespace basecross {
 				}
 			}
 
-			Matrix4X4	mMirror, mBindInverse;
-			mMirror.Identity();
+			Mat4x4	mMirror, mBindInverse;
+			mMirror.identity();
 			mMirror(2, 2) = -1.0f;
 
 			bone.m_BindPose *= mMirror;
 			bone.m_CurrentPose *= mMirror;
-			Vector4 temp4;
-			mBindInverse = Matrix4X4EX::Inverse(&temp4, bone.m_BindPose);
+			mBindInverse = inverse(bone.m_BindPose);
 			bone.m_ConbinedPose = mBindInverse * bone.m_CurrentPose;
 
 			Bones.push_back(bone);
@@ -823,8 +821,8 @@ namespace basecross {
 			}
 		}
 		FbxAMatrix	mCurrentPose;
-		Matrix4X4	mMirror, mBindInverse;
-		mMirror.Identity();
+		Mat4x4	mMirror, mBindInverse;
+		mMirror.identity();
 		mMirror(2, 2) = -1.0f;	//座標系の関係でボーンが反転しているので、それをDirectXに合わせるために使用する行列
 
 								//カレント行列と合成行列を再計算する
@@ -837,8 +835,7 @@ namespace basecross {
 			}
 			tgtBones[i].m_CurrentPose *= mMirror;
 
-			Vector4 temp;
-			mBindInverse = Matrix4X4EX::Inverse(&temp, tgtBones[i].m_BindPose);
+			mBindInverse = inverse(tgtBones[i].m_BindPose);
 
 			tgtBones[i].m_ConbinedPose = mBindInverse * tgtBones[i].m_CurrentPose;
 		}
@@ -1050,7 +1047,7 @@ namespace basecross {
 		bool m_IsAnimeEnd;				//現在のアニメーションが終了したかどうか
 		vector< Bone > m_vecLocalBones;	//各オブジェクトごとにボーンを所持しておく
 										//シェーダに渡すボーン行列
-		vector<Matrix4X4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
+		vector<Mat4x4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
 
 												//アニメーションを名前で照会するする際に使用するインデックステーブル
 		map< string, AnimationData > m_AnimationMap;
@@ -1121,7 +1118,7 @@ namespace basecross {
 		return &pImpl->m_vecLocalBones;
 	}
 
-	const vector< Matrix4X4 >* BcFbxPNTBoneModelDraw::GetVecLocalBonesPtr() const {
+	const vector< Mat4x4 >* BcFbxPNTBoneModelDraw::GetVecLocalBonesPtr() const {
 		return &pImpl->m_LocalBonesMatrix;
 	}
 
@@ -1204,10 +1201,10 @@ namespace basecross {
 	}
 
 	//指定したIDのボーンの現在の行列を取得する
-	void BcFbxPNTBoneModelDraw::GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+	void BcFbxPNTBoneModelDraw::GetBoneMatrix(UINT BoneId, Mat4x4& Matrix) const {
 		auto PtrGameObject = GetGameObject();
 		auto PtrT = PtrGameObject->GetComponent<Transform>();
-		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
+		Mat4x4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
 		if (pImpl->m_vecLocalBones.size() <= BoneId) {
 			throw BaseException(
 				L"ボーンIDが範囲外です",
@@ -1219,10 +1216,10 @@ namespace basecross {
 	}
 
 	//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
-	void BcFbxPNTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+	void BcFbxPNTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Mat4x4& Matrix) const {
 		auto PtrGameObject = GetGameObject();
 		auto PtrT = PtrGameObject->GetComponent<Transform>();
-		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix();
+		Mat4x4 MeshMatrix = GetMeshToTransformMatrix();
 		if (pImpl->m_vecLocalBones.size() <= BoneId) {
 			throw BaseException(
 				L"ボーンIDが範囲外です",
@@ -1439,7 +1436,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -1447,8 +1444,8 @@ namespace basecross {
 			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
 			UINT cb_count = 0;
 			for (size_t b = 0; b < BoneSz; b++) {
-				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-				mat.Transpose();
+				Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
+				mat.transpose();
 				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
 				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
 				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
@@ -1519,7 +1516,7 @@ namespace basecross {
 		bool m_IsAnimeEnd;				//現在のアニメーションが終了したかどうか
 		vector< Bone > m_vecLocalBones;	//各オブジェクトごとにボーンを所持しておく
 										//シェーダに渡すボーン行列
-		vector<Matrix4X4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
+		vector<Mat4x4> m_LocalBonesMatrix;	//シャドウマップに渡すポインタ
 
 												//アニメーションを名前で照会するする際に使用するインデックステーブル
 		map< string, AnimationData > m_AnimationMap;
@@ -1590,7 +1587,7 @@ namespace basecross {
 		return &pImpl->m_vecLocalBones;
 	}
 
-	const vector< Matrix4X4 >* BcFbxPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
+	const vector< Mat4x4 >* BcFbxPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
 		return &pImpl->m_LocalBonesMatrix;
 	}
 
@@ -1673,10 +1670,10 @@ namespace basecross {
 	}
 
 	//指定したIDのボーンの現在の行列を取得する
-	void BcFbxPNTnTBoneModelDraw::GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+	void BcFbxPNTnTBoneModelDraw::GetBoneMatrix(UINT BoneId, Mat4x4& Matrix) const {
 		auto PtrGameObject = GetGameObject();
 		auto PtrT = PtrGameObject->GetComponent<Transform>();
-		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
+		Mat4x4 MeshMatrix = GetMeshToTransformMatrix() * PtrT->GetWorldMatrix();
 		if (pImpl->m_vecLocalBones.size() <= BoneId) {
 			throw BaseException(
 				L"ボーンIDが範囲外です",
@@ -1688,10 +1685,10 @@ namespace basecross {
 	}
 
 	//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
-	void BcFbxPNTnTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const {
+	void BcFbxPNTnTBoneModelDraw::GetLocalBoneMatrix(UINT BoneId, Mat4x4& Matrix) const {
 		auto PtrGameObject = GetGameObject();
 		auto PtrT = PtrGameObject->GetComponent<Transform>();
-		Matrix4X4 MeshMatrix = GetMeshToTransformMatrix();
+		Mat4x4 MeshMatrix = GetMeshToTransformMatrix();
 		if (pImpl->m_vecLocalBones.size() <= BoneId) {
 			throw BaseException(
 				L"ボーンIDが範囲外です",
@@ -1866,7 +1863,7 @@ namespace basecross {
 				BcCb.diffuseColor = m.m_Diffuse;
 			}
 			if (IsModelEmissivePriority()) {
-				Color4 Em4 = m.m_Emissive;
+				Col4 Em4 = m.m_Emissive;
 				Em4.w = 0.0f;
 				BcCb.emissiveColor = Em4;
 			}
@@ -1874,8 +1871,8 @@ namespace basecross {
 			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
 			UINT cb_count = 0;
 			for (size_t b = 0; b < BoneSz; b++) {
-				Matrix4X4 mat = pImpl->m_LocalBonesMatrix[b];
-				mat.Transpose();
+				Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
+				mat.transpose();
 				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
 				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
 				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
@@ -2069,7 +2066,7 @@ namespace basecross {
 		}
 	}
 
-	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
+	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vec3& Position,
 		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
 			if (m_FbxMeshResName != L"") {
@@ -2436,7 +2433,7 @@ namespace basecross {
 				}
 			}
 
-			vector<Matrix4X4> animematrix;
+			vector<Mat4x4> animematrix;
 
 			//ボーンを現在の時間に更新する
 			vector<Bone> AnimeBones;
@@ -2457,7 +2454,7 @@ namespace basecross {
 				for (float f = (float)Start; f < (float)End; f += SampleSpan) {
 					Mesh->GenerateCurrentPose(AnimeBones, animData, f);
 					for (auto b : AnimeBones) {
-						Matrix4X4 Mat = b.m_ConbinedPose;
+						Mat4x4 Mat = b.m_ConbinedPose;
 						Mat._41 *= Scale;
 						Mat._42 *= Scale;
 						Mat._43 *= Scale;
@@ -2473,7 +2470,7 @@ namespace basecross {
 				for (float f = (float)Start; f < (float)End; f += SampleSpan) {
 					Mesh->GenerateCurrentPose(AnimeBones, animData, f);
 					for (auto b : AnimeBones) {
-						Matrix4X4 Mat = b.m_ConbinedPose;
+						Mat4x4 Mat = b.m_ConbinedPose;
 						Mat._41 *= Scale;
 						Mat._42 *= Scale;
 						Mat._43 *= Scale;
@@ -2565,7 +2562,7 @@ namespace basecross {
 			//アニメーション行列
 			BlockHeader AnimeMatrixHeader;
 			AnimeMatrixHeader.m_Type = BlockType::AnimeMatrix;
-			AnimeMatrixHeader.m_Size = (UINT)animematrix.size() * sizeof(Matrix4X4);
+			AnimeMatrixHeader.m_Size = (UINT)animematrix.size() * sizeof(Mat4x4);
 			ofs.write((const char*)&AnimeMatrixHeader, sizeof(BlockHeader));
 			ofs.write((const char*)&animematrix.front(), AnimeMatrixHeader.m_Size);
 

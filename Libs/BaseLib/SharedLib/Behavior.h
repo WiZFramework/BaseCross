@@ -92,7 +92,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void RotToHead(const Vector3& Velocity, float LerpFact);
+		void RotToHead(const bsm::Vec3& Velocity, float LerpFact);
 
 	};
 
@@ -123,7 +123,7 @@ namespace basecross {
 		@return	追いかける位置との距離
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const Vector3& TargetPos);
+		float Execute(const bsm::Vec3& TargetPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
@@ -161,7 +161,7 @@ namespace basecross {
 		@return	現在の重力
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetGravity() const;
+		const bsm::Vec3& GetGravity() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の重力を設定する
@@ -169,7 +169,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetGravity(const Vector3& gravity);
+		void SetGravity(const bsm::Vec3& gravity);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の重力を設定する
@@ -188,7 +188,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void StartJump(const Vector3& StartVec, float EscapeSpan = 0.01f);
+		void StartJump(const bsm::Vec3& StartVec, float EscapeSpan = 0.01f);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ジャンプのスタート

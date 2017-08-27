@@ -15,8 +15,8 @@ namespace basecross{
 	void Scene::OnCreate() {
 		try {
 			//クリアする色を設定
-			Color4 Col;
-			Col.SetUint8(31,30,71,255);
+			Col4 Col;
+			Col.set(31.0f / 255.0f,30.0f / 255.0f,71.0f / 255.0f,255.0f / 255.0f);
 			SetClearColor(Col);
 			//自分自身にイベントを送る
 			//これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる

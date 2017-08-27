@@ -18,17 +18,17 @@ namespace basecross{
 	MySeekSteering::~MySeekSteering() {}
 
 
-	float  MySeekSteering::Execute(const Vector3& TargetPos) {
+	float  MySeekSteering::Execute(const Vec3& TargetPos) {
 		auto RigidPtr = GetGameObject()->GetComponent<Rigidbody>();
 		auto TransPtr = GetGameObject()->GetComponent<Transform>();
-		Vector3 Force = RigidPtr->GetForce();
-		Vector3 DesiredVelocity = Vector3EX::Normalize(TargetPos - TransPtr->GetPosition()) * RigidPtr->GetMaxSpeed();
-		Vector3 WorkForce = (DesiredVelocity - RigidPtr->GetVelocity()) * GetWeight();
+		Vec3 Force = RigidPtr->GetForce();
+		Vec3 DesiredVelocity = normalize(TargetPos - TransPtr->GetPosition()) * RigidPtr->GetMaxSpeed();
+		Vec3 WorkForce = (DesiredVelocity - RigidPtr->GetVelocity()) * GetWeight();
 		Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
 		RigidPtr->SetForce(Force);
 
 		auto Pos = TransPtr->GetPosition();
-		return Vector3EX::Length(Pos - TargetPos);
+		return length(Pos - TargetPos);
 	}
 
 	float MySeekSteering::Execute(const wstring& TargetKey) {
@@ -43,7 +43,7 @@ namespace basecross{
 	//	用途: 追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vector3& StartPos) :
+	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
 		m_StateChangeSize(5.0f)
@@ -112,18 +112,18 @@ namespace basecross{
 		//回転の更新
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
-		Vector3 Velocity = PtrRigidbody->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		Vec3 Velocity = PtrRigidbody->GetVelocity();
+		if (Velocity.length() > 0.0f) {
+			Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTrans->GetQuaternion();
+			Quat NowQt = PtrTrans->GetQuaternion();
 			//現在と目標を補間（10分の1）
-			NowQt.Slerp(NowQt, Qt, 0.1f);
+			NowQt = XMQuaternionSlerp(NowQt, Qt, 0.1f);
 			PtrTrans->SetQuaternion(NowQt);
 		}
 

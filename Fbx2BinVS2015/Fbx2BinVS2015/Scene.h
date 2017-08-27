@@ -52,7 +52,7 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		virtual void OnCreate() override;
 
-		void ReadFbxFile(const wstring& Dir, const wstring& FileName,size_t MeshIndex,float Scale,const Vector3& Position,
+		void ReadFbxFile(const wstring& Dir, const wstring& FileName,size_t MeshIndex,float Scale,const Vec3& Position,
 			bool IsReadStatic,bool WithTangent, const wstring& NormalFileName,bool TextureWrap);
 
 		bool CheckSkinMesh();

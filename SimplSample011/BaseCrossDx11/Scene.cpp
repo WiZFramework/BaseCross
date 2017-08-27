@@ -20,12 +20,12 @@ namespace basecross {
 
 		wstring strTexture = DataDir + L"sky.jpg";
 		//立方体の作成
-		m_CubeObject1 = ObjectFactory::Create<CubeObject>(strTexture, false, Vector3(-1.0f, 0, 2.0f), true);
-		m_CubeObject2 = ObjectFactory::Create<CubeObject>(strTexture, false, Vector3(1.0f, 0, 2.0f), false);
+		m_CubeObject1 = ObjectFactory::Create<CubeObject>(strTexture, false, Vec3(-1.0f, 0, 2.0f), true);
+		m_CubeObject2 = ObjectFactory::Create<CubeObject>(strTexture, false, Vec3(1.0f, 0, 2.0f), false);
 		strTexture = DataDir + L"trace.png";
 		//立方体の作成
-		m_CubeObject3 = ObjectFactory::Create<CubeObject>(strTexture, true, Vector3(-2.0f, 0, 0), true);
-		m_CubeObject4 = ObjectFactory::Create<CubeObject>(strTexture, true, Vector3(2.0f, 0, 0), false);
+		m_CubeObject3 = ObjectFactory::Create<CubeObject>(strTexture, true, Vec3(-2.0f, 0, 0), true);
+		m_CubeObject4 = ObjectFactory::Create<CubeObject>(strTexture, true, Vec3(2.0f, 0, 0), false);
 	}
 
 	void Scene::OnUpdate() {
@@ -37,7 +37,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_CubeObject1->OnDraw();

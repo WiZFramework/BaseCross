@@ -31,8 +31,8 @@ namespace basecross{
 		//丸影を作成するためのメッシュ
 		shared_ptr<MeshResource> m_ShadowResource;
 		//データとゲームとの変換行列
-		Matrix4X4 m_ToAnimeMatrixLeft;
-		Matrix4X4 m_ToAnimeMatrixRight;
+		Mat4x4 m_ToAnimeMatrixLeft;
+		Mat4x4 m_ToAnimeMatrixRight;
 	public:
 		//構築と破棄
 		Player(const shared_ptr<Stage>& StagePtr, const wstring& BaseDir);

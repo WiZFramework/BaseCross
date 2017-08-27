@@ -106,7 +106,9 @@
   <ItemGroup>
     <ClInclude Include="Character.h" />
     <ClInclude Include="GameStage.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />
+    <ClInclude Include="ProjectBehavior.h" />
     <ClInclude Include="ProjectShader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scene.h" />
@@ -122,6 +124,8 @@
   <ItemGroup>
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="GameStage.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="ProjectBehavior.cpp" />
     <ClCompile Include="ProjectShader.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">

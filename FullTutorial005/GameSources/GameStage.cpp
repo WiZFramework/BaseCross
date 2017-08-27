@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -37,14 +37,15 @@ namespace basecross {
 			VertexPositionNormalTangentTexture new_pntnt_v;
 			new_pntnt_v.position = vertices[i].position;
 			new_pntnt_v.normal = vertices[i].normal;
+			new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
 			if (vertices[i].textureCoordinate.x == 1.0f) {
 				new_pntnt_v.textureCoordinate.x = 20.0f;
 			}
 			if (vertices[i].textureCoordinate.y == 1.0f) {
 				new_pntnt_v.textureCoordinate.y = 20.0f;
 			}
-			Vector3 n = Vector3EX::Cross(new_pntnt_v.normal, Vector3(0, 1, 0));
-			new_pntnt_v.tangent = n;
+			Vec3 n = cross((Vec3)new_pntnt_v.normal, Vec3(0, 1, 0));
+			new_pntnt_v.tangent = Vec4(n,0.0f);
 			new_pntnt_v.tangent.w = 0.0f;
 			new_pntnt_vertices.push_back(new_pntnt_v);
 		}
@@ -59,8 +60,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f,0,0), XM_PIDIV2);
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -76,7 +77,7 @@ namespace basecross {
 		DrawComp->DisableSpecular();
 		//フォグはきつめに
 		DrawComp->SetFogEnabled(true);
-		DrawComp->SetFogColor(Color4(0.3f, 0.3f,0.3f, 1.0f));
+		DrawComp->SetFogColor(Col4(0.3f, 0.3f,0.3f, 1.0f));
 		DrawComp->SetFogStart(-10.0f);
 		DrawComp->SetFogEnd(-30.0f);
 		//自分に影が映りこむようにする
@@ -88,7 +89,7 @@ namespace basecross {
 		//オブジェクトのグループを作成する
 		auto Group = CreateSharedObjectGroup(L"ObjectGroup");
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 0, 0.25f, 10.0f },
 			{ 10.0f, 0.25f, 0.0f },
 			{ -10.0f, 0.25f, 0.0f },
@@ -104,10 +105,10 @@ namespace basecross {
 	struct FixedNormalBoxParam {
 		wstring TexKey;
 		wstring NormalTexKey;
-		Vector3 Scale;
-		Vector3 Rot;
-		Vector3 Pos;
-		FixedNormalBoxParam(const wstring& tk, const wstring& ntk, const Vector3& s, const Vector3& r, const Vector3& p) :
+		Vec3 Scale;
+		Vec3 Rot;
+		Vec3 Pos;
+		FixedNormalBoxParam(const wstring& tk, const wstring& ntk, const Vec3& s, const Vec3& r, const Vec3& p) :
 			TexKey(tk), NormalTexKey(ntk), Scale(s), Rot(r), Pos(p) {}
 	};
 
@@ -118,30 +119,30 @@ namespace basecross {
 			FixedNormalBoxParam(
 				L"BLUE_TX",
 				L"NORMAL2_TX",
-				Vector3(5.0f, 0.5f, 5.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 10.0f)
+				Vec3(5.0f, 0.5f, 5.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 10.0f)
 			),
 			FixedNormalBoxParam(
 				L"WALL2_TX",
 				L"WALL2_NORMAL_TX",
-				Vector3(2.0f, 1.0f, 2.0f),
-				Vector3(0, 0, 0),
-				Vector3(10.0f, 0.5f, 10.0f)
+				Vec3(2.0f, 1.0f, 2.0f),
+				Vec3(0, 0, 0),
+				Vec3(10.0f, 0.5f, 10.0f)
 			),
 			FixedNormalBoxParam(
 				L"WALL_TX",
 				L"WALL_NORMAL_TX",
-				Vector3(4.0f, 1.0f, 4.0f),
-				Vector3(0, 0, 0),
-				Vector3(-10.0f, 0.5f, 10.0f)
+				Vec3(4.0f, 1.0f, 4.0f),
+				Vec3(0, 0, 0),
+				Vec3(-10.0f, 0.5f, 10.0f)
 			),
 			FixedNormalBoxParam(
 				L"BROWN_TX",
 				L"FLOOR_NORMAL_TX",
-				Vector3(10.0f, 0.5f, 10.0f),
-				Vector3(-0.5f, 0.0f, -0.5f),
-				Vector3(-10.0f, 0.25f, 10.0f)
+				Vec3(10.0f, 0.5f, 10.0f),
+				Vec3(-0.5f, 0.0f, -0.5f),
+				Vec3(-10.0f, 0.25f, 10.0f)
 			)
 		};
 		//オブジェクトの作成
@@ -169,16 +170,16 @@ namespace basecross {
 	//上下移動しているボックスの作成
 	void GameStage::CreateMoveBox() {
 		AddGameObject<MoveBox>(
-			Vector3(5.0f, 0.5f, 5.0f),
-			Vector3(0.0f, 0.0f, 0.0f),
-			Vector3(0.0f, -0.5f, 20.0f)
+			Vec3(5.0f, 0.5f, 5.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, -0.5f, 20.0f)
 			);
 	}
 
 	//ヒットする球体の作成
 	void GameStage::CreateSphere() {
 		//配列の初期化
-		vector<Vector3> Vec = {
+		vector<Vec3> Vec = {
 			{ 20.0f, 0, 15.0f },
 			{ 20.0f, 0, 0.0f },
 		};
@@ -193,69 +194,69 @@ namespace basecross {
 		//でこぼこ床のデータの作成
 		AddGameObject<UnevenGroundData>();
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 5.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 5.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 5.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 7.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 7.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 9.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 9.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 9.0f)
-			},
-
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 11.0f)
-			},
-			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 11.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 9.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 11.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 13.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 11.0f)
 			},
 
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, XM_PIDIV2, 0.0f),
-				Vector3(-4.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 13.0f)
 			},
 			{
-				Vector3(1.0f, 1.0f, 1.0f),
-				Vector3(0.0f, -XM_PIDIV2, 0.0f),
-				Vector3(-3.0f, 0.0f, 15.0f)
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 13.0f)
+			},
+
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, XM_PIDIV2, 0.0f),
+				Vec3(-4.0f, 0.0f, 15.0f)
+			},
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, -XM_PIDIV2, 0.0f),
+				Vec3(-3.0f, 0.0f, 15.0f)
 			},
 		};
 		//オブジェクトの作成

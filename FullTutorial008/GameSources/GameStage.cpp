@@ -43,34 +43,34 @@ namespace basecross {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		if (CntlVec[0].bConnected) {
-			Vector3 NewAt(0, 0, 0);
+			Vec3 NewAt(0, 0, 0);
 			auto TargetPtr = GetTargetObject();
 			if (TargetPtr) {
 				//目指したい場所
-				Vector3 ToAt = TargetPtr->GetComponent<Transform>()->GetPosition();
+				Vec3 ToAt = TargetPtr->GetComponent<Transform>()->GetPosition();
 				NewAt = Lerp::CalculateLerp(GetAt(), ToAt, 0, 1.0f, m_ToTargetLerp, Lerp::Linear);
 			}
 			//ステップ1、注視点と位置の変更
-			Vector3 Span = GetAt() - GetEye();
-			Vector3 NewEye = NewAt - Span;
+			Vec3 Span = GetAt() - GetEye();
+			Vec3 NewEye = NewAt - Span;
 			SetAt(NewAt);
 			SetEye(NewEye);
 			//ステップ２、ズームの変更
 			//カメラ位置と注視点の間のベクトルを算出
 			Span = GetAt() - GetEye();
 			//正規化
-			Span.Normalize();
+			Span.normalize();
 			//変化値の決定
 			Span = Span * ElapsedTime * 10.0f;
 
-			Vector3 NewArm = GetAt() - GetEye();
+			Vec3 NewArm = GetAt() - GetEye();
 			//Dパッド下
 			//カメラを引く
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
 				//カメラ位置を引く
 				NewEye = NewEye - Span;
 				NewArm = NewAt - NewEye;
-				if (NewArm.Length() > (GetFar() * 0.1f)) {
+				if (NewArm.length() > (GetFar() * 0.1f)) {
 					NewEye = NewEye + Span;
 					NewArm = NewAt - NewEye;
 				}
@@ -81,7 +81,7 @@ namespace basecross {
 				//カメラ位置を寄る
 				NewEye = NewEye + Span;
 				NewArm = NewAt - NewEye;
-				if (NewArm.Length() < GetNear() * 2.0f) {
+				if (NewArm.length() < GetNear() * 2.0f) {
 					NewEye = NewEye - Span;
 					NewArm = NewAt - NewEye;
 				}
@@ -90,7 +90,7 @@ namespace basecross {
 			SetEye(NewEye);
 			//ステップ3角度の変更
 			//現在のAtとEyeの角度を得る
-			Vector3 ArmInv = GetEye() - GetAt();
+			Vec3 ArmInv = GetEye() - GetAt();
 			//右スティックX方向
 			FLOAT AngleY = 0;
 			//右スティックY方向
@@ -108,23 +108,24 @@ namespace basecross {
 			if (ArmInv.x < 0) {
 				AngleZ *= -1.0f;
 			}
-			Quaternion QtSpan(AngleX, AngleY, AngleZ);
-			QtSpan.Normalize();
+			Quat QtSpan;
+			QtSpan.rotationRollPitchYawFromVector(Vec3(AngleX, AngleY, AngleZ));
+			QtSpan.normalize();
 			//回転先計算の行列を作成
-			Matrix4X4 Mat, Mat2;
-			Mat.STRTransformation(
-				Vector3(1.0f, 1.0f, 1.0f),
+			Mat4x4 Mat, Mat2;
+			Mat.strTransformation(
+				Vec3(1.0f, 1.0f, 1.0f),
 				ArmInv,
 				QtSpan);
-			Mat2.TranslationFromVector(GetAt());
+			Mat2.translation(GetAt());
 			Mat *= Mat2;
-			NewEye = Mat.PosInMatrix();
+			NewEye = Mat.transInMatrix();
 			if (NewEye.y < 0.5f) {
 				NewEye.y = 0.5f;
 			}
 			//カメラが一定以上、上から視線にならなように調整
 			ArmInv = NewEye - GetAt();
-			ArmInv.Normalize();
+			ArmInv.normalize();
 			float y2 = ArmInv.y * ArmInv.y;
 			float x2 = ArmInv.x * ArmInv.x;
 			float z2 = ArmInv.z * ArmInv.z;
@@ -162,8 +163,8 @@ namespace basecross {
 //		auto PttCamera = ObjectFactory::Create<LookAtCamera>();
 
 		PtrView->SetCamera(PttCamera);
-		PttCamera->SetEye(Vector3(0.0f, 2.0f, -8.0f));
-		PttCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PttCamera->SetEye(Vec3(0.0f, 2.0f, -8.0f));
+		PttCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
@@ -177,8 +178,8 @@ namespace basecross {
 		//ステージへのゲームオブジェクトの追加
 		auto Ptr = AddGameObject<GameObject>();
 		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quaternion Qt(Vector3(1.0f, 0, 0), XM_PIDIV2);
-		Qt.RotationRollPitchYawFromVector(Vector3(XM_PIDIV2, 0, 0));
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
 		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
 		PtrTrans->SetQuaternion(Qt);
 		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
@@ -200,58 +201,58 @@ namespace basecross {
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vector3> > Vec = {
+		vector< vector<Vec3> > Vec = {
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 0.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 0.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 0.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-10.0f, 0.25f, 0.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(5.0f, 0.25f, 2.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(5.0f, 0.25f, 2.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-5.0f, 0.25f, 2.0f)
-			},
-
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 4.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 4.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(5.0f, 0.25f, 6.0f)
-			},
-			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-5.0f, 0.25f, 6.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-5.0f, 0.25f, 2.0f)
 			},
 
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(10.0f, 0.25f, 8.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 4.0f)
 			},
 			{
-				Vector3(5.0f, 0.5f, 1.0f),
-				Vector3(0.0f, 0.0f, 0.0f),
-				Vector3(-10.0f, 0.25f, 8.0f)
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-10.0f, 0.25f, 4.0f)
+			},
+			{
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(5.0f, 0.25f, 6.0f)
+			},
+			{
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-5.0f, 0.25f, 6.0f)
+			},
+
+			{
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(10.0f, 0.25f, 8.0f)
+			},
+			{
+				Vec3(5.0f, 0.5f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-10.0f, 0.25f, 8.0f)
 			},
 
 		};

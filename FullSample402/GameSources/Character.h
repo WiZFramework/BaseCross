@@ -13,8 +13,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class TraceSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector3 m_StartPos;
+		Vec2 m_StartScale;
+		Vec3 m_StartPos;
 		float m_TotalTime;
 		//バックアップ頂点データ
 		vector<VertexPositionColor> m_BackupVertices;
@@ -29,7 +29,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		TraceSprite(const shared_ptr<Stage>& StagePtr, bool Trace,
-			const Vector2& StartScale, const Vector3& StartPos);
+			const Vec2& StartScale, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -58,8 +58,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class WallSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector3 m_StartPos;
+		Vec2 m_StartScale;
+		Vec3 m_StartPos;
 		wstring m_TextureKey;
 	public:
 		//--------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		WallSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-			const Vector2& StartScale, const Vector3& StartPos);
+			const Vec2& StartScale, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -103,8 +103,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class ScrollSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector3 m_StartPos;
+		Vec2 m_StartScale;
+		Vec3 m_StartPos;
 		wstring m_TextureKey;
 		float m_TotalTime;
 		//バックアップ頂点データ
@@ -121,7 +121,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		ScrollSprite(const shared_ptr<Stage>& StagePtr, const wstring& TextureKey, bool Trace,
-			const Vector2& StartScale, const Vector3& StartPos);
+			const Vec2& StartScale, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -149,8 +149,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class ScoreSprite : public GameObject {
 		bool m_Trace;
-		Vector2 m_StartScale;
-		Vector3 m_StartPos;
+		Vec2 m_StartScale;
+		Vec3 m_StartPos;
 		wstring m_TextureKey;
 		float m_Score;
 		//桁数
@@ -171,7 +171,7 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		ScoreSprite(const shared_ptr<Stage>& StagePtr, UINT NumberOfDigits,
 			const wstring& TextureKey, bool Trace,
-			const Vector2& StartScale, const Vector3& StartPos);
+			const Vec2& StartScale, const Vec3& StartPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

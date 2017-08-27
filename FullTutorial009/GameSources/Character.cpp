@@ -15,9 +15,9 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_Scale(Scale),
@@ -56,9 +56,9 @@ namespace basecross{
 	//構築と破棄
 	Enemy::Enemy(const shared_ptr<Stage>& StagePtr,
 		const shared_ptr<StageCellMap>& CellMap,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	) :
 		GameObject(StagePtr),
 		m_CelMap(CellMap),
@@ -141,7 +141,7 @@ namespace basecross{
 					PtrSeek->Execute(PlayerPos);
 				}
 				else {
-					if (Vector3EX::Length(MyPos - PlayerPos) <= 3.0f){
+					if (length(MyPos - PlayerPos) <= 3.0f){
 						auto PtrRigid = GetComponent<Rigidbody>();
 						auto Velo = PtrRigid->GetVelocity();
 						Velo *= 0.95f;
@@ -233,18 +233,18 @@ namespace basecross{
 		//Velocityの値で、回転を変更する
 		//これで進行方向を向くようになる
 		auto PtrTransform = GetComponent<Transform>();
-		Vector3 Velocity = PtrRigidbody->GetVelocity();
-		if (Velocity.Length() > 0.0f) {
-			Vector3 Temp = Velocity;
-			Temp.Normalize();
+		Vec3 Velocity = PtrRigidbody->GetVelocity();
+		if (Velocity.length() > 0.0f) {
+			Vec3 Temp = Velocity;
+			Temp.normalize();
 			float ToAngle = atan2(Temp.x, Temp.z);
-			Quaternion Qt;
-			Qt.RotationRollPitchYaw(0, ToAngle, 0);
-			Qt.Normalize();
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Vec3(0, ToAngle, 0));
+			Qt.normalize();
 			//現在の回転を取得
-			Quaternion NowQt = PtrTransform->GetQuaternion();
+			Quat NowQt = PtrTransform->GetQuaternion();
 			//現在と目標を補間（10分の1）
-			NowQt.Slerp(NowQt, Qt, 0.1f);
+			NowQt = XMQuaternionSlerp(NowQt, Qt, 0.1f);
 			PtrTransform->SetQuaternion(NowQt);
 		}
 	}
@@ -293,9 +293,9 @@ namespace basecross{
 	//構築と破棄
 	TestCellChangeEnemy::TestCellChangeEnemy(const shared_ptr<Stage>& StagePtr,
 		const shared_ptr<StageCellMap>& CellMap,
-		const Vector3& Scale,
-		const Vector3& Rotation,
-		const Vector3& Position
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
 	):
 		Enemy(StagePtr, CellMap, Scale, Rotation, Position)
 	{}
@@ -318,7 +318,7 @@ namespace basecross{
 			else {
 				//プレイヤーはマップ上にいない
 				//マップをプレイヤーの周りに再設定
-				Vector3  CellmapStart;
+				Vec3  CellmapStart;
 				CellmapStart.x = float((int)(PlayerPos.x - 2.0f));
 				CellmapStart.z = float((int)(PlayerPos.z - 2.0f));
 				CellmapStart.y = 0.0f;

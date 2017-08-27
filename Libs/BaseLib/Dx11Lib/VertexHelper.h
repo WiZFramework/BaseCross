@@ -33,11 +33,11 @@ namespace basecross{
 		{ }
 
 		VertexPosition(float x,float y,float z)
-			: position(XMFLOAT3(x, y, z))
+			: position(bsm::Vec3(x, y, z))
 		{ }
 
 
-		VertexPosition(XMFLOAT3 const& pos)
+		VertexPosition(bsm::Vec3 const& pos)
 			: position(pos)
 		{ }
 
@@ -46,7 +46,7 @@ namespace basecross{
 			XMStoreFloat3(&position, pos);
 		}
 
-		XMFLOAT3 position;
+		bsm::Vec3 position;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionLayout;
@@ -73,7 +73,7 @@ namespace basecross{
 		VertexPositionColor()
 		{ }
 
-		VertexPositionColor(XMFLOAT3 const& pos, XMFLOAT4 const& col)
+		VertexPositionColor(bsm::Vec3 const& pos, bsm::Vec4 const& col)
 			: position(pos),
 			color(col)
 		{ }
@@ -84,8 +84,8 @@ namespace basecross{
 			XMStoreFloat4(&color, col);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT4 color;
+		bsm::Vec3 position;
+		bsm::Vec4 color;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionColorLayout;
@@ -112,7 +112,7 @@ namespace basecross{
 		VertexPositionTexture()
 		{ }
 
-		VertexPositionTexture(XMFLOAT3 const& pos, XMFLOAT2 const& tex)
+		VertexPositionTexture(bsm::Vec3 const& pos, bsm::Vec2 const& tex)
 			: position(pos),
 			textureCoordinate(tex)
 		{ }
@@ -123,8 +123,8 @@ namespace basecross{
 			XMStoreFloat2(&textureCoordinate, tex);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec2 textureCoordinate;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionTextureLayout;
@@ -151,7 +151,7 @@ namespace basecross{
 		VertexPositionNormal()
 		{ }
 
-		VertexPositionNormal(XMFLOAT3 const& pos, XMFLOAT3 const& norm)
+		VertexPositionNormal(bsm::Vec3 const& pos, bsm::Vec3 const& norm)
 			: position(pos),
 			normal(norm)
 		{ }
@@ -162,8 +162,8 @@ namespace basecross{
 			XMStoreFloat3(&normal, norm);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionNormalLayout;
@@ -191,7 +191,7 @@ namespace basecross{
 		VertexPositionColorTexture()
 		{ }
 
-		VertexPositionColorTexture(XMFLOAT3 const& pos, XMFLOAT4 const& col, XMFLOAT2 const& tex)
+		VertexPositionColorTexture(bsm::Vec3 const& pos, bsm::Vec4 const& col, bsm::Vec2 const& tex)
 			: position(pos),
 			color(col),
 			textureCoordinate(tex)
@@ -204,9 +204,9 @@ namespace basecross{
 			XMStoreFloat2(&textureCoordinate, tex);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT4 color;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec4 color;
+		bsm::Vec2 textureCoordinate;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionColorTextureLayout;
@@ -234,7 +234,7 @@ namespace basecross{
 		VertexPositionNormalColor()
 		{ }
 
-		VertexPositionNormalColor(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& col)
+		VertexPositionNormalColor(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec4 const& col)
 			: position(pos),
 			normal(norm),
 			color(col)
@@ -247,9 +247,9 @@ namespace basecross{
 			XMStoreFloat4(&color, col);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT4 color;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec4 color;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionNormalColorLayout;
@@ -276,7 +276,7 @@ namespace basecross{
 		VertexPositionNormalTexture()
 		{ }
 
-		VertexPositionNormalTexture(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT2 const& tex)
+		VertexPositionNormalTexture(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec2 const& tex)
 			: position(pos),
 			normal(norm),
 			textureCoordinate(tex)
@@ -289,9 +289,9 @@ namespace basecross{
 			XMStoreFloat2(&textureCoordinate, tex);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec2 textureCoordinate;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionNormalTextureLayout;
@@ -320,7 +320,7 @@ namespace basecross{
 	struct  VertexPositionNormalTextureSkinning{
 		VertexPositionNormalTextureSkinning(){}
 	
-		VertexPositionNormalTextureSkinning(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT2 const& tex,
+		VertexPositionNormalTextureSkinning(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec2 const& tex,
 			uint32_t* index,float* weight)
 			: position(pos),
 			normal(norm),
@@ -345,9 +345,9 @@ namespace basecross{
 		}
 
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec2 textureCoordinate;
 		uint32_t indices[4];
 		float weights[4];
 
@@ -378,7 +378,7 @@ namespace basecross{
 		VertexPositionNormalColorTexture()
 		{ }
 
-		VertexPositionNormalColorTexture(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& col, XMFLOAT2 const& tex)
+		VertexPositionNormalColorTexture(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec4 const& col, bsm::Vec2 const& tex)
 			: position(pos),
 			normal(norm),
 			color(col),
@@ -393,10 +393,10 @@ namespace basecross{
 			XMStoreFloat2(&textureCoordinate, tex);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT4 color;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec4 color;
+		bsm::Vec2 textureCoordinate;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionNormalColorTextureLayout;
@@ -426,7 +426,7 @@ namespace basecross{
 		{ }
 
 
-		VertexPositionNormalTangentTexture(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& tan, XMFLOAT2 const& tex)
+		VertexPositionNormalTangentTexture(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec4 const& tan, bsm::Vec2 const& tex)
 			: position(pos),
 			normal(norm),
 			tangent(tan),
@@ -443,10 +443,10 @@ namespace basecross{
 		}
 
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT4 tangent;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec4 tangent;
+		bsm::Vec2 textureCoordinate;
 
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
@@ -477,7 +477,7 @@ namespace basecross{
 	struct  VertexPositionNormalTangentTextureSkinning {
 		VertexPositionNormalTangentTextureSkinning() {}
 
-		VertexPositionNormalTangentTextureSkinning(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& tan, XMFLOAT2 const& tex,
+		VertexPositionNormalTangentTextureSkinning(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec4 const& tan, bsm::Vec2 const& tex,
 			uint32_t* index, float* weight)
 			: position(pos),
 			normal(norm),
@@ -503,10 +503,10 @@ namespace basecross{
 			}
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT4 tangent;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec4 tangent;
+		bsm::Vec2 textureCoordinate;
 		uint32_t indices[4];
 		float weights[4];
 
@@ -540,7 +540,7 @@ namespace basecross{
 		{ }
 
 
-		VertexPositionNormalTangentColorTexture(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT4 const& tan, uint32_t rgba, XMFLOAT2 const& tex)
+		VertexPositionNormalTangentColorTexture(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec4 const& tan, uint32_t rgba, bsm::Vec2 const& tex)
 			: position(pos),
 			normal(norm),
 			tangent(tan),
@@ -558,7 +558,7 @@ namespace basecross{
 			XMStoreFloat2(&this->textureCoordinate, tex);
 		}
 
-		VertexPositionNormalTangentColorTexture(XMFLOAT3 const& position, XMFLOAT3 const& normal, XMFLOAT4 const& tangent, XMFLOAT4 const& color, XMFLOAT2 const& textureCoordinate)
+		VertexPositionNormalTangentColorTexture(bsm::Vec3 const& position, bsm::Vec3 const& normal, bsm::Vec4 const& tangent, bsm::Vec4 const& color, bsm::Vec2 const& textureCoordinate)
 			: position(position),
 			normal(normal),
 			tangent(tangent),
@@ -577,14 +577,14 @@ namespace basecross{
 			SetColor( color );
 		}
 
-		void SetColor( XMFLOAT4 const& color ) { SetColor( XMLoadFloat4( &color ) ); }
+		void SetColor( bsm::Vec4 const& color ) { SetColor( XMLoadFloat4( &color ) ); }
 		void XM_CALLCONV SetColor( FXMVECTOR color );
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT4 tangent;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec4 tangent;
 		uint32_t color;
-		XMFLOAT2 textureCoordinate;
+		bsm::Vec2 textureCoordinate;
 
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
@@ -620,8 +620,8 @@ namespace basecross{
 		uint32_t indices;
 		uint32_t weights;
 
-		VertexPositionNormalTangentColorTextureSkinning(XMFLOAT3 const& position, XMFLOAT3 const& normal, XMFLOAT4 const& tangent, uint32_t rgba,
-									XMFLOAT2 const& textureCoordinate, XMUINT4 const& indices, XMFLOAT4 const& weights)
+		VertexPositionNormalTangentColorTextureSkinning(bsm::Vec3 const& position, bsm::Vec3 const& normal, bsm::Vec4 const& tangent, uint32_t rgba,
+									bsm::Vec2 const& textureCoordinate, XMUINT4 const& indices, bsm::Vec4 const& weights)
 			: VertexPositionNormalTangentColorTexture(position,normal,tangent,rgba,textureCoordinate)
 		{
 			SetBlendIndices( indices );
@@ -636,8 +636,8 @@ namespace basecross{
 			SetBlendWeights( weights );
 		}
 
-		VertexPositionNormalTangentColorTextureSkinning(XMFLOAT3 const& position, XMFLOAT3 const& normal, XMFLOAT4 const& tangent, XMFLOAT4 const& color,
-									XMFLOAT2 const& textureCoordinate, XMUINT4 const& indices, XMFLOAT4 const& weights)
+		VertexPositionNormalTangentColorTextureSkinning(bsm::Vec3 const& position, bsm::Vec3 const& normal, bsm::Vec4 const& tangent, bsm::Vec4 const& color,
+									bsm::Vec2 const& textureCoordinate, XMUINT4 const& indices, bsm::Vec4 const& weights)
 			: VertexPositionNormalTangentColorTexture(position,normal,tangent,color,textureCoordinate)
 		{
 			SetBlendIndices( indices );
@@ -654,7 +654,7 @@ namespace basecross{
 
 		void SetBlendIndices( XMUINT4 const& indices );
 
-		void SetBlendWeights( XMFLOAT4 const& weights ) { SetBlendWeights( XMLoadFloat4( &weights ) ); }
+		void SetBlendWeights( bsm::Vec4 const& weights ) { SetBlendWeights( XMLoadFloat4( &weights ) ); }
 		void XM_CALLCONV SetBlendWeights( FXMVECTOR weights );
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
@@ -688,7 +688,7 @@ namespace basecross{
 		VertexPositionColorMatrix()
 		{ }
 
-		VertexPositionColorMatrix(XMFLOAT3 const& pos, XMFLOAT4 const& col, XMFLOAT4X4 const& mat)
+		VertexPositionColorMatrix(bsm::Vec3 const& pos, bsm::Vec4 const& col, bsm::Mat4x4 const& mat)
 			: position(pos),
 			color(col),
 			matrix(mat)
@@ -702,9 +702,9 @@ namespace basecross{
 			XMStoreFloat4x4(&matrix, mat);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT4 color;
-		XMFLOAT4X4 matrix;
+		bsm::Vec3 position;
+		bsm::Vec4 color;
+		bsm::Mat4x4 matrix;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
 			return VertexPositionColorMatrixLayout;
@@ -737,8 +737,8 @@ namespace basecross{
 		VertexPositionTextureMatrix()
 		{ }
 
-		VertexPositionTextureMatrix(XMFLOAT3 const& pos, XMFLOAT2 const& tex,
-			XMFLOAT4X4 const& mat)
+		VertexPositionTextureMatrix(bsm::Vec3 const& pos, bsm::Vec2 const& tex,
+			bsm::Mat4x4 const& mat)
 			: position(pos),
 			textureCoordinate(tex),
 			matrix(mat)
@@ -752,9 +752,9 @@ namespace basecross{
 			XMStoreFloat4x4(&matrix, mat);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT2 textureCoordinate;
-		XMFLOAT4X4 matrix;
+		bsm::Vec3 position;
+		bsm::Vec2 textureCoordinate;
+		bsm::Mat4x4 matrix;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
 			return VertexPositionTextureMatrixLayout;
@@ -787,8 +787,8 @@ namespace basecross{
 		VertexPositionColorTextureMatrix()
 		{ }
 
-		VertexPositionColorTextureMatrix(XMFLOAT3 const& pos, XMFLOAT4 const& col, XMFLOAT2 const& tex,
-			XMFLOAT4X4 const& mat)
+		VertexPositionColorTextureMatrix(bsm::Vec3 const& pos, bsm::Vec4 const& col, bsm::Vec2 const& tex,
+			bsm::Mat4x4 const& mat)
 			: position(pos),
 			color(col),
 			textureCoordinate(tex),
@@ -804,10 +804,10 @@ namespace basecross{
 			XMStoreFloat4x4(&matrix, mat);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT4 color;
-		XMFLOAT2 textureCoordinate;
-		XMFLOAT4X4 matrix;
+		bsm::Vec3 position;
+		bsm::Vec4 color;
+		bsm::Vec2 textureCoordinate;
+		bsm::Mat4x4 matrix;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement() {
 			return VertexPositionColorTextureMatrixLayout;
@@ -840,8 +840,8 @@ namespace basecross{
 		VertexPositionNormalTextureMatrix()
 		{ }
 
-		VertexPositionNormalTextureMatrix(XMFLOAT3 const& pos, XMFLOAT3 const& norm, XMFLOAT2 const& tex,
-			XMFLOAT4X4 const& mat)
+		VertexPositionNormalTextureMatrix(bsm::Vec3 const& pos, bsm::Vec3 const& norm, bsm::Vec2 const& tex,
+			bsm::Mat4x4 const& mat)
 			: position(pos),
 			normal(norm),
 			textureCoordinate(tex),
@@ -857,10 +857,10 @@ namespace basecross{
 			XMStoreFloat4x4(&matrix, mat);
 		}
 
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-		XMFLOAT2 textureCoordinate;
-		XMFLOAT4X4 matrix;
+		bsm::Vec3 position;
+		bsm::Vec3 normal;
+		bsm::Vec2 textureCoordinate;
+		bsm::Mat4x4 matrix;
 
 		static const D3D11_INPUT_ELEMENT_DESC* GetVertexElement(){
 			return VertexPositionNormalTextureMatrixLayout;

@@ -24,7 +24,7 @@ namespace basecross{
 		//現在のHP
 		float m_HP;
 		//スタート位置
-		Vector3 m_StartPosition;
+		Vec3 m_StartPosition;
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ namespace basecross{
 		@return	スタート位置
 		*/
 		//--------------------------------------------------------------------------------------
-		const Vector3& GetStartPosition()const {
+		const Vec3& GetStartPosition()const {
 			return m_StartPosition;
 		}
 

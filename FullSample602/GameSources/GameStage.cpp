@@ -18,8 +18,8 @@ namespace basecross {
 		//ビューのカメラの設定
 		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>();
 		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-		PtrLookAtCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -49,28 +49,28 @@ namespace basecross {
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 		//各トークン（カラム）をスケール、回転、位置に読み込む
-		Vector3 Scale(
+		Vec3 Scale(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
 		);
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, RotStr, L',');
-		Vector3 Rot;
+		Vec3 Rot;
 		//回転は「XM_PIDIV2」の文字列になっている場合がある
 		Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
 		Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
 		Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 		Tokens.clear();
 		Util::WStrToTokenVector(Tokens, PosStr, L',');
-		Vector3 Pos(
+		Vec3 Pos(
 			(float)_wtof(Tokens[0].c_str()),
 			(float)_wtof(Tokens[1].c_str()),
 			(float)_wtof(Tokens[2].c_str())
 		);
 		//プレートの回転の引数はクオータニオンになっているので変換
-		Quaternion Qt;
-		Qt.RotationRollPitchYawFromVector(Rot);
+		Quat Qt;
+		Qt.rotationRollPitchYawFromVector(Rot);
 		//ステージへのゲームオブジェクトの追加
 		AddGameObject<TilingPlate>(Scale, Qt, Pos, 1.0f, 1.0f);
 	}
@@ -99,21 +99,21 @@ namespace basecross {
 			//トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
 			Util::WStrToTokenVector(Tokens, ScaleStr, L',');
 			//各トークン（カラム）をスケール、回転、位置に読み込む
-			Vector3 Scale(
+			Vec3 Scale(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
 			);
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, RotStr, L',');
-			Vector3 Rot;
+			Vec3 Rot;
 			//回転は「XM_PIDIV2」の文字列になっている場合がある
 			Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
 			Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
 			Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
 			Tokens.clear();
 			Util::WStrToTokenVector(Tokens, PosStr, L',');
-			Vector3 Pos(
+			Vec3 Pos(
 				(float)_wtof(Tokens[0].c_str()),
 				(float)_wtof(Tokens[1].c_str()),
 				(float)_wtof(Tokens[2].c_str())
@@ -161,13 +161,13 @@ namespace basecross {
 				float XPos = (float)((int)j - 19);
 				float ZPos = (float)(19 - (int)i);
 				if (Tokens[j] == L"1") {
-					AddGameObject<Enemy1>(Vector3(XPos,0.25f,ZPos));
+					AddGameObject<Enemy1>(Vec3(XPos,0.25f,ZPos));
 				}
 				else if (Tokens[j] == L"2") {
-					AddGameObject<Enemy2>(Vector3(XPos, 0.25f, ZPos));
+					AddGameObject<Enemy2>(Vec3(XPos, 0.25f, ZPos));
 				}
 				else if (Tokens[j] == L"3") {
-					AddGameObject<Enemy3>(Vector3(XPos, 0.25f, ZPos));
+					AddGameObject<Enemy3>(Vec3(XPos, 0.25f, ZPos));
 				}
 			}
 		}

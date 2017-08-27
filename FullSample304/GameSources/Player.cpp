@@ -19,7 +19,7 @@ namespace basecross{
 
 	AttackBall::~AttackBall() {}
 
-	void AttackBall::Weakup(const Vector3& Position, const Vector3& Velocity) {
+	void AttackBall::Weakup(const Vec3& Position, const Vec3& Velocity) {
 		auto PtrTransform = GetComponent<Transform>();
 		PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
 		PtrTransform->SetRotation(0, 0, 0);
@@ -84,7 +84,7 @@ namespace basecross{
 		//Rigidbodyを取り出す
 		auto PtrRigid = GetComponent<Rigidbody>();
 		//現在の速度を取り出す
-		Vector3 Velo = PtrRigid->GetVelocity();
+		Vec3 Velo = PtrRigid->GetVelocity();
 		//ステージ上のオブジェクトの配列を取得
 		auto& ObjectVec = GetStage()->GetGameObjectVec();
 		for (auto& v : ObjectVec) {
@@ -92,20 +92,20 @@ namespace basecross{
 				//FixedBoxというタグを持っているオブジェクトを検証
 				auto PtrBoxTrans = v->GetComponent<Transform>();
 				//ボックスのワールド行列を使ってOBBを作成
-				OBB obb(Vector3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
+				OBB obb(Vec3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
 				//最近接点の変数
-				Vector3 Ret;
+				Vec3 Ret;
 				if (HitTest::SPHERE_OBB(sp, obb, Ret)) {
 					//衝突した(最近接点から法線を計算)
-					Vector3 Normal = sp.m_Center - Ret;
+					Vec3 Normal = sp.m_Center - Ret;
 					//正規化
-					Normal.Normalize();
+					Normal.normalize();
 					//反発を計算
-					Velo = Vector3EX::Reflect(Velo, Normal);
+					Velo = XMVector3Reflect(Velo, Normal);
 					//反発した速度を設定
 					PtrRigid->SetVelocity(Velo);
 					//ボックスの領域からプレイヤーを追い出す
-					Vector3 NewPos = Ret + Normal * 0.05f;
+					Vec3 NewPos = Ret + Normal * 0.05f;
 					PtrTrans->ResetPosition(NewPos);
 
 				}
@@ -160,7 +160,7 @@ namespace basecross{
 			//LookAtCameraである
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 
 		//Aボタンはアタック

@@ -320,8 +320,8 @@ namespace basecross {
 	//	用途: SpriteStdioユーティリティ
 	//--------------------------------------------------------------------------------------
 	struct SS5Util{
-		static Vector3 WstrToVector3(const wstring& src){
-			Vector3 ret(0, 0, 0);
+		static bsm::Vec3 WstrToVector3(const wstring& src){
+			bsm::Vec3 ret(0, 0, 0);
 			vector<wstring> TokenVec;
 			Util::WStrToTokenVector(TokenVec, src, L' ');
 			if (TokenVec.size() >= 3){
@@ -342,12 +342,12 @@ namespace basecross {
 			}
 			return ret;
 		}
-		static Color4 WstrARGBToColor4(const wstring& src){
+		static bsm::Col4 WstrARGBToColor4(const wstring& src){
 			if (src.size() != 8){
 				throw BaseException(
 					L"カラー情報に間違いがあります",
 					src,
-					L"SS5Util::WstrARGBToColor4()"
+					L"SS5Util::WstrARGBTobsm::Col4()"
 					);
 			}
 			wstring a = L"0x" + src.substr(0, 2);
@@ -356,7 +356,7 @@ namespace basecross {
 			wstring b = L"0x" + src.substr(6, 2);
 
 
-			Color4 ret(
+			bsm::Col4 ret(
 				(float)wcstoul(r.c_str(), nullptr, 0) / 255.0f,
 				(float)wcstoul(g.c_str(), nullptr, 0) / 255.0f,
 				(float)wcstoul(b.c_str(), nullptr, 0) / 255.0f,
@@ -379,20 +379,20 @@ namespace basecross {
 			return XmlDocReader::GetAttribute(Node, key.c_str());
 		}
 
-		static Vector3 TextToVector3(IXMLDOMNodePtr Node, const wstring& key){
+		static bsm::Vec3 TextToVector3(IXMLDOMNodePtr Node, const wstring& key){
 			auto pXMLDOMNode = XmlDocReader::GetSelectSingleNode(Node, key.c_str());
 			if (pXMLDOMNode){
 				return SS5Util::WstrToVector3(XmlDocReader::GetText(pXMLDOMNode));
 			}
-			return Vector3(0, 0, 0);
+			return bsm::Vec3(0, 0, 0);
 		}
 
-		static Vector3 AttributeToVector3(IXMLDOMNodePtr Node, const wstring& key){
+		static bsm::Vec3 AttributeToVector3(IXMLDOMNodePtr Node, const wstring& key){
 			wstring str = XmlDocReader::GetAttribute(Node, key.c_str());
 			if (str != L""){
 				return SS5Util::WstrToVector3(str);
 			}
-			return Vector3(0, 0, 0);
+			return bsm::Vec3(0, 0, 0);
 		}
 
 
@@ -489,21 +489,21 @@ namespace basecross {
 		}
 
 
-		static Color4 TextARGBToColor4(IXMLDOMNodePtr Node, const wstring& key){
+		static bsm::Col4 TextARGBToColor4(IXMLDOMNodePtr Node, const wstring& key){
 			auto pXMLDOMNode = XmlDocReader::GetSelectSingleNode(Node, key.c_str());
 			if (pXMLDOMNode){
 				wstring Hex = XmlDocReader::GetText(pXMLDOMNode);
 				return WstrARGBToColor4(Hex);
 			}
-			return Color4(0, 0, 0, 0);
+			return bsm::Col4(0, 0, 0, 0);
 		}
 
-		static Color4 AttributeARGBToColor4(IXMLDOMNodePtr Node, const wstring& key){
+		static bsm::Col4 AttributeARGBToColor4(IXMLDOMNodePtr Node, const wstring& key){
 			wstring str = XmlDocReader::GetAttribute(Node, key.c_str());
 			if (str != L""){
 				return WstrARGBToColor4(str);
 			}
-			return Color4(0, 0, 0, 0);
+			return bsm::Col4(0, 0, 0, 0);
 		}
 
 
@@ -644,14 +644,14 @@ namespace basecross {
 
 	//--------------------------------------------------------------------------------------
 	//	class SS5AnimeColorVal : public SS5AnimeLine;
-	//	用途: Color4型の値を保持するアニメーションライン
+	//	用途: bsm::Col4型の値を保持するアニメーションライン
 	//--------------------------------------------------------------------------------------
 	class SS5AnimeColorVal : public SS5AnimeLine{
 	public:
 		SS5AnimeColorVal(IXMLDOMNodePtr TgtNode, const wstring& typestr);
 		virtual ~SS5AnimeColorVal();
 		//設定された補間をもとに指定時間の値を返す
-		Color4 GetValue(float Time);
+		bsm::Col4 GetValue(float Time);
 	private:
 		//Implイディオム
 		struct Impl;
@@ -671,8 +671,8 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class SS5AnimeVector3Val : public SS5AnimeLine;
-	//	用途: Vector3型の値を保持するアニメーションライン
+	//	class SS5Animebsm::Vec3Val : public SS5AnimeLine;
+	//	用途: bsm::Vec3型の値を保持するアニメーションライン
 	//--------------------------------------------------------------------------------------
 	class SS5AnimeVector3Val : public SS5AnimeLine{
 	public:
@@ -769,7 +769,7 @@ namespace basecross {
 		float GetGridSize() const;
 
 		//操作
-		Matrix4X4 GetLocalMatrix();
+		bsm::Mat4x4 GetLocalMatrix();
 
 		bool GetHide();
 		float GetPrio();
@@ -891,8 +891,8 @@ namespace basecross {
 		virtual void OnCreate() override;
 		//アクセッサ
 		//SS5ssaeからアニメーションオブジェクトへの行列
-		const Matrix4X4& GetToAnimeMatrix() const;
-		void SetToAnimeMatrix(const Matrix4X4& mat);
+		const bsm::Mat4x4& GetToAnimeMatrix() const;
+		void SetToAnimeMatrix(const bsm::Mat4x4& mat);
 
 		//スプライトかどうか(Getterのみ)
 		bool GetSpriteType() const;

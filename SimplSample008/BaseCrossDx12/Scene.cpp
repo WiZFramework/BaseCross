@@ -20,9 +20,9 @@ namespace basecross {
 
 		//四角形の作成
 		wstring strTexture = DataDir + L"wall.jpg";
-		m_WallSprite = ObjectFactory::Create<WallSprite>(strTexture, false, Vector2(0, 0));
+		m_WallSprite = ObjectFactory::Create<WallSprite>(strTexture, false, Vec2(0, 0));
 		strTexture = DataDir + L"trace.png";
-		m_SquareSprite = ObjectFactory::Create<SquareSprite>(strTexture, true, Vector2(0, 0));
+		m_SquareSprite = ObjectFactory::Create<SquareSprite>(strTexture, true, Vec2(0, 0));
 	}
 
 	void Scene::OnUpdate() {
@@ -32,7 +32,7 @@ namespace basecross {
 	void Scene::OnDraw() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0));
+		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_WallSprite->OnDraw();

@@ -294,7 +294,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime) {}
+		virtual void BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -303,7 +303,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const {}
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -312,7 +312,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const {}
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -321,7 +321,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const {}
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -330,7 +330,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const {}
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -339,7 +339,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const {}
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突判定後処理（Collision共通）
@@ -351,7 +351,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AfterCollision(const shared_ptr<Collision>& DestColl, const Vector3& SrcVelocity,  const Vector3& DestVelocity, const Vector3& HitNormal,
+		void AfterCollision(const shared_ptr<Collision>& DestColl, const bsm::Vec3& SrcVelocity,  const bsm::Vec3& DestVelocity, const bsm::Vec3& HitNormal,
 			float AfterHitTime);
 
 		//--------------------------------------------------------------------------------------
@@ -369,7 +369,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename SrcType, typename DestType>
-		void AfterCollisionTmpl_1(const Vector3& SrcVelocity, const Vector3& DestVelocity, float ElapsedTime, float HitTime, 
+		void AfterCollisionTmpl_1(const bsm::Vec3& SrcVelocity, const bsm::Vec3& DestVelocity, float ElapsedTime, float HitTime, 
 			const shared_ptr<SrcType>& SrcColl, const shared_ptr<DestType>&  DestColl) {
 			if (HitTime <= 0) {
 				HitTime = 0;
@@ -403,12 +403,12 @@ namespace basecross {
 				}
 			}
 			if (UseSrcAfter) {
-				Vector3 HitNormal;
+				bsm::Vec3 HitNormal;
 				GetHitNormal(DestColl, HitNormal);
 				AfterCollision(DestColl, SrcVelocity, DestVelocity, HitNormal, AfterHitTime);
 			}
 			if (UseDestAfter) {
-				Vector3 HitNormal;
+				bsm::Vec3 HitNormal;
 				DestColl->GetHitNormal(SrcColl, HitNormal);
 				DestColl->AfterCollision(SrcColl, DestVelocity, SrcVelocity, HitNormal, AfterHitTime);
 			}
@@ -430,7 +430,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename SrcType, typename DestType>
-		void AfterCollisionTmpl_2(const Vector3& SrcVelocity, const Vector3& DestVelocity, float ElapsedTime, float HitTime,
+		void AfterCollisionTmpl_2(const bsm::Vec3& SrcVelocity, const bsm::Vec3& DestVelocity, float ElapsedTime, float HitTime,
 			const shared_ptr<SrcType>& SrcColl, const shared_ptr<DestType>&  DestColl) {
 			if (HitTime <= 0) {
 				HitTime = 0;
@@ -451,7 +451,7 @@ namespace basecross {
 				CollisionEscape(DestColl);
 			}
 			if (UseSrcAfter) {
-				Vector3 HitNormal;
+				bsm::Vec3 HitNormal;
 				GetHitNormal(DestColl, HitNormal);
 				AfterCollision(DestColl, SrcVelocity, DestVelocity, HitNormal, AfterHitTime);
 			}
@@ -530,7 +530,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const = 0;
+		virtual bsm::Vec3 GetCenterPosition()const = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 線分と自分の衝突チェック（判定するのみ）
@@ -539,7 +539,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2) { return false; }
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) { return false; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。デフォルトは何も行わない
@@ -695,7 +695,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
+		virtual void BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -704,7 +704,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -713,7 +713,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -722,7 +722,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -731,7 +731,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -740,7 +740,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -796,7 +796,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2)override;
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
@@ -810,7 +810,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const override;
+		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -967,7 +967,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
+		virtual void BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -976,7 +976,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -985,7 +985,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -994,7 +994,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1003,7 +1003,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1012,7 +1012,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -1068,7 +1068,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2)override;
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
@@ -1082,7 +1082,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const override;
+		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -1213,7 +1213,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void BackToBefore(const Vector3 TotalVelocoty, float SpanTime)override;
+		virtual void BackToBefore(const bsm::Vec3 TotalVelocoty, float SpanTime)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1222,7 +1222,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1231,7 +1231,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1240,7 +1240,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1249,7 +1249,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionTriangles>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -1258,7 +1258,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, Vector3& Ret) const override;
+		virtual void GetHitNormal(const shared_ptr<CollisionRect>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionSphereからのエスケープ
@@ -1314,7 +1314,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2)override;
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
@@ -1328,7 +1328,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const override;
+		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -1431,7 +1431,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const override;
+		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	三角形の配列を包み込むAABBを返す
@@ -1461,7 +1461,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2)override;
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -1557,7 +1557,7 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const Vector3& Pos1, const Vector3& Pos2)override;
+		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
@@ -1578,7 +1578,7 @@ namespace basecross {
 		@return	中心位置
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual Vector3 GetCenterPosition()const override;
+		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる

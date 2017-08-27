@@ -25,10 +25,10 @@ namespace basecross {
 		float HelfSize = 0.5f;
 		//頂点配列
 		vector<VertexPositionColor> vertices = {
-			{ VertexPositionColor(Vector3(-HelfSize, HelfSize, 0), Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-			{ VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, HelfSize, 0), Col4(1.0f, 0.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
+			{ VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f)) },
 		};
 		//インデックス配列
 		vector<uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -56,25 +56,25 @@ namespace basecross {
 		auto RenderState = Dev->GetRenderState();
 
 		//行列の定義
-		Matrix4X4 World, Proj;
+		Mat4x4 World, Proj;
 		//ワールド行列の決定
-		World.AffineTransformation2D(
+		World.affineTransformation2D(
 			m_Scale,			//スケーリング
-			Vector2(0, 0),		//回転の中心（重心）
+			Vec2(0, 0),		//回転の中心（重心）
 			m_Rot,				//回転角度
 			m_Pos				//位置
 		);
 		//射影行列の決定
 		float w = static_cast<float>(App::GetApp()->GetGameWidth());
 		float h = static_cast<float>(App::GetApp()->GetGameHeight());
-		Proj.OrthographicLH(w, h, -1.0, 1.0f);
+		Proj = XMMatrixOrthographicLH(w, h, -1.0, 1.0f);
 		//行列の合成
 		World *= Proj;
 
 		//コンスタントバッファの準備
 		SpriteConstantBuffer sb;
 		//エミッシブ加算は行わない。
-		sb.Emissive = Color4(0, 0, 0, 0);
+		sb.Emissive = Col4(0, 0, 0, 0);
 		//行列の設定
 		sb.World = World;
 		//コンスタントバッファの更新

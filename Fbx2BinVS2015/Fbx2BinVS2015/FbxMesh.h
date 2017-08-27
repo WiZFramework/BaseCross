@@ -15,11 +15,11 @@ namespace basecross {
 	struct	Bone
 	{
 		//!基本ポーズへの行列
-		Matrix4X4	m_BindPose;
+		Mat4x4	m_BindPose;
 		//!現在の行列
-		Matrix4X4	m_CurrentPose;
+		Mat4x4	m_CurrentPose;
 		//!計算された現在の行列
-		Matrix4X4	m_ConbinedPose;
+		Mat4x4	m_ConbinedPose;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@breaf コンストラクタ.
@@ -65,13 +65,13 @@ namespace basecross {
 		//!描画インデックスカウント
 		UINT m_IndexCount;
 		//! デフィーズ（物体の色）
-		Color4 m_Diffuse;
+		Col4 m_Diffuse;
 		//! スペキュラー（反射光）
-		Color4 m_Specular;
+		Col4 m_Specular;
 		//! アンビエント（環境色）
-		Color4 m_Ambient;
+		Col4 m_Ambient;
 		//! エミッシブ（放射光）
-		Color4 m_Emissive;
+		Col4 m_Emissive;
 	};
 
 	class FbxSceneResource;
@@ -453,10 +453,10 @@ namespace basecross {
 		bool IsTargetAnimeEnd() const;
 
 		//指定したIDのボーンの現在の行列を取得する
-		void GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+		void GetBoneMatrix(UINT BoneId, Mat4x4& Matrix) const;
 
 		//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
-		void GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+		void GetLocalBoneMatrix(UINT BoneId, Mat4x4& Matrix) const;
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -464,7 +464,7 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< Mat4x4 >* GetVecLocalBonesPtr() const;
 
 		float GetCurrentTime() const;
 
@@ -547,10 +547,10 @@ namespace basecross {
 		bool IsTargetAnimeEnd() const;
 
 		//指定したIDのボーンの現在の行列を取得する
-		void GetBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+		void GetBoneMatrix(UINT BoneId, Mat4x4& Matrix) const;
 
 		//指定したIDのボーンの現在のローカル行列を取得する（親子関係を構築するなど用）
-		void GetLocalBoneMatrix(UINT BoneId, Matrix4X4& Matrix) const;
+		void GetLocalBoneMatrix(UINT BoneId, Mat4x4& Matrix) const;
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -558,7 +558,7 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< Matrix4X4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< Mat4x4 >* GetVecLocalBonesPtr() const;
 
 		float GetCurrentTime() const;
 
@@ -595,7 +595,7 @@ namespace basecross {
 		wstring m_FbxMeshResName;
 
 		float m_CharaLocalScale;
-		Vector3 m_CharaLocalPosition;
+		Vec3 m_CharaLocalPosition;
 		bool m_IsReadStaticMesh;
 		bool m_WithTangent;
 		//テクスチャをラッピング処理するかどうか
@@ -607,7 +607,7 @@ namespace basecross {
 	public:
 		FbxMeshObject(const shared_ptr<Stage>& StagePtr);
 		virtual ~FbxMeshObject() {}
-		void ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vector3& Position,
+		void ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vec3& Position,
 			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap);
 
 		void ClearFbxMesh();

@@ -88,6 +88,13 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt2& Flt2::set(float _x, float _y) {
+		x = _x;
+		y = _y;
+		return *this;
+	}
+
+
 	inline Flt2 & Flt2::setX(float _x)
 	{
 		x = _x;
@@ -271,6 +278,14 @@ namespace bsm {
 		x = y = z = val;
 		return *this;
 	}
+
+	inline Flt3& Flt3::set(float _x, float _y, float _z) {
+		x = _x;
+		y = _y;
+		z = _z;
+		return *this;
+	}
+
 
 	inline Flt3& Flt3::setX(float _x)
 	{
@@ -512,6 +527,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt4& Flt4::set(float _x, float _y, float _z, float _w) {
+		x = _x;
+		y = _y;
+		z = _z;
+		w = _w;
+		return *this;
+	}
+
+
 	inline Flt4 & Flt4::setX(float _x)
 	{
 		x = _x;
@@ -679,8 +703,10 @@ namespace bsm {
 	inline Quat::Quat(const Flt3 & xyz, float _w):
 		XMFLOAT4()
 	{
-		this->setXYZ(xyz);
-		this->setW(_w);
+		*this = (Quat)XMQuaternionRotationAxis(xyz, _w);
+
+		//this->setXYZ(xyz);
+		//this->setW(_w);
 	}
 
 	inline Quat::Quat(float val):
@@ -856,6 +882,12 @@ namespace bsm {
 		*this = (Quat)XMQuaternionRotationAxis(unitVec, radians);
 		return *this;
 	}
+
+	inline Quat& Quat::rotation(const Flt3& unitVec, float radians) {
+		*this = (Quat)XMQuaternionRotationAxis(unitVec, radians);
+		return *this;
+	}
+
 
 	inline Quat& Quat::rotationRollPitchYawFromVector(const Flt3& rotVec) {
 		*this = (Quat)XMQuaternionRotationRollPitchYawFromVector(rotVec);

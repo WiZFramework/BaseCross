@@ -20,7 +20,7 @@ namespace basecross{
 
 	AttackBall::~AttackBall() {}
 
-	void AttackBall::Weakup(const Vector3& Position, const Vector3& Velocity) {
+	void AttackBall::Weakup(const Vec3& Position, const Vec3& Velocity) {
 		auto PtrTransform = GetComponent<Transform>();
 		PtrTransform->SetScale(0.1f, 0.1f, 0.1f);
 		PtrTransform->SetRotation(0, 0, 0);
@@ -106,11 +106,12 @@ namespace basecross{
 		PtrString->SetText(L"");
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
-		Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.DefTransformation(
-			Vector3(1.0f, 1.0f, 1.0f),
-			Vector3(0.0f, XM_PI, 0.0f),
-			Vector3(0.0f, -0.5f, 0.0f)
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, XM_PI, 0.0f),
+			Vec3(0.0f, -0.5f, 0.0f)
 		);
 
 		//影をつける（シャドウマップを描画する）
@@ -139,7 +140,7 @@ namespace basecross{
 			//LookAtCameraである
 			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 		//最初はAボタンはジャンプ
 		m_PlayerAction = PlayerAction::Jump;
@@ -337,7 +338,7 @@ namespace basecross{
 
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vector3(0, 4.0f, 0));
+		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {

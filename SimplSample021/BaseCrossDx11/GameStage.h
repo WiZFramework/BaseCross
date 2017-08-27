@@ -14,7 +14,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
 		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
-		shared_ptr<SphereObject> m_SphereObject;				///<球オブジェクト
+		shared_ptr<Player> m_Player;				///<プレイヤー
 
 		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
 		shared_ptr<RotateSprite> m_RotateSprite;		///<回転するスプライト
@@ -51,12 +51,12 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 球オブジェクトの取得
-		@return	球オブジェクト
+		@brief プレイヤーの取得
+		@return	プレイヤー
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<SphereObject> GetSphereObject() const {
-			return m_SphereObject;
+		shared_ptr<Player> GetPlayer() const {
+			return m_Player;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
