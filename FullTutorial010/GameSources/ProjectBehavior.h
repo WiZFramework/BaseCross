@@ -53,6 +53,7 @@ namespace basecross {
 		float m_DieRot;
 		float m_DieInterval;
 		DieFlag m_DieFlag;
+		Vec3 m_PokeStart;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -159,7 +160,6 @@ namespace basecross {
 			//Œ•‚ªæ“¾‚Å‚«‚È‚¯‚ê‚Îí‚Éu‰ñ“]C—¹v
 			return true;
 		}
-		Vec3 m_PokeStart;
 
 		//--------------------------------------------------------------------------------------
 		/*!

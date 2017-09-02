@@ -119,6 +119,7 @@ namespace basecross {
 #include "Project.h"
 
 namespace basecross {
+
     //--------------------------------------------------------------------------------------
     //  ゲームステージクラス実体
     //--------------------------------------------------------------------------------------
@@ -127,14 +128,13 @@ namespace basecross {
         auto PtrView = CreateView&lt;SingleView>();
         //ビューのカメラの設定
         auto PtrCamera = PtrView->GetCamera();
-        PtrCamera->SetEye(Vector3(0.0f, 5.0f, -5.0f));
-        PtrCamera->SetAt(Vector3(0.0f, 0.0f, 0.0f));
+        PtrCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+        PtrCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
         //シングルライトの作成
         auto PtrSingleLight = CreateLight&lt;SingleLight>();
         //ライトの設定
         PtrSingleLight->GetLight().SetPositionToDirectional(-0.25f, 1.0f, -0.25f);
     }
-
     void GameStage::OnCreate() {
         try {
             //ビューとライトの作成
@@ -157,11 +157,8 @@ namespace basecross {
 <div class="box1">
 <pre>
 #pragma once
-
 #include "stdafx.h"
-
 namespace basecross{
-
     //--------------------------------------------------------------------------------------
     /// ゲームシーン
     //--------------------------------------------------------------------------------------
@@ -194,9 +191,7 @@ namespace basecross{
         //--------------------------------------------------------------------------------------
         virtual void OnEvent(const shared_ptr&lt;Event>& event) override;
     };
-
 }
-
 //end basecross
 </pre>
 </div>
@@ -209,15 +204,14 @@ namespace basecross{
 #include "Project.h"
 
 namespace basecross{
-
     //--------------------------------------------------------------------------------------
     /// ゲームシーン
     //--------------------------------------------------------------------------------------
     void Scene::OnCreate() {
         try {
             //クリアする色を設定
-            Color4 Col;
-            Col.SetUint8(31,30,71,255);
+            Col4 Col;
+            Col.set(31.0f / 255.0f,30.0f / 255.0f,71.0f / 255.0f,255.0f / 255.0f);
             SetClearColor(Col);
             //自分自身にイベントを送る
             //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
@@ -227,7 +221,6 @@ namespace basecross{
             throw;
         }
     }
-
     void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
         if (event->m_MsgStr == L"ToGameStage") {
             //最初のアクティブステージの設定
@@ -240,7 +233,7 @@ namespace basecross{
 </pre>
 </div>
 　シーンもステージ同様構築時に呼ばれるのは<b>Scene::OnCreate()関数</b>です。<br/>
-　まず、背景色を濃い青に設定してます。<b>Color4</b>は色を管理するクラスです。内部では、各色、0.0fから1.0fまでの値を持つように設計されていますが<b>SetUint8()関数</b>を使用することで<b>0から255の値</b>で設定できます（内部で小数点値に変換されます）。<br />
+　まず、背景色を濃い青に設定してます。<b>Col4</b>は色を管理するクラスです。内部では、各色、0.0fから1.0fまでの値を持つように設計されています。<br />
 　続いては、ここで、<b>ゲームステージをアクティブステージにする</b>という処理は行わずに、
 <div class="box1">
 <pre>
@@ -313,8 +306,8 @@ namespace basecross{
     void Scene::OnCreate(){
         try {
             //クリアする色を設定
-            Color4 Col;
-            Col.SetUint8(31,30,71,255);
+            Col4 Col;
+            Col.set(31.0f / 255.0f,30.0f / 255.0f,71.0f / 255.0f,255.0f / 255.0f);
             SetClearColor(Col);
             //最初のアクティブステージの設定
             ResetActiveStage&lt;GameStage>();

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>２．BaseCrossの構造と使い方</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>２００．計算ライブラリ</h3>
+　この項では、<b>BaseCross</b>に内蔵されている<b>計算ライブラリ</b>について説明します。<br />
+　<b>計算ライブラリ</b>といいましても、ライブラリ内で計算用のコードが実装されているのではなく、ほとんどのケースで<b>DirectXMath</b>の関数を呼び出しているものです。<br />
+　<b>DirectXMath</b>というのは<b>XNAMath</b>という<b>XBox用の計算ライブラリ</b>の互換のある関数群で、<b>WindowsとDirectX</b>という環境で高速演算できる関数群です。ここでは<b>DirectXMath</b>関数群の特徴と基本的な使い方を述べるとともに、<b>BaseCross</b>とのインターフェイス実現のためにどのような実装がされていて、<b>DirectXMath</b>関数群を使うためにどのような使い方をするのかを述べたいと思います。<br />
+<br />
+<h4>■計算ライブラリの役割■</h4>
+　<b>BaseCross</b>の、行列やベクトル計算は<b>DirectXMath</b>を使用しています。これにより、<b>ストリーミング SIMD 拡張命令 2 (いわゆるSSE2)</b>による計算が実装できます。これは<b>浮動小数点の計算</b>が最適化されている、ということです。３Ｄプログラムは、複雑な浮動小数点計算が大量に必要なプログラムです。ですから、こういった<b>ハードウェア依存</b>の計算は、できれば実装したほうが良い機能いいでしょう。<br />
+　<b>BaseCross</b>では、<b>DirectXMath</b>を利用するにあったっての制限を、ゲームプログラマに負担を掛けないように、<b>DirectXMath</b>を使いやすいような計算クラスとして<b>bsm::Vec3</b>や<b>bsm::Mat4x4</b>などの計算クラスがあります。こういった計算クラスがある理由は、<b>DirectXMath</b>の利用にあたって<b>ややこしい部分</b>があるからです。<br />
+　まずは、<b>DirectXMathの利用の、どこがややこしいのか</b>を説明します、<br />
+　<b>DirectXMath</b>の関数群は<b>XMMatrixAffineTransformation()</b>のように<b>XM</b>で始まる関数名を持ちます。<br />
+　ほとんど（というか、ほぼ全部）、<b>XMVECTOR</b>もしくは<b>XMMATRIX</b>という型の変数を返す、あるいは引数に必要とします。これらの型は<b>SSE2</b>とのデータのやり取りに使用します。<br />
+　この<b>XMVECTOR</b>と<b>XMMATRIX</b>の2つの型が曲者です。<b>基本的な情報 - MSDN - Microsoft</b>というマイクロソフトのページに、その要件について記されています）。（かなり下のほうです）<br />
+　<b>XMVECTOR</b>と<b>XMMATRIX</b>についての内容をまとめると以下のような特徴があります。
+<div class="box1">
+<pre>
+１、これらの変数は、16 バイトのアライメント、が必要。
+２、スタック上の場合は問題ない
+３、データセグメントの場合は問題ない
+４、ヒープ領域で、Xbox 360 および Windows x64では問題ない
+５、ヒープ領域で、Windows x86 では 8 バイトアラインメントなので問題になる
+</pre>
+</div>
+　ここで<b>５</b>のケースがまさに<b>BaseCross</b>によくある環境です。ならば<b>Windows x64</b>にすればいいだろうと思うかもしれませんが、<b>Windows x64</b>の場合、size_tの大きさの違いなど、x64の環境に合わせなければいけないので、将来的にはそうすべきですが、現状、<b>Windows x86</b>を使用しています。<br />
+　ここで<b>スタック、データセグメント、ヒープ領域</b>の意味が分からない方のために説明しますと、まず<b>スタック領域</b>に変数が展開される例は、<b>関数の内部変数や、呼び出しの引数</b>です。<br />
+　例えば以下の例は、わかりやすい<b>スタック上</b>の変数です。
+<div class="box1">
+<pre>
+void test(){
+    //単位クォータニオンの取得
+    XMVECTOR q = XMQuaternionIdentity();
+    //単位行列の取得
+    XMMATRIX m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　これは、関数内のローカル変数に代入しています。この場合は問題ないということです。<br />
+　データセグメントは、<b>グローバル変数</b>がそうです。
+<div class="box1">
+<pre>
+XMVECTOR q;
+XMMATRIX m;
+void test(){
+    //単位クォータニオンの取得
+    q = XMQuaternionIdentity();
+    //単位行列の取得
+    m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　これも問題がありません。しかし、以下が<b>ヒープ領域</b>です。
+<div class="box1">
+<pre>
+struct teststr{
+    XMVECTOR q;
+    XMMATRIX m;
+};
+
+void test(){
+    //以下は実行できない
+    auto t = new teststr();
+    //単位クォータニオンの取得
+    t.q = XMQuaternionIdentity();
+    //単位行列の取得
+    t.m = XMMatrixIdentity()
+}
+</pre>
+</div>
+　この実行ができないのです。エラーをなくすためには<b>new演算子</b>を多重定義する必要がありますが、これは負担の重いことです。<br />
+　解決策として、上記マイクロソフトサイトでは<b>XMFLOAT3、XMFLOAT4、XMFLOAT4X3、XMFLOAT4X4</b>を使用すべき、という記述があります。これはどういいうことかというと、実際にコード化してみます。
+<div class="box1">
+<pre>
+struct teststr{
+    XMFLOAT4 q;
+    XMFLOAT4X4 m;
+};
+
+void test(){
+    //以下は実行できる
+    auto t = new teststr();
+    //
+    //ここでtの変数を何らかの形で設定
+    //
+    //変数のXMVECTORへのロード
+    XMVECTOR q = XMLoadFloat4(&t.q);
+    //クォータニオンの正規化
+    q = XMQuaternionNormalize(q);
+    //tの変数に戻す
+    XMStoreFloat4&t.q,q);
+    //変数のXMMATRIXへのロード
+    XMMATRIX m = XMLoadFloat4x4A(&t.m);
+    //行列の転置
+    m = XMMatrixTranspose(m);
+    //tの変数に戻す
+    XMStoreFloat4x4(&t.m,m);
+}
+</pre>
+</div>
+　この処理で<b>newで作成したt</b>の変数を計算することができます。<br />
+　これで、めでたしめでたし、のようですが、実際にプログラムを組んでみると<b>常にロードトストアをしないといけない</b>という現実にぶち当たります。これでは意味がありません。<br />
+　それで、<b>bsm::Mat4x4、bsm::Quat、bsm::Vec3</b>などの構造体があります。以下、<b>bsm::Quat構造体の宣言</b>ですが
+<div class="box1">
+<pre>
+namespace basecross {
+namespace bsm {
+//中略
+    //--------------------------------------------------------------------------------------
+    /// Quat（クオータニオン）
+    //--------------------------------------------------------------------------------------
+    struct Quat : public XMFLOAT4
+    {
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  コンストラクタ
+        */
+        //--------------------------------------------------------------------------------------
+        inline Quat();
+//中略
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  コンストラクタ
+        @param[in]  v   XMFLOAT3構造体
+        */
+        //--------------------------------------------------------------------------------------
+        explicit inline Quat(const XMFLOAT4& v);
+//中略
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  コンストラクタ（XMVECTORで初期化）
+        @param[in]  vec 値
+        */
+        //--------------------------------------------------------------------------------------
+        explicit inline Quat(const XMVECTOR& other);
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  XMVECTORへのキャスト（thisをキャストして返す）
+        @return XMVECTOR型の値
+        */
+        //--------------------------------------------------------------------------------------
+        inline operator XMVECTOR() const;
+//中略
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  XMFLOAT4からの代入
+        @param[in]  other   相手
+        @return *thisの参照
+        */
+        //--------------------------------------------------------------------------------------
+        inline Quat& operator=(const XMFLOAT4& other);
+        //--------------------------------------------------------------------------------------
+        /*!
+        @brief  XMVECTORからの代入
+        @param[in]  other   相手
+        @return *thisの参照
+        */
+        //--------------------------------------------------------------------------------------
+        inline Quat& operator=(const XMVECTOR& other);
+//中略
+    };
+}
+//end bsm
+}
+//end basecross
+</pre>
+</div>
+　こんな感じで宣言されています。namespaceの<b>bsm</b>は<b>BaSecrossMath</b>の略です。関数名が単純なので、他クラスと混同がないように<b>bsmネームスペース</b>に入ってます。ただし、サンプルはあらかじめ<b>using句</b>によって<b>bsm</b>が指定されてますので省略されています。<br />
+　このように、<b>bsm::Quat</b>は<b>XMFLOAT4</b>の派生クラスとして作成したうえで
+<div class="box1">
+<pre>
+１、XMFLOAT4を引数としたコンストラクタ
+２、XMVECTORを引数としたコンストラクタ
+３、XMFLOAT4を引数としたコピー
+４、XMVECTORを引数としたコピー
+５、XMVECTORへのキャスト演算子の多重定義
+</pre>
+</div>
+　を作成し、その中で<b>ロード関数とストア関数</b>が実装されています。<br />
+　以下、上記の実体です。
+<div class="box1">
+<pre>
+namespace basecross {
+namespace bsm {
+//中略
+    //--------------------------------------------------------------------------------------
+    /// Quatインライン関数
+    //--------------------------------------------------------------------------------------
+    inline Quat::Quat():
+        XMFLOAT4()
+    {
+        identity();
+    }
+
+//中略
+
+    inline Quat::Quat(const XMFLOAT4& v) :
+        XMFLOAT4(v)
+    {
+    }
+
+//中略
+
+    inline Quat::Quat(const XMVECTOR& other) :
+        XMFLOAT4() 
+    {
+        XMVECTOR temp = other;
+        XMStoreFloat4((XMFLOAT4*)this, temp);
+    }
+
+    inline Quat::operator XMVECTOR() const {
+        XMFLOAT4 temp = *this;
+        XMVECTOR Vec = XMLoadFloat4(&temp);
+        return Vec;
+    }
+
+
+    inline Quat& Quat::operator=(const XMFLOAT4& other) {
+        (XMFLOAT4)*this = other;
+        return *this;
+    }
+
+
+    inline Quat& Quat::operator=(const XMVECTOR& other) {
+        XMVECTOR temp = other;
+        XMStoreFloat4((XMFLOAT4*)this, temp);
+        return *this;
+    }
+}
+//end bsm
+}
+//end basecross
+</pre>
+</div>
+　このように<b>ロードとストア</b>が実装されています。ですので、
+<div class="box1">
+<pre>
+        bsm::Quat Qt;
+
+        //Qtに対する何らかの操作...
+
+        //正規化
+        Qt = XMQuaternionNormalize(Qt);
+
+</pre>
+</div>
+　のように記述できます。上記Qtがヒープ上にある変数であっても問題ありません。<br />
+<br />
+<h4>計算クラスの種類</h4>
+　計算ライブラリは、実装は<b>basecross::bsm</b>というネームスペースに実装があります。<b>DxLib</b>プロジェクトの<b>BaseMath.h</b>および<b>BaseMathInc.h</b>が実装ファイルです。<br />
+　以下のような種類があります。ちょっと気を付けたいのは、<b>Vec2やVec3など</b>は、<b>Flt2やFlt3の別名</b>として実装されているところです。
+<table>
+<tr>
+<th>型名</th>
+<th>用途</th>
+<th>親クラス</th>
+<th>備考</th>
+</tr>
+<tr>
+<td>Vec2</td>
+<td>2次元ベクトル</td>
+<td>XMFLOAT2</td>
+<td>Flt2の別名</td>
+</tr>
+<tr>
+<td>Vec3</td>
+<td>3次元ベクトル</td>
+<td>XMFLOAT3</td>
+<td>Flt3の別名</td>
+</tr>
+<tr>
+<td>Vec4</td>
+<td>4次元ベクトル</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Pt2</td>
+<td>2次元ポイント</td>
+<td>XMFLOAT2</td>
+<td>Flt2の別名</td>
+</tr>
+<tr>
+<td>Pt3</td>
+<td>3次元ポイント</td>
+<td>XMFLOAT3</td>
+<td>Flt3の別名</td>
+</tr>
+<tr>
+<td>Col4</td>
+<td>RGBAカラー</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Plane4</td>
+<td>平面方程式</td>
+<td>XMFLOAT4</td>
+<td>Flt4の別名</td>
+</tr>
+<tr>
+<td>Quat</td>
+<td>クォータニオン</td>
+<td>XMFLOAT4</td>
+<td>オリジナル名</td>
+</tr>
+<tr>
+<td>Mat3x3</td>
+<td>3x3行列</td>
+<td>XMFLOAT3X3</td>
+<td>オリジナル名</td>
+</tr>
+<tr>
+<td>Mat4x4</td>
+<td>4x4行列</td>
+<td>XMFLOAT4X4</td>
+<td>オリジナル名</td>
+</tr>
+</table>
+　この表で、例えば<b>Vec3</b>は<b>Flt3</b>の別名で、<b>Flt3</b>は<b>XMFLOAT3</b>の派生クラスとして実装されています。<br />
+　<b>float型の変数が3つある型</b>が、まず、<b>Flt3型</b>として実装されていて、その<b>別名</b>として<b>Vec3およびPt3がある</b>という形になります。つまり<b>Vec3とPt3</b>は、名前こそ違いますが、内容は全く同じということです。便宜上、<b>ベクトル</b>あるいは<b>ポイント</b>といういい方をしたほうが扱いやすい場合は多々あります。<br />
+　<b>float型の変数が4つある型</b>も<b>Flt4型</b>として実装されていて、その<b>別名</b>として<b>Vec4、Col4、Plane4がある</b>となってます。クォータニオンだけ特別で<b>直接XMFLOAT4の派生</b>となっています。<br />
+　<b>Mat3x3とMat4x4</b>は行列です。（4x3行列の機能はMat4x4で代用できると思います）。<br />
+<br/>
+<h4>計算クラスの実装</h4>
+　このように、計算クラスは<b>DirectXMath関数</b>をより使いやすくするためにありますが、あらかじめラッピング実装されている関数があります。<b>正規化、単位行列（クォータニオン）、行列転置、逆行列</b>などです。<br />
+　以下に実装済みの関数の使用方法を紹介します。<b>SimplSample021</b>の<b>Player.cpp</b>にあります<b>Player::GetMoveVector()関数</b>です。
+<div class="box1">
+<pre>
+Vec3 Player::GetMoveVector() const {
+    Vec3 Angle(0, 0, 0);
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    Vec3 CameraEye, CameraAt;
+    PtrGameStage->GetCamera().GetCameraEyeAt(CameraEye, CameraAt);
+
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
+            float MoveLength = 0;   //動いた時のスピード
+            //進行方向の向きを計算
+            <span class="red">Vec3 Front = m_Pos - CameraEye;</span>
+            Front.y = 0;
+            <span class="red">Front.normalize();</span>
+            //進行方向向きからの角度を算出
+            float FrontAngle = atan2(Front.z, Front.x);
+            //コントローラの向き計算
+            float MoveX = CntlVec[0].fThumbLX;
+            float MoveZ = CntlVec[0].fThumbLY;
+            Vec2 MoveVec(MoveX, MoveZ);
+            <span class="red">float MoveSize = length(MoveVec);</span>
+            //コントローラの向きから角度を計算
+            float CntlAngle = atan2(-MoveX, MoveZ);
+            //トータルの角度を算出
+            float TotalAngle = FrontAngle + CntlAngle;
+            //角度からベクトルを作成
+            Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+            //正規化する
+            <span class="red">Angle.normalize();
+            //移動サイズを設定。
+            Angle *= MoveSize;</span>
+            //Y軸は変化させない
+            Angle.y = 0;
+        }
+    }
+    return Angle;
+}
+</pre>
+</div>
+　赤くなっているところが、ライブラリでの実装を使用しているところです。例えば
+<div class="box1">
+<pre>
+        //進行方向の向きを計算
+        <span class="red">Vec3 Front = m_Pos - CameraEye;</span>
+</pre>
+</div>
+　は<b>ベクトル同士の引き算</b>ですが、実体は<b>Flt3型</b>として実装され
+<div class="box1">
+<pre>
+    inline const Flt3 Flt3::operator -(const Flt3 & vec) const
+    {
+        return (Flt3)XMVectorSubtract(*this, vec);
+    }
+</pre>
+</div>
+　のように実装されています。単なる引き算であっても、<b>XMVectorSubtract()関数</b>という<b>DirectXMath関数</b>を使用する形で実装されています。<br/>
+　また、ちょっと気を付けたいのは
+<div class="box1">
+<pre>
+    <span class="red">float MoveSize = length(MoveVec);</span>
+</pre>
+</div>
+　ここで<b>length()</b>という関数は<b>構造体の外部</b>で実装されている
+<div class="box1">
+<pre>
+    inline float length(const Flt2 & vec)
+    {
+        return ((Flt2)XMVector2Length(vec)).x;
+    }
+</pre>
+</div>
+　という関数が呼ばれます。<b>normalize（正規化を返す）、length（長さを返す）、lengthSqr（長さの2乗を返す）、dot（内積を返す）、cross（外積を返す。Flt3のみ）</b>などの外部関数があります。<br />
+　そのほか、詳しくは<b>DxLib</b>プロジェクトの<b>BaseMath.h</b>および<b>BaseMathInc.h</b>を参照してください。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="02_01.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

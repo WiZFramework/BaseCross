@@ -18,7 +18,6 @@
 　ここから本格的にBaseCrossの紹介を行います。<br />
 このサンプルは<b>FullTutorial009</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
-　このサンプルから<b>XBoxコントローラ</b>が必要です。<br />
 　リビルドして実行すると以下の画面が出てきます。<b>リリースモード</b>でのビルトをお勧めします。
 <p>&nbsp;</p>
 <img src="img/0109a.png" width="80%"/>
@@ -46,7 +45,7 @@
 void GameStage::CreateStageCellMap() {
     auto Group = CreateSharedObjectGroup(L"CellMap");
     float  PieceSize = 1.0f;
-    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
+    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vec3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
     //セルマップの区画を表示する場合は以下の設定
     Ptr->SetDrawActive(true);
     //さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -55,7 +54,7 @@ void GameStage::CreateStageCellMap() {
     //グループに追加
     Group->IntoGroup(Ptr);
 
-    Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
+    Ptr = AddGameObject&lt;StageCellMap>(Vec3(-10.0f, 0, 16.0f), PieceSize, 20, 7);
     //セルマップの区画を表示する場合は以下の設定
     Ptr->SetDrawActive(true);
     //さらにセルのインデックスとコストを表示する場合は以下の設定
@@ -64,14 +63,18 @@ void GameStage::CreateStageCellMap() {
     //グループに追加
     Group->IntoGroup(Ptr);
 
-    Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
+    //以下3つ目のセルマップはグループを別にする
+    //動的にセルマップを変更する敵用
+    auto Group2 = CreateSharedObjectGroup(L"CellMap2");
+
+    Ptr = AddGameObject&lt;StageCellMap>(Vec3(-10.0f, 0, 28.0f), PieceSize, 20, 7);
     //セルマップの区画を表示する場合は以下の設定
-    //Ptr->SetDrawActive(true);
+    Ptr->SetDrawActive(true);
     //さらにセルのインデックスとコストを表示する場合は以下の設定
-    //Ptr->SetCellStringActive(false);
+    Ptr->SetCellStringActive(true);
     SetSharedGameObject(L"StageCellMap3", Ptr);
     //グループに追加
-    Group->IntoGroup(Ptr);
+    Group2->IntoGroup(Ptr);
 
 }
 </pre>
@@ -89,12 +92,12 @@ void GameStage::CreateStageCellMap() {
 <div class="box1">
 <pre>
     float  PieceSize = 1.0f;
-    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vector3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
+    <span class="red">auto Ptr = AddGameObject&lt;StageCellMap>(Vec3(-10.0f, 0, 4.0f),PieceSize,20,7);</span>
 </pre>
 </div>
 　の記述です。<br />
 　セルマップのクラスは<b>StageCellMap</b>です。このオブジェクトはコンストラクタでいくつかの情報を渡す必要があります。<br />
-　1つ目の引数は<b>最小位置</b>です。セルマップは<b>XZ平面上</b>の<b>2次元オブジェクト</b>ですが、内部的には3次元で管理しています。各セルは<b>AABB</b>という3次元区画を持ってます。<b>AABB</b>とは<b>XYZ軸に平行な直方体</b>です。セルマップでは、<b>縦横そして高さが同じ立方体</b>が、内部的なAABBとなります。そのため、それらの各セルの、<b>一番左手前にあるセルの最小位置</b>が引数になります。一番手前のセルマップは<b>Vector3(-10.0f, 0, 4.0f)の位置</b>から開始するので、そのようなパラメータを渡します。<br />
+　1つ目の引数は<b>最小位置</b>です。セルマップは<b>XZ平面上</b>の<b>2次元オブジェクト</b>ですが、内部的には3次元で管理しています。各セルは<b>AABB</b>という3次元区画を持ってます。<b>AABB</b>とは<b>XYZ軸に平行な直方体</b>です。セルマップでは、<b>縦横そして高さが同じ立方体</b>が、内部的なAABBとなります。そのため、それらの各セルの、<b>一番左手前にあるセルの最小位置</b>が引数になります。一番手前のセルマップは<b>Vec3(-10.0f, 0, 4.0f)の位置</b>から開始するので、そのようなパラメータを渡します。<br />
 　2番目の引数は各セルの<b>縦横（高さ）</b>の大きさです。ここでは<b>1.0f</b>で作成します。<br />
 　次の<b>20</b>は<b>X方向のセルの数</b>です。続く<b>7</b>は<b>Z方向のセルの数</b>です。<br />
 　このように、セルマップ全体の大きさ、は引数に入れないことに注意してください。1区画の大きさとセル数がわかれば、セル全体の大きさは計算できますのでそのような引数のほうが矛盾なくマップを作成できます。縦方向（Y方向）は、1つのセルの大きさです。つまり<b>Y方向のセルの数</b>は常に<b>1</b>になります。<br />
@@ -188,20 +191,20 @@ void FixedBox::OnCreate() {
 　<b>SetFixed(true);</b>は、衝突判定コンポーネントの設定ですが、<b>衝突しても影響受けない</b>という設定です。通常は<b>影響を受ける</b>です。衝突判定は、衝突後<b>滑る</b>とか<b>反発する</b>という設定が可能です。しかしここでの<b>FixedBoxクラス</b>は障害物ですので、プライヤーや敵が衝突したからと言って、それに反動して動かないようにしています。<br />
 　<b>FixedBoxクラス</b>の記述自体はそんなに複雑ではないですが、それを配置するためには<b>GameStage::CreateFixedBox()関数</b>で、一つ一つ配置しています。実際にゲーム作成を行う場合、このようなゲーム盤上の配置オブジェクトは、CSVファイルなどで位置や大きさなどを定義し、それを読み込みながら配置したほうが、カスタマイズしやすくなりますし、可読性も高くなります。<br />
 <br/>
-　さて、<b>GameStage::CreateFixedBox()関数</b>では、各ボックスを配置した後以下のような記述があります。
+　さて、<b>GameStage::CreateFixedBox()関数</b>では、各ボックスを配置した後以下のような記述があります。(赤い部分です)
 <div class="box1">
 <pre>
 //固定のボックスの作成
 void GameStage::CreateFixedBox() {
     //配列の初期化
-    vector&lt; vector&lt;Vector3> > Vec = {
+    vector< vector<Vec3> > Vec = {
         {
-            Vector3(1.0f, 0.5f, 40.0f),
-            Vector3(0.0f, 0.0f, 0.0f),
-            Vector3(9.5f, 0.25f, 20.0f)
+            Vec3(1.0f, 0.5f, 40.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(9.5f, 0.25f, 20.0f)
         },
 
-        //中略
+    //中略
 
     };
 
@@ -209,12 +212,27 @@ void GameStage::CreateFixedBox() {
     auto BoxGroup = CreateSharedObjectGroup(L"FixedBoxes");
     //オブジェクトの作成
     for (auto v : Vec) {
-        auto BoxPtr = AddGameObject&lt;FixedBox>(v[0], v[1], v[2]);
+        auto BoxPtr = AddGameObject<FixedBox>(v[0], v[1], v[2]);
         //ボックスのグループに追加
         BoxGroup->IntoGroup(BoxPtr);
     }
+    <span class="red">//最初の2つのセルマップへのボックスのコスト設定
+    SetCellMapCost(L"CellMap");
+    //奥のセルマップへのボックスのコスト設定
+    SetCellMapCost(L"CellMap2");</span>
+}
+</pre>
+</div>
+　SetCellMapCos()関数は、セルマップからセルの配列を取り出し、それぞれのセルにボックスがかかってないか確認し、かかってたらセルのコストを<b>-1</b>に設定しています。<br />
+　以下がその内容です。
+<div class="box1">
+<pre>
+//固定のボックスのコストをセルマップに反映
+void GameStage::SetCellMapCost(const wstring& CellMapGroupName) {
     //セルマップ内にFixedBoxの情報をセット
-    auto Group = GetSharedObjectGroup(L"CellMap");
+    auto Group = GetSharedObjectGroup(CellMapGroupName);
+    auto BoxGroup = GetSharedObjectGroup(L"FixedBoxes");
+
     //セルマップグループを取得
     for (auto& gv : Group->GetGroupVector()) {
         auto MapPtr = dynamic_pointer_cast&lt;StageCellMap>(gv.lock());
@@ -249,7 +267,6 @@ void GameStage::CreateFixedBox() {
 }
 </pre>
 </div>
-　このコードはセルマップからセルの配列を取り出し、それぞれのセルにボックスがかかってないか確認し、かかってたらセルのコストを<b>-1</b>に設定しています。<br />
 　こうしておくことで、この後説明する<b>敵キャラ</b>の経路検索でボックスを回り込みながらプレイヤーを追いかけるようになります。<br/>
 <br />
 <h4>敵キャラの作成</h4>
@@ -391,11 +408,15 @@ shared_ptr&lt;<span class="red">EnemyDefault</span>> <span class="red">EnemyDefa
 　以下は<b>Enemyクラス</b>の宣言部です。<b>Character.h</b>に記述されてます。
 <div class="box1">
 <pre>
+//--------------------------------------------------------------------------------------
+//  敵
+//--------------------------------------------------------------------------------------
 class Enemy : public GameObject {
+protected:
     weak_ptr&lt;StageCellMap> m_CelMap;
-    Vector3 m_Scale;
-    Vector3 m_StartRotation;
-    Vector3 m_StartPosition;
+    Vec3 m_Scale;
+    Vec3 m_StartRotation;
+    Vec3 m_StartPosition;
     vector&lt;CellIndex> m_CellPath;
     //現在の自分のセルインデックス
     int m_CellIndex;
@@ -404,20 +425,22 @@ class Enemy : public GameObject {
     //ターゲットのセルインデックス
     int m_TargetCellIndex;
     <span class="red">shared_ptr&lt;StateMachine&lt;Enemy>> m_StateMachine;</span>
+    //進行方向を向くようにする
+    void RotToHead();
 public:
     //構築と破棄
     Enemy(const shared_ptr&lt;Stage>& StagePtr,
         const shared_ptr&lt;StageCellMap>& CellMap,
-        const Vector3& Scale,
-        const Vector3& Rotation,
-        const Vector3& Position
+        const Vec3& Scale,
+        const Vec3& Rotation,
+        const Vec3& Position
     );
     virtual ~Enemy();
     //プレイヤーの検索
     bool SearchPlayer();
 
     //デフォルト行動
-    bool DefaultBehavior();
+    virtual bool DefaultBehavior();
     //Seek行動
     bool SeekBehavior();
     //アクセサ
@@ -428,7 +451,7 @@ public:
     virtual void OnCreate() override;
     //操作
     virtual void OnUpdate() override;
-    virtual void OnLastUpdate() override;
+    virtual void OnUpdate2() override;
 };
 </pre>
 </div>

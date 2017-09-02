@@ -17,40 +17,38 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct BasicConstants
 	{
-		XMVECTOR diffuseColor;
-		XMVECTOR emissiveColor;
-		XMVECTOR specularColorAndPower;
+		bsm::Col4 diffuseColor;
+		bsm::Col4 emissiveColor;
+		bsm::Col4 specularColorAndPower;
 
-		XMVECTOR lightDirection[3];
-		XMVECTOR lightDiffuseColor[3];
-		XMVECTOR lightSpecularColor[3];
+		bsm::Col4 lightDirection[3];
+		bsm::Col4 lightDiffuseColor[3];
+		bsm::Col4 lightSpecularColor[3];
 
-		XMVECTOR eyePosition;
+		bsm::Vec4 eyePosition;
 
-		XMVECTOR fogColor;
-		XMVECTOR fogVector;
+		bsm::Col4 fogColor;
+		bsm::Vec4 fogVector;
 
-		XMMATRIX world;
-		XMVECTOR worldInverseTranspose[3];
-		XMMATRIX worldViewProj;
+		bsm::Mat4x4 world;
+		bsm::Vec4 worldInverseTranspose[3];
+		bsm::Mat4x4 worldViewProj;
 		//汎用フラグ
 		XMUINT4 activeFlg;
 		//以下影
-		XMVECTOR lightPos;
-		XMVECTOR eyePos;
-		XMMATRIX lightView;
-		XMMATRIX lightProjection;
+		bsm::Vec4 lightPos;
+		bsm::Vec4 eyePos;
+		bsm::Mat4x4 lightView;
+		bsm::Mat4x4 lightProjection;
 
-		XMVECTOR bones[3 * 72];
+		bsm::Vec4 bones[3 * 72];
 
 	};
+
 	//--------------------------------------------------------------------------------------
 	/// コンスタントバッファ
 	//--------------------------------------------------------------------------------------
 	DECLARE_DX11_CONSTANT_BUFFER(CBBasic, BasicConstants)
-
-
-
 
 
 	//--------------------------------------------------------------------------------------

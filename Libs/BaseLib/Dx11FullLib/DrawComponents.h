@@ -41,17 +41,18 @@ namespace basecross {
 	struct ShadowConstants
 	{
 		/// ワールド行列
-		XMMATRIX mWorld;
+		bsm::Mat4x4 mWorld;
 		/// ビュー行列
-		XMMATRIX mView;
+		bsm::Mat4x4 mView;
 		/// 射影行列
-		XMMATRIX mProj;
+		bsm::Mat4x4 mProj;
 		/// Bone用
-		XMVECTOR Bones[3 * 72];
+		bsm::Vec4 Bones[3 * 72];
 		ShadowConstants() {
 			memset(this, 0, sizeof(ShadowConstants));
 		};
 	};
+
 	DECLARE_DX11_CONSTANT_BUFFER(CBShadow, ShadowConstants)
 	DECLARE_DX11_VERTEX_SHADER(VSShadowmap, VertexPositionNormalTexture)
 	DECLARE_DX11_VERTEX_SHADER(VSShadowmapBone, VertexPositionNormalTextureSkinning)
@@ -118,7 +119,7 @@ namespace basecross {
 		/// ライト射影行列
 		bsm::Mat4x4 LightProjection;
 		/// Bone配列
-		XMVECTOR Bones[3 * 72];
+		bsm::Vec4 Bones[3 * 72];
 		SimpleConstants() {
 			memset(this, 0, sizeof(SimpleConstants));
 			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);

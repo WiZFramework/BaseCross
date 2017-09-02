@@ -34,30 +34,38 @@
 　以下は<b>Player::OnCreate()関数（抜粋）</b>です。
 <div class="box1">
 <pre>
+//初期化
 void Player::OnCreate() {
 
-    //中略
+//中略
 
-    //衝突判定
-    auto PtrColl = AddComponent&lt;CollisionCapsule>();
-    //親の影響を受ける
-    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentSlide);
+    //Rigidbodyをつける
+    auto PtrRedid = AddComponent&lt;Rigidbody>();
+    //衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionSphere>();
+    PtrCol->SetIsHitAction(IsHitAction::Auto);
+    //文字列をつける
+    auto PtrString = AddComponent&lt;StringSprite>();
+    PtrString->SetText(L"");
+    PtrString->SetTextRect(Rect2D&lt;float>(16.0f, 16.0f, 640.0f, 480.0f));
 
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, XM_PI, 0.0f),
-        Vector3(0.0f, -0.5f, 0.0f)
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, XM_PI, 0.0f),
+        Vec3(0.0f, -0.5f, 0.0f)
     );
 
     //影をつける（シャドウマップを描画する）
     auto ShadowPtr = AddComponent&lt;Shadowmap>();
+
     //影の形（メッシュ）を設定
     ShadowPtr->SetMeshResource(L"Chara_R_MESH");
     ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
     //描画コンポーネントの設定
-    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
+    auto PtrDraw = AddComponent&lt;BcPNTBoneModelDraw>();
     //描画するメッシュを設定
     PtrDraw->SetMeshResource(L"Chara_R_MESH");
     PtrDraw->SetMeshToTransformMatrix(SpanMat);
@@ -66,7 +74,7 @@ void Player::OnCreate() {
     PtrDraw->AddAnimation(L"Hit", 30, 30, false, 30.0f);
     PtrDraw->ChangeCurrentAnimation(L"Default");
 
-    //中略
+//中略
 
 }
 </pre>
@@ -75,11 +83,12 @@ void Player::OnCreate() {
 　モデルを使う場合に注意したいのは<b>モデルの大きさや向き</b>です。<b>ローカル座標の中心</b>が、おなかの部分にある場合と足元にある場合もあるでしょう。これはモデルを作成するときに、モデル作成者と十分に話し合いを行い、また<b>Fbx2BinVS2015</b>によるデータ作成時にも調整が必要ですが、それでも実際のステージ上の大きさなどと違っている場合、
 <div class="box1">
 <pre>
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, XM_PI, 0.0f),
-        Vector3(0.0f, -0.5f, 0.0f)
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, XM_PI, 0.0f),
+        Vec3(0.0f, -0.5f, 0.0f)
     );
 </pre>
 </div>
@@ -114,15 +123,17 @@ void Player::OnCreate() {
 　スタティックモデルのオブジェクトは<b>Chgaracter.h/cpp</b>にある<b>StaticModelクラス</b>です。以下は<b>StaticModel::OnCreate()関数（抜粋）</b>です。
 <div class="box1">
 <pre>
+//初期化
 void StaticModel::OnCreate() {
 
-    //中略
+//中略
 
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(0.0f, -0.25f, 0.0f)
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, -0.28f, 0.0f)
     );
 
     auto PtrColl = AddComponent&lt;CollisionCapsule>();
@@ -131,15 +142,13 @@ void StaticModel::OnCreate() {
     //影をつける（シャドウマップを描画する）
     auto ShadowPtr = AddComponent&lt;Shadowmap>();
     //影の形（メッシュ）を設定
-    ShadowPtr->SetMeshResource(L"Chara_Rst_MESH");
+    ShadowPtr->SetMeshResource(L"MODEL_MESH");
     ShadowPtr->SetMeshToTransformMatrix(SpanMat);
 
-    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
-    PtrDraw->SetMeshResource(L"Chara_Rst_MESH");
+    auto PtrDraw = AddComponent&lt;BcPNTStaticModelDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"MODEL_MESH");
     PtrDraw->SetMeshToTransformMatrix(SpanMat);
-
-    //中略
-
 }
 </pre>
 </div>

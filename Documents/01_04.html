@@ -322,83 +322,83 @@ Obj->GetBehavior<行動クラス名>()
 <b>ArriveBehavior</b>の宣言と実体は、<b>ライブラリ中、SharedLibプロジェクトのBehaviorSteering.h/cpp</b>に実装されています。以下がその宣言です。
 <div class="box1">
 <pre>
+//--------------------------------------------------------------------------------------
+/// ArriveSteering行動クラス
+//--------------------------------------------------------------------------------------
+class ArriveSteering : public SteeringBehavior {
+public:
     //--------------------------------------------------------------------------------------
-    /// ArriveSteering行動クラス
+    /*!
+    @brief  コンストラクタ
+    @param[in]  GameObjectPtr   ゲームオブジェクト
+    */
     //--------------------------------------------------------------------------------------
-    class ArriveSteering : public SteeringBehavior {
-    public:
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  コンストラクタ
-        @param[in]  GameObjectPtr   ゲームオブジェクト
-        */
-        //--------------------------------------------------------------------------------------
-        ArriveSteering(const shared_ptr&lt;GameObject>& GameObjectPtr);
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  デストラクタ
-        */
-        //--------------------------------------------------------------------------------------
-        virtual ~ArriveSteering();
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  減速値を得る（デフォルト3.0）
-        @return 減速値
-        */
-        //--------------------------------------------------------------------------------------
-        float GetDecl() const;
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  減速値を設定する
-        @param[in]  f   減速値
-        @return なし
-        */
-        //--------------------------------------------------------------------------------------
-        void SetDecl(float f);
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  行動を実行する
-        @param[in]  TargetPos   追いかける位置
-        @return 追いかける位置との距離
-        */
-        //--------------------------------------------------------------------------------------
-        float Execute(const Vector3& TargetPos);
-        //--------------------------------------------------------------------------------------
-        /*!
-        @brief  行動を実行する
-        @param[in]  TargetKey   追いかけるオブジェクトのキー（SharedObjec）
-        @return 追いかけるオブジェクトとの距離
-        */
-        //--------------------------------------------------------------------------------------
-        float Execute(const wstring& TargetKey);
-    private:
-        // pImplイディオム
-        struct Impl;
-        unique_ptr&lt;Impl> pImpl;
-    };
+    ArriveSteering(const shared_ptr&lt;GameObject>& GameObjectPtr);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~ArriveSteering();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  減速値を得る（デフォルト3.0）
+    @return 減速値
+    */
+    //--------------------------------------------------------------------------------------
+    float GetDecl() const;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  減速値を設定する
+    @param[in]  f   減速値
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void SetDecl(float f);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  行動を実行する
+    @param[in]  TargetPos   追いかける位置
+    @return 追いかける位置との距離
+    */
+    //--------------------------------------------------------------------------------------
+    float Execute(const bsm::Vec3& TargetPos);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  行動を実行する
+    @param[in]  TargetKey   追いかけるオブジェクトのキー（SharedObjec）
+    @return 追いかけるオブジェクトとの距離
+    */
+    //--------------------------------------------------------------------------------------
+    float Execute(const wstring& TargetKey);
+private:
+    // pImplイディオム
+    struct Impl;
+    unique_ptr&lt;Impl> pImpl;
+};
 </pre>
 </div>
 　ステートから呼び出されている関数を見てみましょう（赤くなっている関数です）。
 <div class="box1">
 <pre>
-    float  ArriveSteering::Execute(const Vector3& TargetPos) {
-        auto RigidPtr = GetGameObject()->GetComponent&lt;Rigidbody>();
-        auto TransPtr = GetGameObject()->GetComponent&lt;Transform>();
-        Vector3 Force = RigidPtr->GetForce();
-        Vector3 WorkForce;
-        WorkForce = <span class="red">Steering::Arrive(RigidPtr->GetVelocity(), TargetPos,
-            TransPtr->GetPosition(), RigidPtr->GetMaxSpeed(), pImpl->m_Decl)</span> *  GetWeight();
-        Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
-        RigidPtr->SetForce(Force);
-        auto Pos = TransPtr->GetPosition();
-        return Vector3EX::Length(Pos - TargetPos);
-    }
+float  ArriveSteering::Execute(const bsm::Vec3& TargetPos) {
+    auto RigidPtr = GetGameObject()->GetComponent&lt;Rigidbody>();
+    auto TransPtr = GetGameObject()->GetComponent&lt;Transform>();
+    bsm::Vec3 Force = RigidPtr->GetForce();
+    bsm::Vec3 WorkForce;
+    WorkForce = <span class="red">Steering::Arrive(RigidPtr->GetVelocity(), TargetPos,
+        TransPtr->GetWorldPosition(), RigidPtr->GetMaxSpeed(), pImpl->m_Decl)</span> *  GetWeight();
+    Steering::AccumulateForce(Force, WorkForce, RigidPtr->GetMaxForce());
+    RigidPtr->SetForce(Force);
+    auto Pos = TransPtr->GetWorldPosition();
+    return bsm::length(Pos - TargetPos);
+}
 
-    <span class="red">float ArriveSteering::Execute(const wstring& TargetKey) {
-        auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
-        auto TargetPos = TargetPtr->GetComponent&lt;Transform>()->GetPosition();
-        return Execute(TargetPos);
-    }</span>
+<span class="red">float ArriveSteering::Execute(const wstring& TargetKey) {
+    auto TargetPtr = GetStage()->GetSharedObject(TargetKey);
+    auto TargetPos = TargetPtr->GetComponent&lt;Transform>()->GetWorldPosition();
+    return Execute(TargetPos);
+}</span>
 </pre>
 </div>
 　<b>ArriveSteering::Execute()関数</b>は多重定義されていて、<b>パラメータがキーワードせ呼び出される関数</b>が呼ばれます。ここでは、キーワードからプレイヤーを特定し、その<b>位置情報</b>で、もう一つの関数を呼び出します。<br/>
@@ -585,7 +585,7 @@ void  Player::OnPushA() {
 <pre>
 void PlayerJumpState::Enter(const shared_ptr&lt;Player>& Obj) {
     auto PtrJump = Obj->GetBehavior&lt;JumpBehavior>();
-    PtrJump->StartJump(Vector3(0, 4.0f, 0));
+    PtrJump->StartJump(Vec3(0, 4.0f, 0));
 }
 </pre>
 </div>

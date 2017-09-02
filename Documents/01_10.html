@@ -75,7 +75,25 @@ class HPManeger : public GameObject {
     weak_ptr&lt;T> m_TargetObj;
     weak_ptr&lt;HPSquareBase> m_HPSquareBase;
     weak_ptr&lt;HPSquare> m_HPSquare;
-    Color4 m_Color;
+    Col4 m_Color;
+
+    Quat Billboard(const Vec3& Line) {
+        Vec3 Temp = Line;
+        Mat4x4 RotMatrix;
+        Vec3 DefUp(0, 1.0f, 0);
+        Vec2 TempVec2(Temp.x, Temp.z);
+        if (TempVec2.length() &lt; 0.1f) {
+            DefUp = Vec3(0, 0, 1.0f);
+        }
+        Temp.normalize();
+        RotMatrix = XMMatrixLookAtLH(Vec3(0, 0, 0), Temp, DefUp);
+        RotMatrix.inverse();
+        Quat Qt;
+        Qt = RotMatrix.quatInMatrix();
+        Qt.normalize();
+        return Qt;
+    }
+
 
     void UpdateHPTrans() {
         auto ShTarget = m_TargetObj.lock();
@@ -96,24 +114,24 @@ class HPManeger : public GameObject {
             auto Pos = TargetTrans->GetPosition();
             Pos.y += 0.75f;
             HPBaseTrans->SetPosition(Pos);
-            Pos = Vector3(0, 0, -0.001f);
+            Pos = Vec3(0, 0, -0.001f);
             Pos.x -= 0.46f * 0.5f;
             Pos.x += (0.46f * Width * 0.5f);
             HPTrans->SetPosition(Pos);
 
 
             auto PtrCamera = GetStage()->GetView()->GetTargetCamera();
-            Quaternion Qt;
+            Quat Qt;
             //向きをビルボードにする
-            Qt.Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
+            Qt = Billboard(PtrCamera->GetAt() - PtrCamera->GetEye());
             HPBaseTrans->SetQuaternion(Qt);
         }
     }
 public:
     //構築と破棄
     HPManeger(const shared_ptr&lt;Stage>& StagePtr,
-    <span class="red">const shared_ptr&lt;T>& TargetObj</span>,
-        const Color4& Col):
+        <span class="red">const shared_ptr&lt;T>& TargetObj,</span>
+        const Col4& Col):
         GameObject(StagePtr),
         m_TargetObj(TargetObj),
         m_Color(Col)
@@ -135,8 +153,6 @@ public:
     virtual void OnUpdate2() override {
         UpdateHPTrans();
     }
-
-
 };
 </pre>
 </div>
@@ -145,13 +161,13 @@ public:
 　ちなみにこのクラスのインスタンス作成は「GamaStgae.cpp」に、「プレイヤーのHPバーを構築」は「GameStage::CreatePlayer()」内で
 <div class="box1">
 <pre>
-    AddGameObject&lt;HPManeger<span class="red">&lt;Player></span>>(PlayerPtr,Color4(0,1,0,1));
+    AddGameObject&lt;HPManeger<span class="red">&lt;Player></span>>(PlayerPtr,Col4(0,1,0,1));
 </pre>
 </div>
 　及び、「敵のHPバーを構築」は「GameStage::CreateEnemy()」内で
 <div class="box1">
 <pre>
-    AddGameObject&lt;HPManeger<span class="red">&lt;Enemy></span>>(EnemyPtr, Color4(1, 0, 0, 1));
+    AddGameObject&lt;HPManeger<span class="red">&lt;Enemy></span>>(EnemyPtr, Col4(1, 0, 0, 1));
 </pre>
 </div>
 　という記述で登録しています。型引数を渡しているのがわかります。<br />
@@ -177,7 +193,148 @@ public:
 </div>
 　のように、「HPSquareBaseクラス（HPバーの背景の黒い部分）」と「HPSquareクラス（HPバー）」をステージの「AddGameObject()関数」を呼び出して構築します。「GetStage()」でステージのポインタを取得します。<br />
 　「HPSquareクラス」は「HPSquareBase」と親子関係として設定します。理由は、「HP」は「ビルボード処理」といって、常にカメラを向く処理をします。バラバラにビルボード処理をすると、手前に置くオブジェクト（つまりHP）と奥に置くオブジェクト（背景）のあいだに微妙な回転のずれが起きてしまいます。親子関係にすれば、HPは背景に合わせて回転しますので、ずれがなくなります。<br />
-　HPの値は各オブジェクトから「GetHP()関数呼び出し」で取得して、「GetMaxHP()関数」と合わせて計算します。その計算処理は「UpdateHPTrans()関数」で行います。
+　HPの値は各オブジェクトから「GetHP()関数呼び出し」で取得して、「GetMaxHP()関数」と合わせて計算します。その計算処理は「UpdateHPTrans()関数」で行います。<br />
+<br />
+<h4>行動の使いまわしによるできるだけ少ないコード</h4>
+　このサンプルには「行動クラス」が実装されています。中でも「FightBehavior」クラスは「戦う系の行動」をカプセル化したもので、プレイヤーも敵も、同じアルゴリズムを利用しています。<br />
+　ただ、プレイヤーの場合はコントローラでの操作ですし、敵は完全なAI処理です。その違いをどのようにして吸収しているかを説明したいと思います。<br />
+　「FightBehavior」クラスは「ProjectBehavior.h/cpp」で実装されています。以下がそのヘッダです。テンプレートクラスなので、実体もすべてヘッダファイルに記述されています。ですので、各関数の中身は中略しています。
+<div class="box1">
+<pre>
+template &lt;typename T>
+class FightBehavior : public ObjBehavior&lt;T> {
+    //回転切りの回転角度
+    float m_RotationShakeRad;
+    //剣のweak_ptr
+    weak_ptr&lt;Sword> m_SwordWeak;
+    //相手の剣に当たったときの変数
+    //相手の場所
+    Vec3 m_HitBase;
+    //ひるむ時間
+    float m_HitSwordTime;
+    //倒れた処理用
+    enum class DieFlag {
+        Down,
+        Die,
+        Up,
+    };
+    float m_DieRot;
+    float m_DieInterval;
+    DieFlag m_DieFlag;
+    Vec3 m_PokeStart;
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    FightBehavior(const shared_ptr&lt;T>& GameObjectPtr):
+        ObjBehavior(GameObjectPtr)
+    {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~FightBehavior() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣を持つ処理
+    @param[in]  SwordKey    剣を特定するキー
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void HaveSword(const wstring& SwordKey) {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣を振る処理の開始
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void StartShakeSword() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣を振る（回転）
+    @return 半周回転したらtrue
+    */
+    //--------------------------------------------------------------------------------------
+    bool RotationShakeSword() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣を突く処理の開始
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void StartPokeSword() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣を突く
+    @return 一定距離突いたらtrue
+    */
+    //--------------------------------------------------------------------------------------
+    bool PokeSword() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  相手の剣に当たったときの相手の位置の設定
+    @param[in]  pos 位置
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void SetHitBase(const Vec3& pos) {
+        m_HitBase = pos;
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  相手の剣に当たった行動
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void HitSwordBehavior() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  剣に当たってひるむ行動
+    @return ひるむ時間が終わったらtrue
+    */
+    //--------------------------------------------------------------------------------------
+    bool HitAfterdBehavior() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  倒れる開始
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void DieStartBehavior() {
+        //中略
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  倒れる行動
+    @return 一連の動作が終わればtrue
+    */
+    //--------------------------------------------------------------------------------------
+    bool DieBehavior() {
+        //中略
+    }
+};
+</pre>
+</div>
+
+
+
 
 <h4>解説</h4>
 <div class="box1">

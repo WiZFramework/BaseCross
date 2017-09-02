@@ -700,13 +700,10 @@ namespace bsm {
 	{
 	}
 
-	inline Quat::Quat(const Flt3 & xyz, float _w):
+	inline Quat::Quat(const Flt3& vec, float r):
 		XMFLOAT4()
 	{
-		*this = (Quat)XMQuaternionRotationAxis(xyz, _w);
-
-		//this->setXYZ(xyz);
-		//this->setW(_w);
+		*this = (Quat)XMQuaternionRotationAxis(vec, r);
 	}
 
 	inline Quat::Quat(float val):

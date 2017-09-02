@@ -68,7 +68,7 @@ public:
     @return 方向ベクトル
     */
     //--------------------------------------------------------------------------------------
-    Vector3 GetMoveVector() const;
+    Vec3 GetMoveVector() const;
     //--------------------------------------------------------------------------------------
     /*!
     @brief  プレイヤーを移動させる
@@ -148,7 +148,6 @@ Player::Player(const shared_ptr&lt;Stage>& StagePtr) :
 <pre>
 //初期化
 void Player::OnCreate() {
-
     //初期位置などの設定
     auto Ptr = GetComponent&lt;Transform>();
     Ptr->SetScale(0.25f, 0.25f, 0.25f); //直径25センチの球体
@@ -183,7 +182,7 @@ void Player::OnCreate() {
         //LookAtCameraに注目するオブジェクト（プレイヤー）の設定
         PtrCamera->SetTargetObject(GetThis&lt;GameObject>());
         //注目点をオブジェクト位置から少し上方にする
-        PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+        PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
     }
 }
 </pre>
@@ -201,7 +200,7 @@ void Player::OnCreate() {
         //LookAtCameraに注目するオブジェクト（プレイヤー）の設定
         PtrCamera->SetTargetObject(GetThis&lt;GameObject>());
         //注目点をオブジェクト位置から少し上方にする
-        PtrCamera->SetTargetToAt(Vector3(0, 0.25f, 0));
+        PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
     }
 </pre>
 </div>
@@ -236,11 +235,11 @@ void Player::OnUpdate() {
 <pre>
 void Player::MovePlayer() {
     float ElapsedTime = App::GetApp()->GetElapsedTime();
-    Vector3 Angle = GetMoveVector();
+    Vec3 Angle = GetMoveVector();
     //Rigidbodyを取り出す
     auto PtrRedit = GetComponent&lt;Rigidbody>();
     auto Velo = PtrRedit->GetVelocity();
-    if (Angle.Length() &lt;= 0.0f && Velo.y == 0.0f) {
+    if (Angle.length() &lt;= 0.0f && Velo.y == 0.0f) {
         //コントローラを離したとき対策
         Velo *= GetDecel();
         PtrRedit->SetVelocity(Velo);
@@ -263,7 +262,7 @@ void Player::MovePlayer() {
     //速度を設定する
     PtrRedit->SetVelocity(Velo);
     //回転の計算
-    if (Angle.Length() > 0.0f) {
+    if (Angle.length() > 0.0f) {
         auto UtilPtr = GetBehavior&lt;UtilBehavior>();
         UtilPtr->RotToHead(Angle, 1.0f);
     }
@@ -273,7 +272,7 @@ void Player::MovePlayer() {
 　この関数の冒頭で、
 <div class="box1">
 <pre>
-    Vector3 Angle = GetMoveVector();
+    Vec3 Angle = GetMoveVector();
 </pre>
 </div>
 　のようにコントローラの左スティックの状態から、移動ベクトルを算出しています。
