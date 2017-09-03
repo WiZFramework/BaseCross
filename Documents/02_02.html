@@ -166,7 +166,7 @@ public:
     //OnCreate()関数は何もしない
     virtual void OnCreate() override{}
     //WithParamによる初期化（仮想関数でなくてよい）
-    void OnCreateWithParam(const Vector3& Pos);
+    void OnCreateWithParam(const Vec3& Pos);
     //中略
 };
 </pre>
@@ -181,7 +181,7 @@ GameObject(StagePtr)
 {}
 
 //WithParamによる初期化（仮想関数でなくてよい）
-void TestObject::OnCreateWithParam(const Vector3& Pos){
+void TestObject::OnCreateWithParam(const Vec3& Pos){
     auto PtrTransform = AddComponent&lt;Transform>();
     PtrTransform->SetPosition(Pos);
     PtrTransform->SetScale(1.0f, 1.0f, 1.0f);
@@ -193,7 +193,7 @@ void TestObject::OnCreateWithParam(const Vector3& Pos){
 　そして、ステージに配置する際は、<b>GameStage::OnCreate()関数など（あるいはそこから呼ばれる関数）</b>で
 <div class="box1">
 <pre>
-AddGameObjectWithParam&lt;TestObject>(Vector3(0.0f, 0.5f, 5.0f));
+AddGameObjectWithParam&lt;TestObject>(Vec3(0.0f, 0.5f, 5.0f));
 </pre>
 </div>
 　と書けば、パラメータが<b>TestObject::OnCreateWithParam()関数</b>に渡されます。<br />
@@ -274,6 +274,7 @@ auto PtrTrans = PtrPlayer->GetComponent&lt;Transform>();
 　描画処理は以下のようになっています。
 <div class="box1">
 <pre>
+//ステージ内のすべての描画（シーンからよばれる）
 void Stage::RenderStage() {
     //描画デバイスの取得
     auto Dev = App::GetApp()->GetDeviceResources();
@@ -288,11 +289,11 @@ void Stage::RenderStage() {
                 Dev->EndShadowmapDraw();
             }
             //デフォルト描画の開始
-            Dev->StartDefultDraw();
+            Dev->StartDefaultDraw();
             RsSetViewport(MultiPtr->GetTargetViewport());
             DrawStage();
             //デフォルト描画の終了
-            Dev->EndDefultDraw();
+            Dev->EndDefaultDraw();
         }
         //描画が終わったら更新処理用に先頭のカメラにターゲットを設定する
         MultiPtr->SetTargetIndex(0);
@@ -305,11 +306,11 @@ void Stage::RenderStage() {
             Dev->EndShadowmapDraw();
         }
         //デフォルト描画の開始
-        Dev->StartDefultDraw();
+        Dev->StartDefaultDraw();
         RsSetViewport(GetView()->GetTargetViewport());
         DrawStage();
         //デフォルト描画の終了
-        Dev->EndDefultDraw();
+        Dev->EndDefaultDraw();
     }
     //子供ステージの描画
     for (auto PtrChileStage : pImpl->m_ChildStageVec) {

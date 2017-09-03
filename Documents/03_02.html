@@ -38,16 +38,16 @@ void ActionObject::OnCreate() {
 
     <span class="red">//アクションの登録
     auto PtrAction = AddComponent&lt;Action>();
-    PtrAction->AddRotateBy(1.0f, Vector3(0, XM_PI, 0));
+    PtrAction->AddRotateBy(1.0f, Vec3(0, XM_PI, 0));
     PtrAction->AddRotateInterval(1.0f);
-    PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));
-    PtrAction->AddMoveBy(0.5f, Vector3(0, 1.0f, -1.0f), 
+    PtrAction->AddMoveBy(1.0f, Vec3(2.0f, 0, 0));
+    PtrAction->AddMoveBy(0.5f, Vec3(0, 1.0f, -1.0f), 
         Lerp::Linear, Lerp::EaseOut, Lerp::Linear);
-    PtrAction->AddMoveBy(0.5f, Vector3(0, -1.0f, -1.0f), 
+    PtrAction->AddMoveBy(0.5f, Vec3(0, -1.0f, -1.0f), 
         Lerp::Linear, Lerp::Easein, Lerp::Linear);
-    PtrAction->AddMoveBy(2.0f, Vector3(-4.0f, 0, 0));
-    PtrAction->AddMoveBy(1.0f, Vector3(0, 0, 2.0f));
-    PtrAction->AddMoveBy(1.0f, Vector3(2.0f, 0, 0));</span>
+    PtrAction->AddMoveBy(2.0f, Vec3(-4.0f, 0, 0));
+    PtrAction->AddMoveBy(1.0f, Vec3(0, 0, 2.0f));
+    PtrAction->AddMoveBy(1.0f, Vec3(2.0f, 0, 0));</span>
 
     //ループする
     PtrAction->SetLooped(true);
@@ -76,8 +76,8 @@ void ActionObject::OnCreate() {
 　<b>Actionコンポーネント</b>は<b>スケーリング、回転、移動</b>の３つのラインがありそれぞれ独立して動き、組み合わさった状態になります。<br />
 　例えば<b>１秒間でXM_PIだけY軸回転</b>と<b>２秒間で2.0移動</b>と指定した場合、<b>スタートから0.5秒後</b>は<b>XM_PI/2ぶん回転して、0.5だけ移動</b>の状態になります。<br />
 　<b>スケーリング、回転、移動</b>の３つのラインに指定できるアクションは<b>ScaleBy、RotateBy、MoveBy</b>の<b>○○By</b>であらわされる動作と<b>ScaleTo、RotateTo、MoveTo</b>の<b>○○To</b>であらわされる動きです。<br/>
-　<b>○○By</b>は<b>現在の状態からの変化</b>を表します。例えば、現在<b>Vector3(1.0f,1.0f,1.0f)</b>にいるオブジェクトを<b>AddMoveBy(1.0f, Vector3(2.0f, 0, 0));</b>した場合、<b>1秒間でVector3(2.0f, 0, 0)だけ相対的に移動</b>の意味になり移動後の位置は<b>Vector3(3.0f,1.0f,1.0f)</b>になります。<br />
-　<b>○○To</b>は、<b>AddMoveTo(1.0f, Vector3(2.0f, 0, 0));</b>した場合、現在位置がどこにあっても、1秒後には<b>Vector3(2.0f, 0, 0)</b>に移動します。<b>1秒間でVector3(2.0f, 0, 0)まで移動</b>となり絶対位置の表現となります。<br />
+　<b>○○By</b>は<b>現在の状態からの変化</b>を表します。例えば、現在<b>Vec3(1.0f,1.0f,1.0f)</b>にいるオブジェクトを<b>AddMoveBy(1.0f, Vec3(2.0f, 0, 0));</b>した場合、<b>1秒間でVec3(2.0f, 0, 0)だけ相対的に移動</b>の意味になり移動後の位置は<b>Vec3(3.0f,1.0f,1.0f)</b>になります。<br />
+　<b>○○To</b>は、<b>AddMoveTo(1.0f, Vec3(2.0f, 0, 0));</b>した場合、現在位置がどこにあっても、1秒後には<b>Vec3(2.0f, 0, 0)</b>に移動します。<b>1秒間でVec3(2.0f, 0, 0)まで移動</b>となり絶対位置の表現となります。<br />
 　<b>Scale、Rotate</b>も同様で<b>ScaleBy、RotateBy</b>の場合は相対的な変化であり<b>ScaleTo、RotateTo</b>は絶対的な変化になります。<br />
 　サンプルのように
 <div class="box1">

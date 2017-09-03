@@ -75,7 +75,7 @@
 <div class="box1">
 <pre>
         auto PtrTrans = GetComponent&lt;Transform>();
-        PtrTrans->SetPosition(Vector3(0.0f,0.0f,0.0f));
+        PtrTrans->SetPosition(Vec3(0.0f,0.0f,0.0f));
 </pre>
 </div>
 　のように<b>位置の設定</b>を行います。<br/>
@@ -85,10 +85,11 @@
 　前述しましたように、GameObjectの更新処理（仮想関数が呼び出されるタイミング）と、更新系コンポーネントが計算されるタイミングは以下のような順番になります。
 <div class="box1">
 <pre>
-【１】各GameObjectの、OnPreUpdate()関数呼び出し
+【１】各GameObjectの、OnUpdate()関数呼び出し
 【２】各GameObjectが持つコンポーネントの計算
-【３】ステージのビューの計算
-【４】各GameObjectの、OnUpdate()関数呼び出し
+【３】衝突判定と衝突メッセージの発行
+【４】各GameObjectの、OnUpdate2()関数呼び出し
+【５】ステージのビューの計算
 </pre>
 </div>
 　また<b>【２】各GameObjectが持つコンポーネントの計算</b>は、特殊なコンポーネントとそうでないコンポーネントの評価順があります。以下にその順番を述べます。
@@ -99,17 +100,23 @@
 ２、Gravityコンポーネント（重力コンポーネント）の計算（Transformに影響を与える）
 ３、Rigidbodyコンポーネント（速度を管理するコンポーネント）の計算（Transformに影響を与える）
 ４、Transformの計算（何もしない。ワールド行列は描画系コンポーネントが取得する）
-５、Collision管理者（マネージャ）による衝突判定（Transformに影響を与える）
 </pre>
 </div>
-　このような形になっていますので、<b>【１】各GameObjectの、OnPreUpdate()関数呼び出し</b>で、Transformの値を変更しても、その後、各コンポーネントが影響を与えますので、あまり意味がありません。（場合によっては変な動きになります）<br />
-　ですから、<b>Transformの値を直接変更したい</b>のであれば<b>Update系コンポーネントは追加しない</b>か、もしくは<b>【４】各GameObjectの、OnUpdate()関数呼び出し</b>で行ったほうが比較的思い通りに行くことがあります。<br />
+　またその後
+<div class="box1">
+<pre>
+【３】衝突判定と衝突メッセージの発行
+</pre>
+</div>
+　が行われます。<br />
+　このような形になっていますので、<b>【１】各GameObjectの、OnUpdate()関数呼び出し</b>で、Transformの値を変更しても、その後、各コンポーネントが影響を与えますので、あまり意味がありません。（場合によっては変な動きになります）<br />
+　ですから、<b>Transformの値を直接変更したい</b>のであれば<b>Update系コンポーネントは追加しない</b>か、もしくは<b>【４】各GameObjectの、OnUpdate2()関数呼び出し</b>で行ったほうが比較的思い通りに行くことがあります。<br />
 　基本的に以下の方針で設計すればよいと思います。
 <div class="box1">
 <pre>
 ＊Transformの値を直接変更したい場合は、できれば、更新系コンポーネントは追加しない。
-＊RigidbodyやGravityを利用したい場合は、Rigidbodyの速度や、Gravityの現在の速度を変更する
-＊OnUpdate()関数ならTransformの値を直接変更しても比較的安全。
+＊RigidbodyやCollisionを利用したい場合は、Rigidbodyの速度や、Gravity行動で現在の速度を変更する
+＊OnUpdate2()関数ならTransformの値を直接変更しても比較的安全。
 </pre>
 </div>
 　直接<b>Transform</b>の値を変更するサンプルとして<b>FullTutorial002</b>があります。<br />

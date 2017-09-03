@@ -20,8 +20,8 @@
 　<b>DirectXMath</b>というのは<b>XNAMath</b>という<b>XBox用の計算ライブラリ</b>の互換のある関数群で、<b>WindowsとDirectX</b>という環境で高速演算できる関数群です。ここでは<b>DirectXMath</b>関数群の特徴と基本的な使い方を述べるとともに、<b>BaseCross</b>とのインターフェイス実現のためにどのような実装がされていて、<b>DirectXMath</b>関数群を使うためにどのような使い方をするのかを述べたいと思います。<br />
 <br />
 <h4>■計算ライブラリの役割■</h4>
-　<b>BaseCross</b>の、行列やベクトル計算は<b>DirectXMath</b>を使用しています。これにより、<b>ストリーミング SIMD 拡張命令 2 (いわゆるSSE2)</b>による計算が実装できます。これは<b>浮動小数点の計算</b>が最適化されている、ということです。３Ｄプログラムは、複雑な浮動小数点計算が大量に必要なプログラムです。ですから、こういった<b>ハードウェア依存</b>の計算は、できれば実装したほうが良い機能いいでしょう。<br />
-　<b>BaseCross</b>では、<b>DirectXMath</b>を利用するにあったっての制限を、ゲームプログラマに負担を掛けないように、<b>DirectXMath</b>を使いやすいような計算クラスとして<b>bsm::Vec3</b>や<b>bsm::Mat4x4</b>などの計算クラスがあります。こういった計算クラスがある理由は、<b>DirectXMath</b>の利用にあたって<b>ややこしい部分</b>があるからです。<br />
+　<b>BaseCross</b>の、行列やベクトル計算は<b>DirectXMath</b>を使用しています。これにより、<b>ストリーミング SIMD 拡張命令 2 (いわゆるSSE2)</b>による計算が実装できます。これは<b>浮動小数点の計算</b>が最適化されている、ということです。３Ｄプログラムは、複雑な浮動小数点計算が大量に必要なプログラムです。ですから、こういった<b>ハードウェア依存</b>の計算は、できれば実装したほうが良い機能でしょう。<br />
+　<b>BaseCross</b>では、<b>DirectXMath</b>を利用するにあったっての手間を、ゲームプログラマに、なるべく負担を掛けないように、<b>bsm::Vec3</b>や<b>bsm::Mat4x4</b>などの計算クラスがあります。こういった計算クラスがある理由は、<b>DirectXMath</b>の利用にあたって<b>ややこしい部分</b>があるからです。<br />
 　まずは、<b>DirectXMathの利用の、どこがややこしいのか</b>を説明します、<br />
 　<b>DirectXMath</b>の関数群は<b>XMMatrixAffineTransformation()</b>のように<b>XM</b>で始まる関数名を持ちます。<br />
 　ほとんど（というか、ほぼ全部）、<b>XMVECTOR</b>もしくは<b>XMMATRIX</b>という型の変数を返す、あるいは引数に必要とします。これらの型は<b>SSE2</b>とのデータのやり取りに使用します。<br />
@@ -75,9 +75,9 @@ void test(){
     //以下は実行できない
     auto t = new teststr();
     //単位クォータニオンの取得
-    t.q = XMQuaternionIdentity();
+    t->q = XMQuaternionIdentity();
     //単位行列の取得
-    t.m = XMMatrixIdentity()
+    t->m = XMMatrixIdentity()
 }
 </pre>
 </div>
@@ -97,17 +97,17 @@ void test(){
     //ここでtの変数を何らかの形で設定
     //
     //変数のXMVECTORへのロード
-    XMVECTOR q = XMLoadFloat4(&t.q);
+    XMVECTOR q = XMLoadFloat4(&t->q);
     //クォータニオンの正規化
     q = XMQuaternionNormalize(q);
     //tの変数に戻す
-    XMStoreFloat4&t.q,q);
+    XMStoreFloat4&t->q,q);
     //変数のXMMATRIXへのロード
-    XMMATRIX m = XMLoadFloat4x4A(&t.m);
+    XMMATRIX m = XMLoadFloat4x4A(&t->m);
     //行列の転置
     m = XMMatrixTranspose(m);
     //tの変数に戻す
-    XMStoreFloat4x4(&t.m,m);
+    XMStoreFloat4x4(&t->m,m);
 }
 </pre>
 </div>
