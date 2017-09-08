@@ -33,10 +33,9 @@
 　以下抜粋ですが
 <div class="box1">
 <pre>
-void Collision::AfterCollision(
-    const shared_ptr&lt;Collision>& DestColl,
-     const Vector3& SrcVelocity, const Vector3& DestVelocity, 
-    const Vector3& HitNormal,float AfterHitTime) {
+void Collision::AfterCollision(const shared_ptr&lt;Collision>& DestColl, 
+    const bsm::Vec3& SrcVelocity, const bsm::Vec3& DestVelocity, 
+    const bsm::Vec3& HitNormal,float AfterHitTime) {
 
 //中略
 
@@ -46,7 +45,7 @@ void Collision::AfterCollision(
         case IsHitAction::Slide:
         {
             auto DestVelocity = PtrDestTransform->GetVelocity();
-            Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+            Slide = pImpl->Slide(SrcVelocity, HitNormal);
             PtrRigid->SetVelocity(Slide);
             //重力は0にする
             PtrRigid->SetGravityVelocityZero();
@@ -55,32 +54,36 @@ void Collision::AfterCollision(
         case IsHitAction::Auto:
             if (horizontal) {
                 //乗っているときはスライドさせる
-                Slide = Vector3EX::Slide(SrcVelocity, HitNormal);
+                Slide = pImpl->Slide(SrcVelocity, HitNormal);
                 PtrRigid->SetVelocity(Slide);
                 //何かに乗ったときは重力は0にする
                 PtrRigid->SetGravityVelocityZero();
             }
             else {
                 //乗ってないときは反発
-                <span class="red">
                 auto DestRigid = DestColl->GetGameObject()->GetComponent&lt;Rigidbody>(false);
                 float ResultPower = -(1.0f + PtrRigid->GetReflection());
                 if (DestRigid) {
-                    Vector3 RelativeVelo = SrcVelocity - DestVelocity;
-                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) 
-                        * Vector3EX::Dot(RelativeVelo, HitNormal)) 
-                        / (Vector3EX::Dot(HitNormal, HitNormal) 
-                        * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
+                    bsm::Vec3 RelativeVelo = SrcVelocity - DestVelocity;
+                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) * bsm::dot(RelativeVelo, HitNormal)) /
+                        (bsm::dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass() + 1 / DestRigid->GetMass()));
                 }
                 else {
-                    Vector3 RelativeVelo = SrcVelocity;
-                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) 
-                    * Vector3EX::Dot(RelativeVelo, HitNormal)) 
-                    / (Vector3EX::Dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
-                }</span>
+                    bsm::Vec3 RelativeVelo = SrcVelocity;
+                    ResultPower = (-(1.0f + PtrRigid->GetReflection()) * bsm::dot(RelativeVelo, HitNormal)) /
+                        (bsm::dot(HitNormal, HitNormal) * (1 / PtrRigid->GetMass()));
+                }
                 auto Velo = PtrRigid->GetVelocity();
                 Velo += (HitNormal * ResultPower) / PtrRigid->GetMass();
                 PtrRigid->SetVelocity(Velo);
+            }
+            break;
+        case IsHitAction::Stop:
+            {
+                //速度は0にする
+                PtrRigid->SetVelocityZero();
+                //重力は0にする
+                PtrRigid->SetGravityVelocityZero();
             }
             break;
         }
@@ -97,10 +100,10 @@ void Collision::AfterCollision(
 //ボールの作成
 void GameStage::CreateBalls() {
     //ボールの作成
-    auto Ball1 = AddGameObject&lt;Ball>(Vector3(-2.5f, 0.125f, <span class="red">5.1f</span>), true);
+    auto Ball1 = AddGameObject&lt;Ball>(Vec3(-2.5f, 0.125f, <span class="red">5.1f</span>), true);
     //シェア配列にプレイヤーを追加
     SetSharedGameObject(L"Ball1", Ball1);
-    auto Ball2 = AddGameObject&lt;Ball>(Vector3(2.5f, 0.125f, 5.0f), false);
+    auto Ball2 = AddGameObject&lt;Ball>(Vec3(2.5f, 0.125f, 5.0f), false);
     SetSharedGameObject(L"Ball2", Ball2);
 }
 </pre>

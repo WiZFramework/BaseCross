@@ -22,7 +22,7 @@
 <pre>
     //Rigidbodyをつける
     auto PtrRedid = AddComponent&lt;Rigidbody>();
-    PtrRedid->SetVelocity(Vector3(0, 0, 1.0f));
+    PtrRedid->SetVelocity(Vec(0, 0, 1.0f));
 </pre>
 </div>
 　のように記述します。これでオブジェクトは<b>秒速1.0fでZの方向に</b>移動するようになります。<br />
@@ -31,7 +31,7 @@
 <pre>
     //Rigidbodyを呼び出す
     auto PtrRedid = GetComponent&lt;Rigidbody>();
-    PtrRedid->SetVelocity(Vector3(0, 0, 1.0f));
+    PtrRedid->SetVelocity(Vec(0, 0, 1.0f));
 </pre>
 </div>
 　のように設定します。<b>SetVelocity()関数</b>に渡す値を動的に変更すれば、違う動きを演出できます。<br />
@@ -80,7 +80,7 @@
 <pre>
     //準備
     //目標地点までのベクトルを得る（正規化されていてよい）
-    Vector3 Target = <span class="red">GetTarget();</span>
+    Vector Target = <span class="red">GetTarget();</span>
     //最高秒速をかける
     Target *= <span class="red">GetMaxSpeed();</span>
     //前回のターンからの時間（秒）
@@ -105,8 +105,6 @@
 　このようなコードを<b>OnUpdate()関数など、毎ターン実行されるように</b>記述しておきます。<br />
 　そうすると<b>目標地点が移動</b>しても、常に目標を追いかけるAI動作を実装できます。また、このAI動作は目まぐるしく<b>加速</b>が変わるために、生きてるような動作を実装できます。追いかける速度を調整した場合は、GetMaxSpeed()が返す値を変えればいいのです。<br />
 <br/>
-　ちなみに<b>BaseCrossサンプル</b>の多くは<b>プレイヤーの動き</b>に上記のアルゴリズムを使用していますので、確認しましょう。<br />
-<br />
 <h4>ステアリング（操舵）行動</h4>
 　<b>ステアリング</b>を実装するには、<b>Rigidbodyコンポーネント</b>を追加して、<b>OnUpdate()関数などで</b>上記のようなコードを記述すればいいのですが、いくつかのパターン化された<b>ステアリング</b>が<b>行動クラス</b>として用意されているので、それを使う方法もあります。<br />
 　<b>チュートリアル006</b>サンプルには、<b>SeekObject</b>という<b>プレイヤーを追いかけるオブジェクト</b>があり、これに<b>SeekSteeringコンポーネント</b>と<b>ArriveSteering行動</b>、そして<b>SeparationSteering行動</b>という３つの行動でＡＩ動作を実装しています。<br />

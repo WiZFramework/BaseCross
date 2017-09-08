@@ -34,7 +34,7 @@
 <pre>
 struct SPHERE {
     ///中心点の座標
-    Vector3 m_Center;
+    Vec3 m_Center;
     ///半径
     float m_Radius;
     //以下略
@@ -46,8 +46,8 @@ struct SPHERE {
 <div class="box1">
 <pre>
     static bool SPHERE_SPHERE(const SPHERE& sp1, const SPHERE& sp2){
-        Vector3 d = sp1.m_Center - sp2.m_Center;
-        float dist2 = Vector3EX::Dot(d,d);
+        bsm::Vec3 d = sp1.m_Center - sp2.m_Center;
+        float dist2 = bsm::dot(d,d);
         float radiussum = sp1.m_Radius + sp2.m_Radius;
         return dist2 &lt;= radiussum * radiussum;
     }
@@ -60,11 +60,11 @@ struct SPHERE {
 <pre>
     struct OBB{
         // 中心点の座標
-        Vector3 m_Center;
+        bsm::Vec3 m_Center;
         // XYZ の各座標軸の傾きを表す方向ベクトル
-        Vector3 m_Rot[3];
+        bsm::Vec3 m_Rot[3];
         // OBB の各座標軸に沿った長さの半分（中心点から面までの長さ）
-        Vector3 m_Size;
+        bsm::Vec3 m_Size;
         //以下略
     };
 </pre>
@@ -82,13 +82,13 @@ struct SPHERE {
 @return なし
 */
 //--------------------------------------------------------------------------------------
-static void ClosestPtPointOBB(const Vector3& point, const OBB& obb, Vector3& retvec){
-    Vector3 d = point - obb.m_Center;
+static void ClosestPtPointOBB(const bsm::Vec3& point, const OBB& obb, bsm::Vec3& retvec){
+    bsm::Vec3 d = point - obb.m_Center;
     retvec = obb.m_Center;
     float dist;
     for(int i = 0; i &lt; 3; i++)
     {
-        dist = Vector3EX::Dot(d,obb.m_Rot[i]);
+        dist = bsm::dot(d,obb.m_Rot[i]);
         if(dist > obb.m_Size[i])
         {
             dist = obb.m_Size[i];
@@ -109,15 +109,15 @@ static void ClosestPtPointOBB(const Vector3& point, const OBB& obb, Vector3& ret
 @return 衝突していればtrue
 */
 //--------------------------------------------------------------------------------------
-static bool SPHERE_OBB(const SPHERE& sp, const OBB& obb, Vector3& retvec){
+static bool SPHERE_OBB(const SPHERE& sp, const OBB& obb, bsm::Vec3& retvec){
     ClosestPtPointOBB(sp.m_Center,obb,retvec);
-    Vector3 v = retvec - sp.m_Center;
-    return Vector3EX::Dot(v,v) &lt;= sp.m_Radius * sp.m_Radius;
+    bsm::Vec3 v = retvec - sp.m_Center;
+    return bsm::dot(v,v) &lt;= sp.m_Radius * sp.m_Radius;
 }
 </pre>
 </div>
 　このように<b>SPHERE_OBB()関数</b>は<b>ClosestPtPointOBB()関数</b>を呼び出します。この関数は<b>点とOBBの最近接点</b>を導く関数です。<b>最近接点</b>というのは<b>OBB上の点と一番近い位置</b>です<br />
-　<b>SPHERE_OBB()関数</b>は3つ目のパラメータ<b>Vector3& retvec</b>に<b>最近接点</b>を返します。ここでは<b>SPHEREとOBBの最近接点</b>ということになります。<br />
+　<b>SPHERE_OBB()関数</b>は3つ目のパラメータ<b>bsm::Vec3& retvec</b>に<b>最近接点</b>を返します。ここでは<b>SPHEREとOBBの最近接点</b>ということになります。<br />
 　この<b>最近接点</b>は、衝突後の処理を実装するのに非常に便利な値となります。<br />
 <br />
 　まえに紹介した<b>SPHERE_SPHERE()関数</b>や<b>SPHERE_OBB()関数</b>などは、<b>BaseCrossのライブラリ中</b>の<b>TransHelper.h</b>に記述されています（HitTest構造体のスタティック関数）ので、これらの関数まで新規に記述する必要はありません。<br />
@@ -136,7 +136,7 @@ void Player::OnUpdate2() {
     //Rigidbodyを取り出す
     auto PtrRigid = GetComponent&lt;Rigidbody>();
     //現在の速度を取り出す
-    Vector3 Velo = PtrRigid->GetVelocity();
+    Vec3 Velo = PtrRigid->GetVelocity();
     //ステージ上のオブジェクトの配列を取得
     auto& ObjectVec = GetStage()->GetGameObjectVec();
     for (auto& v : ObjectVec) {
@@ -144,20 +144,20 @@ void Player::OnUpdate2() {
             //FixedBoxというタグを持っているオブジェクトを検証
             auto PtrBoxTrans = v->GetComponent&lt;Transform>();
             //ボックスのワールド行列を使ってOBBを作成
-            OBB obb(Vector3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
+            OBB obb(Vec3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
             //最近接点の変数
-            Vector3 Ret;
+            Vec3 Ret;
             if (HitTest::SPHERE_OBB(sp, obb, Ret)) {
                 //衝突した(最近接点から法線を計算)
-                Vector3 Normal = sp.m_Center - Ret;
+                Vec3 Normal = sp.m_Center - Ret;
                 //正規化
-                Normal.Normalize();
+                Normal.normalize();
                 //反発を計算
-                Velo = Vector3EX::Reflect(Velo, Normal);
+                Velo = XMVector3Reflect(Velo, Normal);
                 //反発した速度を設定
                 PtrRigid->SetVelocity(Velo);
                 //ボックスの領域からプレイヤーを追い出す
-                Vector3 NewPos = Ret + Normal * 0.125f;
+                Vec3 NewPos = Ret + Normal * 0.125f;
                 PtrTrans->ResetPosition(NewPos);
 
             }
@@ -196,39 +196,39 @@ void Player::OnUpdate2() {
 　それを繰り返していくと、<b>判別する球の半径</b>が限りなく小さくなります。ある一定の大きさ以下になったら、その場所を<b>衝突点</b>として、<b>衝突点が導かれるまでの分割数</b>を求め、それを時間に換算します。<b>1ターンは約60分の1秒</b>ですから、例えば、<b>480分の1秒後に衝突している</b>のが算出されるわけです。正確には<b>衝突する直前</b>を算出するわけですが、その関数は以下のようになります。以下は<b>球対ボックス（OBB）</b>の判定です。
 <div class="box1">
 <pre>
-    //--------------------------------------------------------------------------------------
-    /*!
-    @brief  Sphereと動かないObbの衝突判定
-    @param[in]  SrcSp   Srcの球
-    @param[in]  SrcVelocity ソース速度
-    @param[in]  DestObb DestのOBB
-    @param[in]  StartTime   開始時間
-    @param[in]  EndTime 終了時間
-    @param[out] HitTime ヒット時間
-    @return 衝突していればtrue
-    */
-    //--------------------------------------------------------------------------------------
-    static bool CollisionTestSphereObb(const SPHERE& SrcSp, const Vector3& SrcVelocity,
-        const OBB& DestObb,
-        float StartTime, float EndTime, float& HitTime){
-        const float m_EPSILON = 0.005f;
-        SPHERE SrcSp2;
-        float mid = (StartTime + EndTime) * 0.5f;
-        SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
-        SrcSp2.m_Radius = (mid - StartTime) * SrcVelocity.Length() + SrcSp.m_Radius;
-        Vector3 RetVec;
-        if (!HitTest::SPHERE_OBB(SrcSp2, DestObb, RetVec)){
-            return false;
-        }
-        if (EndTime - StartTime &lt; m_EPSILON){
-            HitTime = StartTime;
-            return true;
-        }
-        if (CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, StartTime, mid, HitTime)){
-            return true;
-        }
-        return CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, mid, EndTime, HitTime);
+//--------------------------------------------------------------------------------------
+/*!
+@brief  Sphereと動かないObbの衝突判定
+@param[in]  SrcSp   Srcの球
+@param[in]  SrcVelocity ソース速度
+@param[in]  DestObb DestのOBB
+@param[in]  StartTime   開始時間
+@param[in]  EndTime 終了時間
+@param[out] HitTime ヒット時間
+@return 衝突していればtrue
+*/
+//--------------------------------------------------------------------------------------
+static bool CollisionTestSphereObb(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
+    const OBB& DestObb,
+    float StartTime, float EndTime, float& HitTime){
+    const float m_EPSILON = 0.005f;
+    SPHERE SrcSp2;
+    float mid = (StartTime + EndTime) * 0.5f;
+    SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
+    SrcSp2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcSp.m_Radius;
+    bsm::Vec3 RetVec;
+    if (!HitTest::SPHERE_OBB(SrcSp2, DestObb, RetVec)){
+        return false;
     }
+    if (EndTime - StartTime &lt; m_EPSILON){
+        HitTime = StartTime;
+        return true;
+    }
+    if (CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, StartTime, mid, HitTime)){
+        return true;
+    }
+    return CollisionTestSphereObb(SrcSp, SrcVelocity, DestObb, mid, EndTime, HitTime);
+}
 </pre>
 </div>
 　これも<b>HitTest構造体のスタティック関数</b>として定義されてますが、移動も含めた大きな球体を作成し、もし衝突していたら、大きな球体を半分にして判別しているのがわかります。<br />
@@ -246,7 +246,7 @@ void AttackBall::OnUpdate2() {
     //Rigidbodyを取り出す
     auto PtrRigid = GetComponent&lt;Rigidbody>();
     //現在の速度を取り出す
-    Vector3 Velo = PtrRigid->GetVelocity();
+    Vec3 Velo = PtrRigid->GetVelocity();
     //前回のターンからの時間
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     //ステージ上のオブジェクトの配列を取得
@@ -256,9 +256,9 @@ void AttackBall::OnUpdate2() {
             //FixedBoxというタグを持っているオブジェクトを検証
             auto PtrBoxTrans = v->GetComponent&lt;Transform>();
             //ボックスのワールド行列を使ってOBBを作成
-            OBB obb(Vector3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
-            <span class="red">float HitTime;
-            if (HitTest::CollisionTestSphereObb(sp, Velo, obb, 0, ElapsedTime, HitTime)) {</span>
+            OBB obb(Vec3(1.0f, 1.0f, 1.0f), PtrBoxTrans->GetWorldMatrix());
+            float HitTime;
+            if (HitTest::CollisionTestSphereObb(sp, Velo, obb, 0, ElapsedTime, HitTime)) {
                 //ターン時間内のどこかで衝突した
                 //ヒットする直前まで戻る
                 //1ターン前の位置を取得
@@ -266,27 +266,32 @@ void AttackBall::OnUpdate2() {
                 //ヒット位置の計算
                 auto HitPos = BeforePos + Velo * HitTime;
                 sp.m_Center = HitPos;
-                Vector3 Ret;
+                Vec3 Ret;
                 //最近接点を得る
                 HitTest::SPHERE_OBB(sp, obb, Ret);
                 //衝突した(最近接点から法線を計算)
-                Vector3 Normal = sp.m_Center - Ret;
+                Vec3 Normal = sp.m_Center - Ret;
                 //正規化
-                Normal.Normalize();
+                Normal.normalize();
                 //ボックスの領域からプレイヤーを追い出す
                 //HitPosを新しい位置にすると、少しずれるので以下で求める
-                Vector3 NewPos = Ret + Normal * 0.05f;
+                Vec3 NewPos = Ret + Normal * 0.05f;
                 float OtherTime = ElapsedTime - HitTime;
-                //衝突後の余った時間を<b>スライド</b>処理
+                //衝突後の余った時間をスライド処理
                 if (OtherTime > 0.0f) {
                     //HitTime以降の残った時間はスライドさせる
-                    Vector3 SledeVelo = Vector3EX::Slide(Velo, Normal);
+                    //thisと法線から直行線の長さ（内積で求める）
+                    float Len = dot(Velo, Normal);
+                    //その長さに伸ばす
+                    Vec3 Contact = Normal * Len;
+                    //スライドする方向は現在のベクトルから引き算
+                    Vec3 SledeVelo = Velo - Contact;
                     NewPos += SledeVelo * OtherTime;
                 }
                 //新しい位置を設定（ResetPositionを使用）
                 PtrTrans->ResetPosition(NewPos);
                 //反発を計算
-                Velo = Vector3EX::Reflect(Velo, Normal);
+                Velo = XMVector3Reflect(Velo, Normal);
                 //反発した速度を設定
                 PtrRigid->SetVelocity(Velo);
             }
@@ -326,12 +331,12 @@ void AttackBall::OnUpdate2() {
 <div class="box1">
 <pre>
     //衝突した(最近接点から法線を計算)
-    Vector3 Normal = sp.m_Center - Ret;
+    Vec3 Normal = sp.m_Center - Ret;
     //正規化
-    Normal.Normalize();
+    Normal.normalize();
     //ボックスの領域からプレイヤーを追い出す
     //HitPosを新しい位置にすると、少しずれるので以下で求める
-    Vector3 NewPos = Ret + Normal * 0.05f;
+    Vec3 NewPos = Ret + Normal * 0.05f;
 </pre>
 </div>
 　で<b>NewPos</b>を新しい位置に仮設定します。<br />
@@ -357,13 +362,13 @@ void AttackBall::OnUpdate2() {
 　そしてベクトルADに変換します
 <div class="box1">
 <pre>
-    Vector3 ベクトルAD = 正規化された基準面の法線 * ADの長さ;
+    Vec3 ベクトルAD = 正規化された基準面の法線 * ADの長さ;
 </pre>
 </div>
 　最後に、ベクトルACを求めます
 <div class="box1">
 <pre>
-    Vector3 ベクトルAC = ベクトルAD - ベクトルAO;
+    Vec3 ベクトルAC = ベクトルAD - ベクトルAO;
 </pre>
 </div>
 　このように<b>ベクトルの引き算</b>を使います。
@@ -378,28 +383,20 @@ void AttackBall::OnUpdate2() {
 <div class="box1">
 <pre>
     float OtherTime = ElapsedTime - HitTime;
-    //衝突後の余った時間を<b>スライド</b>処理
+    //衝突後の余った時間をスライド処理
     if (OtherTime > 0.0f) {
         //HitTime以降の残った時間はスライドさせる
-        Vector3 SledeVelo = Vector3EX::Slide(Velo, Normal);
+        //thisと法線から直行線の長さ（内積で求める）
+        float Len = dot(Velo, Normal);
+        //その長さに伸ばす
+        Vec3 Contact = Normal * Len;
+        //スライドする方向は現在のベクトルから引き算
+        Vec3 SledeVelo = Velo - Contact;
         NewPos += SledeVelo * OtherTime;
     }
 </pre>
 </div>
-　<b>OtherTime</b>は<b>衝突後の時間</b>です。これが0以上であれば、スライドさせます。<b>Vector3EX::Slide()関数</b>の中身は
-<div class="box1">
-<pre>
-inline  Vector3 Slide(const Vector3& Vec, const Vector3& Norm) {
-    //thisと法線から直行線の長さ（内積で求める）
-    float Len = Dot(Vec,Norm);
-    //その長さに伸ばす
-    Vector3 Contact = Norm * Len;
-    //スライドする方向は現在のベクトルから引き算
-    return (Vec - Contact);
-}
-</pre>
-</div>
-　となっています。上記で説明したアルゴリズムです。このようにして求めた値を<b>NewPos</b>に反映させます。<br />
+　上記で説明したアルゴリズムです。このようにして求めた値を<b>NewPos</b>に反映させます。<br />
 　最後に、
 <div class="box1">
 <pre>
@@ -412,7 +409,7 @@ inline  Vector3 Slide(const Vector3& Vec, const Vector3& Norm) {
 <div class="box1">
 <pre>
     //反発を計算
-    Velo = Vector3EX::Reflect(Velo, Normal);
+    Velo = XMVector3Reflect(Velo, Normal);
     //反発した速度を設定
     PtrRigid->SetVelocity(Velo);
 </pre>

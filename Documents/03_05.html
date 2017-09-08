@@ -79,8 +79,7 @@ void Player::OnCreate() {
 
     //CollisionSphere衝突判定を付ける
     auto PtrColl = AddComponent&lt;CollisionSphere>();
-    //何かに乗ってないときは反発
-    PtrColl->SetIsHitAction(IsHitAction::AutoOnParentRepel);
+    PtrColl->SetIsHitAction(IsHitAction::Auto);
 
 //中略
 }
