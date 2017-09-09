@@ -9,9 +9,9 @@
 namespace basecross{
 	struct BallConstantBuffer
 	{
-		XMMATRIX m_World;
-		XMMATRIX m_View;
-		XMMATRIX m_Proj;
+		Mat4x4 m_World;
+		Mat4x4 m_View;
+		Mat4x4 m_Proj;
 		Vec3  m_LightDir;
 		float m_Explode;
 		BallConstantBuffer() {

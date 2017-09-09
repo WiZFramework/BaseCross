@@ -10,9 +10,9 @@ namespace basecross{
 	//カスタムシャドウマップ用コンスタントバッファ構造体
 	struct CustomShadowmapConstantBuffer
 	{
-		XMMATRIX mWorld[3];
-		XMMATRIX mView;
-		XMMATRIX mProj;
+		Mat4x4 mWorld[3];
+		Mat4x4 mView;
+		Mat4x4 mProj;
 		CustomShadowmapConstantBuffer() {
 			memset(this, 0, sizeof(CustomShadowmapConstantBuffer));
 		};

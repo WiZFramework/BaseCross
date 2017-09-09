@@ -55,24 +55,24 @@ void PtSphere::OnCreate() {
 　モデルは通常<b>PNT頂点</b>で作成します。これを<b>リアルなライティング</b>にするためには、描画コンポーネントを以下のようにします。以下は<b>スタティックモデル</b>の描画（右から2つ）ですが
 <div class="box1">
 <pre>
+//初期化
 void StaticChara::OnCreate() {
 
-    //中略
+//中略
 
     if (m_TamgentUse) {
-        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTnTStaticModelDraw</span>>();
+        auto PtrDraw = AddComponent&lt;BcPNTnTStaticModelDraw>();
         PtrDraw->SetFogEnabled(true);
         PtrDraw->SetMeshResource(L"MODEL_MESH_WITH_TAN");
         PtrDraw->SetNormalMapTextureResource(L"MODEL_NORMAL_TX");
         PtrDraw->SetMeshToTransformMatrix(SpanMat);
     }
     else {
-        auto PtrDraw = AddComponent&lt;<span class="red">BcPNTStaticModelDraw</span>>();
+        auto PtrDraw = AddComponent&lt;BcPNTStaticModelDraw>();
         PtrDraw->SetFogEnabled(true);
         PtrDraw->SetMeshResource(L"MODEL_MESH");
         PtrDraw->SetMeshToTransformMatrix(SpanMat);
     }
-
 }
 </pre>
 </div>
@@ -80,8 +80,10 @@ void StaticChara::OnCreate() {
 　以下は<b>ボーンモデル</b>の処理です。
 <div class="box1">
 <pre>
+//初期化
 void BoneChara::OnCreate() {
     //中略
+
     if (m_TamgentUse) {
         //描画コンポーネントの設定
         auto PtrDraw = AddComponent&lt;<span class="red">BcPNTnTBoneModelDraw</span>>();

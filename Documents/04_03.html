@@ -79,9 +79,9 @@
 <pre>
 void PcSphere::OnCreate() {
     auto PtrTrans = GetComponent&lt;Transform>();
-    PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-    Quaternion Qt;
-    Qt.Identity();
+    PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+    Quat Qt;
+    Qt.identity();
     PtrTrans->SetQuaternion(Qt);
     PtrTrans->SetPosition(m_StartPos);
 
@@ -94,7 +94,7 @@ void PcSphere::OnCreate() {
     for (size_t i = 0; i &lt; vertices.size(); i++) {
         VertexPositionColor new_v;
         new_v.position = vertices[i].position;
-        new_v.color = Color4(
+        new_v.color = Col4(
             new_v.position.x * 2.0f, 
             new_v.position.y * 2.0f, 
             new_v.position.z * 2.0f, 
@@ -219,27 +219,27 @@ void PcSphere::OnUpdate() {
 　以下は、<b>スペキュラー色</b>をテクスチャ付きの球体に設定した例です。右から2番目のオブジェクトです。
 <div class="box1">
 <pre>
-    //初期化
-    void PntSpSphere::OnCreate() {
-        auto PtrTrans = GetComponent&lt;Transform>();
-        PtrTrans->SetScale(Vector3(1.0f, 1.0f, 1.0f));
-        Quaternion Qt;
-        Qt.Identity();
-        PtrTrans->SetQuaternion(Qt);
-        PtrTrans->SetPosition(m_StartPos);
+//初期化
+void PntSpSphere::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+    Quat Qt;
+    Qt.identity();
+    PtrTrans->SetQuaternion(Qt);
+    PtrTrans->SetPosition(m_StartPos);
 
-        //影をつける
-        auto ShadowPtr = AddComponent&lt;Shadowmap>();
-        ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
-        //描画コンポーネント
-        auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
-        <span class="red">PtrDraw->SetSpecular(Color4(1.0f, 1.0f, 1.0f, 1.0f));</span>
-        PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-        if (m_TextureUse) {
-            PtrDraw->SetTextureResource(L"SKY_TX");
-        }
+    //描画コンポーネント
+    auto PtrDraw = AddComponent&lt;PNTStaticDraw>();
+    <span class="red">PtrDraw->SetSpecular(Col4(1.0f, 1.0f, 1.0f, 1.0f));</span>
+    PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    if (m_TextureUse) {
+        PtrDraw->SetTextureResource(L"SKY_TX");
     }
+}
 </pre>
 </div>
 　赤くなっているところがスペキュラーの設定です。<br />
@@ -281,11 +281,12 @@ void BoneChara::OnCreate() {
     Ptr->SetRotation(0.0f, 0.0f, 0.0f);
     Ptr->SetPosition(m_StartPos);
 
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(0.0f, 0.0f, 0.0f)
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f)
     );
 
     //影をつける（シャドウマップを描画する）
@@ -328,6 +329,7 @@ void BoneChara::OnUpdate() {
 　以下は<b>スタティックモデル</b>の作成です。<b>StaticChara::OnCreate()関数</b>に記述します。
 <div class="box1">
 <pre>
+//初期化
 void StaticChara::OnCreate() {
     //初期位置などの設定
     auto Ptr = AddComponent&lt;Transform>();
@@ -335,11 +337,12 @@ void StaticChara::OnCreate() {
     Ptr->SetRotation(0.0f, 0.0f, 0.0f);
     Ptr->SetPosition(m_StartPos);
 
-    Matrix4X4 SpanMat; // モデルとトランスフォームの間の差分行列
-    SpanMat.DefTransformation(
-        Vector3(1.0f, 1.0f, 1.0f),
-        Vector3(0.0f, 0.0f, 0.0f),
-        Vector3(0.0f, 0.0f, 0.0f)
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f)
     );
 
     //影をつける（シャドウマップを描画する）
@@ -351,6 +354,8 @@ void StaticChara::OnCreate() {
     auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
     PtrDraw->SetMeshResource(L"MODEL_MESH");
     PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+
 }
 </pre>
 </div>

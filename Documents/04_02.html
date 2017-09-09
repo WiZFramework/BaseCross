@@ -40,7 +40,7 @@ void GameStage::CreateViewLight() {
 }
 </pre>
 </div>
-　カメラはデフォルトで<b>カメラ位置(Eye)</b>が<b>Vector3(0, 0.0f, -20.0f)</b>に、<b>注視点(At)</b>が<b>Vector3(0.0f, 0.0f, 0.0f)</b>に設定されます。このサンプルは<b>２D描画しか行わない</b>のでカメラは必要ないのですが、仕様上、何か設定する必要があります。デフォルトで上記のカメラを作成するので、ここでは何も設定する必要がありません。続く
+　カメラはデフォルトで<b>カメラ位置(Eye)</b>が<b>Vec3(0, 0.0f, -20.0f)</b>に、<b>注視点(At)</b>が<b>Vec3(0.0f, 0.0f, 0.0f)</b>に設定されます。このサンプルは<b>２D描画しか行わない</b>のでカメラは必要ないのですが、仕様上、何か設定する必要があります。デフォルトで上記のカメラを作成するので、ここでは何も設定する必要がありません。続く
 <div class="box1">
 <pre>
     //シャドウマップは使用しない
@@ -61,8 +61,8 @@ void GameStage::CreateViewLight() {
 //--------------------------------------------------------------------------------------
 class TraceSprite : public GameObject {
     bool m_Trace;
-    Vector2 m_StartScale;
-    Vector3 m_StartPos;
+    Vec2 m_StartScale;
+    Vec3 m_StartPos;
     float m_TotalTime;
     //バックアップ頂点データ
     vector&lt;VertexPositionColor> m_BackupVertices;
@@ -77,7 +77,7 @@ public:
     */
     //--------------------------------------------------------------------------------------
     TraceSprite(const shared_ptr&lt;Stage>& StagePtr, bool Trace,
-        const Vector2& StartScale, const Vector3& StartPos);
+        const Vec2& StartScale, const Vec3& StartPos);
     //--------------------------------------------------------------------------------------
     /*!
     @brief デストラクタ
@@ -105,8 +105,11 @@ public:
 　それでは、コンストラクタから実体を見てみます。<b>Character.cpp</b>にある<b>TraceSprite::TraceSprite()関数</b>です。
 <div class="box1">
 <pre>
+//--------------------------------------------------------------------------------------
+/// 半透明のスプライト
+//--------------------------------------------------------------------------------------
 TraceSprite::TraceSprite(const shared_ptr&lt;Stage>& StagePtr, bool Trace,
-    const Vector2& StartScale, const Vector3& StartPos) :
+    const Vec2& StartScale, const Vec3& StartPos) :
     GameObject(StagePtr),
     m_Trace(Trace),
     m_StartScale(StartScale),
@@ -116,7 +119,7 @@ TraceSprite::TraceSprite(const shared_ptr&lt;Stage>& StagePtr, bool Trace,
 </pre>
 </div>
 　このように<b>第1引数</b>は親のコンストラクタに直接わたし、残りの引数はメンバの初期化に使用しています。<br />
-　<b>StartScale</b>や<b>StartPos</b>は初期の大きさと初期位置です。大きさは<b>Vector2</b>ですが<b>位置</b>は<b>Vector3</b>なのを注意しましょう。<br />
+　<b>StartScale</b>や<b>StartPos</b>は初期の大きさと初期位置です。大きさは<b>Vec2</b>ですが<b>位置</b>は<b>Vec3</b>なのを注意しましょう。<br />
 　２Ｄスプライトにおける、<b>Ｚ位置</b>というのは、どちらがどちらより手前に描画されるか、を設定します。ただし、0.0fから1.0fの間を指定します。この値は描画直前にZ順番ソートされます。Zが大きいほうが奥に行きます。同じ値に設定した場合は、オブジェクトの配置した順番になります。<br />
 　続いて<b>TraceSprite::OnCreate()関数</b>ですが、ここでは<b>頂点</b>を作成して、それらを<b>描画コンポーネント</b>に設定します。
 <div class="box1">
@@ -125,20 +128,20 @@ void TraceSprite::OnCreate() {
     float HelfSize = 0.5f;
     <span class="red">//頂点配列
     m_BackupVertices = {
-        { VertexPositionColor(Vector3(-HelfSize, HelfSize, 0),Color4(1.0f,0.0f,0.0f,0.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 0.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 0.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 0, 0.0f)) },
-    };
+        { VertexPositionColor(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,0.0f,0.0f,0.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 0.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 0.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 0, 0.0f)) },
+    };</span>
     //インデックス配列
-    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };</span>
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
     SetAlphaActive(m_Trace);
     auto PtrTransform = GetComponent&lt;Transform>();
     PtrTransform->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
     PtrTransform->SetRotation(0, 0, 0);
     PtrTransform->SetPosition(m_StartPos);
-    <span class="red">//頂点とインデックスを指定してスプライト作成
-    AddComponent&lt;PCSpriteDraw>(m_BackupVertices, indices);</span>
+    //頂点とインデックスを指定してスプライト作成
+    AddComponent&lt;PCSpriteDraw>(m_BackupVertices, indices);
 }
 </pre>
 </div>
@@ -164,7 +167,7 @@ void TraceSprite::OnUpdate() {
     }
     <span class="red">vector&lt;VertexPositionColor> NewVertices;
     for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
-        Color4 col = m_BackupVertices[i].color;
+        Col4 col = m_BackupVertices[i].color;
         col.w = sin(m_TotalTime);
         auto v = VertexPositionColor(
             m_BackupVertices[i].position,
@@ -224,7 +227,7 @@ void ScoreSprite::OnUpdate() {
         UINT Base = (UINT)pow(10, i);
         Num = ((UINT)m_Score) % Base;
         Num = Num / (Base / 10);
-        Vector2 UV0 = m_BackupVertices[VerNum].textureCoordinate;
+        Vec2 UV0 = m_BackupVertices[VerNum].textureCoordinate;
         UV0.x = (float)Num / 10.0f;
         auto v = VertexPositionTexture(
             m_BackupVertices[VerNum].position,
@@ -232,7 +235,7 @@ void ScoreSprite::OnUpdate() {
         );
         NewVertices.push_back(v);
 
-        Vector2 UV1 = m_BackupVertices[VerNum + 1].textureCoordinate;
+        Vec2 UV1 = m_BackupVertices[VerNum + 1].textureCoordinate;
         UV1.x = UV0.x + 0.1f;
         v = VertexPositionTexture(
             m_BackupVertices[VerNum + 1].position,
@@ -240,7 +243,7 @@ void ScoreSprite::OnUpdate() {
         );
         NewVertices.push_back(v);
 
-        Vector2 UV2 = m_BackupVertices[VerNum + 2].textureCoordinate;
+        Vec2 UV2 = m_BackupVertices[VerNum + 2].textureCoordinate;
         UV2.x = UV0.x;
 
         v = VertexPositionTexture(
@@ -249,7 +252,7 @@ void ScoreSprite::OnUpdate() {
         );
         NewVertices.push_back(v);
 
-        Vector2 UV3 = m_BackupVertices[VerNum + 3].textureCoordinate;
+        Vec2 UV3 = m_BackupVertices[VerNum + 3].textureCoordinate;
         UV3.x = UV0.x + 0.1f;
 
         v = VertexPositionTexture(
@@ -293,7 +296,7 @@ void ScrollSprite::OnUpdate() {
     }
     vector&lt;VertexPositionTexture> NewVertices;
     <span class="red">for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
-        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        Vec2 UV = m_BackupVertices[i].textureCoordinate;
         if (UV.x == 0.0f) {
             UV.x = m_TotalTime;
         }

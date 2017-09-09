@@ -204,9 +204,9 @@ void main(
 //カスタムシャドウマップ用コンスタントバッファ構造体
 struct CustomShadowmapConstantBuffer
 {
-    XMMATRIX mWorld[3];
-    XMMATRIX mView;
-    XMMATRIX mProj;
+    Mat4x4 mWorld[3];
+    Mat4x4 mView;
+    Mat4x4 mProj;
     CustomShadowmapConstantBuffer() {
         memset(this, 0, sizeof(CustomShadowmapConstantBuffer));
     };
@@ -218,11 +218,11 @@ DECLARE_DX11_VERTEX_SHADER(VSCustomShadowmap, VertexPositionNormalColor)
 //カスタム描画コンスタントバッファ構造体
 struct CustomDrawConstantBuffer
 {
-    Matrix4X4 World[3];
-    Matrix4X4 View;
-    Matrix4X4 Projection;
-    Vector4 LightDir;
-    Vector4 Param;  //汎用パラメータ
+    Mat4x4 World[3];
+    Mat4x4 View;
+    Mat4x4 Projection;
+    Vec4 LightDir;
+    Vec4 Param; //汎用パラメータ
     CustomDrawConstantBuffer() {
         memset(this, 0, sizeof(CustomDrawConstantBuffer));
     };
@@ -328,39 +328,38 @@ void CustomPNCStaticDraw::OnDraw() {
     //カメラを得る
     auto PtrCamera = PtrGameObject->OnGetDrawCamera();
     //カメラの取得
-    Matrix4X4 View, Proj, WorldViewProj;
+    Mat4x4 View, Proj, WorldViewProj;
     View = PtrCamera->GetViewMatrix();
     Proj = PtrCamera->GetProjMatrix();
 
     //コンスタントバッファの設定
     CustomDrawConstantBuffer cb1;
     //行列の設定(転置する)
-    cb1.World[0] = Matrix4X4EX::Transpose(PtrT->GetWorldMatrix());
-    Matrix4X4 Left = Matrix4X4EX::Translation(-5.0f, 0, 0);
+    cb1.World[0] = transpose(PtrT->GetWorldMatrix());
+    Mat4x4 Left;
+    Left.translation(Vec3(-5.0f, 0, 0));
     Left = PtrT->GetWorldMatrix() * Left;
-    cb1.World[1] = Matrix4X4EX::Transpose(Left);
-    Matrix4X4 Right = Matrix4X4EX::Translation(5.0f, 0, 0);
+    cb1.World[1] = transpose(Left);
+    Mat4x4 Right;
+    Right.translation(Vec3(5.0f, 0, 0));
     Right = PtrT->GetWorldMatrix() * Right;
-    cb1.World[2] = Matrix4X4EX::Transpose(Right);
-    cb1.View = Matrix4X4EX::Transpose(View);
-    cb1.Projection = Matrix4X4EX::Transpose(Proj);
+    cb1.World[2] = transpose(Right);
+    cb1.View = transpose(View);
+    cb1.Projection = transpose(Proj);
     //ライトの設定
     auto PtrLight = PtrGameObject->OnGetDrawLight();
     cb1.LightDir = PtrLight.m_Directional;
     cb1.LightDir.w = 1.0f;
 
     //コンスタントバッファの更新
-    pID3D11DeviceContext->UpdateSubresource(CBCustomDraw::GetPtr()->GetBuffer(),
-         0, nullptr, &cb1, 0, 0);
+    pID3D11DeviceContext->UpdateSubresource(CBCustomDraw::GetPtr()->GetBuffer(), 0, nullptr, &cb1, 0, 0);
     //ストライドとオフセット
     UINT stride = MeshRes->GetNumStride();
     UINT offset = 0;
     //頂点バッファの設定
-    pID3D11DeviceContext->IASetVertexBuffers(0, 1, 
-        MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    pID3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
     //インデックスバッファのセット
-    pID3D11DeviceContext->IASetIndexBuffer(
-        MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+    pID3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
     //描画方法（3角形）
     pID3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     //ステータスのポインタ
@@ -415,7 +414,7 @@ void CustomDrawOctahedron::OnCreate() {
         VertexPositionNormalColor new_v;
         new_v.position = vertices[i].position;
         new_v.normal = vertices[i].normal;
-        new_v.color = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+        new_v.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
         m_BackupVertices.push_back(new_v);
     }
     <span class="red">auto PtrDraw = AddComponent&lt;CustomPNCStaticDraw>();
