@@ -84,19 +84,19 @@ void WrappedSprite::OnCreate() {
     float HelfSize = 0.5f;
     //頂点配列(縦横10個ずつ表示)
     m_BackupVertices = {
-        { VertexPositionColorTexture(Vector3(-HelfSize, HelfSize, 0),
-            Color4(1.0f,0,0,1.0f), Vector2(0.0f, 0.0f)) },
-        { VertexPositionColorTexture(Vector3(HelfSize, HelfSize, 0), 
-            Color4(0, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, 0.0f)) },
-        { VertexPositionColorTexture(Vector3(-HelfSize, -HelfSize, 0), 
-            Color4(0, 0, 1.0f, 1.0f), Vector2(0.0f, (float)m_YWrap)) },
-        { VertexPositionColorTexture(Vector3(HelfSize, -HelfSize, 0), 
-            Color4(1.0f, 1.0f, 0, 1.0f), Vector2((float)m_XWrap, (float)m_YWrap)) },
+        { VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),
+            Col4(1.0f,0,0,1.0f), Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), 
+            Col4(0, 1.0f, 0, 1.0f), Vec2((float)m_XWrap, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), 
+            Col4(0, 0, 1.0f, 1.0f), Vec2(0.0f, (float)m_YWrap)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), 
+            Col4(1.0f, 1.0f, 0, 1.0f), Vec2((float)m_XWrap, (float)m_YWrap)) },
     };
     //インデックス配列
     vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
     //メッシュの作成（変更できる）
-    m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, <span class="red">true</span>);
+    m_SquareMesh = MeshResource::CreateMeshResource(m_BackupVertices, indices, true);
     //テクスチャの作成
     m_TextureResource = TextureResource::CreateTextureResource(m_TextureFileName, L"WIC");
 }
@@ -157,7 +157,7 @@ void WrappedSprite::UpdateVertex(float ElapsedTime) {
     <span class="red">VertexPositionColorTexture* vertices
         = (VertexPositionColorTexture*)mappedBuffer.pData;</span>
     for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
-        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        Vec2 UV = m_BackupVertices[i].textureCoordinate;
         if (UV.x == 0.0f) {
             UV.x = m_TotalTime;
         }
@@ -169,11 +169,9 @@ void WrappedSprite::UpdateVertex(float ElapsedTime) {
             m_BackupVertices[i].color,
             UV
         );
-
     }
     //アンマップ
     pD3D11DeviceContext->Unmap(m_SquareMesh->GetVertexBuffer().Get(), 0);
-
 }
 </pre>
 </div>
@@ -197,7 +195,7 @@ void WrappedSprite::UpdateVertex(float ElapsedTime) {
     <span class="red">VertexPositionColorTexture* vertices
         = (VertexPositionColorTexture*)mappedBuffer.pData;</span>
     for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
-        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        Vec2 UV = m_BackupVertices[i].textureCoordinate;
         if (UV.x == 0.0f) {
             UV.x = m_TotalTime;
         }
@@ -260,7 +258,7 @@ void WrappedSprite::UpdateVertex(float ElapsedTime) {
     //--------------------------------------------------------------------------------------
     void AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes,
         const shared_ptr&lt;TextureResource>& TextureRes,
-        const Matrix4X4& WorldMat,
+        const Mat4x4& WorldMat,
         bool Trace,bool Wrap = false);
 </pre>
 </div>
@@ -271,7 +269,7 @@ void WrappedSprite::UpdateVertex(float ElapsedTime) {
 <pre>
 void PNTDrawObject::AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes,
     const shared_ptr&lt;TextureResource>& TextureRes,
-    const Matrix4X4& WorldMat,
+    const Mat4x4& WorldMat,
     bool Trace, bool Wrap) {
     DrawObject Obj;
     Obj.m_MeshRes = MeshRes;
@@ -385,15 +383,14 @@ void PNTDrawObject::OnUpdate() {
 void SquareObject::CreateBuffers(float WrapX, float WrapY) {
     float HelfSize = 0.5f;
     vector&lt;VertexPositionNormalTexture> vertices = {
-        { VertexPositionNormalTexture(Vector3(-HelfSize, HelfSize, 0), 
-                Vector3(0, 0, -1.0f), Vector2(0.0f, 0.0f)) },
-        { VertexPositionNormalTexture(Vector3(HelfSize, HelfSize, 0), 
-                Vector3(0, 0, -1.0f), Vector2(WrapX, 0.0f)) },
-        { VertexPositionNormalTexture(Vector3(-HelfSize, -HelfSize, 0), 
-                Vector3(0, 0, -1.0f), Vector2(0.0f, WrapY)) },
-        { VertexPositionNormalTexture(Vector3(HelfSize, -HelfSize, 0), 
-            Vector3(0, 0, -1.0f), Vector2(WrapX, WrapY)) },
-
+        { VertexPositionNormalTexture(Vec3(-HelfSize, HelfSize, 0), 
+                Vec3(0, 0, -1.0f), Vec2(0.0f, 0.0f)) },
+        { VertexPositionNormalTexture(Vec3(HelfSize, HelfSize, 0), 
+                Vec3(0, 0, -1.0f), Vec2(WrapX, 0.0f)) },
+        { VertexPositionNormalTexture(Vec3(-HelfSize, -HelfSize, 0), 
+                Vec3(0, 0, -1.0f), Vec2(0.0f, WrapY)) },
+        { VertexPositionNormalTexture(Vec3(HelfSize, -HelfSize, 0), 
+                Vec3(0, 0, -1.0f), Vec2(WrapX, WrapY)) },
     };
 
     vector&lt;uint16_t> indices = {
@@ -401,7 +398,7 @@ void SquareObject::CreateBuffers(float WrapX, float WrapY) {
         1, 3, 2,
     };
     //メッシュの作成（変更できない）
-    m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, <span class="red">false</span>);
+    m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 }
 </pre>
 </div>
@@ -460,6 +457,13 @@ public:
     */
     //--------------------------------------------------------------------------------------
     virtual void OnCollision() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 回転処理をする（仮想関数）
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnRotation() {}
 };
 </pre>
 </div>
@@ -555,9 +559,9 @@ void Scene::OnCreate() {
     m_BoxVec.push_back(
         ObjectFactory::Create&lt;BoxObject>(
             GetThis&lt;Scene>(), strTexture, false,
-            Vector3(5.0f, 0.5f, 5.0f),
-            Quaternion(),
-            Vector3(5.0f, 0.25f, 0.0f)
+            Vec3(5.0f, 0.5f, 5.0f),
+            Quat(),
+            Vec3(5.0f, 0.25f, 0.0f)
             )
     );
 
@@ -566,9 +570,9 @@ void Scene::OnCreate() {
     m_BoxVec.push_back(
         ObjectFactory::Create&lt;BoxObject>(
             GetThis&lt;Scene>(), strTexture, false,
-            Vector3(5.0f, 0.5f, 5.0f),
-            Quaternion(Vector3(0, 0, 1), -XM_PIDIV4),
-            Vector3(-5.0f, 1.0f, 0.0f)
+            Vec3(5.0f, 0.5f, 5.0f),
+            Quat(Vec3(0, 0, 1), -XM_PIDIV4),
+            Vec3(-5.0f, 1.0f, 0.0f)
             )
     );
 
@@ -579,9 +583,9 @@ void Scene::OnCreate() {
     m_BoxVec.push_back(
         ObjectFactory::Create&lt;MoveBoxObject>(
             GetThis&lt;Scene>(), strTexture, false,
-            Vector3(0.25f, 0.5f, 0.5f),
-            Quaternion(),
-            Vector3(0.0f, 0.25f, 5.0f)
+            Vec3(0.25f, 0.5f, 0.5f),
+            Quat(),
+            Vec3(0.0f, 0.25f, 5.0f)
             )
     );
 
@@ -688,9 +692,9 @@ void MoveBoxObject::UpdateVelosity() {
         return;
     }
     //フォース（力）
-    Vector3 Force(0, 0, 0);
+    Vec3 Force(0, 0, 0);
     //プレイヤーを向く方向ベクトル
-    Vector3 ToPlayerVec = 
+    Vec3 ToPlayerVec = 
         ShPtrScene->GetSphereObject()->GetPosition() - m_Pos;
     //縦方向は計算しない
     ToPlayerVec.y = 0;
@@ -698,7 +702,7 @@ void MoveBoxObject::UpdateVelosity() {
     //力を掛ける方向を決める
     Force = ToPlayerVec - m_Velocity;
     //力と質量から加速を求める
-    Vector3 Accel = Force / m_Mass;
+    Vec3 Accel = Force / m_Mass;
     //前回のターンからの経過時間を求める
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     //速度を加速する
@@ -730,7 +734,7 @@ void MoveBoxObject::UpdateVelosity() {
 
 <div class="box1">
 <pre>
-void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
+void MoveBoxObject::CollisionWithBoxes(const Vec3& BeforePos) {
     //前回のターンからの経過時間を求める
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     //衝突判定
@@ -744,20 +748,20 @@ void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
         OBB SrcObb = GetOBB();
         SrcObb.m_Center = BeforePos;
         float HitTime;
-        Vector3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
+        Vec3 CollisionVelosity = (m_Pos - BeforePos) / ElapsedTime;
         if (HitTest::CollisionTestObbObb(SrcObb, CollisionVelosity, DestObb, 0, ElapsedTime, HitTime)) {
             m_Pos = BeforePos + CollisionVelosity * HitTime;
             float SpanTime = ElapsedTime - HitTime;
             //m_Posが動いたのでOBBを再取得
             SrcObb = GetOBB();
-            Vector3 HitPoint;
+            Vec3 HitPoint;
             //最近接点を得るための判定
             HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
             //衝突法線をHitPointとm_Posから導く
-            Vector3 Normal = m_Pos - HitPoint;
-            Normal.Normalize();
+            Vec3 Normal = m_Pos - HitPoint;
+            Normal.normalize();
             //速度をスライドさせて設定する
-            m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+            m_Velocity = ProjUtil::Slide(m_Velocity, Normal);
             //Y方向はなし
             m_Velocity.y = 0;
             //最後に衝突点から余った時間分だけ新しい値で移動させる
@@ -776,9 +780,9 @@ void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
                     //最近接点を得るための判定
                     HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
                     //衝突していたら追い出し処理
-                    Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+                    Vec3 EscapeNormal = SrcObb.m_Center - HitPoint;
                     EscapeNormal.y = 0;
-                    EscapeNormal.Normalize();
+                    EscapeNormal.normalize();
                     m_Pos = m_Pos + EscapeNormal * MiniSpan;
                 }
                 else {
@@ -811,9 +815,9 @@ void MoveBoxObject::CollisionWithBoxes(const Vector3& BeforePos) {
                     //最近接点を得るための判定
                     HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, HitPoint);
                     //衝突していたら追い出し処理
-                    Vector3 EscapeNormal = SrcObb.m_Center - HitPoint;
+                    Vec3 EscapeNormal = SrcObb.m_Center - HitPoint;
                     EscapeNormal.y = 0;
-                    EscapeNormal.Normalize();
+                    EscapeNormal.normalize();
                     m_Pos = m_Pos + EscapeNormal * MiniSpan;
                 }
                 else {
@@ -852,12 +856,12 @@ void SphereObject::OnUpdate() {
             if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
                 m_BeforePos.y += 0.01f;
                 m_Pos.y += 0.01f;
-                m_GravityVelocity = Vector3(0, 4.0f, 0);
+                m_GravityVelocity = Vec3(0, 4.0f, 0);
                 m_JumpLock = true;
             }
         }
-        <span class="red">Vector3 Direction = GetMoveVector();
-        if (Direction.Length() &lt; 0.1f) {
+        <span class="red">Vec3 Direction = GetMoveVector();
+        if (Direction.length() &lt; 0.1f) {
             m_Velocity *= 0.9f;
         }
         else {
@@ -869,7 +873,7 @@ void SphereObject::OnUpdate() {
     m_Pos += m_GravityVelocity * ElapsedTime;
     if (m_Pos.y &lt;= m_BaseY) {
         m_Pos.y = m_BaseY;
-        m_GravityVelocity = Vector3(0, 0, 0);
+        m_GravityVelocity = Vec3(0, 0, 0);
         m_JumpLock = false;
     }
 }
@@ -882,7 +886,7 @@ void SphereObject::OnUpdate() {
 　こちらは<b>SphereObject::CollisionWithBoxes()</b>になります。以下が実体です。
 <div class="box1">
 <pre>
-void SphereObject::CollisionWithBoxes(const Vector3& BeforePos) {
+void SphereObject::CollisionWithBoxes(const Vec3& BeforePos) {
     //前回のターンからの経過時間を求める
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     //衝突判定
@@ -893,54 +897,55 @@ void SphereObject::CollisionWithBoxes(const Vector3& BeforePos) {
         Sp.m_Center = BeforePos;
         float HitTime;
         //相手の速度
-        Vector3 DestVelocity(0, 0, 0);
+        Vec3 DestVelocity(0, 0, 0);
         auto MovBoxPtr = dynamic_pointer_cast&lt;MoveBoxObject>(v);
         if (MovBoxPtr) {
             DestVelocity = MovBoxPtr->GetPosition() - MovBoxPtr->GetBeforePos();
             Obb.m_Center = MovBoxPtr->GetBeforePos();
         }
-        Vector3 SrcVelocity = m_Pos - BeforePos;
+        Vec3 SrcVelocity = m_Pos - BeforePos;
 
-        Vector3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
+        Vec3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
         if (HitTest::CollisionTestSphereObb(Sp, CollisionVelosity, Obb, 0, ElapsedTime, HitTime)) {
             m_JumpLock = false;
             m_Pos = BeforePos + CollisionVelosity * HitTime;
             float SpanTime = ElapsedTime - HitTime;
             //m_Posが動いたのでSPHEREを再取得
             Sp = GetSPHERE();
-            Vector3 HitPoint;
+            Vec3 HitPoint;
             //最近接点を得るための判定
             HitTest::SPHERE_OBB(Sp, Obb, HitPoint);
             //衝突法線をHitPointとm_Posから導く
-            Vector3 Normal = m_Pos - HitPoint;
-            Normal.Normalize();
-            if (Vector3EX::AngleBetweenNormals(Normal, Vector3(0, 1, 0)) &lt;= 0.01f) {
+            Vec3 Normal = m_Pos - HitPoint;
+            Normal.normalize();
+            Vec3 angle(XMVector3AngleBetweenNormals(Normal, Vec3(0, 1, 0)));
+            if (angle.x &lt;= 0.01f) {
                 //平面の上
-                m_GravityVelocity = Vector3(0, 0, 0);
+                m_GravityVelocity = Vec3(0, 0, 0);
             }
             else {
                 //重力をスライドさせて設定する
                 //これで、斜めのボックスを滑り落ちるようになる
-                m_GravityVelocity = Vector3EX::Slide(m_GravityVelocity, Normal);
+                m_GravityVelocity = ProjUtil::Slide(m_GravityVelocity, Normal);
             }
             if (MovBoxPtr) {
                 <span class="red">//お互いに反発する
-                Vector3 TgtVelo = CollisionVelosity * 0.5f;
-                if (TgtVelo.Length() &lt; 1.0f) {
+                Vec3 TgtVelo = CollisionVelosity * 0.5f;
+                if (TgtVelo.length() &lt; 1.0f) {
                     //衝突時の速度が小さかったら、速度を作り出す
                     TgtVelo = MovBoxPtr->GetPosition() - m_Pos;
-                    TgtVelo.Normalize();
+                    TgtVelo.normalize();
                     TgtVelo *= 2.0f;
                 }
-                Vector3 DestVelo = Vector3EX::Reflect(-TgtVelo, Normal);
+                Vec3 DestVelo(XMVector3Reflect(-TgtVelo, Normal));
                 DestVelo.y = 0;
                 MovBoxPtr->SetVelocity(DestVelo);
                 //速度を反発させて設定する
-                m_Velocity = Vector3EX::Reflect(TgtVelo, -Normal);</span>
+                m_Velocity = XMVector3Reflect(TgtVelo, -Normal);</span>
             }
             else {
                 //速度をスライドさせて設定する
-                m_Velocity = Vector3EX::Slide(m_Velocity, Normal);
+                m_Velocity = ProjUtil::Slide(m_Velocity, Normal);
             }
             //Y方向は重力に任せる
             m_Velocity.y = 0;
@@ -952,8 +957,8 @@ void SphereObject::CollisionWithBoxes(const Vector3& BeforePos) {
             Sp = GetSPHERE();
             if (HitTest::SPHERE_OBB(Sp, Obb, HitPoint)) {
                 //衝突していたら追い出し処理
-                Vector3 EscapeNormal = Sp.m_Center - HitPoint;
-                EscapeNormal.Normalize();
+                Vec3 EscapeNormal = Sp.m_Center - HitPoint;
+                EscapeNormal.normalize();
                 m_Pos = HitPoint + EscapeNormal * Sp.m_Radius;
             }
         }
