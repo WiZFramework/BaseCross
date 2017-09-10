@@ -9,6 +9,52 @@
 namespace basecross {
 
 	//--------------------------------------------------------------------------------------
+	///	ステージ（シーンで管理するインターフェイス）
+	//--------------------------------------------------------------------------------------
+	//追加オブジェクトの指定
+	void Stage::PushBackGameObject(const shared_ptr<GameObject>& Ptr) {
+		//このステージはクリエイト後である
+		if (IsCreated()) {
+			m_WaitAddObjectVec.push_back(Ptr);
+		}
+		else {
+			//クリエイト前
+			m_GameObjectVec.push_back(Ptr);
+		}
+	}
+	//削除オブジェクトの指定
+	void Stage::RemoveBackGameObject(const shared_ptr<GameObject>& Ptr) {
+		m_WaitRemoveObjectVec.push_back(Ptr);
+	}
+	//オブジェクトの削除
+	void Stage::RemoveTargetGameObject(const shared_ptr<GameObject>& targetobj) {
+		auto it = m_GameObjectVec.begin();
+		while (it != m_GameObjectVec.end()) {
+			if (*it == targetobj) {
+				m_GameObjectVec.erase(it);
+				return;
+			}
+			it++;
+		}
+	}
+	//追加や削除待ちになってるオブジェクトを追加削除する
+	void Stage::SetWaitToObjectVec() {
+		if (!m_WaitRemoveObjectVec.empty()) {
+			for (auto Ptr : m_WaitRemoveObjectVec) {
+				RemoveTargetGameObject(Ptr);
+			}
+		}
+		m_WaitRemoveObjectVec.clear();
+		if (!m_WaitAddObjectVec.empty()) {
+			for (auto Ptr : m_WaitAddObjectVec) {
+				m_GameObjectVec.push_back(Ptr);
+			}
+		}
+		m_WaitAddObjectVec.clear();
+	}
+
+
+	//--------------------------------------------------------------------------------------
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	Scene::Scene() :
@@ -39,6 +85,7 @@ namespace basecross {
 	}
 
 	void Scene::OnUpdate() {
+		GetActiveStage()->OnPreUpdateStage();
 		GetActiveStage()->OnUpdateStage();
 	}
 	void Scene::OnDraw() {

@@ -17,53 +17,91 @@ namespace basecross {
 		m_LightDir.normalize();
 	}
 
+	shared_ptr<Player> GameStage::GetPlayer() const {
+		for (auto& v : GetGameObjectVec()) {
+			if (v->FindTag(L"Player")) {
+				auto shptr = dynamic_pointer_cast<Player>(v);
+				if (shptr) {
+					return shptr;
+				}
+			}
+		}
+		throw BaseException(
+			L"オブジェクトが見つかりません",
+			L"FindTag()",
+			L"GameStage::GetPlayer()"
+		);
+		return nullptr;
+	}
+
+	shared_ptr<PNTDrawObject> GameStage::GetPNTDrawObject() const {
+		for (auto& v : GetGameObjectVec()) {
+			if (v->FindTag(L"PNTDrawObject")) {
+				auto shptr = dynamic_pointer_cast<PNTDrawObject>(v);
+				if (shptr) {
+					return shptr;
+				}
+			}
+		}
+		throw BaseException(
+			L"オブジェクトが見つかりません",
+			L"FindTag()",
+			L"GameStage::GetPNTDrawObject()"
+		);
+		return nullptr;
+	}
+
+
+
 	void GameStage::OnCreate() {
+
 		//平面の作成
 		Quat Qt;
 		Qt.rotationX(XM_PIDIV2);
-		m_SquareObject = ObjectFactory::Create<SquareObject>(
-			GetThis<Stage>(),
+		AddGameObject<SquareObject>(
 			L"SKY_TX",
 			Vec3(50.0f, 50.0f, 1.0f),
 			Qt,
 			Vec3(0.0f, 0.0f, 0.0f)
 			);
+
 		//プレイヤーの作成
-		m_Player = ObjectFactory::Create<Player>(
-			GetThis<Stage>(),
-			18, L"TRACE_TX", true, Vec3(0.0f, 0.125f, 0.0f));
+		AddGameObject<Player>(
+			18, 
+			L"TRACE_TX", 
+			true, 
+			Vec3(0.0f, 0.125f, 0.0f)
+			);
+
 		//PNT描画オブジェクトの作成
-		m_PNTDrawObject = ObjectFactory::Create<PNTDrawObject>(
-			GetThis<Stage>()
-		);
-		m_RotateSprite = ObjectFactory::Create<RotateSprite>(
-			GetThis<Stage>(),
+		AddGameObject<PNTDrawObject>();
+
+		//回転するスプライトの作成
+		AddGameObject<RotateSprite>(
 			L"TRACE_TX",
 			Vec2(160, 160),
 			0.0f,
 			Vec2(-480, 260),
-			4, 4);
-		m_MessageSprite = ObjectFactory::Create<MessageSprite>(
-			GetThis<Stage>(),
+			4, 4
+			);
+
+
+		//メッセージを表示するスプライトの作成
+		AddGameObject<MessageSprite>(
 			L"MESSAGE_TX",
 			Vec2(256, 64),
 			0.0f,
 			Vec2(480, 260),
-			1, 1);
+			1, 1
+			);
+
 	}
 
 	void GameStage::OnUpdateStage() {
-		//プレートの更新
-		m_SquareObject->OnUpdate();
-		//プレイヤーの更新
-		m_Player->OnUpdate();
-		//回転処理
-		m_Player->OnRotation();
-		//描画オブジェクトの更新
-		m_PNTDrawObject->OnUpdate();
-		//スプライトの更新
-		m_RotateSprite->OnUpdate();
-		m_MessageSprite->OnUpdate();
+		for (auto& v : GetGameObjectVec()) {
+			//各オブジェクトの更新
+			v->OnUpdate();
+		}
 		//自分自身の更新
 		this->OnUpdate();
 	}
@@ -128,15 +166,10 @@ namespace basecross {
 		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
-		//プレート描画
-		m_SquareObject->OnDraw();
-		//プレイヤー描画
-		m_Player->OnDraw();
-		//描画オブジェクト描画
-		m_PNTDrawObject->OnDraw();
-		//スプライト描画
-		m_RotateSprite->OnDraw();
-		m_MessageSprite->OnDraw();
+		for (auto& v : GetGameObjectVec()) {
+			//各オブジェクトの描画
+			v->OnDraw();
+		}
 		//自分自身の描画
 		this->OnDraw();
 		//デフォルト描画の終了

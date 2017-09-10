@@ -8,6 +8,7 @@
 namespace basecross {
 
 	class Scene;
+	class GameObject;
 
 	//--------------------------------------------------------------------------------------
 	///	カメラ
@@ -62,6 +63,20 @@ namespace basecross {
 	///	ステージ（シーンで管理するインターフェイス）
 	//--------------------------------------------------------------------------------------
 	class Stage : public ObjectInterface, public ShapeInterface {
+		//オブジェクトの配列
+		vector< shared_ptr<GameObject> > m_GameObjectVec;
+		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
+		vector< shared_ptr<GameObject> > m_WaitAddObjectVec;
+		//途中にオブジェクトが削除された場合、ターンの開始まで待つ配列
+		vector< shared_ptr<GameObject> > m_WaitRemoveObjectVec;
+		//追加オブジェクトの指定
+		void PushBackGameObject(const shared_ptr<GameObject>& Ptr);
+		//削除オブジェクトの指定
+		void RemoveBackGameObject(const shared_ptr<GameObject>& Ptr);
+		//オブジェクトの削除
+		void RemoveTargetGameObject(const shared_ptr<GameObject>& targetobj);
+		//追加や削除待ちになってるオブジェクトを追加削除する
+		void SetWaitToObjectVec();
 	protected:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -78,6 +93,15 @@ namespace basecross {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief ステージ更新準備（仮想関数）
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnPreUpdateStage() {
+			SetWaitToObjectVec();
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief ステージ更新（純粋仮想関数）
 		@return	なし
 		*/
@@ -90,6 +114,72 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnDrawStage() = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ゲームオブジェクトを追加する
+		@tparam	T	作成する型
+		@tparam	Ts	可変長パラメータの型
+		@param[in]	params	可変長パラメータ
+		@return	作成されたゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T, typename... Ts>
+		shared_ptr<T> AddGameObject(Ts&&... params) {
+			try {
+				auto Ptr = ObjectFactory::Create<T>(GetThis<Stage>(), params...);
+				PushBackGameObject(Ptr);
+				return Ptr;
+			}
+			catch (...) {
+				throw;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ゲームオブジェクトの配列を得る
+		@return	ゲームオブジェクトの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector< shared_ptr<GameObject> >& GetGameObjectVec()const {
+			return m_GameObjectVec;
+		}
+		vector< shared_ptr<GameObject> >& GetGameObjectVec() {
+			return m_GameObjectVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インスタンスからそのゲームオブジェクトが指定した型かどうかを得る
+		@tparam	T	調べる型
+		@param[in]	Obj	インスタンス
+		@return	指定した型で存在すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		bool FindGameObject(const shared_ptr<GameObject>& Obj) const{
+			auto shptr = dynamic_pointer_cast<T>(Obj);
+			if (shptr) {
+				for (auto ptr : GetGameObjectVec()) {
+					if (Obj == ptr) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ゲームオブジェクトを削除する
+		@tparam	T	削除する型
+		@param[in]	Obj	インスタンス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void RemoveGameObject(const shared_ptr<GameObject>& Obj) {
+			if (FindGameObject<T>(Obj)) {
+				RemoveBackGameObject(Obj);
+			}
+		}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -97,6 +187,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class GameObject : public ObjectInterface, public ShapeInterface {
 		weak_ptr<Stage> m_Stage;	//所属ステージ
+		set<wstring> m_Tag;	//タグ
 	protected:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -148,6 +239,59 @@ namespace basecross {
 				);
 			}
 			return TargetPtr;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タグのセットを得る
+		@return	タグのセット
+		*/
+		//--------------------------------------------------------------------------------------
+		const set<wstring>& GetTagSet()const {
+			return m_Tag;
+		}
+		set<wstring>& GetTagSet() {
+			return m_Tag;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定するタグが存在するかどうかを得る
+		@param[in]	tagstr	検証するタグ
+		@return	存在すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool FindTag(const wstring& tagstr) const {
+			if (m_Tag.find(tagstr) == m_Tag.end()) {
+				return false;
+			}
+			return true;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定するタグを追加する
+		@param[in]	tagstr	追加するタグ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void  AddTag(const wstring& tagstr) {
+			if (tagstr == L"") {
+				//空白なら例外
+				throw BaseException(
+					L"設定するタグが空です",
+					L"if (tagstr == L"")",
+					L"GameObject::AddTag()"
+				);
+			}
+			m_Tag.insert(tagstr);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定するタグが存在したら削除する（存在しない場合は何もしない）
+		@param[in]	tagstr	削除するタグ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void  RemoveTag(const wstring& tagstr) {
+			m_Tag.erase(tagstr);
 		}
 	};
 

@@ -73,6 +73,12 @@ namespace basecross {
 	{}
 	PNTDrawObject::~PNTDrawObject() {}
 
+	void PNTDrawObject::OnCreate() {
+		//ƒ^ƒO‚Ì’Ç‰Á
+		AddTag(L"PNTDrawObject");
+	}
+
+
 	void PNTDrawObject::AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
 		const shared_ptr<TextureResource>& TextureRes,
 		const Mat4x4& WorldMat,

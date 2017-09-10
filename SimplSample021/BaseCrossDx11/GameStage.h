@@ -13,14 +13,6 @@ namespace basecross {
 	///	ゲームステージ
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
-		shared_ptr<SquareObject> m_SquareObject;				///<平面オブジェクト
-		shared_ptr<Player> m_Player;				///<プレイヤー
-
-		shared_ptr<PNTDrawObject>	m_PNTDrawObject;				///<描画オブジェクト
-		shared_ptr<RotateSprite> m_RotateSprite;		///<回転するスプライト
-		shared_ptr<MessageSprite> m_MessageSprite;		///<メッセージを表示するスプライト
-
-
 		Vec4 m_LightDir;		///<ライト向き
 		Camera m_Camera;		///<カメラ
 	public:
@@ -55,18 +47,14 @@ namespace basecross {
 		@return	プレイヤー
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<Player> GetPlayer() const {
-			return m_Player;
-		}
+		shared_ptr<Player> GetPlayer() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画オブジェクトの取得
 		@return	描画オブジェクト
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<PNTDrawObject> GetPNTDrawObject() const {
-			return m_PNTDrawObject;
-		}
+		shared_ptr<PNTDrawObject> GetPNTDrawObject() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief ライト向きの取得

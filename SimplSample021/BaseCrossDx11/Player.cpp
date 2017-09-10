@@ -83,6 +83,8 @@ namespace basecross {
 		MeshUtill::CreateSphere(1.0f, m_Division, vertices, indices);
 		//メッシュの作成（変更できない）
 		m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+		//タグの追加
+		AddTag(L"Player");
 	}
 	void Player::OnUpdate() {
 		//1つ前の位置を取っておく

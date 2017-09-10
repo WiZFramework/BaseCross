@@ -76,30 +76,77 @@ void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
 <div class="box1">
 <pre>
 void GameStage::OnCreate() {
+
     //平面の作成
-    Quat(Vector3(1.0f, 0, 0), XM_PIDIV2);
-    m_SquareObject = ObjectFactory::Create&lt;SquareObject>(
-        GetThis&lt;Stage>(),
-        <span class="red">L"SKY_TX",</span>
-        Vector3(50.0f, 50.0f, 1.0f),
-        Quat::rotationX(XM_PIDIV2),
-        Vector3(0.0f, 0.0f, 0.0f)
+    Quat Qt;
+    Qt.rotationX(XM_PIDIV2);
+    AddGameObject&lt;SquareObject>(
+        L"SKY_TX",
+        Vec3(50.0f, 50.0f, 1.0f),
+        Qt,
+        Vec3(0.0f, 0.0f, 0.0f)
         );
-    //球の作成
-    m_SphereObject = ObjectFactory::Create&lt;SphereObject>(
-        GetThis&lt;Stage>(),
-        18, L"TRACE_TX", true, Vector3(0.0f, 0.125f, 0.0f));
+
+    //プレイヤーの作成
+    AddGameObject&lt;Player>(
+        18, 
+        L"TRACE_TX", 
+        true, 
+        Vec3(0.0f, 0.125f, 0.0f)
+        );
+
     //PNT描画オブジェクトの作成
-    m_PNTDrawObject = ObjectFactory::Create&lt;PNTDrawObject>(
-        GetThis&lt;Stage>()
-    );
+    AddGameObject&lt;PNTDrawObject>();
 
 //中略
 
 }
 </pre>
 </div>
-　このように、以前のサンプル(SimplaSample015)では<b>Scene::OnCreate()関数</b>に記述されていた内容が記述されています。また、テクスチャも<b>ファイル名</b>を渡すのではなく<b>リソース名</b>を渡しています。これは、テクスチャを使いまわしができるように<b>リソース登録</b>されているためです。<br />
+　このように、以前のサンプル(SimplaSample015)では<b>Scene::OnCreate()関数</b>に記述されていた内容が変更されてます。フルバージョンのように
+<div class="box1">
+<pre>
+    AddGameObjectテンプレート関数
+</pre>
+</div>
+　が実装されています。「Stageクラス」にあるこの関数は、フルバージョンの者とほぼ同じです。<br />
+　(SimplaSample015)のように、ゲームステージに各インスタンスのポインタを持つことも可能ですが、配列で持たせることにより、各オブジェクトの仮想関数呼び出しが効率化されています。<br />
+　しかし、「Stageクラス」にあるこの配列は「GameObjectの配列」です。各派生クラスの仮想関数呼び出しは、直接呼び出すよりは負担はかかります。これが我慢できない場合は、「EmptyStage」のように、各々メンバとして持つといいでしょう。<br />
+　さて、中身を見てみましょう。テクスチャも<b>ファイル名</b>を渡すのではなく<b>リソース名</b>を渡しています。これは、テクスチャを使いまわしができるように<b>リソース登録</b>されているためです。<br />
+　ゲームオブジェクトの配列化により、「GameStage::OnUpdateStage()」も以下のようにシンプルになります。<br />
+<div class="box1">
+<pre>
+void GameStage::OnUpdateStage() {
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの更新
+        v->OnUpdate();
+    }
+    //自分自身の更新
+    this->OnUpdate();
+}
+</pre>
+</div>
+　「GameStage::OnDrawStage()」も同様です。
+<div class="box1">
+<pre>
+void GameStage::OnDrawStage() {
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
+    //デフォルト描画の開始
+    Dev->StartDefaultDraw();
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの描画
+        v->OnDraw();
+    }
+    //自分自身の描画
+    this->OnDraw();
+    //デフォルト描画の終了
+    Dev->EndDefaultDraw();
+}
+</pre>
+</div>
+<br />
 <br />
 　さて、このようにして<b>ゲームステージ</b>は表示されるわけですが、もう一つの<b>EmptyStage</b>はどのように切り替えられるのでしょうか。答えは<b>GameStage::OnUpdate()関数</b>にあります。<br />
 　この関数では<b>カメラの移動</b>を行っていますが、その際<b>コントローラのBボタンが押されたら</b>という処理が追加されています。
