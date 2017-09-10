@@ -77,51 +77,67 @@ void SquareSprite::OnDraw() {
     //中略
 
     //行列の定義
-    Matrix4X4 World, Proj;
+    Mat4x4 World, Proj;
     //ワールド行列の決定
-    World.AffineTransformation2D(
+    World.affineTransformation2D(
         m_Scale,            //スケーリング
-        Vector2(0, 0),      //回転の中心（重心）
+        Vec2(0, 0),     //回転の中心（重心）
         m_Rot,              //回転角度
         m_Pos               //位置
     );
     //射影行列の決定
     float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    Proj.OrthographicLH(w, h, -1.0, 1.0f);
+    Proj = XMMatrixOrthographicLH(w, h, -1.0, 1.0f);
     //行列の合成
     World *= Proj;
 
     //コンスタントバッファの準備
     SpriteConstantBuffer sb;
     //エミッシブ加算は行わない。
-    sb.Emissive = Color4(0, 0, 0, 0);
+    sb.Emissive = Col4(0, 0, 0, 0);
     //行列の設定
     sb.World = World;
     //コンスタントバッファの更新
     pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 
-    //中略
-
     //ストライドとオフセット
     UINT stride = sizeof(VertexPositionColor);
     UINT offset = 0;
     //頂点バッファのセット
-    pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_SquareMesh->GetVertexBuffer().GetAddressOf(),
-         &stride, &offset);
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1,
+         m_SquareMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
     //インデックスバッファのセット
-    pD3D11DeviceContext->IASetIndexBuffer(m_SquareMesh->GetIndexBuffer().Get(), 
-        DXGI_FORMAT_R16_UINT, 0);
+    pD3D11DeviceContext->IASetIndexBuffer(m_SquareMesh->GetIndexBuffer().Get(),
+         DXGI_FORMAT_R16_UINT, 0);
 
     //描画方法（3角形）
     pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    //中略
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBSprite::GetPtr()->GetBuffer();
+    ID3D11Buffer* pNullConstantBuffer = nullptr;
+    //頂点シェーダに渡す
+    pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ピクセルシェーダに渡す
+    pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //シェーダの設定
+    pD3D11DeviceContext->VSSetShader(VSPCSprite::GetPtr()->GetShader(), nullptr, 0);
+    pD3D11DeviceContext->PSSetShader(PSPCSprite::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pD3D11DeviceContext->IASetInputLayout(VSPCSprite::GetPtr()->GetInputLayout());
+
+    //ブレンドステート
+    pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+    //デプスステンシルステート
+    pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthNone(), 0);
+    //ラスタライザステート
+    pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 
     //描画
     pD3D11DeviceContext->DrawIndexed(m_SquareMesh->GetNumIndicis(), 0, 0);
-
-    //中略
+    //後始末
+    Dev->InitializeStates();
 
 }
 </pre>

@@ -135,14 +135,14 @@ void GameStage::CreateEnemy() {
             float XPos = (float)((int)j - 19);
             float ZPos = (float)(19 - (int)i);
             if (Tokens[j] == L"1") {
-                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+                AddGameObject&lt;Enemy1>(Vec3(XPos,0.25f,ZPos));
             }
             else if (Tokens[j] == L"2") {
-                AddGameObject&lt;Enemy2>(Vector3(XPos, 0.25f, ZPos));
+                AddGameObject&lt;Enemy2>(Vec3(XPos, 0.25f, ZPos));
 
             }
             else if (Tokens[j] == L"3") {
-                AddGameObject&lt;Enemy3>(Vector3(XPos, 0.25f, ZPos));
+                AddGameObject&lt;Enemy3>(Vec3(XPos, 0.25f, ZPos));
 
             }
         }
@@ -193,7 +193,7 @@ void GameStage::CreateEnemy() {
 <div class="box1">
 <pre>
             if (Tokens[j] == L"1") {
-                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+                AddGameObject&lt;Enemy1>(Vec3(XPos,0.25f,ZPos));
             }
 </pre>
 </div>
@@ -246,17 +246,17 @@ void GameStage::CreateFixedBox() {
         //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
         Util::WStrToTokenVector(Tokens, v, L',');
         //各トークン（カラム）をスケール、回転、位置に読み込む
-        Vector3 Scale(
+        Vec3 Scale(
             (float)_wtof(Tokens[1].c_str()), 
             (float)_wtof(Tokens[2].c_str()), 
             (float)_wtof(Tokens[3].c_str())
         );
-        Vector3 Rot;
-        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Vec3 Rot;
+        //回転は「XM_PIDIV2」の文字列になっている場合がある
         Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
         Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
         Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
-        Vector3 Pos(
+        Vec3 Pos(
             (float)_wtof(Tokens[7].c_str()),
             (float)_wtof(Tokens[8].c_str()),
             (float)_wtof(Tokens[9].c_str())
@@ -296,17 +296,17 @@ TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0
         //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
         Util::WStrToTokenVector(Tokens, v, L',');
         //各トークン（カラム）をスケール、回転、位置に読み込む
-        Vector3 Scale(
+        Vec3 Scale(
             (float)_wtof(Tokens[1].c_str()), 
             (float)_wtof(Tokens[2].c_str()), 
             (float)_wtof(Tokens[3].c_str())
         );
-        Vector3 Rot;
-        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Vec3 Rot;
+        //回転は「XM_PIDIV2」の文字列になっている場合がある
         Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
         Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
         Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
-        Vector3 Pos(
+        Vec3 Pos(
             (float)_wtof(Tokens[7].c_str()),
             (float)_wtof(Tokens[8].c_str()),
             (float)_wtof(Tokens[9].c_str())

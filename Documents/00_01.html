@@ -73,9 +73,9 @@
 void TriangleObject::OnCreate() {
     //頂点を作成するための配列
     vector&lt;VertexPositionColor> vertices = {
-        { Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
+        { Vec3(0.0f, 0.5f , 0.0f),Col4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { Vec3(0.5f, -0.5f, 0.5f),Col4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { Vec3(-0.5f, -0.5f, 0.5f),Col4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
     m_TriangleMesh = MeshResource::CreateMeshResource(vertices, false);
 }
@@ -93,7 +93,7 @@ void TriangleObject::OnCreate() {
 void Scene::OnDraw() {
     //描画デバイスの取得
     auto Dev = App::GetApp()->GetDeviceResources();
-    Dev->ClearDefaultViews(Color4(0, 0, 0, 1.0f));
+    Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
     //デフォルト描画の開始
     Dev->StartDefaultDraw();
     m_TriangleObject->OnDraw();
@@ -147,6 +147,7 @@ void TriangleObject::OnDraw() {
     pID3D11DeviceContext->Draw(3, 0);
     //後始末
     Dev->InitializeStates();
+
 }
 </pre>
 </div>

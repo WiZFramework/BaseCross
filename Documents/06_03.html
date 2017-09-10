@@ -128,6 +128,7 @@ void GameStage::OnCreate() {
 　ですから、各ゲームオブジェクトは、その<b>1行の文字列を受け取るコンストラクタ</b>を記述する必要があります。以下は<b>TilingPlate</b>のコンストラクタです。
 <div class="box1">
 <pre>
+//構築と破棄
 TilingPlate::TilingPlate(const shared_ptr&lt;Stage>& StagePtr, <span class="red">const wstring& Line</span>) :
     GameObject(StagePtr)
 {
@@ -136,19 +137,19 @@ TilingPlate::TilingPlate(const shared_ptr&lt;Stage>& StagePtr, <span class="red"
         vector&lt;wstring> Tokens;
         Util::WStrToTokenVector(Tokens, Line, L',');
         //各トークン（カラム）をスケール、回転、位置に読み込む
-        m_Scale = Vector3(
+        m_Scale = Vec3(
             (float)_wtof(Tokens[1].c_str()),
             (float)_wtof(Tokens[2].c_str()),
             (float)_wtof(Tokens[3].c_str())
         );
-        Vector3 Rot;
-        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Vec3 Rot;
+        //回転は「XM_PIDIV2」の文字列になっている場合がある
         Rot.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
         Rot.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
         Rot.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
         //プレートの回転の引数はクオータニオンになっているので変換
-        m_Qt.RotationRollPitchYawFromVector(Rot);
-        m_Position = Vector3(
+        m_Qt.rotationRollPitchYawFromVector(Rot);
+        m_Position = Vec3(
             (float)_wtof(Tokens[7].c_str()),
             (float)_wtof(Tokens[8].c_str()),
             (float)_wtof(Tokens[9].c_str())

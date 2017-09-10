@@ -48,6 +48,7 @@
 　更新は、流れるテクスチャのオブジェクトのみ、<b>頂点の更新</b>を行います。<b>SquareSprite::UpdateVertex()関数</b>です。
 <div class="box1">
 <pre>
+//頂点の変更
 void SquareSprite::UpdateVertex(float ElapsedTime) {
     m_TotalTime += ElapsedTime;
     if (m_TotalTime > 1.0f) {
@@ -57,13 +58,13 @@ void SquareSprite::UpdateVertex(float ElapsedTime) {
     auto Dev = App::GetApp()->GetDeviceResources();
     auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 
-    //頂点の変更
-    <span class="red">//D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
+    <span class="red">//頂点の変更準備
+    //D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
     D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
     D3D11_MAPPED_SUBRESOURCE mappedBuffer;
     //頂点のマップ
-    if (FAILED(pD3D11DeviceContext->Map(m_SquareMesh->GetVertexBuffer().Get(), 
-        0, mapType, 0, &mappedBuffer))) {
+    if (FAILED(pD3D11DeviceContext->Map(m_SquareMesh->GetVertexBuffer().Get(),
+         0, mapType, 0, &mappedBuffer))) {
         // Map失敗
         throw BaseException(
             L"頂点のMapに失敗しました。",
@@ -75,7 +76,7 @@ void SquareSprite::UpdateVertex(float ElapsedTime) {
     VertexPositionTexture* vertices
         = (VertexPositionTexture*)mappedBuffer.pData;
     for (size_t i = 0; i &lt; m_SquareMesh->GetNumVertices(); i++) {
-        Vector2 UV = m_BackupVertices[i].textureCoordinate;
+        Vec2 UV = m_BackupVertices[i].textureCoordinate;
         if (UV.x == 0.0f) {
             UV.x = m_TotalTime;
         }

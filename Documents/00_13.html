@@ -101,7 +101,7 @@ void SphereObject::OnUpdate() {
     //キーボードとマウスの取得
     auto Key = App::GetApp()->GetInputDevice().GetKeyState();
     //位置情報の退避
-    Vector3 TempPos = m_Pos;
+    Vec3 TempPos = m_Pos;
     if (CntlVec[0].bConnected) {
         if (CntlVec[0].fThumbLX != 0) {
             m_Pos.x += (CntlVec[0].fThumbLX * ElapsedTime * 5.0f);
@@ -123,12 +123,12 @@ void SphereObject::OnUpdate() {
         m_Pos.z -= ElapsedTime * 5.0f;
     }</span>
     TempPos = m_Pos - TempPos;
-    if (TempPos.Length() > 0) {
+    if (TempPos.length() > 0) {
         //移動した
-        TempPos.Normalize();
+        TempPos.normalize();
         float Angle = atan2(TempPos.x, TempPos.z);
-        m_Qt.RotationAxis(Vector3(0, 1.0f, 0), Angle);
-        m_Qt.Normalize();
+        m_Qt.rotation(Angle, Vec3(0, 1.0f, 0));
+        m_Qt.normalize();
     }
 }
 </pre>

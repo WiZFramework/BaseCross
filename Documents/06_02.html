@@ -227,7 +227,7 @@ void GameStage::CreateEnemy() {
     //内容の文字列を取得
     wstring MapStr = XmlDocReader::GetText(CellmapNode);
     vector&lt;wstring> LineVec;
-    //最初に<b>改行</b>をデリミタとした文字列の配列にする
+    //最初に「改行」をデリミタとした文字列の配列にする
     Util::WStrToTokenVector(LineVec, MapStr, L'\n');
     for (size_t i = 0; i &lt; LineVec.size();i++) {
         //トークン（カラム）の配列
@@ -239,13 +239,13 @@ void GameStage::CreateEnemy() {
             float XPos = (float)((int)j - 19);
             float ZPos = (float)(19 - (int)i);
             if (Tokens[j] == L"1") {
-                AddGameObject&lt;Enemy1>(Vector3(XPos,0.25f,ZPos));
+                AddGameObject&lt;Enemy1>(Vec3(XPos,0.25f,ZPos));
             }
             else if (Tokens[j] == L"2") {
-                AddGameObject&lt;Enemy2>(Vector3(XPos, 0.25f, ZPos));
+                AddGameObject&lt;Enemy2>(Vec3(XPos, 0.25f, ZPos));
             }
             else if (Tokens[j] == L"3") {
-                AddGameObject&lt;Enemy3>(Vector3(XPos, 0.25f, ZPos));
+                AddGameObject&lt;Enemy3>(Vec3(XPos, 0.25f, ZPos));
             }
         }
     }
@@ -308,21 +308,21 @@ void GameStage::CreateFixedBox() {
         //トークン（カラム）単位で文字列を抽出(L','をデリミタとして区分け)
         Util::WStrToTokenVector(Tokens, ScaleStr, L',');
         //各トークン（カラム）をスケール、回転、位置に読み込む
-        Vector3 Scale(
+        Vec3 Scale(
             (float)_wtof(Tokens[0].c_str()),
             (float)_wtof(Tokens[1].c_str()),
             (float)_wtof(Tokens[2].c_str())
         );
         <span class="red">Tokens.clear();</span>
         Util::WStrToTokenVector(Tokens, RotStr, L',');
-        Vector3 Rot;
-        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Vec3 Rot;
+        //回転は「XM_PIDIV2」の文字列になっている場合がある
         Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
         Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
         Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
         <span class="red">Tokens.clear();</span>
         Util::WStrToTokenVector(Tokens, PosStr, L',');
-        Vector3 Pos(
+        Vec3 Pos(
             (float)_wtof(Tokens[0].c_str()),
             (float)_wtof(Tokens[1].c_str()),
             (float)_wtof(Tokens[2].c_str())

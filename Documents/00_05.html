@@ -108,8 +108,8 @@ void SquareSprite::OnDraw() {
 
     //中略
 
-    //ブレンドステート
-    <span class="red">if (m_Trace) {
+    <span class="red">//ブレンドステート
+    if (m_Trace) {
         //透明処理
         pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
     }
@@ -122,15 +122,17 @@ void SquareSprite::OnDraw() {
     //ラスタライザステート
     pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 
-    //テクスチャとサンプラーの設定
-    <span class="red">pD3D11DeviceContext->PSSetShaderResources(0, 1, 
+    <span class="red">//テクスチャとサンプラーの設定
+    pD3D11DeviceContext->PSSetShaderResources(0, 1, 
         m_TextureResource->GetShaderResourceView().GetAddressOf());
     ID3D11SamplerState* pSampler = RenderState->GetLinearClamp();
     pD3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);</span>
+
     //描画
     pD3D11DeviceContext->DrawIndexed(m_SquareMesh->GetNumIndicis(), 0, 0);
     //後始末
     Dev->InitializeStates();
+
 }
 </pre>
 </div>

@@ -104,6 +104,7 @@ void GameStage::OnCreate() {
 　では<b>XMLのノードを受け取るコンストラクタ</b>を実際に見てみましょう。例として、<b>TilingPlateクラス</b>のコンストラクタを紹介します。
 <div class="box1">
 <pre>
+//構築と破棄
 TilingPlate::TilingPlate(const shared_ptr&lt;Stage>& StagePtr, IXMLDOMNodePtr pNode):
     GameObject(StagePtr)
 {
@@ -119,23 +120,23 @@ TilingPlate::TilingPlate(const shared_ptr&lt;Stage>& StagePtr, IXMLDOMNodePtr pN
         Tokens.clear();
         Util::WStrToTokenVector(Tokens, ScaleStr, L',');
         //各トークン（カラム）をスケール、回転、位置に読み込む
-        m_Scale = Vector3(
+        m_Scale = Vec3(
             (float)_wtof(Tokens[0].c_str()),
             (float)_wtof(Tokens[1].c_str()),
             (float)_wtof(Tokens[2].c_str())
         );
         Tokens.clear();
         Util::WStrToTokenVector(Tokens, RotStr, L',');
-        Vector3 Rot;
-        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        Vec3 Rot;
+        //回転は「XM_PIDIV2」の文字列になっている場合がある
         Rot.x = (Tokens[0] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[0].c_str());
         Rot.y = (Tokens[1] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[1].c_str());
         Rot.z = (Tokens[2] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[2].c_str());
         //プレートの回転の引数はクオータニオンになっているので変換
-        m_Qt.RotationRollPitchYawFromVector(Rot);
+        m_Qt.rotationRollPitchYawFromVector(Rot);
         Tokens.clear();
         Util::WStrToTokenVector(Tokens, PosStr, L',');
-        m_Position = Vector3(
+        m_Position = Vec3(
             (float)_wtof(Tokens[0].c_str()),
             (float)_wtof(Tokens[1].c_str()),
             (float)_wtof(Tokens[2].c_str())

@@ -115,15 +115,15 @@ float4 main(PSPNInput input) : SV_TARGET
 <pre>
 void CubeObject::CreateBuffers() {
     float HelfSize = 0.5f;
-    vector&lt;Vector3> PosVec = {
-        { Vector3(-HelfSize, HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, -HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, HelfSize) },
-        { Vector3(-HelfSize, HelfSize, HelfSize) },
-        { Vector3(HelfSize, -HelfSize, HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    vector&lt;Vec3> PosVec = {
+        { Vec3(-HelfSize, HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, -HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, HelfSize) },
+        { Vec3(-HelfSize, HelfSize, HelfSize) },
+        { Vec3(HelfSize, -HelfSize, HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, HelfSize) },
     };
     vector&lt;UINT> PosIndeces = {
         0, 1, 2, 3,
@@ -135,13 +135,13 @@ void CubeObject::CreateBuffers() {
     };
 
 
-    vector&lt;Vector3> FaceNormalVec = {
-        { Vector3(0, 0, -1.0f) },
-        { Vector3(1.0f, 0, 0) },
-        { Vector3(0, 0, 1.0f) },
-        { Vector3(-1.0f, 0, 0) },
-        { Vector3(0, 1.0f, 0) },
-        { Vector3(0, -1.0f, 0) }
+    vector&lt;Vec3> FaceNormalVec = {
+        { Vec3(0, 0, -1.0f) },
+        { Vec3(1.0f, 0, 0) },
+        { Vec3(0, 0, 1.0f) },
+        { Vec3(-1.0f, 0, 0) },
+        { Vec3(0, 1.0f, 0) },
+        { Vec3(0, -1.0f, 0) }
     };
 
     vector&lt;VertexPositionNormal> vertices;
@@ -154,7 +154,7 @@ void CubeObject::CreateBuffers() {
             if (m_Flat) {
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
             }
             else {
                 //フラット表示しない場合は、法線は面の向き
@@ -172,6 +172,7 @@ void CubeObject::CreateBuffers() {
 
         BasePosCount += 4;
     }
+
     //メッシュの作成（変更できない）
     m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 }
@@ -181,15 +182,15 @@ void CubeObject::CreateBuffers() {
 <div class="box1">
 <pre>
     float HelfSize = 0.5f;
-    vector&lt;Vector3> PosVec = {
-        { Vector3(-HelfSize, HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, -HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, HelfSize) },
-        { Vector3(-HelfSize, HelfSize, HelfSize) },
-        { Vector3(HelfSize, -HelfSize, HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    vector&lt;Vec3> PosVec = {
+        { Vec3(-HelfSize, HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, -HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, HelfSize) },
+        { Vec3(-HelfSize, HelfSize, HelfSize) },
+        { Vec3(HelfSize, -HelfSize, HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, HelfSize) },
     };
     vector&lt;UINT> PosIndeces = {
         0, 1, 2, 3,
@@ -206,13 +207,13 @@ void CubeObject::CreateBuffers() {
 　続いて、<b>各面の法線</b>を作成します。ライティングするためには、<b>各頂点の法線</b>を指定しなければいけません。立方体のように<b>角張ったオブジェクト</b>を描画するためには<b>面に対する法線</b>を各頂点に設定します。しかし<b>フラットな描画</b>や<b>球のような滑らかなオブジェクト</b>の場合は、法線は<b>面</b>に対するものではなく<b>頂点の方向</b>で設定します。以下が<b>面に対する法線</b>を作成しているところです。面は6つですから、6個の配列になります。
 <div class="box1">
 <pre>
-    vector&lt;Vector3> FaceNormalVec = {
-        { Vector3(0, 0, -1.0f) },
-        { Vector3(1.0f, 0, 0) },
-        { Vector3(0, 0, 1.0f) },
-        { Vector3(-1.0f, 0, 0) },
-        { Vector3(0, 1.0f, 0) },
-        { Vector3(0, -1.0f, 0) }
+    vector&lt;Vec3> FaceNormalVec = {
+        { Vec3(0, 0, -1.0f) },
+        { Vec3(1.0f, 0, 0) },
+        { Vec3(0, 0, 1.0f) },
+        { Vec3(-1.0f, 0, 0) },
+        { Vec3(0, 1.0f, 0) },
+        { Vec3(0, -1.0f, 0) }
     };
 </pre>
 </div>
@@ -229,7 +230,7 @@ void CubeObject::CreateBuffers() {
             if (m_Flat) {
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
             }
             else {
                 //フラット表示しない場合は、法線は面の向き
@@ -247,6 +248,7 @@ void CubeObject::CreateBuffers() {
 
         BasePosCount += 4;
     }
+
     //メッシュの作成（変更できない）
     m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 </pre>
@@ -262,7 +264,6 @@ void CubeObject::CreateBuffers() {
 　内側のループは各頂点のループです。1つの面を作成するのに4つの頂点が必要ですから4回ループします。
 <div class="box1">
 <pre>
-        //4つの面のループ
         for (int j = 0; j &lt; 4; j++) {
 </pre>
 </div>
@@ -280,7 +281,7 @@ void CubeObject::CreateBuffers() {
             if (m_Flat) {
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
             }
             else {
                 //フラット表示しない場合は、法線は面の向き
@@ -293,14 +294,14 @@ void CubeObject::CreateBuffers() {
 <pre>
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
 </pre>
 </div>
 　に、あれと思うかもしれません。これは、ローカルの立方体が、原点を中心に作成されているので、<b>Data.position</b>がそのまま法線の向きになるのです。ですから
 <div class="box1">
 <pre>
                 //フラット表示の場合は法線は頂点方向にする
-                Data.normal = Data.position - Vector3(0,0,0);
+                Data.normal = Data.position - Vec3(0,0,0);
 </pre>
 </div>
 　と同じ意味です。原点を引き算するのと同じです。<br />

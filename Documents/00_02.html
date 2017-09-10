@@ -86,11 +86,14 @@ float4 main(PSPCInput input) : SV_TARGET
 　表示しているのは、<b>TriangleSpriteクラス</b>です。まず、<b>Character.h</b>ですが、以下のようなヘッダになります。
 <div class="box1">
 <pre>
+//--------------------------------------------------------------------------------------
+/// 三角形スプライト
+//--------------------------------------------------------------------------------------
 class TriangleSprite : public ObjectInterface, public ShapeInterface {
     ///メッシュ
     shared_ptr&lt;MeshResource> m_TriangleMesh;
-    Vector3 m_Pos;                  ///&lt;現在の位置
-    Vector3 m_MoveSpan;             ///&lt;位置変更値
+    Vec3 m_Pos;                 ///&lt;現在の位置
+    Vec3 m_MoveSpan;                ///&lt;位置変更値
 public:
     //構築と破棄
     TriangleSprite();
@@ -110,10 +113,10 @@ public:
 <pre>
 void TriangleSprite::OnCreate() {
     //頂点を作成するための配列
-    vector&lt;VertexPositionColor> vertices = {
-        { VertexPositionColor(Vector3(0.0f, 0.5f, 0.0f), Color4(1.0f,0.0f,0.0f,1.0f)) },
-        { VertexPositionColor(Vector3(0.5f, -0.5f, 0.0f), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-0.5f, -0.5f, 0.0f), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
+    vector<VertexPositionColor> vertices = {
+        { VertexPositionColor(Vec3(0.0f, 0.5f, 0.0f), Col4(1.0f,0.0f,0.0f,1.0f)) },
+        { VertexPositionColor(Vec3(0.5f, -0.5f, 0.0f), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-0.5f, -0.5f, 0.0f), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
     };
     m_TriangleMesh = MeshResource::CreateMeshResource(vertices, false);
 }
@@ -147,19 +150,19 @@ void TriangleSprite::OnDraw() {
 
     <span class="red">//コンスタントバッファの準備
     SpriteConstantBuffer sb;
-    sb.Emissive = Color4(0.0f, 0.0f, 0, 1.0f);
-    Matrix4X4 mat;
-    mat.TranslationFromVector(m_Pos);
+    sb.Emissive = Col4(0.0f, 0.0f, 0, 1.0f);
+    Mat4x4 mat;
+    mat.translation(m_Pos);
     sb.World = mat;
     //コンスタントバッファの更新
-    pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, 
-        &sb, 0, 0);</span>
+    pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 
+            0, nullptr, &sb, 0, 0);</span>
 
     //ストライドとオフセット
     UINT stride = sizeof(VertexPositionColor);
     UINT offset = 0;
-    pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_TriangleMesh->GetVertexBuffer().GetAddressOf(), 
-        &stride, &offset);
+    pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
+        m_TriangleMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
     //描画方法（3角形）
     pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -198,13 +201,13 @@ void TriangleSprite::OnDraw() {
 <pre>
     //コンスタントバッファの準備
     SpriteConstantBuffer sb;
-    sb.Emissive = Color4(0.0f, 0.0f, 0, 1.0f);
-    Matrix4X4 mat;
-    mat.TranslationFromVector(m_Pos);
+    sb.Emissive = Col4(0.0f, 0.0f, 0, 1.0f);
+    Mat4x4 mat;
+    mat.translation(m_Pos);
     sb.World = mat;
     //コンスタントバッファの更新
-    pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, 
-        &sb, 0, 0);
+    pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 
+            0, nullptr, &sb, 0, 0);
 </pre>
 </div>
 　というブロックと
@@ -219,6 +222,9 @@ void TriangleSprite::OnDraw() {
 <pre>
     //コンスタントバッファの設定
     ID3D11Buffer* pConstantBuffer = CBSprite::GetPtr()->GetBuffer();
+
+    //中略
+
     //頂点シェーダに渡す
     pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
     //ピクセルシェーダに渡す
@@ -232,8 +238,8 @@ void TriangleSprite::OnDraw() {
 //スプライト用コンスタントバッファ構造体
 struct SpriteConstantBuffer
 {
-    Matrix4X4 World;
-    Color4 Emissive;
+    Mat4x4 World;
+    Col4 Emissive;
     SpriteConstantBuffer() {
         memset(this, 0, sizeof(SpriteConstantBuffer));
     };
