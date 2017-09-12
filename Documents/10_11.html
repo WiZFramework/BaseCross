@@ -47,15 +47,15 @@
 <pre>
 void CubeObject::CreateBuffers() {
     float HelfSize = 0.5f;
-    vector&lt;Vector3> PosVec = {
-        { Vector3(-HelfSize, HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, -HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, HelfSize) },
-        { Vector3(-HelfSize, HelfSize, HelfSize) },
-        { Vector3(HelfSize, -HelfSize, HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    vector&lt;Vec3> PosVec = {
+        { Vec3(-HelfSize, HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, -HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, HelfSize) },
+        { Vec3(-HelfSize, HelfSize, HelfSize) },
+        { Vec3(HelfSize, -HelfSize, HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, HelfSize) },
     };
     vector&lt;UINT> PosIndeces = {
         0, 1, 2, 3,
@@ -65,15 +65,13 @@ void CubeObject::CreateBuffers() {
         5, 4, 0, 1,
         2, 3, 7, 6,
     };
-
-
-    vector&lt;Vector3> FaceNormalVec = {
-        { Vector3(0, 0, -1.0f) },
-        { Vector3(1.0f, 0, 0) },
-        { Vector3(0, 0, 1.0f) },
-        { Vector3(-1.0f, 0, 0) },
-        { Vector3(0, 1.0f, 0) },
-        { Vector3(0, -1.0f, 0) }
+    vector&lt;Vec3> FaceNormalVec = {
+        { Vec3(0, 0, -1.0f) },
+        { Vec3(1.0f, 0, 0) },
+        { Vec3(0, 0, 1.0f) },
+        { Vec3(-1.0f, 0, 0) },
+        { Vec3(0, 1.0f, 0) },
+        { Vec3(0, -1.0f, 0) }
     };
 
     vector&lt;VertexPositionNormalTexture> vertices;
@@ -86,7 +84,7 @@ void CubeObject::CreateBuffers() {
             <span class="red">if (m_Flat)</span> {
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
             }
             else {
                 //フラット表示しない場合は、法線は面の向き
@@ -94,16 +92,16 @@ void CubeObject::CreateBuffers() {
             }
             <span class="red">switch (j) {
             case 0:
-                Data.textureCoordinate = Vector2(0, 0);
+                Data.textureCoordinate = Vec2(0, 0);
                 break;
             case 1:
-                Data.textureCoordinate = Vector2(1.0f, 0);
+                Data.textureCoordinate = Vec2(1.0f, 0);
                 break;
             case 2:
-                Data.textureCoordinate = Vector2(0, 1.0f);
+                Data.textureCoordinate = Vec2(0, 1.0f);
                 break;
             case 3:
-                Data.textureCoordinate = Vector2(1.0f, 1.0f);
+                Data.textureCoordinate = Vec2(1.0f, 1.0f);
                 break;
             }</span>
             vertices.push_back(Data);
@@ -452,35 +450,35 @@ void CubeObject::CreateCommandList() {
 <pre>
 void CubeObject::UpdateConstantBuffer() {
     //行列の定義
-    Matrix4X4 World, View, Proj;
+    Mat4x4 World, View, Proj;
     //ワールド行列の決定
-    World.AffineTransformation(
+    World.affineTransformation(
         m_Scale,            //スケーリング
-        Vector3(0, 0, 0),       //回転の中心（重心）
+        Vec3(0, 0, 0),      //回転の中心（重心）
         m_Qt,               //回転角度
         m_Pos               //位置
     );
     //転置する
-    World.Transpose();
+    World.transpose();
     //ビュー行列の決定
-    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+    View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
     //転置する
-    View.Transpose();
+    View.transpose();
     //射影行列の決定
     float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
     //転置する
-    Proj.Transpose();
+    Proj.transpose();
     //ライティング
-    Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
-    LightDir.Normalize();
+    Vec4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+    LightDir.normalize();
     m_StaticConstantBuffer.World = World;
     m_StaticConstantBuffer.View = View;
     m_StaticConstantBuffer.Projection = Proj;
     m_StaticConstantBuffer.LightDir = LightDir;
-    m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+    m_StaticConstantBuffer.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_StaticConstantBuffer.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
     //更新
     memcpy(m_pConstantBuffer, reinterpret_cast&lt;void**>(&m_StaticConstantBuffer),
         sizeof(m_StaticConstantBuffer));

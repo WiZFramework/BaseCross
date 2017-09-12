@@ -51,8 +51,8 @@ void SphereObject::CreateBuffers() {
     //経度方向
     UINT Horizontal = m_Division * 2;
 
-    vector</b>VertexPositionNormalTexture> vertices;
-    for (UINT i = 0; i </b>= Vertical; i++)
+    vector&lt;VertexPositionNormalTexture> vertices;
+    for (UINT i = 0; i &lt;= Vertical; i++)
     {
         float v = 1 - (float)i / Vertical;
 
@@ -60,27 +60,27 @@ void SphereObject::CreateBuffers() {
         float Dy = sin(Latitude);
         float Dxz = cos(Latitude);
 
-        for (UINT j = 0; j </b>= Horizontal; j++)
+        for (UINT j = 0; j &lt;= Horizontal; j++)
         {
             float u = 1 - (float)j / Horizontal;
 
             float Longitude = j * XM_2PI / Horizontal;
             float Dx = sin(Longitude) * Dxz;
             float Dz = cos(Longitude) * Dxz;
-            Vector3 normal(Dx, Dy, Dz);
+            Vec3 normal(Dx, Dy, Dz);
             VertexPositionNormalTexture Data;
             Data.position = normal * Radius;
             Data.normal = normal;
-            Data.normal.Normalize();
-            Data.textureCoordinate = Vector2(u, v);
+            Data.normal.normalize();
+            Data.textureCoordinate = Vec2(u, v);
             vertices.push_back(Data);
         }
     }
     UINT Stride = Horizontal + 1;
-    vector</b>uint16_t> indices;
-    for (UINT i = 0; i </b> Vertical; i++)
+    vector&lt;uint16_t> indices;
+    for (UINT i = 0; i &lt; Vertical; i++)
     {
-        for (UINT j = 0; j </b>= Horizontal; j++)
+        for (UINT j = 0; j &lt;= Horizontal; j++)
         {
             UINT NextI = i + 1;
             UINT NextJ = (j + 1) % Stride;
@@ -296,35 +296,35 @@ void SphereObject::CreateCommandList() {
 <pre>
 void SphereObject::UpdateConstantBuffer() {
     //行列の定義
-    Matrix4X4 World, View, Proj;
+    Mat4x4 World, View, Proj;
     //ワールド行列の決定
-    World.AffineTransformation(
+    World.affineTransformation(
         m_Scale,            //スケーリング
-        Vector3(0, 0, 0),       //回転の中心（重心）
+        Vec3(0, 0, 0),      //回転の中心（重心）
         m_Qt,               //回転角度
         m_Pos               //位置
     );
     //転置する
-    World.Transpose();
+    World.transpose();
     //ビュー行列の決定
-    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), Vector3(0, 1.0f, 0));
+    View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
     //転置する
-    View.Transpose();
+    View.transpose();
     //射影行列の決定
     float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
     //転置する
-    Proj.Transpose();
+    Proj.transpose();
     //ライティング
-    Vector4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
-    LightDir.Normalize();
+    Vec4 LightDir(0.5f, -1.0f, 0.5f, 0.0f);
+    LightDir.normalize();
     m_StaticConstantBuffer.World = World;
     m_StaticConstantBuffer.View = View;
     m_StaticConstantBuffer.Projection = Proj;
     m_StaticConstantBuffer.LightDir = LightDir;
-    m_StaticConstantBuffer.Diffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-    m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+    m_StaticConstantBuffer.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    m_StaticConstantBuffer.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
     //更新
     memcpy(m_pConstantBuffer, reinterpret_cast&lt;void**>(&m_StaticConstantBuffer),
         sizeof(m_StaticConstantBuffer));

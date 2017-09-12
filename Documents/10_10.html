@@ -47,15 +47,15 @@
 <pre>
 void CubeObject::CreateBuffers() {
     float HelfSize = 0.5f;
-    vector&lt;Vector3> PosVec = {
-        { Vector3(-HelfSize, HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, -HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, -HelfSize, -HelfSize) },
-        { Vector3(HelfSize, HelfSize, HelfSize) },
-        { Vector3(-HelfSize, HelfSize, HelfSize) },
-        { Vector3(HelfSize, -HelfSize, HelfSize) },
-        { Vector3(-HelfSize, -HelfSize, HelfSize) },
+    vector&lt;Vec3> PosVec = {
+        { Vec3(-HelfSize, HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, -HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, -HelfSize, -HelfSize) },
+        { Vec3(HelfSize, HelfSize, HelfSize) },
+        { Vec3(-HelfSize, HelfSize, HelfSize) },
+        { Vec3(HelfSize, -HelfSize, HelfSize) },
+        { Vec3(-HelfSize, -HelfSize, HelfSize) },
     };
     vector&lt;UINT> PosIndeces = {
         0, 1, 2, 3,
@@ -65,14 +65,13 @@ void CubeObject::CreateBuffers() {
         5, 4, 0, 1,
         2, 3, 7, 6,
     };
-
-    vector&lt;Vector3> FaceNormalVec = {
-        { Vector3(0, 0, -1.0f) },
-        { Vector3(1.0f, 0, 0) },
-        { Vector3(0, 0, 1.0f) },
-        { Vector3(-1.0f, 0, 0) },
-        { Vector3(0, 1.0f, 0) },
-        { Vector3(0, -1.0f, 0) }
+    vector&lt;Vec3> FaceNormalVec = {
+        { Vec3(0, 0, -1.0f) },
+        { Vec3(1.0f, 0, 0) },
+        { Vec3(0, 0, 1.0f) },
+        { Vec3(-1.0f, 0, 0) },
+        { Vec3(0, 1.0f, 0) },
+        { Vec3(0, -1.0f, 0) }
     };
 
     vector&lt;VertexPositionNormal> vertices;
@@ -82,10 +81,10 @@ void CubeObject::CreateBuffers() {
         for (int j = 0; j &lt; 4; j++) {
             VertexPositionNormal Data;
             Data.position = PosVec[PosIndeces[BasePosCount + j]];
-            <span class="red">if (m_Flat) </span>{
+            <span class="red">if (m_Flat)</span> {
                 //フラット表示の場合は法線は頂点方向にする
                 Data.normal = Data.position;
-                Data.normal.Normalize();
+                Data.normal.normalize();
             }
             else {
                 //フラット表示しない場合は、法線は面の向き

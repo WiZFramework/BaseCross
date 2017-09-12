@@ -53,10 +53,10 @@
 float HelfSize = 0.5f;
 //頂点配列(縦横10個ずつ表示)
 vector&lt;VertexPositionTexture> vertices = {
-    { VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), <span class="red">Vector2(0.0f, 0.0f)</span>) },
-    { VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), <span class="red">Vector2(10, 0.0f)</span>) },
-    { VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), <span class="red">Vector2(0.0f, 10)</span>) },
-    { VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), <span class="red">Vector2(10, 10)</span>) },
+    { VertexPositionTexture(Vec3(-HelfSize, HelfSize, 0), <span class="red">Vec2(0.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vec3(HelfSize, HelfSize, 0), <span class="red">Vec2(10, 0.0f)</span>) },
+    { VertexPositionTexture(Vec3(-HelfSize, -HelfSize, 0), <span class="red">Vec2(0.0f, 10)</span>) },
+    { VertexPositionTexture(Vec3(HelfSize, -HelfSize, 0), <span class="red">Vec2(10, 10)</span>) },
 };
 //インデックス配列
 vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -72,10 +72,10 @@ m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 float HelfSize = 0.5f;
 //頂点配列
 m_BackupVertices = {
-    { VertexPositionTexture(Vector3(-HelfSize, HelfSize, 0), <span class="red">Vector2(0.0f, 0.0f)</span>) },
-    { VertexPositionTexture(Vector3(HelfSize, HelfSize, 0), <span class="red">Vector2(4.0f, 0.0f)</span>) },
-    { VertexPositionTexture(Vector3(-HelfSize, -HelfSize, 0), <span class="red">Vector2(0.0f, 1.0f)</span>) },
-    { VertexPositionTexture(Vector3(HelfSize, -HelfSize, 0), <span class="red">Vector2(4.0f, 1.0f)</span>) },
+    { VertexPositionTexture(Vec3(-HelfSize, HelfSize, 0), <span class="red">Vec2(0.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vec3(HelfSize, HelfSize, 0), <span class="red">Vec2(4.0f, 0.0f)</span>) },
+    { VertexPositionTexture(Vec3(-HelfSize, -HelfSize, 0), <span class="red">Vec2(0.0f, 1.0f)</span>) },
+    { VertexPositionTexture(Vec3(HelfSize, -HelfSize, 0), <span class="red">Vec2(4.0f, 1.0f)</span>) },
 };
 //インデックス配列
 vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };

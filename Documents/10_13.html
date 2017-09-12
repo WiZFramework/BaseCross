@@ -107,7 +107,7 @@ void SphereObject::OnUpdate() {
     //キーボードとマウスの取得
     auto Key = App::GetApp()->GetInputDevice().GetKeyState();
     //位置情報の退避
-    Vector3 TempPos = m_Pos;
+    Vec3 TempPos = m_Pos;
     if (CntlVec[0].bConnected) {
         if (CntlVec[0].fThumbLX != 0) {
             m_Pos.x += (CntlVec[0].fThumbLX * ElapsedTime * 5.0f);

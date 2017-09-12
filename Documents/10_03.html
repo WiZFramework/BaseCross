@@ -68,18 +68,18 @@ m_SquareMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 //コンスタントバッファ更新
 void SquareSprite::UpdateConstantBuffer() {
     //行列の定義
-    Matrix4X4 World, Proj;
+    Mat4x4 World, Proj;
     //ワールド行列の決定
-    World.AffineTransformation2D(
+    World.affineTransformation2D(
         m_Scale,            //スケーリング
-        Vector2(0, 0),      //回転の中心（重心）
+        Vec2(0, 0),     //回転の中心（重心）
         m_Rot,              //回転角度
         m_Pos               //位置
     );
     //射影行列の決定
     float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    Proj.OrthographicLH(w, h, -1.0, 1.0f);
+    Proj = XMMatrixOrthographicLH(w, h, -1.0, 1.0f);
     //行列の合成
     World *= Proj;
 

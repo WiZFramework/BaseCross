@@ -52,10 +52,10 @@ void SquareSpriteGroup::OnCreate() {
     float HelfSize = 0.5f;
     //頂点配列
     vector&lt;VertexPositionColor> vertices = {
-        { VertexPositionColor(Vector3(-HelfSize, HelfSize, 0), Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, HelfSize, 0), Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, 0), Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, -HelfSize, 0), Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, HelfSize, 0), Col4(1.0f, 0.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, HelfSize, 0), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, -HelfSize, 0), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, -HelfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f)) },
     };
     //インデックス配列
     vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -67,10 +67,10 @@ void SquareSpriteGroup::OnCreate() {
     for (auto& v : m_SquareSpriteVec) {
         v.m_LocalRot = Util::RandZeroToOne(true);
         v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-        v.m_LocalPos = Vector2(0, 0);
-        v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f,
+        v.m_LocalPos = Vec2(0, 0);
+        v.m_LocalVelocity = Vec2(Util::RandZeroToOne(true) * 200.0f - 100.0f,
              100 + Util::RandZeroToOne(true) * 100.0f);
-        v.m_LocalGravityVelocity = Vector2(0, 0);
+        v.m_LocalGravityVelocity = Vec2(0, 0);
     }
     ///ルートシグネチャ作成
     CreateRootSignature();
@@ -96,10 +96,10 @@ void SquareSpriteGroup::OnCreate() {
 for (auto& v : m_SquareSpriteVec) {
     v.m_LocalRot = Util::RandZeroToOne(true);
     v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-    v.m_LocalPos = Vector2(0, 0);
-    v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 
-        100 + Util::RandZeroToOne(true) * 100.0f);
-    v.m_LocalGravityVelocity = Vector2(0, 0);
+    v.m_LocalPos = Vec2(0, 0);
+    v.m_LocalVelocity = Vec2(Util::RandZeroToOne(true) * 200.0f - 100.0f,
+         100 + Util::RandZeroToOne(true) * 100.0f);
+    v.m_LocalGravityVelocity = Vec2(0, 0);
 }
 </pre>
 </div>
@@ -169,6 +169,7 @@ void SquareSprite::CreateDescriptorHeap() {
 　ここでは前回のターンからの経過時間を取得して<b>UpdateObjects()関数</b>を呼び出しています。以下が<b>UpdateObjects()関数</b>です。
 <div class="box1">
 <pre>
+//各オブジェクトの位置等の変更
 void SquareSpriteGroup::UpdateObjects(float ElapsedTime) {
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
     h /= 2.0f;
@@ -176,15 +177,15 @@ void SquareSpriteGroup::UpdateObjects(float ElapsedTime) {
         if (v.m_LocalPos.y &lt; -h) {
             v.m_LocalRot = Util::RandZeroToOne(true);
             v.m_LocalRotVelocity = Util::RandZeroToOne(true) * 20.0f - 10.0f;
-            v.m_LocalPos = Vector2(0, 0);
-            v.m_LocalVelocity = Vector2(Util::RandZeroToOne(true) * 200.0f - 100.0f, 
-                100 + Util::RandZeroToOne(true) * 100.0f);
-            v.m_LocalGravityVelocity = Vector2(0, 0);
+            v.m_LocalPos = Vec2(0, 0);
+            v.m_LocalVelocity = Vec2(Util::RandZeroToOne(true) * 200.0f - 100.0f,
+                 100 + Util::RandZeroToOne(true) * 100.0f);
+            v.m_LocalGravityVelocity = Vec2(0, 0);
         }
         else {
             v.m_LocalRot += v.m_LocalRotVelocity * ElapsedTime;
             v.m_LocalPos += v.m_LocalVelocity * ElapsedTime;
-            v.m_LocalGravityVelocity += Vector2(0, -98.0f) * ElapsedTime;
+            v.m_LocalGravityVelocity += Vec2(0, -98.0f) * ElapsedTime;
             v.m_LocalPos += v.m_LocalGravityVelocity * ElapsedTime;
         }
     }

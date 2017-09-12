@@ -35,9 +35,9 @@
 void TriangleObject::OnCreate() {
     //頂点を作成するための配列
     vector&lt;VertexPositionColor> vertices = {
-        { Vector3(0.0f, 0.5f , 0.0f),Color4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { Vector3(0.5f, -0.5f, 0.5f),Color4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { Vector3(-0.5f, -0.5f, 0.5f),Color4(0.0f, 0.0f, 1.0f, 1.0f) }
+        { Vec3(0.0f, 0.5f , 0.0f),Col4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { Vec3(0.5f, -0.5f, 0.5f),Col4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { Vec3(-0.5f, -0.5f, 0.5f),Col4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
     m_TriangleMesh = MeshResource::CreateMeshResource(vertices,false);
     CreateRootSignature();
@@ -198,13 +198,13 @@ void Scene::OnCreate() {
 void Scene::OnDraw() {
     //描画デバイスの取得
     auto Dev = App::GetApp()->GetDeviceResources();
-    Dev->ClearDefultViews(Color4(0, 0, 0, 1.0));
+    Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0));
     //デフォルト描画の開始
-    Dev->StartDefultDraw();
+    Dev->StartDefaultDraw();
     //三角形の描画
     m_TriangleObject->OnDraw();
     //デフォルト描画の終了
-    Dev->EndDefultDraw();
+    Dev->EndDefaultDraw();
 }
 </pre>
 </div>

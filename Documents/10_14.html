@@ -52,9 +52,9 @@ void CubeObjectGroup::CreateBuffers() {
 
     //インスタンス行列バッファの作成
     //Max値で作成する
-    vector&lt;Matrix4X4> matrices(m_MaxInstance);
+    vector&lt;Mat4x4> matrices(m_MaxInstance);
     for (auto& m : matrices) {
-        m = Matrix4X4();
+        m = Mat4x4();
     }
     //インスタンス描画用の行列のメッシュ（内容変更できる）
     m_InstanceMatrixMesh = MeshResource::CreateMeshResource(matrices, true);
@@ -100,33 +100,32 @@ void CubeObjectGroup::OnUpdate() {
         );
 
     }
-
     float ElapsedTime = App::GetApp()->GetElapsedTime();
     for (auto& v : m_CubeObjectVec) {
         v.m_Posision += v.m_Velocity * ElapsedTime;
-        Quaternion QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
+        Quat QtSpan(v.m_QuaternionRot, v.m_QuaternionVelocity * ElapsedTime);
         v.m_Quaternion *= QtSpan;
-        v.m_Quaternion.Normalize();
-        if (v.m_Posision.Length() >= 2.0f) {
+        v.m_Quaternion.normalize();
+        if (v.m_Posision.length() >= 2.0f) {
             v.Refresh();
         }
     }
-    vector&lt;Matrix4X4> MatVec;
+    vector&lt;Mat4x4> MatVec;
     for (size_t i = 0; i &lt; m_CubeObjectVec.size(); i++) {
-        Matrix4X4 World;
+        Mat4x4 World;
         //ワールド行列の決定
-        World.AffineTransformation(
+        World.affineTransformation(
             m_CubeObjectVec[i].m_Scale,         //スケーリング
-            Vector3(0, 0, 0),       //回転の中心（重心）
+            Vec3(0, 0, 0),      //回転の中心（重心）
             m_CubeObjectVec[i].m_Quaternion,        //回転角度
             m_CubeObjectVec[i].m_Posision       //位置
         );
         //転置する
-        World.Transpose();
+        World.transpose();
         MatVec.push_back(World);
     }
-    <span class="red">//メッシュの頂点の変更
-    m_InstanceMatrixMesh->UpdateVirtex(MatVec);</span>
+    //メッシュの頂点の変更
+    <span class="red">m_InstanceMatrixMesh->UpdateVirtex(MatVec);</span>
 }
 </pre>
 </div>

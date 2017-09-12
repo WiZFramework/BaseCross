@@ -52,22 +52,14 @@
 void CubeObject::CreateBuffers() {
     float HelfSize = 0.5f;
     vector&lt;VertexPositionColor> vertices = {
-        { VertexPositionColor(Vector3(-HelfSize, HelfSize, -HelfSize), 
-            Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, HelfSize, -HelfSize), 
-            Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, -HelfSize), 
-            Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, -HelfSize, -HelfSize), 
-            Color4(1.0f, 0.0f, 1.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, HelfSize, HelfSize), 
-            Color4(1.0f, 0.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, HelfSize, HelfSize), 
-            Color4(0.0f, 1.0f, 0.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(HelfSize, -HelfSize, HelfSize), 
-            Color4(0.0f, 0.0f, 1.0f, 1.0f)) },
-        { VertexPositionColor(Vector3(-HelfSize, -HelfSize, HelfSize), 
-            Color4(1.0f, 0.0f, 1.0f, 1.0f)) }
+        { VertexPositionColor(Vec3(-HelfSize, HelfSize, -HelfSize), Col4(1.0f, 0.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, HelfSize, -HelfSize), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, -HelfSize, -HelfSize), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, -HelfSize, -HelfSize), Col4(1.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, HelfSize, HelfSize), Col4(1.0f, 0.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, HelfSize, HelfSize), Col4(0.0f, 1.0f, 0.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(HelfSize, -HelfSize, HelfSize), Col4(0.0f, 0.0f, 1.0f, 1.0f)) },
+        { VertexPositionColor(Vec3(-HelfSize, -HelfSize, HelfSize), Col4(1.0f, 0.0f, 1.0f, 1.0f)) }
     };
     vector&lt;uint16_t> indices = {
         0, 1, 2,
@@ -106,10 +98,10 @@ void CubeObject::CreateBuffers() {
 <pre>
 struct StaticConstantBuffer
 {
-    Matrix4X4 World;
-    Matrix4X4 View;
-    Matrix4X4 Projection;
-    Color4 Emissive;
+    Mat4x4 World;
+    Mat4x4 View;
+    Mat4x4 Projection;
+    Col4 Emissive;
     StaticConstantBuffer() {
         memset(this, 0, sizeof(StaticConstantBuffer));
     };
@@ -219,32 +211,31 @@ explicit CD3DX12_DEPTH_STENCIL_DESC( CD3DX12_DEFAULT )
 <pre>
 void CubeObject::UpdateConstantBuffer() {
     //行列の定義
-    Matrix4X4 World, View, Proj;
+    Mat4x4 World, View, Proj;
     //ワールド行列の決定
-    World.AffineTransformation(
+    World.affineTransformation(
         m_Scale,            //スケーリング
-        Vector3(0, 0, 0),       //回転の中心（重心）
+        Vec3(0, 0, 0),      //回転の中心（重心）
         m_Qt,               //回転角度
         m_Pos               //位置
     );
     //転置する
-    <span class="red">World.Transpose();</span>
+    <span class="red">World.transpose();</span>
     //ビュー行列の決定
-    View.LookAtLH(Vector3(0, 2.0, -5.0f), Vector3(0, 0, 0), 
-        Vector3(0, 1.0f, 0));
+    View = XMMatrixLookAtLH(Vec3(0, 2.0, -5.0f), Vec3(0, 0, 0), Vec3(0, 1.0f, 0));
     //転置する
-    <span class="red">View.Transpose();</span>
+    <span class="red">View.transpose();</span>
     //射影行列の決定
     float w = static_cast&lt;float>(App::GetApp()->GetGameWidth());
     float h = static_cast&lt;float>(App::GetApp()->GetGameHeight());
-    Proj.PerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
+    Proj = XMMatrixPerspectiveFovLH(XM_PIDIV4, w / h, 1.0f, 100.0f);
     //転置する
-    <span class="red">Proj.Transpose();</span>
+    <span class="red">Proj.transpose();</span>
 
     m_StaticConstantBuffer.World = World;
     m_StaticConstantBuffer.View = View;
     m_StaticConstantBuffer.Projection = Proj;
-    m_StaticConstantBuffer.Emissive = Color4(0, 0, 0, 0);
+    m_StaticConstantBuffer.Emissive = Col4(0, 0, 0, 0);
     //更新
     memcpy(m_pConstantBuffer, reinterpret_cast&lt;void**>(&m_StaticConstantBuffer),
         sizeof(m_StaticConstantBuffer));
