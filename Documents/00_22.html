@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０２．シンプルバージョンでゲームの実装(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０２２．Rigidbody（剛体）(Dx11版)</h3>
+　このサンプルは<b>SimplSample022</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。いくつかのオブジェクトが配置されており、プレイヤーはそれらと衝突します。
+<p>&nbsp;</p>
+<img src="img/0022a.png" width="80%"/>
+<p>図0021a</p>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　このサンプルは<b>Rigidbody（いわゆる、剛体）</b>についての説明です。<br />
+　とはいえ、ほかゲームエンジンにあるような<b>物理計算</b>を綿密に行うものではありません。ここで紹介する<b>Rigidbody</b>は<b>速度</b>と<b>フォース</b>を持ち、<b>衝突判定と衝突応答</b>を行います。回転処理は自動には行いません。<br />
+　ここで紹介する<b>Rigidbody</b>は、各オブジェクトと分離して管理します。<b>Rigidbodyマネージャ</b>という管理クラスを用意し、速度の反映や衝突関連の操作はマネージャで行います。<br />
+　ポイントをまとめると以下になります。
+<div class="box1">
+<pre>
+１、Rigidbodyクラス（構造体）の実装
+２、Rigidbodyマネージャの実装
+</pre>
+</div>
+　これらについて、詳しく説明します。<br />
+<br />
+<h4>■１、Rigidbodyクラス（構造体）の実装■</h4>
+　<b>Rigidbodyクラス</b>は<b>構造体</b>として作成します。<b>GameStage.h</b>に宣言があります。以下、抜粋ですが
+<div class="box1">
+<pre>
+struct Rigidbody {
+    //オーナー
+    weak_ptr&lt;GameObject> m_Owner;
+    //重力加速度
+    Vec3 m_Gravity;
+    //質量
+    float m_Mass;
+    //現在のフォース
+    Vec3 m_Force;
+    //速度
+    Vec3 m_Velocity;
+    //コリジョンのタイプ
+    CollType m_CollType;
+    //Fixedかどうか
+    bool m_IsFixed;
+    //スケール
+    Vec3 m_Scale;
+    //回転
+    Quat m_Quat;
+    //位置
+    Vec3 m_Pos;
+    //1つ前のスケール
+    Vec3 m_BeforeScale;
+    //1つ前の回転
+    Quat m_BeforeQuat;
+    //1つ前の位置
+    Vec3 m_BeforePos;
+
+//中略
+
+};
+</pre>
+</div>
+　ここでは<b>剛体</b>を表現する、最低限の情報をまとめてあります。<b>m_Owner</b>はこの剛体を持つオブジェクトです。安全のため<b>weak_ptr</b>になっています。<br />
+　実際に描画に必要なのは<b>m_Scale、m_Quat、m_Pos</b>です。これで、ワールド行列を作成し描画します。ほかのデータは、計算用変数だったり、情報だったりします。<br />
+　綿密な物理計算はしませんが、基本的に<b>ニュートンの法則</b>に従って計算します。<br />
+　<b>m_CollType</b>は<b>CollType</b>のenum値です。<b>CollType</b>は、衝突判定の形状で、以下のように定義されます。
+<div class="box1">
+<pre>
+enum class CollType {
+    typeNone,
+    typeSPHERE,
+    typeCAPSULE,
+    typeOBB,
+};
+</pre>
+</div>
+　このようにこのサンプルでは<b>SPHERE（球体）、CAPSULE（カプセル）、OBB（直方体）</b>について対応しています。<br />
+　<b>m_BeforeScale、m_BeforeQuat、m_BeforePos</b>は<b>処理前の情報</b>です。Update処理が終わったとき、処理前との変更を確認できます。<br />
+　さて、このような<b>剛体クラス</b>があったとき、各オブジェクトはこのクラスをどのように扱うのでしょうか。<br />
+　それは、例えば<b>Playerクラス</b>の<b>OnCreate()関数</b>に記述があります。<br />
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
+    //メッシュの作成（変更できない）
+    m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+    //タグの追加
+    AddTag(L"Player");
+    <span class="red">//Rigidbodyの初期化
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    Rigidbody body;
+    body.m_Owner = GetThis&lt;GameObject>();
+    body.m_Mass = 1.0f;
+    body.m_Scale = Vec3(0.25f);
+    body.m_Quat = Quat();
+    body.m_Pos = m_Posision;
+    body.m_CollType = CollType::typeSPHERE;
+    body.SetToBefore();
+
+    PtrGameStage->AddRigidbody(body);</span>
+
+}
+</pre>
+</div>
+　このように<b>Rigidbodyの変数</b>の<b>body</b>を定義し、<b>GameStage</b>の<b>AddRigidbody()関数</b>で<b>bodyを追加</b>します。<br />
+　<b>GameStage</b>には、以下のように<b>RigidbodyManagerクラス</b>のshared_ptrがあります。
+<div class="box1">
+<pre>
+class GameStage : public Stage {
+    Vec4 m_LightDir;        ///&lt;ライト向き
+    Camera m_Camera;        ///&lt;カメラ
+    //RigidbodyManager
+    <span class="red">shared_ptr&lt;RigidbodyManager> m_RigidbodyManager;</span>
+public:
+//中略
+};
+</pre>
+</div>
+　<b>RigidbodyManagerクラス</b>については後で詳しく説明しますが<b>Rigidbodyの配列</b>があり、<b>GameStage</b>の<b>AddRigidbody()関数</b>はその配列に<b>Rigidbodyを追加</b>します。<br />
+<br />
+　さて<b>Player</b>ではこのように<b>Rigidbodyの作成と登録</b>を行うわけですが、その更新（Update）はどのように行うのでしょうか？<br />
+　<b>Player::OnUpdate()関数</b>に記述があります。
+<div class="box1">
+<pre>
+void Player::OnUpdate() {
+    <span class="red">auto& body = GetStage&lt;GameStage>()->GetOwnRigidbody(GetThis&lt;GameObject>());</span>
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        if (!m_JumpLock) {
+            //Aボタン
+            if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+                body.m_BeforePos.y += 0.01f;
+                body.m_Pos.y += 0.01f;
+                body.m_Velocity += Vec3(0, 4.0f, 0);
+                m_JumpLock = true;
+            }
+        }
+        Vec3 Direction = GetMoveVector();
+        if (length(Direction) &lt; 0.1f) {
+            body.m_Velocity.x *= 0.9f;
+            body.m_Velocity.z *= 0.9f;
+        }
+        else {
+            //フォースで変更する場合は以下のように記述
+            //body.m_Force += Direction * 10.0f;
+            //速度で変更する場合は以下のように記述
+            body.m_Velocity += Direction * 0.5f;
+            Vec2 TempVelo(body.m_Velocity.x, body.m_Velocity.z);
+            TempVelo = XMVector2ClampLength(TempVelo, 0, 5.0f);
+            body.m_Velocity.x = TempVelo.x;
+            body.m_Velocity.z = TempVelo.y;
+        }
+    }
+    body.m_Force += body.m_Gravity * body.m_Mass;
+}
+</pre>
+</div>
+　ここではコントローラに合わせて、プレイヤーを移動させます。その際
+<div class="box1">
+<pre>
+    <span class="red">auto& body = GetStage&lt;GameStage>()->GetOwnRigidbody(GetThis&lt;GameObject>());</span>
+</pre>
+</div>
+　で自分自身の<b>Rigidbody</b>を取得し、その内容を更新します。<br />
+　更新方法は、ここでは、<b>Velocity</b>を変更します。<br />
+<div class="box1">
+<pre>
+    //速度で変更する場合は以下のように記述
+    body.m_Velocity += Direction * 0.5f;
+</pre>
+</div>
+　もし、<b>Velocity</b>ではなく<b>Force</b>を変更する場合は、上記をコメントにして
+<div class="box1">
+<pre>
+    body.m_Force += Direction * 10.0f;
+</pre>
+</div>
+　のコメントを外します。この違いは、実際に動かしてみるとわかると思いますが、<b>フォース</b>を変更する形だと、<b>慣性</b>がより強く働きます。<br />
+　<b>Rigidbody</b>には<b>Velocity</b>と<b>Force</b>があるわけですが、実際の計算は以下のよう、<b>Velocity</b>にまとめられます。
+<div class="box1">
+<pre>
+    Vec3 accel = m_Force * m_Mass;
+    m_Velocity += accel * ElapsedTime;
+</pre>
+</div>
+　この処理はマネージャで行われますので、オブジェクト側では、<b>Force</b>もしくは<b>Velocity</b>の修正のみ行います。<br />
+　ここでの<b>ElapsedTime</b>は<b>前回のターンからの時間</b>です。<b>Force</b>は<b>力</b>ですから、ニュートンの第2法則により
+<div class="box1">
+<pre>
+加速度 = Force / 質量
+</pre>
+</div>
+　の関係があります。ですから<b>質量が大きいもの</b>は<b>Force</b>の影響は小さくなります。<br />
+　また、<b>Force</b>は、毎ターン0に初期化され、そのターンで加わる力を足していきます。フォースとして自動的に加算される値に<b>重力加速度</b>があります。これは、上記プレイヤーの処理で
+<div class="box1">
+<pre>
+    body.m_Force += body.m_Gravity * body.m_Mass;
+</pre>
+</div>
+　と追加されます。ニュートンの第2法則は
+<div class="box1">
+<pre>
+Force = 質量 * 加速度
+</pre>
+</div>
+　ともも書けますので、この方法で重力加速度を追加しています。<br />
+<br />
+　さて、この<b>Player::OnUpdate()</b>では<b>m_Pos（つまり位置）</b>は修正はしていません。<br />
+　<b>Rigidbody</b>を使う環境では位置情報の直接変更は、しない前提です。<br />
+　もし、直接変更したいのであれば<b>Player::OnUpdate2()関数</b>で行います。この関数は<b>Rigidbodyマネージャ</b>の処理後に呼ばれますので、位置を直接変更できます。以下が実体です。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    auto& body = GetStage&lt;GameStage>()->GetOwnRigidbody(GetThis&lt;GameObject>());
+    if (body.m_Pos.y &lt;= m_BaseY) {
+        <span class="red">body.m_Pos.y = m_BaseY;</span>
+        body.m_Velocity.y = 0;
+        m_JumpLock = false;
+    }
+    auto& StateVec = GetStage&lt;GameStage>()->GetCollisionStateVec();
+    for (auto& v : StateVec) {
+        if (v.m_Src == &body) {
+            Vec3 Normal = v.m_SrcHitNormal;
+            Normal.normalize();
+            Vec4 v = (Vec4)XMVector3AngleBetweenNormals(Vec3(0, 1, 0), Normal);
+            if (v.x &lt; 0.1f) {
+                m_JumpLock = false;
+                break;
+            }
+        }
+        if (v.m_Dest == &body) {
+            Vec3 Normal = v.m_SrcHitNormal;
+            Normal.normalize();
+            Vec4 v = (Vec4)XMVector3AngleBetweenNormals(Vec3(0, 1, 0), Normal);
+            if (v.x &lt; 0.1f) {
+                m_JumpLock = false;
+                break;
+            }
+        }
+    }
+    auto LenVec = body.m_Pos - body.m_BeforePos;
+    LenVec.y = 0;
+    auto Len = LenVec.length();
+    if (Len > 0) {
+        Vec3 Cross = cross(Vec3(0, 1, 0), LenVec);
+        Quat Span(Cross, Len / 0.5f);
+        body.m_Quat *= Span;
+    }
+}
+</pre>
+</div>
+　赤くなっているところで、位置を変更しています。このサンプルでは<b>プレート（いわゆるゲーム盤）</b>には衝突判定を設けずに、その下には行けないようになっています（衝突判定を設ける方法もあります）。<br />
+　このサンプルのような処理をする場合は、位置情報を強制的に戻す必要があり、その処理を行っています。<br />
+　そのあとの処理は、回転などの処理です。ここでは進行方向に回転する処理を行っています。<br />
+<br />
+<h4>■２、Rigidbodyマネージャの実装■</h4>
+　プレイヤーをはじめ、配置されているオブジェクトは（プレート以外は）、<b>Rigidbody</b>を持っています。<b>持っている</b>というのは正確ではなくて、<b>登録されている</b>のほうが当たっているかもしれません。<br />
+　登録先は<b>Rigidbodyマネージャ</b>です。<b>GameStage.h/cpp</b>に実装があります。<br />
+　以下は、宣言部です。長くなりますが
+<div class="box1">
+<pre>
+class RigidbodyManager : public GameObject {
+    //Rigidbodyの配列
+    <span class="red">vector&lt;Rigidbody> m_RigidbodyVec;</span>
+    //衝突判定
+    void CollisionDest(Rigidbody& Src);
+    bool CollisionStateChk(Rigidbody* p1, Rigidbody* p2);
+    bool CollisionTest(Rigidbody& Src, Rigidbody& Dest, CollisionState& state);
+    //衝突ステートの配列
+    <span class="red">vector&lt;CollisionState> m_CollisionStateVec;</span>
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    @param[in]  StagePtr    ステージのポインタ
+    */
+    //--------------------------------------------------------------------------------------
+    RigidbodyManager(const shared_ptr&lt;Stage>& StagePtr);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~RigidbodyManager();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief Rigidbodyの配列を得る
+    @return Rigidbodyの配列
+    */
+    //--------------------------------------------------------------------------------------
+    const vector&lt;Rigidbody>& GetRigidbodyVec()const {
+        return m_RigidbodyVec;
+    }
+    vector&lt;Rigidbody>& GetRigidbodyVec() {
+        return m_RigidbodyVec;
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 衝突情報の配列を得る
+    @return 衝突情報の配列
+    */
+    //--------------------------------------------------------------------------------------
+    const vector&lt;CollisionState>& GetCollisionStateVec()const {
+        return m_CollisionStateVec;
+    }
+    vector&lt;CollisionState>& GetCollisionStateVec(){
+        return m_CollisionStateVec;
+    }
+
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 指定のオーナーのRigidbodyを得る
+    @param[in]  OwnerPtr    オーナーのポインタ
+    @return 指定のオーナーのRigidbody
+    */
+    //--------------------------------------------------------------------------------------
+    Rigidbody& GetOwnRigidbody(const shared_ptr&lt;GameObject>& OwnerPtr) {
+        for (auto& v : m_RigidbodyVec) {
+            auto shptr = v.m_Owner.lock();
+            if (shptr == OwnerPtr) {
+                return v;
+            }
+        }
+        throw BaseException(
+            L"指定のRigidbodyが見つかりません",
+            L"!Rigidbody",
+            L"RigidbodyManager::GetOwnRigidbody()"
+        );
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief フォースを初期化する
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void InitRigidbody();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief SrcのDestからのエスケープ
+    @param[in]  Src     Srcのポインタ
+    @param[in]  Dest    Destのポインタ
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void Escape(Rigidbody* Src, Rigidbody* Dest);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 更新
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate()override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 最終更新
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate2()override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 描画
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDraw()override {}
+
+};
+</pre>
+</div>
+　<b>RigidbodyManagerマネージャ</b>は様々な更新処理を行うので、宣言をすべて紹介しましたが、その中でも大事なのは以下の2つの配列です。
+<div class="box1">
+<pre>
+    //Rigidbodyの配列
+    <span class="red">vector&lt;Rigidbody> m_RigidbodyVec;</span>
+//中略
+    //衝突ステートの配列
+    <span class="red">vector&lt;CollisionState> m_CollisionStateVec;</span>
+</pre>
+</div>
+　<b>Rigidbodyの配列</b>はすでに説明しましたが、各オブジェクトから追加される配列です。<br />
+　<b>衝突ステートの配列</b>は、衝突情報を保持しておく配列です。衝突情報は
+<div class="box1">
+<pre>
+struct CollisionState {
+    Rigidbody* m_Src;
+    Vec3 m_SrcHitNormal;
+    Rigidbody* m_Dest;
+    Vec3 m_DestHitNormal;
+    float m_HitTime;
+};
+</pre>
+</div>
+　という構造体にまとめられます。中に<b>生ポインタ</b>がありますが、この配列はターン毎に初期化されるので、無理やり、ポインタをdeleteでもしない限り安全です。<br />
+<br />
+　<b>RigidbodyManagerマネージャ</b>自体は単なるゲームオブジェクトです。しかしゲームステージ上の<b>ゲームオブジェクトの配列</b>に加わるのではなく、別途初期化されます。<b>GameStage::OnCreate()関数</b>の冒頭で初期化されます。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    //Rigidbodyマネージャの初期化
+    m_RigidbodyManager 
+        = ObjectFactory::Create&lt;RigidbodyManager>(GetThis&lt;GameStage>());
+
+//以下略
+
+}
+</pre>
+</div>
+　ここで初期化されますので後続のオブジェクトは、<b>Rigidbodyの追加</b>を行うことができます。<br />
+<br />
+　さて、<b>Rigidbodyマネージャ</b>の実際の仕事ですが、それを説明するのに<b>ゲームステージのUpdate処理</b>を説明します。以下は<b>GameStage::OnUpdateStage()関数</b>です。この関数は<b>シーン</b>から呼ばれます。
+<div class="box1">
+<pre>
+void GameStage::OnUpdateStage() {
+    //ターン毎の初期化
+    <span class="red">m_RigidbodyManager->InitRigidbody();</span>
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの更新
+        v->OnUpdate();
+    }
+    //Rigidbodyマネージャの更新（衝突判定など）
+    <span class="red">m_RigidbodyManager->OnUpdate();</span>
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの最終更新
+        v->OnUpdate2();
+    }
+    //自分自身の更新(カメラ)
+    this->OnUpdate();
+    //Rigidbodyマネージャの最終更新（衝突判定情報のクリア）
+    <span class="red">m_RigidbodyManager->OnUpdate2();</span>
+}
+</pre>
+</div>
+　赤くなっているところが、<b>Rigidbodyマネージャの操作</b>になります。<br />
+　まず、<b>m_RigidbodyManager->InitRigidbody()</b>ですが
+<div class="box1">
+<pre>
+//ターン毎の初期化
+void RigidbodyManager::InitRigidbody() {
+    //1つ前の位置にセットとフォースの初期化
+    for (auto& v : m_RigidbodyVec) {
+        v.SetToBefore();
+        v.m_Force = Vec3(0);
+    }
+}
+</pre>
+</div>
+　コメントにもあるように<b>ターン毎の初期化</b>です。<b>Rigidbody</b>の<b>SetToBefore()</b>を呼び出すことで、現在のスケーリング、回転、位置をとっておきます。<br />
+　ここでフォースも0に初期化します。<br />
+　続いて<b>m_RigidbodyManager->OnUpdate();</b>ですが、以下のように様々な処理を行ってます。各オブジェクトの<b>OnUpdate()</b>がよばれた後ですので、それらの動きに応じた処理になります。
+<div class="box1">
+<pre>
+void RigidbodyManager::OnUpdate() {
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //フォースから速度に変換
+    for (auto& v : m_RigidbodyVec) {
+        Vec3 accel = v.m_Force * v.m_Mass;
+        v.m_Velocity += accel * ElapsedTime;
+    }
+
+    //衝突判定を行い、ヒットがあれば速度を変更する
+    if (m_RigidbodyVec.size() >= 2) {
+        //衝突判定
+        for (auto& v : m_RigidbodyVec) {
+            CollisionDest(v);
+        }
+    }
+    if (m_CollisionStateVec.size() >= 2) {
+        //ヒットタイムでソート（ヒットタイムが）近いものに対応
+        auto func = [&](CollisionState& Left, CollisionState& Right)->bool {
+            return (Left.m_HitTime &lt; Right.m_HitTime);
+        };
+        std::sort(m_CollisionStateVec.begin(), m_CollisionStateVec.end(), func);
+    }
+    //衝突応答
+    for (auto& v : m_CollisionStateVec) {
+        if (!v.m_Src->m_IsFixed) {
+            v.m_Src->Move(v.m_HitTime);
+            v.m_Src->m_Velocity.slide(v.m_SrcHitNormal);
+        }
+        if (!v.m_Dest->m_IsFixed) {
+            v.m_Dest->Move(v.m_HitTime);
+            v.m_Dest->m_Velocity.slide(v.m_DestHitNormal);
+        }
+    }
+
+    //設定された速度をもとに衝突無しのオブジェクトの位置の決定
+    for (auto& v : m_RigidbodyVec) {
+            v.Move(ElapsedTime);
+    }
+
+    //エスケープ処理
+    for (auto& v : m_CollisionStateVec) {
+        if (!v.m_Src->m_IsFixed) {
+            Escape(v.m_Src, v.m_Dest);
+        }
+        if (!v.m_Dest->m_IsFixed) {
+            Escape(v.m_Dest ,v.m_Src);
+        }
+    }
+}
+</pre>
+</div>
+　まず、各オブジェクトで設定されたフォースを速度にまとめます。
+<div class="box1">
+<pre>
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //フォースから速度に変換
+    for (auto& v : m_RigidbodyVec) {
+        Vec3 accel = v.m_Force * v.m_Mass;
+        v.m_Velocity += accel * ElapsedTime;
+    }
+</pre>
+</div>
+　の部分です。続いて衝突判定です。
+<div class="box1">
+<pre>
+    //衝突判定を行い、ヒットがあれば速度を変更する
+    if (m_RigidbodyVec.size() >= 2) {
+        //衝突判定
+        for (auto& v : m_RigidbodyVec) {
+            CollisionDest(v);
+        }
+    }
+</pre>
+</div>
+　2個以上の<b>Rigidbody</b>がある場合に行います。<b>CollisionDest(v)</b>というのは、多対多の衝突判定の1次元目です。この関数は、2次元めの判定を呼び出します。<br />
+　この関数を追いかけていくとわかりますが、衝突があった場合に<b>m_CollisionStateVec</b>に衝突情報が追加されます。ですので、続く
+<div class="box1">
+<pre>
+    if (m_CollisionStateVec.size() >= 2) {
+        //ヒットタイムでソート（ヒットタイムが）近いものに対応
+        auto func = [&](CollisionState& Left, CollisionState& Right)->bool {
+            return (Left.m_HitTime &lt; Right.m_HitTime);
+        };
+        std::sort(m_CollisionStateVec.begin(), m_CollisionStateVec.end(), func);
+    }
+    //衝突応答
+    for (auto& v : m_CollisionStateVec) {
+        if (!v.m_Src->m_IsFixed) {
+            v.m_Src->Move(v.m_HitTime);
+            v.m_Src->m_Velocity.slide(v.m_SrcHitNormal);
+        }
+        if (!v.m_Dest->m_IsFixed) {
+            v.m_Dest->Move(v.m_HitTime);
+            v.m_Dest->m_Velocity.slide(v.m_DestHitNormal);
+        }
+    }
+</pre>
+</div>
+　で衝突応答の処理を行ってます。<b>ヒットタイムでソート</b>というのは、ターン時間での衝突時間の速いものから順に応答処理を行うということです。1つのオブジェクトが複数のオブジェクトと衝突している場合があります。そういう場合に、速い時間で衝突したものから応答処理をしています。<br />
+<<br />
+　衝突判定は、衝突そのものより、<b>応答</b>のほうが処理は大変です。物理計算のライブラリなどはこの応答処理に多くのコードを割いています。<br />
+　このサンプルでは、このあたりをかなり簡略化しています。以下のような丸め込みがあります。
+<div class="box1">
+<pre>
+１、同じターン内で複数の衝突があった場合、本来なら、最初の衝突の応答を計算して、
+　その後それに合わせた判定を行わなければならないが、簡略化している。
+２、本来なら、回転も応答処理に入れるべきだが、その処理は行っていない
+３、回転要素を加味しない代わりに、スライドと呼ばれる処理で移動速度を変更している
+</pre>
+</div>
+　このため、この<b>衝突応答</b>を修正することで、もっと細かな処理を実装することができます。<b>CollisionState</b>には<b>衝突ペア</b>のほかに、<b>衝突法線</b>や<b>衝突時間</b>も入っているので、いろいろな計算が可能と思います。<br/>
+<br />
+　<b>Rigidbodyマネージャの操作</b>ではその後、実際に位置の変更を行い、最後に<b>エスケープ処理</b>というのを行っています。この処理は、衝突応答によって位置の変更がされた場合、衝突した相手とまだ衝突している場合に、相手の領域から脱出する処理です。この処理は意外と重要で、これを行わないと、オブジェクトが別のオブジェクトの中に挟まってしまったりします。<br />
+　どういう処理をしているかどうかは
+<div class="box1">
+<pre>
+    Escape(v.m_Src, v.m_Dest);
+</pre>
+</div>
+　の呼び出しを追いかけてみてください。<br />
+<br />
+　さてこのように<b>RigidbodyManager::OnUpdate()</b>が行われるのですが、各ターンの最後に<b>m_RigidbodyManager->OnUpdate2();</b>が実行されます。内容は以下です。
+
+
+<div class="box1">
+<pre>
+    void RigidbodyManager::OnUpdate2() {
+        //衝突情報のクリア
+        m_CollisionStateVec.clear();
+    }
+</pre>
+</div>
+　このように<b>衝突情報のクリア</b>を行います。衝突情報は各オブジェクトの<b>OnUpdate2()呼び出し</b>の時点では保持されてますので。<b>もし衝突があったら</b>などの処理は各オブジェクトの<b>OnUpdate2()</b>で処理することができます。<br />
+<br />
+　この項では<b>Rigidbody</b>の作成、使用例について述べました。この方法ばかりではなくほかにもいろんな実装方法があります。例えば<b>BaseCrossのフルバージョン</b>では<b>Rigidbody</b>と<b>Collision</b>は別に実装し、また<b>コンポーネント</b>として実装しています。<br />
+　最後になりましたが、このサンプルには<b>Player</b>のほかに<b>CapsulePlayer</b>と<b>ObbPlayer</b>が定義されています。<br />
+　<b>GameStage::OnCreate()関数</b>で
+<div class="box1">
+<pre>
+        //プレイヤーの作成
+        AddGameObject&lt;Player>(
+            L"TRACE_TX",
+            true,
+            Vec3(0.0f, 0.125f, 0.0f)
+            );
+
+        //カプセルプレイヤーの作成
+        //AddGameObject&lt;CapsulePlayer>(
+        //  L"TRACE_TX",
+        //  true,
+        //  Vec3(0.0f, 0.25f, 0.0f)
+        //  );
+
+        //OBBプレイヤーの作成
+        //AddGameObject&lt;ObbPlayer>(
+        //  L"TRACE_TX",
+        //  true,
+        //  Vec3(0.0f, 0.125f, 0.0f)
+        //  );
+</pre>
+</div>
+　のような記載がありますので、<b>CapsulePlayer</b>もしくは<b>ObbPlayer</b>を実装したい場合は、コメントを外してください。ただし<b>これらの別タイプのプレイヤー</b>は共存できませんので、どれか一つを選択してみましょう。<br />
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_21.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

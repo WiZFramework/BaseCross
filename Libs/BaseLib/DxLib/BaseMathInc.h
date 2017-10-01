@@ -428,6 +428,21 @@ namespace bsm {
 
 	}
 
+	inline Flt3& Flt3::reflect(const Flt3 & normal) {
+		*this = (Flt3)XMVector3Reflect(*this, normal);
+		return *this;
+	}
+
+	inline Flt3& Flt3::slide(const Flt3 & normal) {
+		//*thisと法線から直行線の長さ（内積で求める）
+		float Len = bsm::dot(*this, normal);
+		//その長さに伸ばす
+		Flt3 Contact = normal * Len;
+		//スライドする方向は現在のベクトルから引き算
+		*this -= Contact;
+		return *this;
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	Flt4インライン実装
@@ -1876,6 +1891,23 @@ namespace bsm {
 	{
 		return (Flt3)XMVector3Cross(vec0, vec1);
 	}
+
+	inline const Flt3 reflect(const Flt3 & vec, const Flt3 & normal)
+	{
+		return (Flt3)XMVector3Reflect(vec, normal);
+	}
+
+	inline const Flt3 slide(const Flt3 & vec, const Flt3 & normal)
+	{
+		//vecと法線から直行線の長さ（内積で求める）
+		float Len = bsm::dot(vec, normal);
+		//その長さに伸ばす
+		Flt3 Contact = normal * Len;
+		//スライドする方向は現在のベクトルから引き算
+		return (vec - Contact);
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt4

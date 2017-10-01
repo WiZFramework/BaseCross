@@ -15,7 +15,6 @@ namespace basecross {
 	class Player : public GameObject {
 		//メッシュ
 		shared_ptr<MeshResource> m_SphereMesh;
-		UINT m_Division;				///<分割数
 		wstring m_TextureResName;		///<テクスチャリソース名
 		Vec3 m_Scale;				///<スケーリング
 		float m_BaseY;				///<スケーリングベースの最下地点
@@ -49,14 +48,13 @@ namespace basecross {
 		/*!
 		@brief コンストラクタ
 		@param[in]	StagePtr	ステージのポインタ
-		@param[in]	Division	分割数
 		@param[in]	TextureResName	テクスチャリソース名
 		@param[in]	Trace	透明処理するかどうか
 		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
 		Player(const shared_ptr<Stage>& StagePtr,
-			UINT Division, const wstring& TextureResName, bool Trace, const Vec3& Pos);
+			const wstring& TextureResName, bool Trace, const Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ

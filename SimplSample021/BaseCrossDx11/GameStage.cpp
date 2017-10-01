@@ -67,7 +67,6 @@ namespace basecross {
 
 		//ƒvƒŒƒCƒ„[‚Ìì¬
 		AddGameObject<Player>(
-			18, 
 			L"TRACE_TX", 
 			true, 
 			Vec3(0.0f, 0.125f, 0.0f)

@@ -818,6 +818,75 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
+	///	シリンダーボリューム境界
+	//--------------------------------------------------------------------------------------
+	struct CYLINDER {
+		float m_Radius;			///< 半径
+		bsm::Vec3 m_PointBottom;		///< 中間部線分の開始点
+		bsm::Vec3 m_PointTop;		///< 中間部線分の終了点
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		CYLINDER() :
+			m_Radius(1.0f),
+			m_PointBottom(0, -0.5f, 0),
+			m_PointTop(0, 0.5f, 0)
+		{
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	Radius	半径
+		@param[in]	PointBottom	中間部線分の開始点
+		@param[in]	PointTop	中間部線分の終了点
+		*/
+		//--------------------------------------------------------------------------------------
+		CYLINDER(float Radius, const bsm::Vec3& PointBottom, const bsm::Vec3& PointTop) :
+			m_Radius(Radius),
+			m_PointBottom(PointBottom),
+			m_PointTop(PointTop)
+		{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心点を得る
+		@return	中心点
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Vec3 GetCenter() const {
+			return m_PointBottom + ((m_PointTop - m_PointBottom) * 0.5f);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	高さを得る
+		@return	高さ
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetHeight() const {
+			return bsm::length(m_PointTop - m_PointBottom);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	半径1.0、高さ1.0の基本形からのワールド行列を得る
+		@return	ワールド行列
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Mat4x4 GetMatrix() const{
+			bsm::Mat4x4 mat;
+			bsm::Vec3 Pos = GetCenter();
+			bsm::Vec3 Rot = m_PointTop - m_PointBottom;
+			Rot.normalize();
+			bsm::Quat Qt(Rot,0.0f);
+			float Height = bsm::length(m_PointTop - m_PointBottom);
+			bsm::Vec3 Scale(m_Radius, Height, m_Radius);
+			mat.affineTransformation(Scale, bsm::Vec3(0, 0, 0), Qt, Pos);
+			return mat;
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	カプセルボリューム境界
 	//--------------------------------------------------------------------------------------
 	struct CAPSULE {
@@ -1382,6 +1451,24 @@ namespace basecross{
 			d = a + (ab * t);
 		}
 
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	点cとプレーンの最近接点を返す
+		@param[in]	c	もとになる点
+		@param[in]	c	もとになる点
+		@param[out]	d	最近接点の戻り値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosetPtPointPlane(const bsm::Vec3& c,
+			const PLANE& pl,bsm::Vec3& d) {
+			float t = (bsm::dot(pl.m_Normal, c) - pl.m_DotValue) / bsm::dot(pl.m_Normal, pl.m_Normal);
+			d = c - pl.m_Normal * t;
+		}
+
+
+
 		static SPHERE SphereEnclosingSphere(const SPHERE& s0, const SPHERE& s1) {
 			const float EPSILON = 1.175494e-37f;
 			SPHERE s;
@@ -1437,6 +1524,82 @@ namespace basecross{
 			float radius = sp.m_Radius + cap.m_Radius;
 			return dist2 <= radius * radius;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	球と平面との衝突判定
+		@param[in]	sp	球
+		@param[in]	pl	平面
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_PLANE(const SPHERE& sp, const PLANE& pl) {
+			float dist = bsm::dot(sp.m_Center, pl.m_Normal) - pl.m_DotValue;
+			return dist <= sp.m_Radius;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	球とシリンダーとの衝突判定
+		@param[in]	sp	球
+		@param[in]	cy	シリンダー
+		@param[out]	d	最近接点の戻り値
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_CYLINDER(const SPHERE& sp, const CYLINDER& cy, bsm::Vec3& d) {
+			CAPSULE cap;
+			cap.m_PointBottom = cy.m_PointBottom;
+			cap.m_PointTop = cy.m_PointTop;
+			cap.m_Radius = cy.m_Radius;
+			//まずカプセルを作成して判定
+			if (!SPHERE_CAPSULE(sp, cap, d)) {
+				return false;
+			}
+			bsm::Vec3 CenterPole = cap.m_PointTop - cap.m_PointBottom;
+			float CenterPoleLen = CenterPole.length();
+			CenterPole.normalize();
+			float f = bsm::dot(CenterPole, d - cap.m_PointBottom);
+			if (f >= 0 && f <= CenterPoleLen) {
+				return true;
+			}
+
+			bsm::Vec3 t0(0, 0.5f, 0);
+			bsm::Vec3 t1(0.0f, 0.5f, 1.0);
+			bsm::Vec3 t2(1.0, 0.5f, 0.0f);
+
+			bsm::Vec3 b0(0, -0.5f, 0);
+			bsm::Vec3 b1(1.0f, -0.5f, 0.0);
+			bsm::Vec3 b2(0.0, -0.5f, 1.0f);
+
+			bsm::Mat4x4 cyWorld = cy.GetMatrix();
+			t0 *= cyWorld;
+			t1 *= cyWorld;
+			t2 *= cyWorld;
+
+			b0 *= cyWorld;
+			b1 *= cyWorld;
+			b2 *= cyWorld;
+
+			PLANE topPlane(t0,t1,t2);
+			PLANE bottomPlane(b0, b1, b2);
+
+			bool tb = SPHERE_PLANE(sp, topPlane);
+			bool bb = SPHERE_PLANE(sp, bottomPlane);
+			if (tb && bb) {
+				bsm::Vec3 topV,bottomV;
+				ClosetPtPointPlane(sp.m_Center, topPlane, topV);
+				ClosetPtPointPlane(sp.m_Center, bottomPlane, bottomV);
+				if (bsm::lengthSqr(sp.m_Center - topV) <= bsm::lengthSqr(sp.m_Center - bottomV)) {
+					d = topV;
+				}
+				else {
+					d = bottomV;
+				}
+				return true;
+			}
+			return false;
+		}
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カプセルとカプセルとの衝突判定
@@ -2170,6 +2333,41 @@ namespace basecross{
 			}
 			return CollisionTestSphereSphere(SrcSp, SrcVelocity, DestSp, mid, EndTime, HitTime);
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Sphereと動かないCylinderの衝突判定
+		@param[in]	SrcSp	Srcの球
+		@param[in]	SrcVelocity	ソース速度
+		@param[in]	DestCy	Destシリンダー
+		@param[in]	StartTime	開始時間
+		@param[in]	EndTime	終了時間
+		@param[out]	HitTime	ヒット時間
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CollisionTestSphereCylinder(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
+			const CYLINDER& DestCy,
+			float StartTime, float EndTime, float& HitTime) {
+			const float m_EPSILON = 0.005f;
+			SPHERE SrcSp2;
+			float mid = (StartTime + EndTime) * 0.5f;
+			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
+			SrcSp2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcSp.m_Radius;
+			bsm::Vec3 RetVec;
+			if (!HitTest::SPHERE_CYLINDER(SrcSp2, DestCy, RetVec)) {
+				return false;
+			}
+			if (EndTime - StartTime < m_EPSILON) {
+				HitTime = StartTime;
+				return true;
+			}
+			if (CollisionTestSphereCylinder(SrcSp, SrcVelocity, DestCy, StartTime, mid, HitTime)) {
+				return true;
+			}
+			return CollisionTestSphereCylinder(SrcSp, SrcVelocity, DestCy, mid, EndTime, HitTime);
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Sphereと動かないCapsuleの衝突判定

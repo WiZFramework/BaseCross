@@ -56,6 +56,14 @@ namespace basecross {
 			Vec3(0.0f, 0.0f, 0.0f)
 			);
 
+		m_CylinderObject = ObjectFactory::Create<CylinderObject>(
+			GetThis<Scene>(),
+			strTexture,
+			Vec3(5.0f, 1.0f, 5.0f),
+			Quat(Vec3(0.0f, 1.0, 0), 0),
+			Vec3(0.0f, 0.5f, 10.0f)
+			);
+
 		m_BoxVec.push_back(
 			ObjectFactory::Create<BoxObject>(
 				GetThis<Scene>(), strTexture, false,
@@ -96,14 +104,14 @@ namespace basecross {
 		strTexture = DataDir + L"wall.jpg";
 
 		//移動ボックス
-		m_BoxVec.push_back(
-			ObjectFactory::Create<MoveBoxObject>(
-				GetThis<Scene>(), strTexture, false,
-				Vec3(0.25f, 0.5f, 0.5f),
-				Quat(),
-				Vec3(0.0f, 0.25f, 5.0f)
-				)
-		);
+		//m_BoxVec.push_back(
+		//	ObjectFactory::Create<MoveBoxObject>(
+		//		GetThis<Scene>(), strTexture, false,
+		//		Vec3(0.25f, 0.5f, 0.5f),
+		//		Quat(),
+		//		Vec3(0.0f, 0.25f, 5.0f)
+		//		)
+		//);
 
 
 		wstring strTexture2 = DataDir + L"trace.png";
@@ -129,6 +137,7 @@ namespace basecross {
 	void Scene::OnUpdate() {
 		//更新
 		m_SquareObject->OnUpdate();
+		m_CylinderObject->OnUpdate();
 		m_SphereObject->OnUpdate();
 		for (auto& v : m_BoxVec) {
 			v->OnUpdate();
@@ -201,6 +210,7 @@ namespace basecross {
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		m_SquareObject->OnDraw();
+		m_CylinderObject->OnDraw();
 		for (auto& v : m_BoxVec) {
 			v->OnDraw();
 		}

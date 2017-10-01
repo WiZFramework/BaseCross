@@ -73,6 +73,69 @@ namespace basecross {
 	}
 
 
+	//--------------------------------------------------------------------------------------
+	///	シリンダー実体
+	//--------------------------------------------------------------------------------------
+	CylinderObject::CylinderObject(const shared_ptr<Scene> PtrScene,
+		const wstring& TextureFileName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos) :
+		m_Scene(PtrScene),
+		ObjectInterface(),
+		ShapeInterface(),
+		m_TextureFileName(TextureFileName),
+		m_Scale(Scale),
+		m_Qt(Qt),
+		m_Pos(Pos)
+	{}
+	CylinderObject::~CylinderObject() {}
+
+	CYLINDER CylinderObject::GetCYLINDER()const {
+		CYLINDER cy;
+		cy.m_Radius = m_Scale.x;
+		float halfY = m_Scale.y * 0.5f;
+		cy.m_PointTop = bsm::Vec3(m_Pos.x, m_Pos.y + halfY, m_Pos.z);
+		cy.m_PointBottom = bsm::Vec3(m_Pos.x, m_Pos.y - halfY, m_Pos.z);
+		return cy;
+	}
+
+
+	void CylinderObject::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCylinder(1.0f, 2.0f,18, vertices, indices);
+		//メッシュの作成（変更できない）
+		m_CylinderMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+		//テクスチャの作成
+		m_TextureResource = ObjectFactory::Create<TextureResource>(m_TextureFileName, L"WIC");
+	}
+	void CylinderObject::OnUpdate() {
+	}
+
+	void CylinderObject::OnDraw() {
+		auto ShPtrScene = m_Scene.lock();
+		if (!ShPtrScene) {
+			return;
+		}
+		//行列の定義
+		Mat4x4 World;
+		//ワールド行列の決定
+		World.affineTransformation(
+			m_Scale,			//スケーリング
+			Vec3(0, 0, 0),		//回転の中心（重心）
+			m_Qt,				//回転角度
+			m_Pos				//位置
+		);
+		ShPtrScene->GetPNTDrawObject()->AddDrawMesh(
+			m_CylinderMesh,
+			m_TextureResource,
+			World,
+			true
+		);
+	}
+
+
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	球実体
@@ -149,6 +212,62 @@ namespace basecross {
 		sp.m_Radius =  m_Scale.y * 0.5f;
 		return sp;
 	}
+
+	void SphereObject::CollisionWithCylinder(const Vec3& BeforePos) {
+		//前回のターンからの経過時間を求める
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//衝突判定
+		auto ShPtrScene = m_Scene.lock();
+		auto cyOb = ShPtrScene->GetCylinderObject();
+		CYLINDER cy = cyOb->GetCYLINDER();
+		SPHERE Sp = GetSPHERE();
+		Sp.m_Center = BeforePos;
+		float HitTime;
+		//相手の速度
+		Vec3 DestVelocity(0, 0, 0);
+		Vec3 SrcVelocity = m_Pos - BeforePos;
+		Vec3 CollisionVelosity = (SrcVelocity - DestVelocity) / ElapsedTime;
+		if (HitTest::CollisionTestSphereCylinder(Sp, CollisionVelosity, cy, 0, ElapsedTime, HitTime)) {
+			m_JumpLock = false;
+			m_Pos = BeforePos + CollisionVelosity * HitTime;
+			float SpanTime = ElapsedTime - HitTime;
+			//m_Posが動いたのでSPHEREを再取得
+			Sp = GetSPHERE();
+			Vec3 HitPoint;
+			//最近接点を得るための判定
+			HitTest::SPHERE_CYLINDER(Sp, cy, HitPoint);
+			//衝突法線をHitPointとm_Posから導く
+			Vec3 Normal = m_Pos - HitPoint;
+			Normal.normalize();
+			Vec3 angle(XMVector3AngleBetweenNormals(Normal, Vec3(0, 1, 0)));
+			if (angle.x <= 0.01f) {
+				//平面の上
+				m_GravityVelocity = Vec3(0, 0, 0);
+			}
+			else {
+				//重力をスライドさせて設定する
+				//これで、斜めのボックスを滑り落ちるようになる
+				m_GravityVelocity = ProjUtil::Slide(m_GravityVelocity, Normal);
+			}
+			//速度をスライドさせて設定する
+			m_Velocity = ProjUtil::Slide(m_Velocity, Normal);
+			//Y方向は重力に任せる
+			m_Velocity.y = 0;
+			//最後に衝突点から余った時間分だけ新しい値で移動させる
+			m_Pos = m_Pos + m_Velocity * SpanTime;
+			m_Pos = m_Pos + m_GravityVelocity * SpanTime;
+			//もう一度衝突判定
+			//m_Posが動いたのでSPHEREを再取得
+			Sp = GetSPHERE();
+			if (HitTest::SPHERE_CYLINDER(Sp, cy, HitPoint)) {
+				//衝突していたら追い出し処理
+				Vec3 EscapeNormal = Sp.m_Center - HitPoint;
+				EscapeNormal.normalize();
+				m_Pos = HitPoint + EscapeNormal * Sp.m_Radius;
+			}
+		}
+	}
+
 
 	void SphereObject::CollisionWithBoxes(const Vec3& BeforePos) {
 		//前回のターンからの経過時間を求める
@@ -282,6 +401,7 @@ namespace basecross {
 	void SphereObject::OnCollision() {
 		//衝突判定
 		CollisionWithBoxes(m_BeforePos);
+		CollisionWithCylinder(m_BeforePos);
 	}
 
 	void SphereObject::RotToHead(float LerpFact) {
