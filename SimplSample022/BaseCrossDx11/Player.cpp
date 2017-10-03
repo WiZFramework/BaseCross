@@ -169,7 +169,8 @@ namespace basecross {
 		Mat4x4 World;
 		World.affineTransformation(body.m_Scale, Vec3(0, 0, 0),
 			body.m_Quat, body.m_Pos);
-		PtrGameStage->GetPNTDrawObject()->AddDrawMesh(
+		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
+		shptr->AddDrawMesh(
 			m_SphereMesh,
 			TexPtr,
 			World,
@@ -342,7 +343,8 @@ namespace basecross {
 		Mat4x4 World;
 		World.affineTransformation(body.m_Scale, Vec3(0, 0, 0),
 			body.m_Quat, body.m_Pos);
-		PtrGameStage->GetPNTDrawObject()->AddDrawMesh(
+		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
+		shptr->AddDrawMesh(
 			m_CapsuleMesh,
 			TexPtr,
 			World,
@@ -514,7 +516,8 @@ namespace basecross {
 		Mat4x4 World;
 		World.affineTransformation(body.m_Scale, Vec3(0, 0, 0),
 			body.m_Quat, body.m_Pos);
-		PtrGameStage->GetPNTDrawObject()->AddDrawMesh(
+		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
+		shptr->AddDrawMesh(
 			m_ObbMesh,
 			TexPtr,
 			World,

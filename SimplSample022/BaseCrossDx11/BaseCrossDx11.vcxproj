@@ -105,6 +105,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Character.h" />
+    <ClInclude Include="DrawObjects.h" />
     <ClInclude Include="GameStage.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />
@@ -123,6 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Character.cpp" />
+    <ClCompile Include="DrawObjects.cpp" />
     <ClCompile Include="GameStage.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="ProjectBehavior.cpp" />

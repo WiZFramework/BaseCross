@@ -1,91 +1,79 @@
 /*!
-@file Player.h
-@brief プレイヤー
+@file DrawObjects.h
+@brief 描画オブジェクト
 */
 
 #pragma once
 #include "stdafx.h"
 
 namespace basecross {
+	class Scene;
+	class Stage;
+	class GameObject;
+
+	//--------------------------------------------------------------------------------------
+	///	PNT頂点描画に使用する構造体
+	//--------------------------------------------------------------------------------------
+	struct DrawObject {
+		shared_ptr<MeshResource> m_MeshRes;
+		shared_ptr<TextureResource> m_TextureRes;
+		Mat4x4 m_WorldMatrix;
+		bool m_Trace;
+		bool m_Wrap;
+		DrawObject() :
+			m_MeshRes(nullptr),
+			m_TextureRes(nullptr),
+			m_WorldMatrix(),
+			m_Trace(false),
+			m_Wrap(false)
+		{}
+	};
 
 
 	//--------------------------------------------------------------------------------------
-	///	プレイヤー
+	///	PNT頂点オブジェクトの描画クラス
 	//--------------------------------------------------------------------------------------
-	class Player : public GameObject {
-		//メッシュ
-		shared_ptr<MeshResource> m_SphereMesh;
-		wstring m_TextureResName;		///<テクスチャリソース名
-		Vec3 m_Scale;				///<スケーリング
-		float m_BaseY;				///<スケーリングベースの最下地点
-		Quat m_Qt;			///<回転
-		Vec3 m_Pos;				///<位置
-		bool m_Trace;					///<透明処理するかどうか
-		Vec3 m_Velocity;		//速度
-		Vec3 m_Gravity;		//自由落下加速度
-		Vec3 m_GravityVelocity;		//自由落下による速度
-		bool m_JumpLock;	//ジャンプのロック
-		Vec3 m_BeforePos;	//1つ前の位置
-		float m_Mass;
-
+	class PNTDrawObject : public GameObject {
+		vector<DrawObject> m_DrawObjectVec;
+		vector<DrawObject> m_TraceDrawObjectVec;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	コントローラから方向ベクトルを得る
-		@return	方向ベクトル
-		*/
-		//--------------------------------------------------------------------------------------
-		Vec3 GetMoveVector() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 進行方向を向く
-		@param[in]	LerpFact	補間係数
+		@brief 描画サブ処理
+		@param[in]	ObjectVec	描画する配列
+		@param[in]	sb	コンスタントバッファ
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void RotToHead(float LerpFact);
+		void OnDrawSub(vector<DrawObject>& ObjectVec, PNTStaticConstantBuffer& sb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
 		@param[in]	StagePtr	ステージのポインタ
-		@param[in]	TextureResName	テクスチャリソース名
-		@param[in]	Trace	透明処理するかどうか
-		@param[in]	Pos	位置
 		*/
 		//--------------------------------------------------------------------------------------
-		Player(const shared_ptr<Stage>& StagePtr,
-			const wstring& TextureResName, bool Trace, const Vec3& Pos);
+		PNTDrawObject(const shared_ptr<Stage>& StagePtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~Player();
+		virtual ~PNTDrawObject();
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief SPHEREを得る
-		@return	SPHERE
+		@brief 描画するオブジェクトを追加する
+		@param[in]	MeshRes	メッシュ
+		@param[in]	TextureRes テクスチャ
+		@param[in]	WorldMat ワールド行列
+		@param[in]	Trace 透明処理するかどうか
+		@param[in]	Wrap ラッピング処理するかどうか
+		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		SPHERE GetSPHERE()const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 位置を得る
-		@return	位置
-		*/
-		//--------------------------------------------------------------------------------------
-		Vec3 GetPosition() const {
-			return m_Pos;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前の位置を得る
-		@return	1つ前の位置
-		*/
-		//--------------------------------------------------------------------------------------
-		Vec3 GetBeforePos()const {
-			return m_BeforePos;
-		}
+		void AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
+			const shared_ptr<TextureResource>& TextureRes,
+			const Mat4x4& WorldMat,
+			bool Trace, bool Wrap = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -99,7 +87,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnUpdate()override;
+		virtual void OnUpdate()override {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画
@@ -108,7 +96,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
 	};
-
 
 
 }

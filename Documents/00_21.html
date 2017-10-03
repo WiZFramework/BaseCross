@@ -33,7 +33,8 @@
 <pre>
 １、ステージの切り替え
 ２、テクスチャのリソース登録
-３、親子関係のスプライト
+３、３Ｄの描画オブジェクト
+４、親子関係のスプライト
 </pre>
 </div>
 　これらについて、詳しく説明します。<br />
@@ -108,11 +109,11 @@ void GameStage::OnCreate() {
     AddGameObjectテンプレート関数
 </pre>
 </div>
-　が実装されています。「Stageクラス」にあるこの関数は、フルバージョンの者とほぼ同じです。<br />
+　が実装されています。<b>Stageクラス</b>にあるこの関数は、フルバージョンの者とほぼ同じです。<br />
 　(SimplaSample015)のように、ゲームステージに各インスタンスのポインタを持つことも可能ですが、配列で持たせることにより、各オブジェクトの仮想関数呼び出しが効率化されています。<br />
-　しかし、「Stageクラス」にあるこの配列は「GameObjectの配列」です。各派生クラスの仮想関数呼び出しは、直接呼び出すよりは負担はかかります。これが我慢できない場合は、「EmptyStage」のように、各々メンバとして持つといいでしょう。<br />
+　しかし、<b>Stageクラス</b>にあるこの配列は<b>GameObjectの配列</b>です。各派生クラスの仮想関数呼び出しは、直接呼び出すよりは負担はかかります。これが我慢できない場合は、<b>EmptyStage</b>のように、各々メンバとして持つといいでしょう。<br />
 　さて、中身を見てみましょう。テクスチャも<b>ファイル名</b>を渡すのではなく<b>リソース名</b>を渡しています。これは、テクスチャを使いまわしができるように<b>リソース登録</b>されているためです。<br />
-　ゲームオブジェクトの配列化により、「GameStage::OnUpdateStage()」も以下のようにシンプルになります。<br />
+　ゲームオブジェクトの配列化により、<b>GameStage::OnUpdateStage()</b>も以下のようにシンプルになります。<br />
 <div class="box1">
 <pre>
 void GameStage::OnUpdateStage() {
@@ -125,7 +126,7 @@ void GameStage::OnUpdateStage() {
 }
 </pre>
 </div>
-　「GameStage::OnDrawStage()」も同様です。
+　<b>GameStage::OnDrawStage()</b>も同様です。
 <div class="box1">
 <pre>
 void GameStage::OnDrawStage() {
@@ -195,8 +196,63 @@ void Scene::CreateResources() {
 <br />
 　<b>リソース登録</b>は<b>メッシュ</b>や<b>WAVファイル</b>もすることが可能です。このサンプルで使用するメッシュは、動的に頂点を変更するのが多いのでリソース登録してませんが、固定メッシュの場合はリソースにしておいたほうがいいでしょう。またWAVはデータが大きくなる傾向にあるので、リソース登録は必須と言えます。（WAVについてのサンプルは後ほど紹介します）。<br />
 <br />
-<h4>■３、親子関係のスプライト■</h4>
-　最後にスプライトの説明です。BaseCrossでは<b>２Ｄの単一テクスチャオブジェクト</b>を<b>スプライト</b>と称しています。コード説明に入る前に、<b>スプライトにはどういう機能があると便利か</b>を記します。
+<h4>■３、３Ｄの描画オブジェクト■</h4>
+　このサンプルには、SimpleSample015同様<b>描画オブジェクト</b>が実装されています。<b>DrawObjects.h/cpp</b>にあります。同じ描画方法をとるオブジェクトに対して、一度で描画をするオブジェクトですが、少し改良を加えています。<br />
+　３Ｄの処理の中で<b>透明処理</b>があります。<b>透明なもの</b>は<b>不透明なもの</b>の後に描画する必要があります。また、<b>透明処理</b>をするオブジェクト同士は<b>カメラより遠いものから順番に</b>描画すると、透明なのに奥が描画されない、などのエラーが出にくくなります。<br />
+　このサンプルの<b>描画オブジェクト</b>である、<b>PNTDrawObjectクラス</b>は<b>透明なものと不透明なもの</b>を別に管理しています。<br />
+　また、<b>透明なもの同士</b>は描画直前に<b>カメラ位置から遠いもの順</b>にソートします。以下がその部分です。
+<div class="box1">
+<pre>
+void PNTDrawObject::OnDraw() {
+
+//中略
+    //サブ関数呼び出し(不透明)
+    OnDrawSub(m_DrawObjectVec,sb);
+    //カメラの位置
+    Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
+    //--------------------------------------------------------
+    //透明の3Dオブジェクトをカメラからの距離でソート
+    //以下は、オブジェクトを引数に取りboolを返すラムダ式
+    //--------------------------------------------------------
+    <span class="red">auto func = [&](DrawObject& Left, DrawObject& Right)->bool {
+        auto LeftPos = Left.m_WorldMatrix.transInMatrix();
+        auto RightPos = Right.m_WorldMatrix.transInMatrix();
+        auto LeftLen = bsm::length(LeftPos - CameraEye);
+        auto RightLen = bsm::length(RightPos - CameraEye);
+        return (LeftLen > RightLen);
+    };
+    //ラムダ式を使ってソート
+    std::sort(m_TraceDrawObjectVec.begin(), m_TraceDrawObjectVec.end(), func);</span>
+    //サブ関数呼び出し(透明)
+    OnDrawSub(m_TraceDrawObjectVec, sb);
+    //後始末
+    Dev->InitializeStates();
+    //描画用の配列をクリア
+    m_DrawObjectVec.clear();
+    m_TraceDrawObjectVec.clear();
+}
+</pre>
+</div>
+　赤くなっているところが透明のものをソートしている個所です。ラムダ式なので
+<div class="box1">
+<pre>
+//ラムダ式を使ってソート
+std::sort(m_TraceDrawObjectVec.begin(), m_TraceDrawObjectVec.end(), 
+    [&](DrawObject& Left, DrawObject& Right)->bool {
+    auto LeftPos = Left.m_WorldMatrix.transInMatrix();
+    auto RightPos = Right.m_WorldMatrix.transInMatrix();
+    auto LeftLen = bsm::length(LeftPos - CameraEye);
+    auto RightLen = bsm::length(RightPos - CameraEye);
+    return (LeftLen > RightLen);
+});
+</pre>
+</div>
+　のように書けるわけですが、ラムダ式を一気に記述すると、訳が分からなくなるので、ラムダ式を分離しています。<br />
+　ラムダ式の理解には分離した状態で記述するとわかりやすいと思います。<br />
+<br />
+<h4>■４、親子関係のスプライト■</h4>
+　最後にスプライトの説明です。BaseCrossでは<b>２Ｄの単一テクスチャオブジェクト</b>を<b>スプライト</b>と称しています。コ
+ード説明に入る前に、<b>スプライトにはどういう機能があると便利か</b>を記します。
 <div class="box1">
 <pre>
 １、PCT頂点を作成する機能（共通）

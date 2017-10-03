@@ -29,15 +29,41 @@ namespace basecross {
 			Vec3(0.0f, 0.0f, 0.0f)
 			);
 
+		//固定のボックス
+		AddGameObject<BoxObject>(
+			L"SKY_TX",
+			false,
+			Vec3(3.0f, 0.25f, 3.0f),
+			Quat(),
+			Vec3(0.0f, 0.125f, 5.0f)
+			);
+
+		//固定のボックス
+		AddGameObject<BoxObject>(
+			L"SKY_TX",
+			false,
+			Vec3(3.0f, 1.0f, 3.0f),
+			Quat(),
+			Vec3(0.0f, 0.5f, 10.0f)
+			);
+
+
+
 		//プレイヤーの作成
 		AddGameObject<Player>(
+			18, 
 			L"TRACE_TX", 
 			true, 
 			Vec3(0.0f, 0.125f, 0.0f)
 			);
 
+		//シャドウっプ描画オブジェクトの作成
+		AddGameObject<ShadowmapDrawObject>();
 		//PNT描画オブジェクトの作成
 		AddGameObject<PNTDrawObject>();
+		//PNTシャドウ描画オブジェクトの作成
+		AddGameObject<PNTShadowDrawObject>();
+
 
 		//回転するスプライトの作成
 		AddGameObject<RotateSprite>(
@@ -127,6 +153,15 @@ namespace basecross {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
+
+		Dev->ClearShadowmapViews();
+		Dev->StartShadowmapDraw();
+		for (auto& v : GetGameObjectVec()) {
+			//各オブジェクトの描画
+			v->OnDrawShadowmap();
+		}
+		Dev->EndShadowmapDraw();
+
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		for (auto& v : GetGameObjectVec()) {

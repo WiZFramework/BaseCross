@@ -613,41 +613,6 @@ namespace basecross {
 		m_LightDir.normalize();
 	}
 
-	shared_ptr<GameObject> GameStage::GetPlayer() const {
-		for (auto& v : GetGameObjectVec()) {
-			if (v->FindTag(L"Player")) {
-				auto shptr = dynamic_pointer_cast<GameObject>(v);
-				if (shptr) {
-					return shptr;
-				}
-			}
-		}
-		throw BaseException(
-			L"オブジェクトが見つかりません",
-			L"FindTag()",
-			L"GameStage::GetPlayer()"
-		);
-		return nullptr;
-	}
-
-	shared_ptr<PNTDrawObject> GameStage::GetPNTDrawObject() const {
-		for (auto& v : GetGameObjectVec()) {
-			if (v->FindTag(L"PNTDrawObject")) {
-				auto shptr = dynamic_pointer_cast<PNTDrawObject>(v);
-				if (shptr) {
-					return shptr;
-				}
-			}
-		}
-		throw BaseException(
-			L"オブジェクトが見つかりません",
-			L"FindTag()",
-			L"GameStage::GetPNTDrawObject()"
-		);
-		return nullptr;
-	}
-
-
 
 	void GameStage::OnCreate() {
 		//Rigidbodyマネージャの初期化
@@ -846,7 +811,7 @@ namespace basecross {
 				}
 			}
 
-			m_Camera.m_CamerAt = GetPlayer()->GetPosition();
+			m_Camera.m_CamerAt = FindTagGameObject<Player>(L"Player")->GetPosition();
 			Vec3 CameraLocalEye =
 				Vec3(
 					sin(m_Camera.m_CameraXZRad) * m_Camera.m_CameraArmLen * sin(m_Camera.m_CameraYRad),

@@ -201,7 +201,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		void FindTagGameObjectVec(const wstring& TagName,vector<weak_ptr<T>>& Ret) const {
+		void FindTagGameObjectVec(const wstring& TagName, vector<weak_ptr<T>>& Ret) const {
 			Ret.clear();
 			for (auto& v : GetGameObjectVec()) {
 				if (v->FindTag(TagName)) {
@@ -346,6 +346,13 @@ namespace basecross {
 		void  RemoveTag(const wstring& tagstr) {
 			m_Tag.erase(tagstr);
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	シャドウマップの描画処理(仮想関数)
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDrawShadowmap() {}
 	};
 
 

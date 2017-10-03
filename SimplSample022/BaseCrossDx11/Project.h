@@ -10,6 +10,7 @@
 #include "ProjectShader.h"
 #include "ProjectBehavior.h"
 #include "Scene.h"
+#include "DrawObjects.h"
 #include "Character.h"
 #include "Player.h"
 #include "GameStage.h"

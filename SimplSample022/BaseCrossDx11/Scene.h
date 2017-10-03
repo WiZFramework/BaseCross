@@ -294,6 +294,59 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	タグを持つそのゲームオブジェクトを得る
+		@tparam	T	調べる型
+		@param[in]	TagName	タグ名
+		@return	 指定のタグを持つ最初のオブジェクト（保存してはいけない）
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		shared_ptr<T> FindTagGameObject(const wstring& TagName) const {
+			for (auto& v : GetGameObjectVec()) {
+				if (v->FindTag(TagName)) {
+					auto shptr = dynamic_pointer_cast<T>(v);
+					if (shptr) {
+						return shptr;
+					}
+				}
+			}
+			throw BaseException(
+				L"オブジェクトが見つかりません",
+				TagName,
+				L"Stage::FindGameObject()"
+			);
+			return nullptr;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タグからそのゲームオブジェクトを得る
+		@tparam	T	調べる型
+		@param[in]	TagName	タグ名
+		@param[out]	Ret	オブジェクトの配列(weak_ptrの配列)
+		@return	 指定のタグを持つオブジェクトの配列を得る
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void FindTagGameObjectVec(const wstring& TagName, vector<weak_ptr<T>>& Ret) const {
+			Ret.clear();
+			for (auto& v : GetGameObjectVec()) {
+				if (v->FindTag(TagName)) {
+					auto shptr = dynamic_pointer_cast<T>(v);
+					if (shptr) {
+						Ret.push_back(shptr);
+					}
+				}
+			}
+			if (Ret.empty()) {
+				throw BaseException(
+					L"オブジェクトが見つかりません",
+					TagName,
+					L"Stage::FindTagGameObjectVec()"
+				);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	ゲームオブジェクトを削除する
 		@tparam	T	削除する型
 		@param[in]	Obj	インスタンス

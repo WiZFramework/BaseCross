@@ -56,7 +56,7 @@ namespace basecross {
 			m_Qt, 
 			m_Pos
 		);
-		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
+		auto shptr = PtrGameStage->FindTagGameObject<PNTShadowDrawObject>(L"PNTShadowDrawObject");
 		shptr->AddDrawMesh(
 			m_SquareMesh,
 			TexPtr,
@@ -65,6 +65,80 @@ namespace basecross {
 			true
 		);
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	固定のボックス実体
+	//--------------------------------------------------------------------------------------
+
+	//static変数の初期化
+	shared_ptr<MeshResource> BoxObject::m_BoxMesh(nullptr);
+
+	BoxObject::BoxObject(const shared_ptr<Stage>& StagePtr,
+		const wstring& TextureResName, bool Trace,
+		const Vec3& Scale,
+		const Quat& Qt,
+		const Vec3& Pos) :
+		BoxBase(StagePtr),
+		m_TextureResName(TextureResName),
+		m_Trace(Trace),
+		m_Scale(Scale),
+		m_Qt(Qt),
+		m_Pos(Pos)
+	{}
+	BoxObject::~BoxObject() {}
+
+	void BoxObject::OnCreate() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		//メッシュの作成（変更できない）
+		if (!m_BoxMesh) {
+			m_BoxMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+		}
+	}
+	void BoxObject::OnUpdate() {
+	}
+
+	void BoxObject::OnDrawShadowmap() {
+		auto PtrGameStage = GetStage<GameStage>();
+		//ワールド行列の決定
+		Mat4x4 World;
+		World.affineTransformation(m_Scale, Vec3(0, 0, 0),
+			m_Qt, m_Pos);
+		auto shptr = PtrGameStage->FindTagGameObject<ShadowmapDrawObject>(L"ShadowmapDrawObject");
+		shptr->AddDrawMesh(
+			m_BoxMesh,
+			World
+		);
+	}
+
+
+	void BoxObject::OnDraw() {
+		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
+		auto PtrGameStage = GetStage<GameStage>();
+		//行列の定義
+		Mat4x4 World;
+		//ワールド行列の決定
+		World.affineTransformation(
+			m_Scale,			//スケーリング
+			Vec3(0, 0, 0),		//回転の中心（重心）
+			m_Qt,				//回転角度
+			m_Pos				//位置
+		);
+		auto shptr = PtrGameStage->FindTagGameObject<PNTShadowDrawObject>(L"PNTShadowDrawObject");
+		shptr->AddDrawMesh(
+			m_BoxMesh,
+			TexPtr,
+			World,
+			false,
+			false,
+			true
+		);
+	}
+
+
+
 
 
 	//--------------------------------------------------------------------------------------

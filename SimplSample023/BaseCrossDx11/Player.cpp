@@ -12,8 +12,9 @@ namespace basecross {
 	///	プレイヤー実体
 	//--------------------------------------------------------------------------------------
 	Player::Player(const shared_ptr<Stage>& StagePtr,
-		const wstring& TextureResName, bool Trace, const Vec3& Pos) :
+		UINT Division, const wstring& TextureResName, bool Trace, const Vec3& Pos) :
 		GameObject(StagePtr),
+		m_Division(Division),
 		m_TextureResName(TextureResName),
 		m_Trace(Trace),
 		m_Scale(0.25f, 0.25f, 0.25f),
@@ -79,7 +80,7 @@ namespace basecross {
 	void Player::OnCreate() {
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
-		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
+		MeshUtill::CreateSphere(1.0f, m_Division, vertices, indices);
 		//メッシュの作成（変更できない）
 		m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 		//タグの追加
@@ -144,6 +145,19 @@ namespace basecross {
 		}
 	}
 
+
+	void Player::OnDrawShadowmap() {
+		auto PtrGameStage = GetStage<GameStage>();
+		//ワールド行列の決定
+		Mat4x4 World;
+		World.affineTransformation(m_Scale, Vec3(0, 0, 0),
+			m_Qt, m_Pos);
+		auto shptr = PtrGameStage->FindTagGameObject<ShadowmapDrawObject>(L"ShadowmapDrawObject");
+		shptr->AddDrawMesh(
+			m_SphereMesh,
+			World
+		);
+	}
 
 	void Player::OnDraw() {
 		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
