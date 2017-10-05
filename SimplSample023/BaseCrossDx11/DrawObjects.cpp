@@ -34,9 +34,6 @@ namespace basecross {
 		m_ShadowmapObjectVec.push_back(Obj);
 	}
 
-	void ShadowmapDrawObject::OnUpdate() {
-		m_ShadowmapObjectVec.clear();
-	}
 
 	void ShadowmapDrawObject::OnDrawShadowmap() {
 
@@ -106,6 +103,7 @@ namespace basecross {
 		}
 		//ŒãŽn––
 		Dev->InitializeStates();
+		m_ShadowmapObjectVec.clear();
 	}
 
 

@@ -19,6 +19,10 @@ namespace basecross {
 
 	void GameStage::OnCreate() {
 
+		//描画デバイスの取得
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->GetShadowMapRenderTarget(2048.0f);
+
 		//平面の作成
 		Quat Qt;
 		Qt.rotationX(XM_PIDIV2);
@@ -57,7 +61,7 @@ namespace basecross {
 			Vec3(0.0f, 0.125f, 0.0f)
 			);
 
-		//シャドウっプ描画オブジェクトの作成
+		//シャドウマップ描画オブジェクトの作成
 		AddGameObject<ShadowmapDrawObject>();
 		//PNT描画オブジェクトの作成
 		AddGameObject<PNTDrawObject>();

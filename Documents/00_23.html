@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０２．シンプルバージョンでゲームの実装(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０２３．影（シャドウマップ）の実装(Dx11版)</h3>
+　このサンプルは<b>SimplSample023</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。<br />
+　なお、前項で紹介した<b>Rigidbody</b>は実装されてませんので、衝突処理を実装する場合は、前項の実装などを追加する必要があります。
+<p>&nbsp;</p>
+<img src="img/0023a.png" width="80%"/>
+<p>図0023a</p>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　このサンプルのポイントは<b>影の送出と受け止め</b>です。影は<b>影を出すほう</b>と<b>影を受け止めるほう</b>のセットで実装します。影の送出は<b>シャドウマップ</b>という手法で行います。影の受け止めは<b>シャドウマップとオブジェクトの描画の合成</b>で行います。以下がポイントです。
+<div class="box1">
+<pre>
+１、シャドウマップを書き込みむ方法
+２、シャドウマップを受け止め、描画する方法
+３、シャドウマップの細かさ
+</pre>
+</div>
+　これらについて、説明します。<br />
+<br />
+<h4>■１、シャドウマップを書き込みむ方法■</h4>
+　シャドウマップは<b>ステンシルバッファ</b>という領域に書き込みます。<br />
+　<b>シャドウマップで使用するステンシルバッファ</b>は、通常の描画に使用する<b>バックバッファ</b>とは別に存在し、<b>BaseCrossシンプルバージョン</b>でも、あらかじめ準備はされています。しかしその領域に書き込むためには、<b>シェーダー</b>を記述しなければいけません。<br />
+　まず、<b>シャドウマップで使用するステンシルバッファ</b>の準備ですが、ゲームステージの<b>OnCreate()</b>関数で、以下のように記述します。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->GetShadowMapRenderTarget(<span class="red">2048.0f</span>);
+
+
+//中略
+
+    //プレイヤーの作成
+    AddGameObject&lt;Player>(
+        18, 
+        L"TRACE_TX", 
+        true, 
+        Vec3(0.0f, 0.125f, 0.0f)
+        );
+
+    //シャドウマップ描画オブジェクトの作成
+    AddGameObject&lt;ShadowmapDrawObject>();
+    //PNT描画オブジェクトの作成
+    AddGameObject&lt;PNTDrawObject>();
+    //PNTシャドウ描画オブジェクトの作成
+    AddGameObject&lt;PNTShadowDrawObject>();
+
+
+//中略
+
+}
+</pre>
+</div>
+　赤くなっているところは<b>シャドウマップの大きさ</b>です。その意味は後ほど説明します。<br />
+　また、描画オブジェクトは３つ使用します。３Ｄオブジェクトの追加後に追加します。<br />
+　続いて、ゲームステージの<b>OnDrawStage()</b>関数ですが以下のように記述します。
+<div class="box1">
+<pre>
+void GameStage::OnDrawStage() {
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
+
+    <span class="red">Dev->ClearShadowmapViews();
+    Dev->StartShadowmapDraw();
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの描画
+        v->OnDrawShadowmap();
+    }
+    Dev->EndShadowmapDraw();</span>
+
+    //デフォルト描画の開始
+    Dev->StartDefaultDraw();
+    for (auto& v : GetGameObjectVec()) {
+        //各オブジェクトの描画
+        v->OnDraw();
+    }
+    //自分自身の描画
+    this->OnDraw();
+    //デフォルト描画の終了
+    Dev->EndDefaultDraw();
+}
+</pre>
+</div>
+　赤くなっているところが<b>シャドウマップへの書き込み</b>の部分です。<br />
+　<b>GameStage::OnDrawStage()</b>では上記のように、各オブジェクトの<b>OnDrawShadowmap()関数</b>を呼び出しています。各オブジェクは、このタイミングで<b>シャドウマップへの書き込み</b>を行います。<br />
+　<b>OnDrawShadowmap()関数</b>は仮想関数です、各オブジェクトの親クラスの<b>OnDrawShadowmap()関数</b>は未定義（何もしない）ですので、シャドウマップを書き込む場合は各オブジェクトで多重定義します。例えば、プレイヤーの<b>OnDrawShadowmap()関数</b>は以下のようになります。
+<div class="box1">
+<pre>
+void Player::OnDrawShadowmap() {
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    //ワールド行列の決定
+    Mat4x4 World;
+    World.affineTransformation(m_Scale, Vec3(0, 0, 0),
+        m_Qt, m_Pos);
+    <span class="red">auto shptr 
+    = PtrGameStage->FindTagGameObject&lt;ShadowmapDrawObject>(L"ShadowmapDrawObject");</span>
+    shptr->AddDrawMesh(
+        m_SphereMesh,
+        World
+    );
+}
+</pre>
+</div>
+　赤くなっているところは、<b>L"ShadowmapDrawObject"というタグを持つShadowmapDrawObject型のオブジェクトの取得</b>という関数です。<br />
+　<b>FindTagGameObject()関数</b>はテンプレート関数となっており、<b>Stageクラス（GameStageの親）</b>で以下のように定義されています。
+<div class="box1">
+<pre>
+template&lt;typename T>
+shared_ptr&lt;T> FindTagGameObject(const wstring& TagName) const {
+    for (auto& v : GetGameObjectVec()) {
+        if (v->FindTag(TagName)) {
+            auto shptr = dynamic_pointer_cast&lt;T>(v);
+            if (shptr) {
+                return shptr;
+            }
+        }
+    }
+    throw BaseException(
+        L"オブジェクトが見つかりません",
+        TagName,
+        L"Stage::FindGameObject()"
+    );
+    return nullptr;
+}
+</pre>
+</div>
+　このようにこの関数では<b>タグ名と型</b>をキーに、ゲームオブジェクトの配列の中から特定のオブジェクトを探し出します。<br />
+　<b>SimpleSample022</b>以降のサンプルでは、<b>描画オブジェクト</b>を通常のオブジェクトと同様に<b>ゲームオブジェクト</b>として作成しています。各オブジェクトの描画処理（あるいはシャドウマップの描画処理）では、このテンプレート関数を使って、自分を描画する<b>描画オブジェクト</b>を取り出し、そこに情報を登録します。<br />
+　各描画オブジェクトは、1ターン内で登録されたデータをもとに、各描画方法でまとめて描画します。<br />
+　前項のサンプルまでは<b>描画オブジェクト</b>は（３Ｄ処理に限って言えば）、<b>PNTDrawObject</b>のみでした。しかし、このサンプルでは、３種類の描画オブジェクトがあります。
+<div class="box1">
+<pre>
+１、ShadowmapDrawObjectクラス
+２、PNTDrawObjectクラス
+３、PNTShadowDrawObjectクラス
+</pre>
+</div>
+　それぞれ<b>DrawObjects.h/cpp</b>に宣言定義されています。<br />
+　２の<b>PNTDrawObjectクラス</b>は前項までと同じです。１は<b>シャドウマップの書き込み</b>に使用するクラスです。以下のような宣言になっています。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// シャドウマップ描画に使用する構造体
+//--------------------------------------------------------------------------------------
+struct ShadowmapObject {
+    shared_ptr&lt;MeshResource> m_MeshRes;
+    Mat4x4 m_WorldMatrix;
+    ShadowmapObject() :
+        m_MeshRes(nullptr),
+        m_WorldMatrix()
+    {}
+};
+
+//--------------------------------------------------------------------------------------
+/// シャドウマップの描画クラス
+//--------------------------------------------------------------------------------------
+class ShadowmapDrawObject : public GameObject {
+    vector&lt;ShadowmapObject> m_ShadowmapObjectVec;
+public:
+    static float m_LightHeight; //ライトの高さ（向きをこの値で掛ける）
+    static float m_LightNear;   //ライトのNear
+    static float m_LightFar;        //ライトのFar
+    static float m_ViewWidth;
+    static float m_ViewHeight;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    @param[in]  StagePtr    ステージのポインタ
+    */
+    //--------------------------------------------------------------------------------------
+    ShadowmapDrawObject(const shared_ptr&lt;Stage>& StagePtr);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~ShadowmapDrawObject();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 描画するオブジェクトを追加する
+    @param[in]  MeshRes メッシュ
+    @param[in]  WorldMat ワールド行列
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes, const Mat4x4& WorldMat);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 更新
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate()override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  シャドウマップの描画処理(仮想関数)
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDrawShadowmap() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 描画
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDraw()override {}
+};
+</pre>
+</div>
+　最初の<b>ShadowmapObject</b>は<b>ShadowmapDrawObject内</b>で保持する中間データです。各オブジェクトに渡されたデータをもとに配列に追加します。<br />
+　それは<b>AddDrawMesh()関数</b>で行います。以下実体です。
+<div class="box1">
+<pre>
+void ShadowmapDrawObject::AddDrawMesh(const shared_ptr&lt;MeshResource>& MeshRes,
+     const Mat4x4& WorldMat) {
+    ShadowmapObject Obj;
+    Obj.m_MeshRes = MeshRes;
+    Obj.m_WorldMatrix = WorldMat;
+    m_ShadowmapObjectVec.push_back(Obj);
+}
+</pre>
+</div>
+　このように<b>ShadowmapObject</b>のインスタンスを作成し、配列に追加します。<br />
+　この関数の呼び出しは、前述したように<b>各オブジェクトのOnDrawShadowmap() 関数</b>で行います。<br />
+<br />
+　それで実際の<b>シャドウマップの書き込み</b>ですが、<b>ShadowmapDrawObject::OnDrawShadowmap()関数</b>で行います。以下実体です。
+<div class="box1">
+<pre>
+void ShadowmapDrawObject::OnDrawShadowmap() {
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderState = Dev->GetRenderState();
+    //各オブジェクト共通処理
+    //シェーダの設定
+    <span class="red">//頂点シェーダーのセット
+    pID3D11DeviceContext->VSSetShader(VSShadowmap::GetPtr()->GetShader(), nullptr, 0);</span>
+    //ピクセルシェーダはセットしない！
+    pID3D11DeviceContext->PSSetShader(nullptr, nullptr, 0);
+    //ジオメトリシェーダの設定（使用しない）
+    pID3D11DeviceContext->GSSetShader(nullptr, nullptr, 0);
+    //インプットレイアウトのセット
+    pID3D11DeviceContext->IASetInputLayout(VSShadowmap::GetPtr()->GetInputLayout());
+    //描画方法（3角形）
+    pID3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //ストライドとオフセット
+    UINT stride = sizeof(VertexPositionNormalTexture);
+    UINT offset = 0;
+    //個別処理
+    for (auto& v : m_ShadowmapObjectVec) {
+        <span class="blue">//位置の取得
+        auto Pos = v.m_WorldMatrix.transInMatrix();
+        Vec4 LightDir4;
+        PtrGameStage->GetLightDir(LightDir4);
+        Vec3 LightDir(LightDir4.x, LightDir4.y, LightDir4.z);
+        Vec3 PosSpan = LightDir;
+        PosSpan *= 0.1f;
+        Pos += PosSpan;
+        //行列の定義
+        Mat4x4 World, LightView, LightProj;
+        //ワールド行列の決定
+        World.affineTransformation(
+            v.m_WorldMatrix.scaleInMatrix(),            //スケーリング
+            Vec3(0, 0, 0),      //回転の中心（重心）
+            v.m_WorldMatrix.quatInMatrix(),             //回転角度
+            Pos             //位置
+        );
+        LightDir = LightDir  * -1.0;
+        Vec3 LightAt = PtrGameStage->GetCamera().m_CamerAt;
+        Vec3 LightEye = LightAt + (LightDir * m_LightHeight);
+        //ライトのビューと射影を計算
+        LightView = XMMatrixLookAtLH(LightEye, LightAt, Vec3(0, 1.0f, 0));
+        LightProj = XMMatrixOrthographicLH(m_ViewWidth, m_ViewHeight, m_LightNear, m_LightFar);
+        ShadowConstants Cb;
+        Cb.mWorld = bsm::transpose(World);
+        Cb.mView = bsm::transpose(LightView);
+        Cb.mProj = bsm::transpose(LightProj);</span>
+        //コンスタントバッファの更新
+        pID3D11DeviceContext->UpdateSubresource(CBShadow::GetPtr()->GetBuffer(), 0, nullptr, &Cb, 0, 0);
+        //頂点バッファをセット
+        pID3D11DeviceContext->IASetVertexBuffers(0, 1, 
+            v.m_MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+        //インデックスバッファのセット
+        pID3D11DeviceContext->IASetIndexBuffer(v.m_MeshRes->GetIndexBuffer().Get(), 
+            DXGI_FORMAT_R16_UINT, 0);
+        //コンスタントバッファの設定
+        ID3D11Buffer* pConstantBuffer = CBShadow::GetPtr()->GetBuffer();
+        ID3D11Buffer* pNullConstantBuffer = nullptr;
+        pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+        //コンスタントバッファをピクセルシェーダにセット
+        pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pNullConstantBuffer);
+        //描画
+        pID3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+    }
+    //後始末
+    Dev->InitializeStates();
+    m_ShadowmapObjectVec.clear();
+}
+</pre>
+</div>
+　赤くなっているところが<b>頂点シェーダの設定</b>です。シャドウマップ書き込みではピクセルシェーダは使用しません。また、個別処理内の青くなっているところは、ワールド行列から位置情報を取り出し、<b>ライトの位置など</b>から、実際に書き込む行列を作成します。具体的には、<b>ライトの位置にカメラを持っていき、そこからオブジェクトを見る</b>という処理です。<br />
+　<b>影</b>というのは<b>光源</b>からみてそのオブジェクトを描画する処理です。その際、ステンシルバッファには<b>深度</b>と呼ばれる情報を書き込みます。<br />
+　ここで使用している頂点シェーダはクラスになっています。<b>ProjectShader.h/cpp</b>でマクロでクラス化されています。<b>VSShadowmap</b>クラスです。このクラスはシングルトンなので
+<div class="box1">
+<pre>
+    <span class="red">//頂点シェーダーのセット
+    pID3D11DeviceContext->VSSetShader(VSShadowmap::GetPtr()->GetShader(), nullptr, 0);</span>
+</pre>
+</div>
+　のようにして<b>シェーダそのもの</b>を設定します。<br />
+<br />
+<h4>■２、シャドウマップを受け止め、描画する方法■</h4>
+　このようにして<b>ステンシルバッファ</b>に書き込んだシャドウマップ（深度）をもとに、実際の描画処理では、<b>シャドウマップの深度とそのオブジェクトの光源までの距離</b>を比較して、<b>影かどうか</b>を判別します。<br />
+　描画オブジェクトは<b>PNTShadowDrawObjectクラス</b>を使用します。このクラスは<b>PNTDrawObjectクラス</b>の影対応版です。<b>頂点シェーダ</b>には<b>VSPNTStaticShadow</b>を使用し、ピクセルシェーダには<b>PSPNTStaticShadow</b>もしくは<b>PSPNTStaticShadow2</b>を使用します。ピクセルシェーダが2種類あるのは<b>自己影を出すか出さないか</b>により分けてます。そのオブジェクトが<b>シャドオウマップ</b>を書き込み、かつ、<b>影を受け止める</b>場合、<b>自己影</b>といってモアレのようなもの（縞模様）がでてしまいます。そのため自己影防止用には<b>PSPNTStaticShadow2</b>を使用します。<br />
+　影描画のためには、コンスタントバッファに送る内容も複雑になります。<br />
+　以下は、影描画に使うコンスタントバッファです。
+<div class="box1">
+<pre>
+struct PNTStaticShadowConstantBuffer
+{
+    bsm::Mat4x4 World;
+    bsm::Mat4x4 View;
+    bsm::Mat4x4 Projection;
+    bsm::Col4 Emissive;
+    bsm::Col4 Diffuse;
+    bsm::Vec4 LightDir;
+    bsm::Vec4 LightPos;
+    bsm::Vec4 EyePos;
+    bsm::Mat4x4 LightView;
+    bsm::Mat4x4 LightProjection;
+    PNTStaticShadowConstantBuffer() {
+        memset(this, 0, sizeof(PNTStaticShadowConstantBuffer));
+        Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    };
+};
+</pre>
+</div>
+　このように、光源の情報が必要になります。そのため<b>コンスタントバッファ作成</b>に別関数を用意してます。<b>PNTShadowDrawObject::SetConstants関数</b>です。以下に紹介します。
+<div class="box1">
+<pre>
+void PNTShadowDrawObject::SetConstants(DrawObject& DrawObj, PNTStaticShadowConstantBuffer& Cb) {
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    //行列の定義
+    bsm::Mat4x4 World, ViewMat, ProjMat;
+    //ワールド行列の決定
+    World = DrawObj.m_WorldMatrix;
+    //転置する
+    World.transpose();
+    //カメラを得る
+    PtrGameStage->GetCamera().GetViewProjMatrix(ViewMat, ProjMat);
+    Vec4 LightDir;
+    PtrGameStage->GetLightDir(LightDir);
+    //転置する
+    ViewMat.transpose();
+    //転置する
+    ProjMat.transpose();
+    Cb.World = World;
+    Cb.View = ViewMat;
+    Cb.Projection = ProjMat;
+    //ディフューズ
+    Cb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    //エミッシブ加算。
+    Cb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
+    //ライティング
+    Cb.LightDir = LightDir;
+    Cb.LightDir.w = 1.0f;
+    Cb.EyePos = PtrGameStage->GetCamera().m_CamerEye;
+    Cb.EyePos.w = 1.0f;
+    Vec3 CalcLightDir(LightDir.x, LightDir.y, LightDir.z);
+    CalcLightDir = -1.0 * CalcLightDir;
+    Vec3 LightAt = PtrGameStage->GetCamera().m_CamerAt;
+    Vec3 LightEye = CalcLightDir;
+    auto ShadowObj = PtrGameStage->FindTagGameObject&lt;ShadowmapDrawObject>(L"ShadowmapDrawObject");
+    LightEye *= ShadowmapDrawObject::m_LightHeight;
+    LightEye = LightAt + LightEye;
+    Cb.LightPos = LightEye;
+    Cb.LightPos.w = 1.0f;
+    bsm::Mat4x4 LightView, LightProj;
+    //ライトのビューと射影を計算
+    LightView = XMMatrixLookAtLH(LightEye, LightAt, Vec3(0, 1.0f, 0));
+    LightProj = XMMatrixOrthographicLH(ShadowmapDrawObject::m_ViewWidth, ShadowmapDrawObject::m_ViewHeight,
+        ShadowmapDrawObject::m_LightNear, ShadowmapDrawObject::m_LightFar);
+    Cb.LightView = bsm::transpose(LightView);
+    Cb.LightProjection = bsm::transpose(LightProj);
+
+}
+</pre>
+</div>
+　このように、シャドウマップの光源の情報などをもとに行列を作成し、それをシェーダに渡します。<br />
+　最後に描画処理です。描画オブジェクトの<b>PNTShadowDrawObject::OnDraw()関数</b>です。内部で先ほどの<b>SetConstants関数</b>を呼び出しています。
+<div class="box1">
+<pre>
+void PNTShadowDrawObject::OnDraw() {
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderState = Dev->GetRenderState();
+    //サンプラーの準備
+    ID3D11SamplerState* pSamplerClamp = RenderState->GetLinearClamp();
+    ID3D11SamplerState* pSamplerWrap = RenderState->GetLinearWrap();
+
+    //個別処理
+    for (auto& v : m_DrawObjectVec) {
+        //コンスタントバッファの準備
+        PNTStaticShadowConstantBuffer Cb;
+        SetConstants(v, Cb);
+        //テクスチャ
+        pD3D11DeviceContext->PSSetShaderResources(0, 1, 
+            v.m_TextureRes->GetShaderResourceView().GetAddressOf());
+        //コンスタントバッファの更新
+        pD3D11DeviceContext->UpdateSubresource(CBPNTStaticShadow::GetPtr()->GetBuffer(), 
+            0, nullptr, &Cb, 0, 0);
+        //ストライドとオフセット
+        UINT stride = v.m_MeshRes->GetNumStride();
+        UINT offset = 0;
+        //頂点バッファのセット
+        pD3D11DeviceContext->IASetVertexBuffers(0, 1, 
+            v.m_MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+        //インデックスバッファのセット
+        pD3D11DeviceContext->IASetIndexBuffer(v.m_MeshRes->GetIndexBuffer().Get(),
+             DXGI_FORMAT_R16_UINT, 0);
+        //描画方法（3角形）
+        pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        //コンスタントバッファの設定
+        ID3D11Buffer* pConstantBuffer = CBPNTStaticShadow::GetPtr()->GetBuffer();
+        ID3D11Buffer* pNullConstantBuffer = nullptr;
+        //頂点シェーダに渡す
+        pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+        //ピクセルシェーダに渡す
+        pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+        //シェーダの設定
+        pD3D11DeviceContext->VSSetShader(VSPNTStaticShadow::GetPtr()->GetShader(), nullptr, 0);
+        if (v.m_OwnShadowmapActive) {
+            //自己影がある場合
+            pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow2::GetPtr()->GetShader(), nullptr, 0);
+        }
+        else {
+            //自己影がない場合
+            pD3D11DeviceContext->PSSetShader(PSPNTStaticShadow::GetPtr()->GetShader(), nullptr, 0);
+        }
+        //シャドウマップのレンダラーターゲット
+        auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
+        ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
+        pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
+        //シャドウマップサンプラー
+        ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
+        pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
+        //インプットレイアウトの設定
+        pD3D11DeviceContext->IASetInputLayout(VSPNTStaticShadow::GetPtr()->GetInputLayout());
+        //オブジェクトのサンプラー
+        if (v.m_Wrap) {
+            pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerWrap);
+        }
+        else {
+            pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerClamp);
+        }
+        //デプスステンシルステート
+        pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+        //ブレンドステート
+        if (v.m_Trace) {
+            //透明処理
+            pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+            //透明処理の場合は、ラスタライザステートを変更して2回描画
+            //ラスタライザステート（裏面描画）
+            pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
+            //描画
+            pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+            //ラスタライザステート（表面描画）
+            pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+            //描画
+            pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+        }
+        else {
+            //透明処理しない
+            pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+            //ラスタライザステート（表面描画）
+            pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
+            //描画
+            pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+        }
+
+    }
+    //後始末
+    Dev->InitializeStates();
+    m_DrawObjectVec.clear();
+}
+</pre>
+</div>
+　シェーダの説明は省略させていただきます。<b>VSPNTStaticShadow、PSPNTStaticShadow、PSPNTStaticShadow2</b>の各シェーダが該当しますので、各自読んでみてください。<br />
+<br />
+<h4>■３、シャドウマップの細かさ■</h4>
+　さて、以下の２つの描画を比べてみてください。
+<p>&nbsp;</p>
+<img src="img/0023b.png" width="80%"/>
+<p>図0023b</p>
+<p>&nbsp;</p>
+<img src="img/0023c.png" width="80%"/>
+<p>図0023c</p>
+<p>&nbsp;</p>
+　下のほうが明らかに影が細かくなっています。これは、シャドウマップの<b>ビューの範囲</b>を調整することで、細かくすることができます。<b>ビューの範囲</b>は、<b>DrawObjects.cpp</b>の冒頭にある
+<div class="box1">
+<pre>
+    float ShadowmapDrawObject::m_ViewWidth(<span class="red">8.0f</span>);
+    float ShadowmapDrawObject::m_ViewHeight(<span class="red">8.0f</span>);
+</pre>
+</div>
+　で調整します。赤くなっているところの数値です。初期値は<b>32.0f</b>です（図0023b）。<b>8.0f</b>にしたのは、図0023cです。<br />
+　しかし、<b>ビューの範囲</b>で調整した場合は、下図のように、影が出る範囲が小さくなります。
+<p>&nbsp;</p>
+<img src="img/0023d.png" width="80%"/>
+<p>図0023d</p>
+<p>&nbsp;</p>
+　奥のボックスの影が途中で切れているのがわかると思います。<br />
+　ここで、<b>GameStage::OnCreate()</b>に記述した、以下の部分が関係してきます。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+
+    //描画デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    Dev->GetShadowMapRenderTarget(<span class="red">2048.0f</span>);
+
+
+//中略
+
+}
+</pre>
+</div>
+　ここでの<b>2048.0f</b>という<b>シャドウマップのサイズ</b>を<b>4096.0</b>にすれば、<b>ビューの範囲</b>を<b>16.0</b>にして、範囲も狭くならずに、ある程度細かくすることができます。<b>シャドウマップのサイズ</b>を<b>8192.0</b>にすれば、ビューは<b>32.0</b>でも、細かくなります。しかし動かしてみるとわかりますが<b>シャドウマップのサイズが8192.0</b>の場合、ゲームの動作がかなり重くなります。メモリをかなり圧迫するからです。<br />
+　これらはゲームによって調整すべきでしょう。サンプルは<b>ビューは32.0f、シャドウマップサイズは2048.0f</b>です。これはある程度広範囲の影を出せますが、荒くなります。しかし、動作には問題ありません。ですから<b>シャドウマップのサイズは変えずにビューサイズで調整する</b>というのが基本かと思います。<br />
+　例えば、<b>カメラの更新</b>が記述されている<b>GameStage::OnUpdate()</b>に、以下のような記述を追加します。
+<div class="box1">
+<pre>
+void GameStage::OnUpdate() {
+    //中略
+        if (m_Camera.m_CameraArmLen &lt; 10.0f) {
+            ShadowmapDrawObject::m_ViewHeight = 8.0f;
+            ShadowmapDrawObject::m_ViewWidth = 8.0f;
+        }
+        else {
+            ShadowmapDrawObject::m_ViewHeight = 32.0f;
+            ShadowmapDrawObject::m_ViewWidth = 32.0f;
+
+        }
+    }
+}
+</pre>
+</div>
+　このように記述すると、<b>カメラが寄っているときは影を細かく、離れているときは荒く</b>という処理ができます。メモリに負担を掛けずに、ある程度<b>影が細かく見える</b>処理かと思いますので、ぜひ試してみましょう。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_22.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
