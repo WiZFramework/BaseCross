@@ -13,6 +13,8 @@ cbuffer SimpleConstantBuffer : register(b0)
 	float4 LightDir	: packoffset(c12);
 	float4 Emissive : packoffset(c13);
 	float4 Diffuse	: packoffset(c14);
+	float4 Specular : packoffset(c15);
+	float4 EyePos	: packoffset(c16);
 };
 
 Texture2D g_texture : register(t0);
@@ -24,6 +26,7 @@ float4 main(PSPNTInput input) : SV_TARGET
 	float3 lightdir = normalize(LightDir.xyz);
 	float3 N1 = normalize(input.norm);
 	float4 Light = saturate(dot(N1, -lightdir) * Diffuse) + Emissive;
+	Light += input.specular;
 	Light.a = Diffuse.a;
 	//テクスチャを設定
 	Light = g_texture.Sample(g_sampler, input.tex) * Light;

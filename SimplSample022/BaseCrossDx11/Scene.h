@@ -297,11 +297,12 @@ namespace basecross {
 		@brief	タグを持つそのゲームオブジェクトを得る
 		@tparam	T	調べる型
 		@param[in]	TagName	タグ名
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
 		@return	 指定のタグを持つ最初のオブジェクト（保存してはいけない）
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		shared_ptr<T> FindTagGameObject(const wstring& TagName) const {
+		shared_ptr<T> FindTagGameObject(const wstring& TagName, bool ExceptionActive = true) const {
 			for (auto& v : GetGameObjectVec()) {
 				if (v->FindTag(TagName)) {
 					auto shptr = dynamic_pointer_cast<T>(v);
@@ -310,41 +311,24 @@ namespace basecross {
 					}
 				}
 			}
-			throw BaseException(
-				L"オブジェクトが見つかりません",
-				TagName,
-				L"Stage::FindGameObject()"
-			);
+			if (ExceptionActive) {
+				throw BaseException(
+					L"オブジェクトが見つかりません",
+					TagName,
+					L"Stage::FindGameObject()"
+				);
+			}
 			return nullptr;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	タグからそのゲームオブジェクトを得る
-		@tparam	T	調べる型
 		@param[in]	TagName	タグ名
-		@param[out]	Ret	オブジェクトの配列(weak_ptrの配列)
-		@return	 指定のタグを持つオブジェクトの配列を得る
+		@param[out]	Ret GameObjectの配列(shared_ptrの配列)
+		@return	 指定のタグを持つオブジェクトの配列を得る。使用後は速やかに解放すること
 		*/
 		//--------------------------------------------------------------------------------------
-		template<typename T>
-		void FindTagGameObjectVec(const wstring& TagName, vector<weak_ptr<T>>& Ret) const {
-			Ret.clear();
-			for (auto& v : GetGameObjectVec()) {
-				if (v->FindTag(TagName)) {
-					auto shptr = dynamic_pointer_cast<T>(v);
-					if (shptr) {
-						Ret.push_back(shptr);
-					}
-				}
-			}
-			if (Ret.empty()) {
-				throw BaseException(
-					L"オブジェクトが見つかりません",
-					TagName,
-					L"Stage::FindTagGameObjectVec()"
-				);
-			}
-		}
+		void FindTagGameObjectVec(const wstring& TagName, vector<shared_ptr<GameObject>>& Ret) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ゲームオブジェクトを削除する

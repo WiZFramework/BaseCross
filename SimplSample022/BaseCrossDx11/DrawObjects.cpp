@@ -138,13 +138,16 @@ namespace basecross {
 		sb.Projection = Proj;
 		sb.LightDir = LightDir;
 		//ディフューズ
-		sb.Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+		sb.Diffuse = Col4(0.8f, 0.8f, 0.8f, 1.0f);
 		//エミッシブ加算。
 		sb.Emissive = Col4(0.4f, 0.4f, 0.4f, 0);
-		//サブ関数呼び出し(不透明)
-		OnDrawSub(m_DrawObjectVec,sb);
+		//スペキュラー。
+		sb.Specular = Col4(0.2f, 0.2f, 0.2f, 0);
 		//カメラの位置
 		Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
+		sb.EyePos = CameraEye;
+		//サブ関数呼び出し(不透明)
+		OnDrawSub(m_DrawObjectVec, sb);
 		//--------------------------------------------------------
 		//透明の3Dオブジェクトをカメラからの距離でソート
 		//以下は、オブジェクトを引数に取りboolを返すラムダ式

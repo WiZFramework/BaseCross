@@ -12,11 +12,12 @@ cbuffer ParametersBuffer : register(b0)
 	float4x4 Projection	: packoffset(c8);
 	float4 Emissive : packoffset(c12);
 	float4 Diffuse : packoffset(c13);
-	float4 LightDir	: packoffset(c14);
-	float4 LightPos	: packoffset(c15);
-	float4 EyePos	: packoffset(c16);
-	float4x4 LightView	: packoffset(c17);
-	float4x4 LightProjection	: packoffset(c21);
+	float4 Specular : packoffset(c14);
+	float4 LightDir	: packoffset(c15);
+	float4 LightPos	: packoffset(c16);
+	float4 EyePos	: packoffset(c17);
+	float4x4 LightView	: packoffset(c18);
+	float4x4 LightProjection	: packoffset(c22);
 };
 
 Texture2D<float4> g_texture : register(t0);
@@ -37,6 +38,7 @@ float4 main(PSPNTInputShadow input) : SV_TARGET
 	float3 lightdir = normalize(LightDir.xyz);
 	float3 N1 = normalize(input.norm);
 	float4 RetColor = (saturate(dot(N1, -lightdir)) * Diffuse) + Emissive;
+	RetColor += input.specular;
 	RetColor.a = Diffuse.a;
 	//テクスチャとデフィーズからライティングを作成
 	RetColor = g_texture.Sample(g_sampler, input.tex) * RetColor;

@@ -19,6 +19,8 @@ namespace basecross {
 		Vec4 LightDir;
 		Col4 Emissive;
 		Col4 Diffuse;
+		Col4 Specular;
+		Vec4 EyePos;
 		PNTStaticConstantBuffer() {
 			memset(this, 0, sizeof(PNTStaticConstantBuffer));
 		};

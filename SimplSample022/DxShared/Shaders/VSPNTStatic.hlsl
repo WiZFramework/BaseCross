@@ -14,6 +14,8 @@ cbuffer SimpleConstantBuffer : register(b0)
 	float4 LightDir	: packoffset(c12);
 	float4 Emissive : packoffset(c13);
 	float4 Diffuse	: packoffset(c14);
+	float4 Specular : packoffset(c15);
+	float4 EyePos	: packoffset(c16);
 };
 
 
@@ -33,6 +35,9 @@ PSPNTInput main(VSPNTInput input)
 	//ライティング
 	result.norm = mul(input.norm, (float3x3)World);
 	result.norm = normalize(result.norm);
+	//スペキュラー
+	float3 H = normalize(normalize(-LightDir.xyz) + normalize(EyePos.xyz - pos.xyz));
+	result.specular = Specular * dot(result.norm, H);
 	//テクスチャUV
 	result.tex = input.tex;
 	return result;

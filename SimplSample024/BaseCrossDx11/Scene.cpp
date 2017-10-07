@@ -8,12 +8,9 @@
 
 namespace basecross {
 
-
-
 	//--------------------------------------------------------------------------------------
 	///	ステージ（シーンで管理するインターフェイス）
 	//--------------------------------------------------------------------------------------
-
 	//追加オブジェクトの指定
 	void Stage::PushBackGameObject(const shared_ptr<GameObject>& Ptr) {
 		//このステージはクリエイト後である
@@ -65,8 +62,6 @@ namespace basecross {
 		}
 	}
 
-
-
 	//--------------------------------------------------------------------------------------
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
@@ -87,6 +82,10 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = DataDir + L"StageMessage.png";
 		App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);
+		strTexture = DataDir + L"spark.png";
+		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+		strTexture = DataDir + L"fire.png";
+		App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
 	}
 
 

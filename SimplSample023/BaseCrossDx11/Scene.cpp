@@ -53,6 +53,16 @@ namespace basecross {
 		m_WaitAddObjectVec.clear();
 	}
 
+	void Stage::FindTagGameObjectVec(const wstring& TagName, vector<shared_ptr<GameObject>>& Ret) const {
+		Ret.clear();
+		for (auto& v : GetGameObjectVec()) {
+			if (v->FindTag(TagName)) {
+				Ret.push_back(v);
+			}
+		}
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	ÉQÅ[ÉÄÉVÅ[Éì

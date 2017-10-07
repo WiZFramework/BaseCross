@@ -7,29 +7,6 @@
 #include "stdafx.h"
 
 namespace basecross {
-
-	//--------------------------------------------------------------------------------------
-	///	Shadowコンスタントバッファ構造体
-	//--------------------------------------------------------------------------------------
-	struct ShadowConstants
-	{
-		/// ワールド行列
-		bsm::Mat4x4 mWorld;
-		/// ビュー行列
-		bsm::Mat4x4 mView;
-		/// 射影行列
-		bsm::Mat4x4 mProj;
-		/// Bone用
-		bsm::Vec4 Bones[3 * 72];
-		ShadowConstants() {
-			memset(this, 0, sizeof(ShadowConstants));
-		};
-	};
-
-	DECLARE_DX11_CONSTANT_BUFFER(CBShadow, ShadowConstants)
-	DECLARE_DX11_VERTEX_SHADER(VSShadowmap, VertexPositionNormalTexture)
-
-
 	//--------------------------------------------------------------------------------------
 	///	描画用のシェーダクラスの宣言（マクロ使用）
 	//--------------------------------------------------------------------------------------
@@ -53,30 +30,31 @@ namespace basecross {
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
 
 
-	struct PNTStaticShadowConstantBuffer
+	//--------------------------------------------------------------------------------------
+	///	PCTStaticConstantsコンスタントバッファ構造体
+	//--------------------------------------------------------------------------------------
+	struct PCTStaticConstants
 	{
+		/// ワールド行列
 		Mat4x4 World;
+		/// ビュー行列
 		Mat4x4 View;
+		/// 射影行列
 		Mat4x4 Projection;
+		/// エミッシブ色
 		Col4 Emissive;
+		/// デフューズ色
 		Col4 Diffuse;
-		Col4 Specular;
-		Vec4 LightDir;
-		Vec4 LightPos;
-		Vec4 EyePos;
-		Mat4x4 LightView;
-		Mat4x4 LightProjection;
-		PNTStaticShadowConstantBuffer() {
-			memset(this, 0, sizeof(PNTStaticShadowConstantBuffer));
-			Diffuse = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
+		PCTStaticConstants() {
+			memset(this, 0, sizeof(PCTStaticConstants));
+			Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
-	//PNTStaticShadowConstantBuffer
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTStaticShadow, PNTStaticShadowConstantBuffer)
-	///PNTStaticShadow
-	DECLARE_DX11_VERTEX_SHADER(VSPNTStaticShadow, VertexPositionNormalTexture)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow)
-	DECLARE_DX11_PIXEL_SHADER(PSPNTStaticShadow2)
+	//CBPCTStatic
+	DECLARE_DX11_CONSTANT_BUFFER(CBPCTStatic, PCTStaticConstants)
+	//PCTStaticInstance
+	DECLARE_DX11_VERTEX_SHADER(VSPCTStaticInstance, VertexPositionColorTextureMatrix)
+	DECLARE_DX11_PIXEL_SHADER(PSPCTStatic)
 
 
 	//スプライト用コンスタントバッファ構造体
