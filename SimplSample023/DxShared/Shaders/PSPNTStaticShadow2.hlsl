@@ -4,21 +4,7 @@
 //--------------------------------------------------------------------------------------
 
 #include "INCStructs.hlsli"
-
-cbuffer ParametersBuffer : register(b0)
-{
-	float4x4 World	: packoffset(c0);
-	float4x4 View	: packoffset(c4);
-	float4x4 Projection	: packoffset(c8);
-	float4 Emissive : packoffset(c12);
-	float4 Diffuse : packoffset(c13);
-	float4 Specular : packoffset(c14);
-	float4 LightDir	: packoffset(c15);
-	float4 LightPos	: packoffset(c16);
-	float4 EyePos	: packoffset(c17);
-	float4x4 LightView	: packoffset(c18);
-	float4x4 LightProjection	: packoffset(c22);
-};
+#include "INCSimpleConstant.hlsli"
 
 Texture2D<float4> g_texture : register(t0);
 // 深度マップ
@@ -59,8 +45,10 @@ float4 main(PSPNTInputShadow input) : SV_TARGET
 	float4 RetColor = (saturate(dot(N1, -lightdir)) * Diffuse) + Emissive;
 	RetColor += input.specular;
 	RetColor.a = Diffuse.a;
-	//テクスチャとデフィーズからライティングを作成
-	RetColor = g_texture.Sample(g_sampler, input.tex) * RetColor;
+	if (Activeflags.x) {
+		//テクスチャとデフィーズからライティングを作成
+		RetColor = g_texture.Sample(g_sampler, input.tex) * RetColor;
+	}
 	RetColor = saturate(RetColor);
 	//影を足す
 	RetColor.rgb = RetColor.rgb * shadowColor;

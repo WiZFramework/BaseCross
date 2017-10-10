@@ -138,7 +138,7 @@ namespace basecross {
 				}
 			}
 
-			m_Camera.m_CamerAt = FindTagGameObject<Player>(L"Player")->GetPosition();
+			m_Camera.m_CamerAt = FindTagGameObject<GameObject>(L"Player")->GetPosition();
 			Vec3 CameraLocalEye =
 				Vec3(
 					sin(m_Camera.m_CameraXZRad) * m_Camera.m_CameraArmLen * sin(m_Camera.m_CameraYRad),

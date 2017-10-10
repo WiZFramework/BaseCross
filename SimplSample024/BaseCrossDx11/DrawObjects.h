@@ -44,7 +44,7 @@ namespace basecross {
 		@return	‚È‚µ
 		*/
 		//--------------------------------------------------------------------------------------
-		void OnDrawSub(vector<DrawObject>& ObjectVec, PNTStaticConstantBuffer& sb);
+		void OnDrawSub(vector<DrawObject>& ObjectVec, SimpleConstants& sb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

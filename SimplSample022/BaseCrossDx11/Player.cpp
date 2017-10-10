@@ -62,7 +62,7 @@ namespace basecross {
 	}
 
 	Vec3 Player::GetPosition() {
-		auto& body = GetStage<GameStage>()->GetOwnRigidbody(GetThis<GameObject>());
+		auto& body =  GetStage<GameStage>()->GetOwnRigidbody(GetThis<GameObject>());
 		return body.m_Pos;
 	}
 

@@ -15,13 +15,17 @@ namespace basecross {
 	IMPLEMENT_DX11_CONSTANT_BUFFER(CBShadow)
 	IMPLEMENT_DX11_VERTEX_SHADER(VSShadowmap, App::GetApp()->GetShadersPath() + L"VSShadowmap.cso")
 
+	//--------------------------------------------------------------------------------------
+	///	SimpleConstantsコンスタントバッファ構造体(シンプル３Ｄ共有)
+	//--------------------------------------------------------------------------------------
+	//CBSimple
+	IMPLEMENT_DX11_CONSTANT_BUFFER(CBSimple)
 	//PNTStatic
-	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStatic)
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStatic, App::GetApp()->GetShadersPath() + L"VSPNTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStatic, App::GetApp()->GetShadersPath() + L"PSPNTStatic.cso")
 
 	//CBPNTStaticShadow
-	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStaticShadow)
+//	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStaticShadow)
 	//PNTStaticShadow
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"VSPNTStaticShadow.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"PSPNTStaticShadow.cso")

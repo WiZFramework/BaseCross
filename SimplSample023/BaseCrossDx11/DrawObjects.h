@@ -106,7 +106,6 @@ namespace basecross {
 		{}
 	};
 
-
 	//--------------------------------------------------------------------------------------
 	///	PNT頂点オブジェクトの描画クラス
 	//--------------------------------------------------------------------------------------
@@ -121,7 +120,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void OnDrawSub(vector<DrawObject>& ObjectVec, PNTStaticConstantBuffer& sb);
+		void OnDrawSub(vector<DrawObject>& ObjectVec, SimpleConstants& sb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -187,7 +186,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetConstants(DrawObject& DrawObj, PNTStaticShadowConstantBuffer& Cb);
+		void SetConstants(DrawObject& DrawObj, SimpleConstants& Cb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

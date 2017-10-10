@@ -10,23 +10,44 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	描画用のシェーダクラスの宣言（マクロ使用）
 	//--------------------------------------------------------------------------------------
-	//PNTStatic
-	struct PNTStaticConstantBuffer
+	//--------------------------------------------------------------------------------------
+	///	SimpleConstantsコンスタントバッファ構造体(シンプル３Ｄ共有)
+	//--------------------------------------------------------------------------------------
+	struct SimpleConstants
 	{
+		/// ワールド行列
 		Mat4x4 World;
+		/// ビュー行列
 		Mat4x4 View;
+		/// 射影行列
 		Mat4x4 Projection;
-		Vec4 LightDir;
+		/// エミッシブ色
 		Col4 Emissive;
+		/// デフューズ色
 		Col4 Diffuse;
+		/// スペキュラー
 		Col4 Specular;
+		/// テクスチャ=xがアクティブかどうか
+		XMUINT4 ActiveFlg;
+		/// ライイト方向
+		Vec4 LightDir;
+		/// ライト位置
+		Vec4 LightPos;
+		/// Eyeの位置
 		Vec4 EyePos;
-		PNTStaticConstantBuffer() {
-			memset(this, 0, sizeof(PNTStaticConstantBuffer));
+		/// ライトビュー行列
+		Mat4x4 LightView;
+		/// ライト射影行列
+		Mat4x4 LightProjection;
+		/// Bone配列
+		Vec4 Bones[3 * 72];
+		SimpleConstants() {
+			memset(this, 0, sizeof(SimpleConstants));
+			Diffuse = Col4(1.0f, 1.0f, 1.0f, 1.0f);
 		};
 	};
-
-	DECLARE_DX11_CONSTANT_BUFFER(CBPNTStatic, PNTStaticConstantBuffer)
+	//CBSimple
+	DECLARE_DX11_CONSTANT_BUFFER(CBSimple, SimpleConstants)
 	DECLARE_DX11_VERTEX_SHADER(VSPNTStatic, VertexPositionNormalTexture)
 	DECLARE_DX11_PIXEL_SHADER(PSPNTStatic)
 

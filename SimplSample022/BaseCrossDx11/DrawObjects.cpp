@@ -40,7 +40,7 @@ namespace basecross {
 		}
 	}
 
-	void PNTDrawObject::OnDrawSub(vector<DrawObject>& ObjectVec, PNTStaticConstantBuffer& sb) {
+	void PNTDrawObject::OnDrawSub(vector<DrawObject>& ObjectVec, SimpleConstants& sb) {
 		auto PtrGameStage = GetStage<GameStage>();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
@@ -57,10 +57,26 @@ namespace basecross {
 			v.m_WorldMatrix.transpose();
 			//ワールド行列の決定
 			sb.World = v.m_WorldMatrix;
+			//テクスチャの設定
+			if (v.m_TextureRes) {
+				//テクスチャ
+				sb.ActiveFlg.x = 1;
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, v.m_TextureRes->GetShaderResourceView().GetAddressOf());
+				//サンプラー
+				if (v.m_Wrap) {
+					pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerWrap);
+				}
+				else {
+					pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerClamp);
+				}
+			}
+			else {
+				sb.ActiveFlg.x = 0;
+			}
 			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBPNTStatic::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+			pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
 			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBPNTStatic::GetPtr()->GetBuffer();
+			ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
 			ID3D11Buffer* pNullConstantBuffer = nullptr;
 			//頂点シェーダに渡す
 			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
@@ -70,16 +86,6 @@ namespace basecross {
 			pD3D11DeviceContext->IASetVertexBuffers(0, 1, v.m_MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
 			//インデックスバッファのセット
 			pD3D11DeviceContext->IASetIndexBuffer(v.m_MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-			//テクスチャの設定
-			ID3D11ShaderResourceView* pNull[1] = { 0 };
-			pD3D11DeviceContext->PSSetShaderResources(0, 1, v.m_TextureRes->GetShaderResourceView().GetAddressOf());
-			//サンプラー
-			if (v.m_Wrap) {
-				pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerWrap);
-			}
-			else {
-				pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerClamp);
-			}
 			//ブレンドステート
 			if (v.m_Trace) {
 				//透明処理
@@ -133,7 +139,7 @@ namespace basecross {
 		//転置する
 		Proj.transpose();
 		//コンスタントバッファの準備
-		PNTStaticConstantBuffer sb;
+		SimpleConstants sb;
 		sb.View = View;
 		sb.Projection = Proj;
 		sb.LightDir = LightDir;

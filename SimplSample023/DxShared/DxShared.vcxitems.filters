@@ -12,6 +12,9 @@
     <None Include="$(MSBuildThisFileDirectory)Shaders\INCShadowmap.hlsli">
       <Filter>シェーダファイル</Filter>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)Shaders\INCSimpleConstant.hlsli">
+      <Filter>シェーダファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)Shaders\PSPNTStatic.hlsl">

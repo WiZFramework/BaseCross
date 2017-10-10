@@ -11,8 +11,12 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	描画用のシェーダクラスの実体（マクロ使用）
 	//--------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------
+	///	SimpleConstantsコンスタントバッファ構造体(シンプル３Ｄ共有)
+	//--------------------------------------------------------------------------------------
+	//CBSimple
+	IMPLEMENT_DX11_CONSTANT_BUFFER(CBSimple)
 	//PNTStatic
-	IMPLEMENT_DX11_CONSTANT_BUFFER(CBPNTStatic)
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPNTStatic, App::GetApp()->GetShadersPath() + L"VSPNTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPNTStatic, App::GetApp()->GetShadersPath() + L"PSPNTStatic.cso")
 
