@@ -25,6 +25,17 @@ namespace bsm {
 	{
 	}
 
+	inline Flt2::Flt2(const Flt3 & vec) :
+		XMFLOAT2(vec.x, vec.y)
+	{
+	}
+
+	inline Flt2::Flt2(const Flt4 & vec) :
+		XMFLOAT2(vec.x, vec.y)
+	{
+	}
+
+
 	inline Flt2::Flt2(const XMFLOAT2& v) :
 		XMFLOAT2(v)
 	{
@@ -62,6 +73,21 @@ namespace bsm {
 		}
 		return *this;
 	}
+
+	inline Flt2 & Flt2::operator =(const Flt3 & other)
+	{
+		x = other.x;
+		y = other.y;
+		return *this;
+	}
+
+	inline Flt2 & Flt2::operator =(const Flt4 & other)
+	{
+		x = other.x;
+		y = other.y;
+		return *this;
+	}
+
 
 	inline Flt2& Flt2::operator=(const XMFLOAT2& other) {
 		(XMFLOAT2)*this = other;
@@ -135,10 +161,24 @@ namespace bsm {
 		return (Flt2)XMVectorAdd(*this, vec);
 	}
 
+	inline const Flt2 Flt2::operator +(float val) const
+	{
+		Flt2 temp(val, val);
+		return (Flt2)XMVectorAdd(*this, temp);
+	}
+
+
 	inline const Flt2 Flt2::operator -(const Flt2 & vec) const
 	{
 		return (Flt2)XMVectorSubtract(*this, vec);
 	}
+
+	inline const Flt2 Flt2::operator -(float val) const
+	{
+		Flt2 temp(val, val);
+		return (Flt2)XMVectorSubtract(*this, temp);
+	}
+
 
 	inline const Flt2 Flt2::operator *(float val) const
 	{
@@ -152,9 +192,22 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt2 & Flt2::operator +=(float val)
+	{
+		*this = *this + val;
+		return *this;
+	}
+
+
 	inline Flt2 & Flt2::operator -=(const Flt2 & vec)
 	{
 		*this = *this - vec;
+		return *this;
+	}
+
+	inline Flt2 & Flt2::operator -=(float val)
+	{
+		*this = *this - val;
 		return *this;
 	}
 
@@ -215,6 +268,19 @@ namespace bsm {
 	{
 	}
 
+	inline Flt3::Flt3(const Flt2 & vec) :
+		XMFLOAT3(vec.x, vec.y, 0)
+	{
+	}
+
+
+	inline Flt3::Flt3(const Flt4 & vec) :
+		XMFLOAT3(vec.x, vec.y, vec.z)
+	{
+	}
+
+
+
 	inline Flt3::Flt3(const XMFLOAT3& v) :
 		XMFLOAT3(v)
 	{
@@ -244,6 +310,14 @@ namespace bsm {
 		return Vec;
 	}
 
+	inline Flt3 & Flt3::operator =(const Flt2 & other)
+	{
+		x = other.x;
+		y = other.y;
+		z = 0;
+		return *this;
+	}
+
 	inline Flt3 & Flt3::operator =(const Flt3 & other)
 	{
 		if (this != &other) {
@@ -251,6 +325,14 @@ namespace bsm {
 			y = other.y;
 			z = other.z;
 		}
+		return *this;
+	}
+
+	inline Flt3 & Flt3::operator =(const Flt4 & other)
+	{
+		x = other.x;
+		y = other.y;
+		z = other.z;
 		return *this;
 	}
 
@@ -334,9 +416,22 @@ namespace bsm {
 		return (Flt3)XMVectorAdd(*this, vec);
 	}
 
+	inline const Flt3 Flt3::operator +(float val) const
+	{
+		Flt3 temp(val, val, val);
+		return (Flt3)XMVectorAdd(*this, temp);
+	}
+
+
 	inline const Flt3 Flt3::operator -(const Flt3 & vec) const
 	{
 		return (Flt3)XMVectorSubtract(*this, vec);
+	}
+
+	inline const Flt3 Flt3::operator -(float val) const
+	{
+		Flt3 temp(val, val, val);
+		return (Flt3)XMVectorSubtract(*this, temp);
 	}
 
 	inline const Flt3 Flt3::operator *(float val) const
@@ -353,19 +448,31 @@ namespace bsm {
 		return (Flt3)XMVector3Transform(*this, mat);
 	}
 
-
-
 	inline Flt3 & Flt3::operator +=(const Flt3 & vec)
 	{
 		*this = *this + vec;
 		return *this;
 	}
 
+	inline Flt3 & Flt3::operator +=(float val)
+	{
+		*this = *this + val;
+		return *this;
+	}
+
+
 	inline Flt3 & Flt3::operator -=(const Flt3 & vec)
 	{
 		*this = *this - vec;
 		return *this;
 	}
+
+	inline Flt3 & Flt3::operator -=(float val)
+	{
+		*this = *this - val;
+		return *this;
+	}
+
 
 	inline Flt3 & Flt3::operator *=(float val)
 	{
@@ -458,6 +565,17 @@ namespace bsm {
 	{
 	}
 
+	inline Flt4::Flt4(const Flt2 & vec) :
+		XMFLOAT4(vec.x, vec.y, 0, 0)
+	{
+	}
+
+	inline Flt4::Flt4(const Flt3 & vec) :
+		XMFLOAT4(vec.x, vec.y, vec.z, 0)
+	{
+	}
+
+
 	inline Flt4::Flt4(const Flt3& vec, float _w):
 		XMFLOAT4(vec.x, vec.y, vec.z, _w)
 	{}
@@ -496,6 +614,22 @@ namespace bsm {
 		return Flt3(x, y, z);
 	}
 
+	inline Flt4& Flt4::operator =(const Flt2& other) {
+		x = other.x;
+		y = other.y;
+		z = 0;
+		w = 0;
+		return *this;
+	}
+
+
+	inline Flt4& Flt4::operator =(const Flt3& other) {
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		w = 0;
+		return *this;
+	}
 
 	inline Flt4 & Flt4::operator =(const Flt4 & other)
 	{
@@ -505,14 +639,6 @@ namespace bsm {
 			z = other.z;
 			w = other.w;
 		}
-		return *this;
-	}
-
-	inline Flt4& Flt4::operator =(const Flt3& other) {
-		x = other.x;
-		y = other.y;
-		z = other.z;
-		w = 0.0f;
 		return *this;
 	}
 
@@ -603,9 +729,22 @@ namespace bsm {
 		return (Flt4)XMVectorAdd(*this, vec);
 	}
 
+	inline const Flt4 Flt4::operator +(float val) const
+	{
+		Flt4 temp(val, val, val, val);
+		return (Flt4)XMVectorAdd(*this, temp);
+	}
+
+
 	inline const Flt4 Flt4::operator -(const Flt4 & vec) const
 	{
 		return (Flt4)XMVectorSubtract(*this, vec);
+	}
+
+	inline const Flt4 Flt4::operator -(float val) const
+	{
+		Flt4 temp(val, val, val, val);
+		return (Flt4)XMVectorSubtract(*this, temp);
 	}
 
 	inline const Flt4 Flt4::operator *(float val) const
@@ -622,17 +761,27 @@ namespace bsm {
 		return (Flt4)XMVector4Transform(*this, mat);
 	}
 
-
-
 	inline Flt4 & Flt4::operator +=(const Flt4 & vec)
 	{
 		*this = *this + vec;
 		return *this;
 	}
 
+	inline Flt4 & Flt4::operator +=(float val)
+	{
+		*this = *this + val;
+		return *this;
+	}
+
 	inline Flt4 & Flt4::operator -=(const Flt4 & vec)
 	{
 		*this = *this - vec;
+		return *this;
+	}
+
+	inline Flt4 & Flt4::operator -=(float val)
+	{
+		*this = *this - val;
 		return *this;
 	}
 
@@ -933,6 +1082,32 @@ namespace bsm {
 		*this = (Quat)XMQuaternionInverse(*this);
 		return *this;
 	}
+
+	inline Quat& Quat::facing(const Flt3& norm) {
+		Flt3 DefUp(0, 1.0f, 0);
+		Flt3 Temp = norm;
+		Flt2 TempVec2(Temp.x, Temp.z);
+		if (bsm::length(TempVec2) < 0.1f) {
+			DefUp = bsm::Flt3(0, 0, 1.0f);
+		}
+		Temp.normalize();
+		Mat4x4 RotMatrix;
+		RotMatrix = XMMatrixLookAtLH(bsm::Flt3(0, 0, 0), Temp, DefUp);
+		RotMatrix = bsm::inverse(RotMatrix);
+		*this = RotMatrix.quatInMatrix();
+		(*this).normalize();
+		return *this;
+	}
+
+	inline Quat& Quat::facingY(const Flt3& norm) {
+		Flt3 Temp = norm;
+		Temp.normalize();
+		*this = XMQuaternionRotationRollPitchYaw(0, atan2(Temp.x, Temp.z), 0);
+		(*this).normalize();
+		return *this;
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1985,6 +2160,20 @@ namespace bsm {
 	inline const Quat inverse(const Quat & quat) {
 		return (Quat)XMQuaternionInverse(quat);
 	}
+
+	inline const Quat facing(const Flt3& norm) {
+		Quat ret;
+		ret.facing(norm);
+		return ret;
+	}
+
+	inline const Quat facingY(const Flt3& norm) {
+		Quat ret;
+		ret.facingY(norm);
+		return ret;
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------

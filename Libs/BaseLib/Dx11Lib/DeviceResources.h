@@ -63,6 +63,7 @@ namespace basecross {
 		UINT m_NumIndicis;				//インデックスの数
 		type_index m_MeshTypeIndex;		//このメッシュの形
 		UINT m_NumStride;				//ストライド数
+		D3D11_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;	//描画トポロジー
 		shared_ptr<BackupDataBase> m_BackUpData;
 		vector<MaterialEx> m_MaterialExVec;	//マテリアルの配列（モデルで使用）
 		//以下、ボーン用
@@ -185,6 +186,25 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		UINT GetNumStride() const {
 			return m_NumStride;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画トポロジーの取得
+		@return	描画トポロジー
+		*/
+		//--------------------------------------------------------------------------------------
+		D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const {
+			return m_PrimitiveTopology;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画トポロジーの設定
+		@param[in]	Topology	描画トポロジー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology){
+			m_PrimitiveTopology = Topology;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -893,6 +913,7 @@ namespace basecross {
 		CullFront,
 		CullBack,
 		Wireframe,
+		DoubleDraw,	//背面描画の後、前面描画
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -1279,6 +1300,153 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ID3D11SamplerState* GetComparisonLinear()const;
+		//以下、レンダリングステートの各enum値によるデバイスへの設定
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	BlendStateの設定
+		@param[in]	pContext	ID3D11DeviceContext2コンテキストのポインタ
+		@param[in]	state	BlendState値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBlendState(ID3D11DeviceContext2* pContext, BlendState state) {
+			switch (state) {
+			case BlendState::Opaque:
+				pContext->OMSetBlendState(GetOpaque(), nullptr, 0xffffffff);
+				break;
+			case BlendState::AlphaBlend:
+				pContext->OMSetBlendState(GetAlphaBlendEx(), nullptr, 0xffffffff);
+				break;
+			case BlendState::Additive:
+				pContext->OMSetBlendState(GetAdditive(), nullptr, 0xffffffff);
+				break;
+			case BlendState::NonPremultiplied:
+				pContext->OMSetBlendState(GetNonPremultiplied(), nullptr, 0xffffffff);
+				break;
+			default:
+				//デフォルトは塗りつぶし
+				pContext->OMSetBlendState(GetOpaque(), nullptr, 0xffffffff);
+				break;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	DepthStencilStateの設定
+		@param[in]	pContext	ID3D11DeviceContext2コンテキストのポインタ
+		@param[in]	state	DepthStencilState値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetDepthStencilState(ID3D11DeviceContext2* pContext, DepthStencilState state) {
+			switch (state) {
+			case DepthStencilState::None:
+				pContext->OMSetDepthStencilState(GetDepthNone(), 0);
+				break;
+			case DepthStencilState::Default:
+				pContext->OMSetDepthStencilState(GetDepthDefault(), 0);
+				break;
+			case DepthStencilState::Read:
+				pContext->OMSetDepthStencilState(GetDepthRead(), 0);
+				break;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	RasterizerStateの設定
+		@param[in]	pContext	ID3D11DeviceContext2コンテキストのポインタ
+		@param[in]	state	RasterizerState値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetRasterizerState(ID3D11DeviceContext2* pContext, RasterizerState state) {
+			switch (state) {
+			case RasterizerState::CullBack:
+				//ラスタライザステート（表描画）
+				pContext->RSSetState(GetCullBack());
+				break;
+			case RasterizerState::CullFront:
+				//ラスタライザステート（裏描画）
+				pContext->RSSetState(GetCullFront());
+				break;
+			case RasterizerState::CullNone:
+				//ラスタライザステート（両面描画）
+				pContext->RSSetState(GetCullNone());
+				break;
+			case RasterizerState::Wireframe:
+				//ラスタライザステート（ワイアフレーム）
+				pContext->RSSetState(GetWireframe());
+				break;
+			case RasterizerState::DoubleDraw:
+				//ラスタライザステート（裏描画を設定）
+				pContext->RSSetState(GetCullFront());
+				break;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	1つのSamplerStateの設定
+		@param[in]	pContext	ID3D11DeviceContext2コンテキストのポインタ
+		@param[in]	state	SamplerState値
+		@param[in]	slot	スロット番号
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetSamplerState(ID3D11DeviceContext2* pContext, SamplerState state,UINT slot) {
+			ID3D11SamplerState* pSampler = nullptr;
+			ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+			switch (state) {
+			case SamplerState::SamplerNone:
+				//サンプラークリア
+				pContext->PSSetSamplers(slot, 1, pNullSR);
+				break;
+			case SamplerState::PointWrap:
+				pSampler = GetPointWrap();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::PointClamp:
+				pSampler = GetPointClamp();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::LinearWrap:
+				pSampler = GetLinearWrap();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::LinearClamp:
+				pSampler = GetLinearClamp();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::AnisotropicWrap:
+				pSampler = GetAnisotropicWrap();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::AnisotropicClamp:
+				pSampler = GetAnisotropicClamp();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			case SamplerState::ComparisonLinear:
+				pSampler = GetComparisonLinear();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			default:
+				//デフォルトはClamp
+				pSampler = GetLinearClamp();
+				pContext->PSSetSamplers(slot, 1, &pSampler);
+				break;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SamplerStateをすべてクリアする
+		@param[in]	pContext	ID3D11DeviceContext2コンテキストのポインタ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetSamplerAllClear(ID3D11DeviceContext2* pContext) {
+			ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
+			pContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+		}
+
+
 	private:
 		// pImplイディオム
 		struct Impl;
