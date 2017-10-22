@@ -369,7 +369,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -452,7 +452,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -551,7 +551,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeSPHERE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -628,7 +628,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeSPHERE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -719,7 +719,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeOBB;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -798,7 +798,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -888,7 +888,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -979,7 +979,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 
@@ -1077,7 +1077,7 @@ namespace basecross {
 		body.m_Pos = m_Pos;
 		body.m_CollType = CollType::typeCAPSULE;
 		body.m_IsFixed = true;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 		PtrGameStage->AddRigidbody(body);
 

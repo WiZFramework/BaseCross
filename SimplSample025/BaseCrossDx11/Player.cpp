@@ -84,7 +84,7 @@ namespace basecross {
 		body.m_Quat = Quat();
 		body.m_Pos = m_Posision;
 		body.m_CollType = CollType::typeSPHERE;
-		body.m_IsDrawActive = true;
+//		body.m_IsDrawActive = true;
 		body.SetToBefore();
 
 		PtrGameStage->AddRigidbody(body);
