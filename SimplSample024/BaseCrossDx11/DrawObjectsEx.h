@@ -275,6 +275,9 @@ namespace basecross {
 		vector< shared_ptr<Particle> > m_ParticleVec;
 		//加算処理するかどうか
 		bool m_AddType;
+		//描画オブジェクト
+		weak_ptr<ParticleDrawObject> m_DrawPtrAdd;
+		weak_ptr<ParticleDrawObject> m_DrawPtrAlpha;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

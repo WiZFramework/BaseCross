@@ -42,28 +42,27 @@ namespace basecross {
 
 	void SquareObject::OnCreate() {
 		CreateBuffers(m_Scale.x, m_Scale.y);
+
+		//ワールド行列の決定
+		Mat4x4 World;
+		World.affineTransformation(m_Scale, Vec3(0, 0, 0),
+			m_Qt, m_Pos);
+		//データの初期化
+		m_PtrObj = make_shared<DrawObject>();
+		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
+		m_PtrObj->m_MeshRes = m_SquareMesh;
+		m_PtrObj->m_TextureRes = TexPtr;
+		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Trace = false;
+		m_PtrObj->m_Wrap = true;
+
 	}
 	void SquareObject::OnUpdate() {
 	}
 	void SquareObject::OnDraw() {
-		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
 		auto PtrGameStage = GetStage<GameStage>();
-		//行列の定義
-		Mat4x4 World;
-		World.affineTransformation(
-			m_Scale, 
-			Vec3(0, 0, 0),
-			m_Qt, 
-			m_Pos
-		);
 		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
-		shptr->AddDrawMesh(
-			m_SquareMesh,
-			TexPtr,
-			World,
-			false,
-			true
-		);
+		shptr->AddDrawMesh(m_PtrObj);
 	}
 
 

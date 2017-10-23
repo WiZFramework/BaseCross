@@ -22,6 +22,8 @@
 　あるいは実際のゲーム制作の、ひな形としても利用できると思います（ただし、これ以降のサンプルと同じ設計で作成する場合）。設計的には、<b>フルバージョン</b>の簡略化したものです。もし、このような設計が気に入らなければ、<b>SimpleSample015（あるいはそれ以前のサンプル）</b>をひな形として、自分の設計で制作することをお勧めします。<br />
 　例えば<b>画面のフェードイン。フェードアウト</b>を実装する場合は、このサンプルをひな型にしてもよいですが、<b>画面のオーバーラップ</b>を実装するには不向きです。そういう場合は<b>SimpleSample015（あるいはそれ以前のサンプル）</b>をひな形にするのをお勧めします。また今流行りの<b>オープンワールド</b>にも不向きでしょう。<b>オープンワールド</b>の実装には<b>ゲームを遊んでいる最中</b>の、リソース読み込みや破棄が必要であり、そのためには<b>マルチスレッド</b>処理や<b>テッセレーション</b>も必要になるでしょう。<br />
 <br />
+　また、これ以降<b>SimplSample023</b>までは、<b>個別の機能</b>を紹介するサンプルとなります。いろんな機能を同時に実装するには<b>SimplSample024</b>を、ひな形として利用するとよいでしょう。<br />
+<br />
 　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。
 <p>&nbsp;</p>
 <img src="img/0021a.png" width="80%"/>
@@ -204,19 +206,16 @@ void Scene::CreateResources() {
 <div class="box1">
 <pre>
 void PNTDrawObject::OnDraw() {
-
 //中略
     //サブ関数呼び出し(不透明)
     OnDrawSub(m_DrawObjectVec,sb);
-    //カメラの位置
-    Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
     //--------------------------------------------------------
     //透明の3Dオブジェクトをカメラからの距離でソート
     //以下は、オブジェクトを引数に取りboolを返すラムダ式
     //--------------------------------------------------------
-    <span class="red">auto func = [&](DrawObject& Left, DrawObject& Right)->bool {
-        auto LeftPos = Left.m_WorldMatrix.transInMatrix();
-        auto RightPos = Right.m_WorldMatrix.transInMatrix();
+    <span class="red">auto func = [&](shared_ptr&lt;DrawObject>& Left, shared_ptr&lt;DrawObject>& Right)->bool {
+        auto LeftPos = Left->m_WorldMatrix.transInMatrix();
+        auto RightPos = Right->m_WorldMatrix.transInMatrix();
         auto LeftLen = bsm::length(LeftPos - CameraEye);
         auto RightLen = bsm::length(RightPos - CameraEye);
         return (LeftLen > RightLen);
@@ -238,9 +237,9 @@ void PNTDrawObject::OnDraw() {
 <pre>
 //ラムダ式を使ってソート
 std::sort(m_TraceDrawObjectVec.begin(), m_TraceDrawObjectVec.end(), 
-    [&](DrawObject& Left, DrawObject& Right)->bool {
-    auto LeftPos = Left.m_WorldMatrix.transInMatrix();
-    auto RightPos = Right.m_WorldMatrix.transInMatrix();
+    [&](shared_ptr&lt;DrawObject>& Left, shared_ptr&lt;DrawObject>& Right)->bool {
+    auto LeftPos = Left->m_WorldMatrix.transInMatrix();
+    auto RightPos = Right->m_WorldMatrix.transInMatrix();
     auto LeftLen = bsm::length(LeftPos - CameraEye);
     auto RightLen = bsm::length(RightPos - CameraEye);
     return (LeftLen > RightLen);
@@ -351,10 +350,9 @@ void  MessageSprite::UpdateVertex(float ElapsedTime,
 <br/>
 <h4>■まとめ■</h4>
 　今回は、シンプルバージョンという低レベルの状態から、どのようにして<b>ゲーム</b>に仕上げていくか、そのヒントになる実装を紹介しました。<br />
-　次項からはこのサンプルをベースに、その項目ごとのテーマにあった実装を個別にサンプル化していきます。<br />
-　<b>必要のないものは実装しない</b>というシンプルな考え方は、<b>フルバージョン</b>や<b>他のゲームフレームワーク</b>では実装が難しい昨今です。しかし、今後、サンプルの紹介では、個別に紹介することで、ほかの実装とは分けて考えることが可能にしていきます。<br />
-　例えば、<b>影の描画、リアルなシェーダ、モデル、アニメーションの実装</b>などなど、紹介すべき事項は多々ありますが、それらは<b>ミックスされた状態</b>で紹介するのではなく、個別に紹介していきます。そうすることで、<b>必要のないものは実装しない</b>という考え方が浸透しますし、何より、それぞれの実装の勉強にもなると思います。
-
+　また、今後、<b>SImpleSample023</b>までのサンプルの紹介では、個別に紹介することで、ほかの実装とは分けて考えることが可能にしてあります。<br />
+　それらは、<b>衝突判定の実装、影の描画</b>です。ほかの機能もそれらを参考に実装可能と思います。<br />
+　また、それらやほかの機能が<b>ミックスされた、汎用的なサンプル</b>は<b>SImpleSample024</b>に紹介します。それでは<bエフェクト、>モデルの描画</b>や、<b>リアルなシェーダ</b>も含まれます。
 <br />
 </div>
 <!-- /コンテンツ　-->

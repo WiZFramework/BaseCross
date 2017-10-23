@@ -62,6 +62,8 @@ namespace basecross {
 		}
 	}
 
+
+
 	//--------------------------------------------------------------------------------------
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
@@ -82,10 +84,46 @@ namespace basecross {
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = DataDir + L"StageMessage.png";
 		App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);
+
+		strTexture = DataDir + L"wall.jpg";
+		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		strTexture = DataDir + L"wall_normal.png";
+		App::GetApp()->RegisterTexture(L"WALL_NORMAL_TX", strTexture);
+
+		strTexture = DataDir + L"Brown.png";
+		App::GetApp()->RegisterTexture(L"BROWN_TX", strTexture);
+		strTexture = DataDir + L"normal2.png";
+		App::GetApp()->RegisterTexture(L"NORMAL2_TX", strTexture);
+
+
+		//ボーンモデルのリソース
+		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+		//ボーンモデルのタンジェント付きリソース
+		ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", ModelMesh);
+		//法線マップ
+		strTexture = DataDir + L"Chara_R_narmal.png";
+		App::GetApp()->RegisterTexture(L"Chara_R_NORMAL_TX", strTexture);
+
+		//スタティックモデルのリソースとして読み込み
+		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
+
+		//スタティックモデルのタンジェント付きリソースとして読み込み
+		StaticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(DataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", StaticModelMesh);
+		//法線マップ
+		strTexture = DataDir + L"Character_2_normal.png";
+		App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);
+		//エフェクト
 		strTexture = DataDir + L"spark.png";
 		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
 		strTexture = DataDir + L"fire.png";
 		App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
+
+
+
 	}
 
 

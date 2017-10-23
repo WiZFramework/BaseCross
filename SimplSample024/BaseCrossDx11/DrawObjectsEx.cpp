@@ -78,9 +78,14 @@ namespace basecross {
 
 	void MultiParticle::OnDraw() {
 		auto PtrGameStage = GetStage<GameStage>();
-		auto DrawPtrAdd = PtrGameStage->FindTagGameObject<ParticleDrawObject>(L"ParticleDrawObjectAdd");
-		auto DrawPtrAlpha = PtrGameStage->FindTagGameObject<ParticleDrawObject>(L"ParticleDrawObjectAlpha");
-
+		auto DrawPtrAdd = m_DrawPtrAdd.lock();
+		if (!DrawPtrAdd) {
+			DrawPtrAdd = PtrGameStage->FindTagGameObject<ParticleDrawObject>(L"ParticleDrawObjectAdd");
+		}
+		auto DrawPtrAlpha = m_DrawPtrAlpha.lock();
+		if (!DrawPtrAlpha) {
+			DrawPtrAlpha = PtrGameStage->FindTagGameObject<ParticleDrawObject>(L"ParticleDrawObjectAlpha");
+		}
 		if (m_ParticleVec.size() > 0) {
 			for (auto Ptr : m_ParticleVec) {
 				if (Ptr->IsActive()) {

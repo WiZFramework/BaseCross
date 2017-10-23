@@ -58,6 +58,136 @@ namespace basecross {
 		}
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	シングルライト
+	//--------------------------------------------------------------------------------------
+	struct SingleLight {
+		Vec3 m_Directional;	//ライトの向き
+		Col4 m_DiffuseColor;	//ディフィーズ色
+		Col4 m_SpecularColor;	//スペキュラー色
+		Col4 m_AmbientLightColor;			//アンビエント色
+		SingleLight()
+		{
+			SetDefaultLighting();
+		}
+		SingleLight(const Vec3& dir, const Col4& def, const Col4& sp, const Col4& am) :
+			m_Directional(dir),
+			m_DiffuseColor(def),
+			m_SpecularColor(sp),
+			m_AmbientLightColor(am)
+		{
+		}
+		~SingleLight() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief ライト位置からの向きを設定する
+		@param[in]	Position	ライトの位置
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetPositionToDirectional(const Vec3& Position) {
+			m_Directional = Position;
+			m_Directional *= -1.0f;
+			m_Directional.normalize();
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief ライト位置からの向きを設定する
+		@param[in]	x	ライト位置x
+		@param[in]	y	ライト位置y
+		@param[in]	z	ライト位置z
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetPositionToDirectional(float x, float y, float z) {
+			m_Directional = bsm::Vec3(x, y, z);
+			m_Directional *= -1.0f;
+			m_Directional.normalize();
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デフォルトのライティングを設定する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetDefaultLighting() {
+			m_Directional = Vec3(0.4545195f, -0.7660444f,  0.4545195f);
+			m_Directional.normalize();
+			m_DiffuseColor = Col4(0.3231373f, 0.3607844f, 0.3937255f, 0.0f);
+			m_SpecularColor = Col4(0.3231373f, 0.3607844f, 0.3937255f, 0.0f);
+			m_AmbientLightColor = Col4( 0.05333332f, 0.09882354f, 0.1819608f ,0.0f );
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	//	マルチライト
+	//--------------------------------------------------------------------------------------
+	struct MultiLights {
+		Vec3 m_Directional[3];	//ライトの向き
+		Col4 m_DiffuseColor[3];	//ディフィーズ色
+		Col4 m_SpecularColor[3];	//スペキュラー色
+		Col4 m_AmbientLightColor;			//アンビエント色
+		size_t m_MainColorIndex;
+		MultiLights()
+		{
+			SetDefaultLighting();
+			m_MainColorIndex = 2;
+		}
+		~MultiLights() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デフォルトのライティングを設定する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetDefaultLighting() {
+			static const Vec3 defaultDirections[3] =
+			{
+				{ -0.5265408f, -0.5735765f, -0.6275069f },
+				{ 0.7198464f,  0.3420201f,  0.6040227f },
+				{ 0.4545195f, -0.7660444f,  0.4545195f },
+			};
+			static const Col4 defaultDiffuse[3] =
+			{
+				{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+				{ 0.9647059f, 0.7607844f, 0.4078432f,0.0f },
+				{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+			};
+
+			static const Col4 defaultSpecular[3] =
+			{
+				{ 1.0000000f, 0.9607844f, 0.8078432f,0.0f },
+				{ 0.0000000f, 0.0000000f, 0.0000000f,0.0f },
+				{ 0.3231373f, 0.3607844f, 0.3937255f,0.0f },
+			};
+
+
+			m_AmbientLightColor = Col4(0.05333332f, 0.09882354f, 0.1819608f, 0.0f);
+			for (size_t i = 0; i < 3; i++) {
+				m_Directional[i] = defaultDirections[i];
+				m_Directional[i].normalize();
+				m_DiffuseColor[i] = defaultDiffuse[i];
+				m_SpecularColor[i] = defaultSpecular[i];
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief メインのライトを取得する
+		@param[out]	Light	受け取るライト
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetMainLight(SingleLight& light) {
+			light.m_Directional = m_Directional[m_MainColorIndex];
+			light.m_DiffuseColor = m_DiffuseColor[m_MainColorIndex];
+			light.m_SpecularColor = m_SpecularColor[m_MainColorIndex];
+			light.m_AmbientLightColor = m_AmbientLightColor;
+		}
+	};
+
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	ステージ（シーンで管理するインターフェイス）
@@ -176,7 +306,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		shared_ptr<T> FindTagGameObject(const wstring& TagName, bool ExceptionActive = true) const {
+		shared_ptr<T> FindTagGameObject(const wstring& TagName,bool ExceptionActive = true) const {
 			for (auto& v : GetGameObjectVec()) {
 				if (v->FindTag(TagName)) {
 					auto shptr = dynamic_pointer_cast<T>(v);

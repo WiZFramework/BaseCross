@@ -84,6 +84,20 @@ namespace basecross {
 		m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 		//タグの追加
 		AddTag(L"Player");
+
+		//ワールド行列の決定
+		Mat4x4 World;
+		World.affineTransformation(m_Scale, Vec3(0, 0, 0),
+			m_Qt, m_Pos);
+		//データの初期化
+		m_PtrObj = make_shared<DrawObject>();
+		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
+		m_PtrObj->m_MeshRes = m_SphereMesh;
+		m_PtrObj->m_TextureRes = TexPtr;
+		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Trace = true;
+		m_PtrObj->m_Wrap = true;
+
 	}
 	void Player::OnUpdate() {
 		//1つ前の位置を取っておく
@@ -146,19 +160,14 @@ namespace basecross {
 
 
 	void Player::OnDraw() {
-		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
 		auto PtrGameStage = GetStage<GameStage>();
 		//ワールド行列の決定
 		Mat4x4 World;
 		World.affineTransformation(m_Scale, Vec3(0, 0, 0),
 			m_Qt, m_Pos);
+		m_PtrObj->m_WorldMatrix = World;
 		auto shptr = PtrGameStage->FindTagGameObject<PNTDrawObject>(L"PNTDrawObject");
-		shptr->AddDrawMesh(
-			m_SphereMesh,
-			TexPtr,
-			World,
-			true
-		);
+		shptr->AddDrawMesh(m_PtrObj);
 	}
 
 

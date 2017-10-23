@@ -1,5 +1,5 @@
 /*!
-@file GameStage.h
+@file GameStage.cpp
 @brief ゲームステージ実体
 */
 
@@ -11,39 +11,218 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ゲームステージ
 	//--------------------------------------------------------------------------------------
-	GameStage::GameStage():
-		m_LightDir(0.5f, -1.0f, 0.5f, 1.0f)
+	GameStage::GameStage()
 	{
-		m_LightDir.normalize();
+	}
+
+	void GameStage::RegisterNormalBox() {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionNormalTangentTexture> new_vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		BcRenderer::ConvertToNormalVertex(vertices, new_vertices);
+		App::GetApp()->RegisterResource(L"NORMAL_BOX",
+			MeshResource::CreateMeshResource(new_vertices, indices, false));
 	}
 
 	void GameStage::OnCreate() {
+		//Rigidbodyマネージャの初期化
+		m_RigidbodyManager
+			= ObjectFactory::Create<RigidbodyManager>(GetThis<GameStage>());
+
+		//シャドウマップの描画デバイスの取得
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->GetShadowMapRenderTarget(2048.0f);
+
+		//複数使用する法線付きボックスの登録（リソース登録する）
+		RegisterNormalBox();
 
 		//平面の作成
 		Quat Qt;
 		Qt.rotationX(XM_PIDIV2);
 		AddGameObject<SquareObject>(
-			L"SKY_TX",
+			L"WALL_TX",
+			L"WALL_NORMAL_TX",
 			Vec3(50.0f, 50.0f, 1.0f),
 			Qt,
 			Vec3(0.0f, 0.0f, 0.0f)
 			);
+
+		//Static描画スタティックな3D平面(Faceing)
+		AddGameObject<SimpleSquare>(
+			L"SKY_TX",
+			Vec3(4.0f, 4.0f, 1.0f),
+			Vec3(-15.0f, 2.0f, 18.0f),
+			SquareDrawOption::Faceing
+			);
+
+		//Static描画スタティックな3D平面(Billboard)
+		AddGameObject<SimpleSquare>(
+			L"SKY_TX",
+			Vec3(4.0f, 4.0f, 1.0f),
+			Vec3(-5.0f, 2.0f, 18.0f),
+			SquareDrawOption::Billboard
+			);
+
+		//Static描画スタティックな3D平面(FaceingY)
+		AddGameObject<SimpleSquare>(
+			L"SKY_TX",
+			Vec3(4.0f, 4.0f, 1.0f),
+			Vec3(5.0f, 2.0f, 18.0f),
+			SquareDrawOption::FaceingY
+			);
+
+		//Static描画スタティックな3D平面(何もしない。正規化のみ)
+		AddGameObject<SimpleSquare>(
+			L"SKY_TX",
+			Vec3(4.0f, 4.0f, 1.0f),
+			Vec3(15.0f, 2.0f, 18.0f),
+			SquareDrawOption::Normal
+			);
+
+
+
+
+		//Basic描画スタティックなボックス
+		AddGameObject<BcBoxObject>(
+			L"BROWN_TX",
+			L"NORMAL2_TX",
+			Vec3(5.0f, 0.5f, 5.0f),
+			Quat(),
+			Vec3(5.0f, 0.25f, 12.0f)
+			);
+
+		//Basic描画スタティックなボックス
+		AddGameObject<BcBoxObject>(
+			L"BROWN_TX",
+			L"NORMAL2_TX",
+			Vec3(3.0f, 1.0f, 3.0f),
+			Quat(),
+			Vec3(5.0f, 0.5f, 12.0f)
+			);
+
+		//Basic描画スタティックなボックス
+		AddGameObject<BcBoxObject>(
+			L"BROWN_TX",
+			L"NORMAL2_TX",
+			Vec3(3.0f, 1.0f, 3.0f),
+			Quat(),
+			Vec3(-3.5f, 0.5f, 12.0f)
+			);
+
+
+		//Basic描画スタティックなボックス
+		AddGameObject<BcBoxObject>(
+			L"BROWN_TX",
+			L"NORMAL2_TX",
+			Vec3(5.0f, 0.5f, 5.0f),
+			Quat(Vec3(0, 0, 1), -XM_PIDIV4),
+			Vec3(-5.0f, 1.0f, 12.0f)
+			);
+
+
+		//Basic描画法線マップつきBoneキャラ(自己影なし)
+		AddGameObject<BcBoneNormalChara>(
+			Vec3(-1.0f, 0.5f, 2.5f),
+			false);
+
+		//Basic描画法線マップつきBoneキャラ(自己影あり)
+		AddGameObject<BcBoneNormalChara>(
+			Vec3(-3.0f, 0.5f, 2.5f),
+			true);
+
+		//Basic描画Boneキャラ(自己影なし)
+		AddGameObject<BcBoneChara>(
+			Vec3(-5.0f, 0.5f, 2.5f),
+			false);
+
+		//Basic描画Boneキャラ(自己影なし)
+		AddGameObject<BcBoneChara>(
+			Vec3(-7.0f, 0.5f, 2.5f),
+			true);
+
+
+
+		//Simple描画Boneキャラ(自己影なし)
+		AddGameObject<BoneChara>(
+			Vec3(1.0f, 0.5f, 2.5f),
+			false);
+
+		//Simple描画Boneキャラ(自己影あり)
+		AddGameObject<BoneChara>(
+			Vec3(3.0f, 0.5f, 2.5f),
+			false);
+
+
+
+		//スタティックなキャラ(自己影なし)
+		AddGameObject<StaticChara>(
+			Vec3(1.0f, 0.5f, 5.0f),
+			false);
+		//スタティックなキャラ(自己影あり)
+		AddGameObject<StaticChara>(
+			Vec3(3.0f, 0.5f, 5.0f),
+			true);
+
+		//Simple描画スタティックな球体(自己影なし)
+		AddGameObject<SimpleSphereObject>(
+			L"SKY_TX",
+			Vec3(1.0f, 1.0f, 1.0f),
+			Quat(),
+			Vec3(1.0f, 0.5f, 8.0f),
+			false);
+
+		//Simple描画スタティックな球体(自己影あり)
+		AddGameObject<SimpleSphereObject>(
+			L"SKY_TX",
+			Vec3(1.0f, 1.0f, 1.0f),
+			Quat(),
+			Vec3(3.0f, 0.5f, 8.0f),
+			true);
+
+		//Basic描画スタティックな球体(自己影なし)
+		AddGameObject<BcSphereObject>(
+			L"SKY_TX",
+			Vec3(1.0f, 1.0f, 1.0f),
+			Quat(),
+			Vec3(-1.0f, 0.5f, 8.0f));
+
+		//Basic描画法線マップ付きスタティックなキャラ(自己影なし)
+		AddGameObject<BcStaticNormalChara>(
+			Vec3(-1.0f, 0.5f, 5.0f),
+			false);
+
+		//Basic描画法線マップ付きスタティックなキャラ(自己影あり)
+		AddGameObject<BcStaticNormalChara>(
+			Vec3(-3.0f, 0.5f, 5.0f),
+			true);
+
+		//Basic描画スタティックなキャラ(自己影なし)
+		AddGameObject<BcStaticChara>(
+			Vec3(-5.0f, 0.5f, 5.0f),
+			false);
+
+		//Basic描画スタティックなキャラ(自己影あり)
+		AddGameObject<BcStaticChara>(
+			Vec3(-7.0f, 0.5f, 5.0f),
+			true);
+
+
 		//プレイヤーの作成
 		AddGameObject<Player>(
 			L"TRACE_TX", 
 			true, 
 			Vec3(0.0f, 0.125f, 0.0f)
 			);
+
 		//スパークエフェクト
 		AddGameObject<MultiSpark>();
 		//ファイアエフェクト
 		AddGameObject<MultiFire>();
-		//PNT描画オブジェクトの作成
-		AddGameObject<PNTDrawObject>();
-		//Particle描画オブジェクトの作成(加算処理しない)
-		AddGameObject<ParticleDrawObject>(false);
-		//Particle描画オブジェクトの作成(加算処理する)
-		AddGameObject<ParticleDrawObject>(true);
+
+		//描画オブジェクトの追加
+		CreateDrawObjects();
+
 
 		//回転するスプライトの作成
 		AddGameObject<RotateSprite>(
@@ -64,15 +243,76 @@ namespace basecross {
 			1, 1
 			);
 
+		//文字列描画オブジェクトの作成
+		AddGameObject<StringDrawObject>();
+
+
 	}
 
+	//描画オブジェクトの追加
+	void GameStage::CreateDrawObjects() {
+		//シャドウマップ描画オブジェクトの作成
+		AddGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+
+		//SimplePCTStaticRenderer描画オブジェクトの作成
+		AddGameObject<SimplePCTStaticRenderer>(L"SimplePCTStaticRenderer");
+
+		//SimplePNTStaticRenderer描画オブジェクトの作成
+		AddGameObject<SimplePNTStaticRenderer>(L"SimplePNTStaticRenderer");
+		//SimplePNTStaticRenderer2描画オブジェクトの作成
+		AddGameObject<SimplePNTStaticRenderer2>(L"SimplePNTStaticRenderer2");
+
+		//SimplePNTStaticModelRenderer描画オブジェクトの作成
+		AddGameObject<SimplePNTStaticModelRenderer>(L"SimplePNTStaticModelRenderer");
+		//SimplePNTStaticModelRenderer2描画オブジェクトの作成
+		AddGameObject<SimplePNTStaticModelRenderer2>(L"SimplePNTStaticModelRenderer2");
+
+		//SimplePNTBoneModelRenderer描画オブジェクトの作成
+		AddGameObject<SimplePNTBoneModelRenderer>(L"SimplePNTBoneModelRenderer");
+		//SimplePNTBoneModelRenderer2描画オブジェクトの作成
+		AddGameObject<SimplePNTBoneModelRenderer2>(L"SimplePNTBoneModelRenderer2");
+
+
+		//BcPNTStaticDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTStaticRenderer>(L"BcPNTStaticRenderer");
+		//BcPNTnTStaticDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTnTStaticRenderer>(L"BcPNTnTStaticRenderer");
+
+		//BcPNTStaticModelDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTStaticModelRenderer>(L"BcPNTStaticModelRenderer");
+		//BcPNTnTStaticModelDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTnTStaticModelRenderer>(L"BcPNTnTStaticModelRenderer");
+
+		//BcPNTBoneModelDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTBoneModelRenderer>(L"BcPNTBoneModelRenderer");
+		//BcPNTnTBoneModelDrawObject描画オブジェクトの作成
+		AddGameObject<BcPNTnTBoneModelRenderer>(L"BcPNTnTBoneModelRenderer");
+
+		//Particle描画オブジェクトの作成(加算処理しない)
+		AddGameObject<ParticleDrawObject>(false);
+		//Particle描画オブジェクトの作成(加算処理する)
+		AddGameObject<ParticleDrawObject>(true);
+
+	}
+
+
 	void GameStage::OnUpdateStage() {
+		//ターン毎の初期化
+		m_RigidbodyManager->InitRigidbody();
 		for (auto& v : GetGameObjectVec()) {
 			//各オブジェクトの更新
 			v->OnUpdate();
 		}
-		//自分自身の更新
+		//Rigidbodyマネージャの更新（衝突判定など）
+		m_RigidbodyManager->OnUpdate();
+		for (auto& v : GetGameObjectVec()) {
+			//各オブジェクトの最終更新
+			v->OnUpdate2();
+		}
+		//自分自身の更新(カメラ)
 		this->OnUpdate();
+		//Rigidbodyマネージャの最終更新（衝突判定情報のクリア）
+		m_RigidbodyManager->OnUpdate2();
 	}
 
 
@@ -127,12 +367,34 @@ namespace basecross {
 				PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToEmptyStage");
 			}
 		}
+
+		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+		wstring FPS(L"FPS: ");
+		FPS += Util::UintToWStr(fps);
+		FPS += L"\nElapsedTime: ";
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		FPS += Util::FloatToWStr(ElapsedTime);
+		FPS += L"\n";
+		if (!m_StringDrawObject) {
+			m_StringDrawObject = FindTagGameObject<StringDrawObject>(L"StringDrawObject");
+		}
+		m_StringDrawObject->SetText(FPS);
 	}
 
 	void GameStage::OnDrawStage() {
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->ClearDefaultViews(Col4(0, 0, 0, 1.0f));
+
+		//シャドオウマップ描画の開始
+		Dev->ClearShadowmapViews();
+		Dev->StartShadowmapDraw();
+		for (auto& v : GetGameObjectVec()) {
+			//各オブジェクトの描画
+			v->OnDrawShadowmap();
+		}
+		Dev->EndShadowmapDraw();
+
 		//デフォルト描画の開始
 		Dev->StartDefaultDraw();
 		for (auto& v : GetGameObjectVec()) {
@@ -147,7 +409,7 @@ namespace basecross {
 
 
 	void GameStage::OnDraw() {
-		//何もしない
+		m_RigidbodyManager->OnDraw();
 	}
 
 	//--------------------------------------------------------------------------------------

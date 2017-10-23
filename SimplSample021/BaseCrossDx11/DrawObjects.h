@@ -34,8 +34,8 @@ namespace basecross {
 	///	PNT頂点オブジェクトの描画クラス
 	//--------------------------------------------------------------------------------------
 	class PNTDrawObject : public GameObject {
-		vector<DrawObject> m_DrawObjectVec;
-		vector<DrawObject> m_TraceDrawObjectVec;
+		vector<shared_ptr<DrawObject>> m_DrawObjectVec;
+		vector<shared_ptr<DrawObject>> m_TraceDrawObjectVec;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画サブ処理
@@ -44,7 +44,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void OnDrawSub(vector<DrawObject>& ObjectVec, SimpleConstants& sb);
+		void OnDrawSub(const vector<shared_ptr<DrawObject>>& ObjectVec, SimpleConstants& sb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -52,7 +52,7 @@ namespace basecross {
 		@param[in]	StagePtr	ステージのポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		PNTDrawObject(const shared_ptr<Stage>& StagePtr);
+		explicit PNTDrawObject(const shared_ptr<Stage>& StagePtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
@@ -62,18 +62,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画するオブジェクトを追加する
-		@param[in]	MeshRes	メッシュ
-		@param[in]	TextureRes テクスチャ
-		@param[in]	WorldMat ワールド行列
-		@param[in]	Trace 透明処理するかどうか
-		@param[in]	Wrap ラッピング処理するかどうか
+		@param[in]	Obj	描画するオブジェクトのポインタ
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
-			const shared_ptr<TextureResource>& TextureRes,
-			const Mat4x4& WorldMat,
-			bool Trace, bool Wrap = false);
+		void AddDrawMesh(const shared_ptr<DrawObject>& Obj);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

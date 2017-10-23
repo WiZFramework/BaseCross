@@ -22,6 +22,8 @@ namespace basecross {
 		Vec3 m_Scale;				///<スケーリング
 		Quat m_Qt;			///<回転
 		Vec3 m_Pos;				///<位置
+		///描画データ
+		shared_ptr<DrawObject> m_PtrObj;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 頂点の作成

@@ -107,11 +107,13 @@
     <ClInclude Include="Character.h" />
     <ClInclude Include="DrawObjects.h" />
     <ClInclude Include="GameStage.h" />
+    <ClInclude Include="DrawObjectsEx.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="ProjectBehavior.h" />
     <ClInclude Include="ProjectShader.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RigidbodyManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -126,9 +128,11 @@
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="DrawObjects.cpp" />
     <ClCompile Include="GameStage.cpp" />
+    <ClCompile Include="DrawObjectsEx.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="ProjectBehavior.cpp" />
     <ClCompile Include="ProjectShader.cpp" />
+    <ClCompile Include="RigidbodyManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

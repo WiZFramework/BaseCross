@@ -21,18 +21,8 @@ namespace basecross {
 		AddTag(L"PNTDrawObject");
 	}
 
-
-	void PNTDrawObject::AddDrawMesh(const shared_ptr<MeshResource>& MeshRes,
-		const shared_ptr<TextureResource>& TextureRes,
-		const Mat4x4& WorldMat,
-		bool Trace, bool Wrap) {
-		DrawObject Obj;
-		Obj.m_MeshRes = MeshRes;
-		Obj.m_TextureRes = TextureRes;
-		Obj.m_WorldMatrix = WorldMat;
-		Obj.m_Trace = Trace;
-		Obj.m_Wrap = Wrap;
-		if (Trace) {
+	void PNTDrawObject::AddDrawMesh(const shared_ptr<DrawObject>& Obj) {
+		if (Obj->m_Trace) {
 			m_TraceDrawObjectVec.push_back(Obj);
 		}
 		else {
@@ -40,7 +30,8 @@ namespace basecross {
 		}
 	}
 
-	void PNTDrawObject::OnDrawSub(vector<DrawObject>& ObjectVec, SimpleConstants& sb) {
+
+	void PNTDrawObject::OnDrawSub(const vector<shared_ptr<DrawObject>>& ObjectVec, SimpleConstants& sb) {
 		auto PtrGameStage = GetStage<GameStage>();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
@@ -52,18 +43,18 @@ namespace basecross {
 		UINT stride = sizeof(VertexPositionNormalTexture);
 		UINT offset = 0;
 		//個別処理
-		for (auto& v : ObjectVec) {
-			//転置する
-			v.m_WorldMatrix.transpose();
+		for (auto v : ObjectVec) {
 			//ワールド行列の決定
-			sb.World = v.m_WorldMatrix;
+			sb.World = v->m_WorldMatrix;
+			//転置する
+			sb.World.transpose();
 			//テクスチャの設定
-			if (v.m_TextureRes) {
+			if (v->m_TextureRes) {
 				//テクスチャ
 				sb.ActiveFlg.x = 1;
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, v.m_TextureRes->GetShaderResourceView().GetAddressOf());
+				pD3D11DeviceContext->PSSetShaderResources(0, 1, v->m_TextureRes->GetShaderResourceView().GetAddressOf());
 				//サンプラー
-				if (v.m_Wrap) {
+				if (v->m_Wrap) {
 					pD3D11DeviceContext->PSSetSamplers(0, 1, &pSamplerWrap);
 				}
 				else {
@@ -83,22 +74,22 @@ namespace basecross {
 			//ピクセルシェーダに渡す
 			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
 			//頂点バッファのセット
-			pD3D11DeviceContext->IASetVertexBuffers(0, 1, v.m_MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+			pD3D11DeviceContext->IASetVertexBuffers(0, 1, v->m_MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
 			//インデックスバッファのセット
-			pD3D11DeviceContext->IASetIndexBuffer(v.m_MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+			pD3D11DeviceContext->IASetIndexBuffer(v->m_MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
 			//ブレンドステート
-			if (v.m_Trace) {
+			if (v->m_Trace) {
 				//透明処理
 				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
 				//透明処理の場合は、ラスタライザステートを変更して2回描画
 				//ラスタライザステート（裏面描画）
 				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
 				//描画
-				pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+				pD3D11DeviceContext->DrawIndexed(v->m_MeshRes->GetNumIndicis(), 0, 0);
 				//ラスタライザステート（表面描画）
 				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 				//描画
-				pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+				pD3D11DeviceContext->DrawIndexed(v->m_MeshRes->GetNumIndicis(), 0, 0);
 			}
 			else {
 				//透明処理しない
@@ -106,7 +97,7 @@ namespace basecross {
 				//ラスタライザステート（表面描画）
 				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
 				//描画
-				pD3D11DeviceContext->DrawIndexed(v.m_MeshRes->GetNumIndicis(), 0, 0);
+				pD3D11DeviceContext->DrawIndexed(v->m_MeshRes->GetNumIndicis(), 0, 0);
 			}
 		}
 	}
@@ -158,9 +149,9 @@ namespace basecross {
 		//透明の3Dオブジェクトをカメラからの距離でソート
 		//以下は、オブジェクトを引数に取りboolを返すラムダ式
 		//--------------------------------------------------------
-		auto func = [&](DrawObject& Left, DrawObject& Right)->bool {
-			auto LeftPos = Left.m_WorldMatrix.transInMatrix();
-			auto RightPos = Right.m_WorldMatrix.transInMatrix();
+		auto func = [&](shared_ptr<DrawObject>& Left, shared_ptr<DrawObject>& Right)->bool {
+			auto LeftPos = Left->m_WorldMatrix.transInMatrix();
+			auto RightPos = Right->m_WorldMatrix.transInMatrix();
 			auto LeftLen = bsm::length(LeftPos - CameraEye);
 			auto RightLen = bsm::length(RightPos - CameraEye);
 			return (LeftLen > RightLen);

@@ -27,7 +27,8 @@ namespace basecross {
 		bool m_JumpLock;	//ジャンプのロック
 		Vec3 m_BeforePos;	//1つ前の位置
 		float m_Mass;
-
+		///描画データ
+		shared_ptr<DrawObject> m_PtrObj;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コントローラから方向ベクトルを得る

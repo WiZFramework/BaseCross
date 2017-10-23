@@ -1,6 +1,7 @@
 
 #include "INCStructs.hlsli"
-
+#include "INCSimpleConstant.hlsli"
+/*
 cbuffer SimpleConstantBuffer : register(b0)
 {
 	float4x4 World	: packoffset(c0);
@@ -9,7 +10,7 @@ cbuffer SimpleConstantBuffer : register(b0)
 	float4 Emissive : packoffset(c12);
 	float4 Diffuse	: packoffset(c13);
 };
-
+*/
 
 
 PSPCTInput main(VSPCTInstanceInput input)
