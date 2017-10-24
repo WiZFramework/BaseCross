@@ -25,12 +25,16 @@ namespace basecross {
 		bool m_Trace;
 		///ジャンプのロック
 		bool m_JumpLock;
+		//Rigidbodyのshared_ptr
+		shared_ptr<Rigidbody> m_Rigidbody;
 		///描画データ
 		shared_ptr<BcDrawObject> m_PtrObj;
 		//描画オブジェクト(weak_ptr)
 		weak_ptr<BcPNTStaticRenderer> m_Renderer;
 		///シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コントローラから方向ベクトルを得る

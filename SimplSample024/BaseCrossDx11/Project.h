@@ -10,11 +10,11 @@
 #include "ProjectShader.h"
 #include "ProjectBehavior.h"
 #include "Scene.h"
+#include "RigidbodyManager.h"
 #include "DrawObjects.h"
 #include "DrawObjectsEx.h"
 #include "Character.h"
 #include "Player.h"
-#include "RigidbodyManager.h"
 #include "GameStage.h"
 
 

@@ -31,6 +31,9 @@ namespace basecross {
 		float m_HitTime;
 	};
 
+	class GameObject;
+	struct Camera;
+
 	//--------------------------------------------------------------------------------------
 	///	剛体
 	//--------------------------------------------------------------------------------------
@@ -200,13 +203,12 @@ namespace basecross {
 	};
 
 
-
 	//--------------------------------------------------------------------------------------
 	///	Rigidbodyマネージャ
 	//--------------------------------------------------------------------------------------
 	class RigidbodyManager : public GameObject {
 		//Rigidbodyの配列
-		vector<Rigidbody> m_RigidbodyVec;
+		vector<shared_ptr<Rigidbody>> m_RigidbodyVec;
 		//衝突判定
 		void CollisionDest(Rigidbody& Src);
 		bool CollisionStateChk(Rigidbody* p1, Rigidbody* p2);
@@ -233,10 +235,7 @@ namespace basecross {
 		@return	Rigidbodyの配列
 		*/
 		//--------------------------------------------------------------------------------------
-		const vector<Rigidbody>& GetRigidbodyVec()const {
-			return m_RigidbodyVec;
-		}
-		vector<Rigidbody>& GetRigidbodyVec() {
+		const vector<shared_ptr<Rigidbody>>& GetRigidbodyVec()const {
 			return m_RigidbodyVec;
 		}
 		//--------------------------------------------------------------------------------------
@@ -248,30 +247,22 @@ namespace basecross {
 		const vector<CollisionState>& GetCollisionStateVec()const {
 			return m_CollisionStateVec;
 		}
-		vector<CollisionState>& GetCollisionStateVec() {
-			return m_CollisionStateVec;
-		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 指定のオーナーのRigidbodyを得る
 		@param[in]	OwnerPtr	オーナーのポインタ
-		@return	指定のオーナーのRigidbody
+		@return	指定のオーナーのRigidbodyのshared_ptr
 		*/
 		//--------------------------------------------------------------------------------------
-		Rigidbody& GetOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
-			for (auto& v : m_RigidbodyVec) {
-				auto shptr = v.m_Owner.lock();
-				if (shptr == OwnerPtr) {
-					return v;
-				}
-			}
-			throw BaseException(
-				L"指定のRigidbodyが見つかりません",
-				L"!Rigidbody",
-				L"RigidbodyManager::GetOwnRigidbody()"
-			);
-		}
+		shared_ptr<Rigidbody> GetOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 指定のオーナーのRigidbodyを削除する（見つからなければ何もしない）
+		@param[in]	OwnerPtr	オーナーのポインタ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void RemoveOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -286,6 +277,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void InitRigidbody();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief Rigidbodyを登録する
+		@return	追加したRigidbodyのshared_ptr
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<Rigidbody> AddRigidbody(const Rigidbody& body);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief SrcのDestからのエスケープ

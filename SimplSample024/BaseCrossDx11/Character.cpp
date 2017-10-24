@@ -65,6 +65,7 @@ namespace basecross {
 		m_PtrObj->m_TextureRes = TexPtr;
 		m_PtrObj->m_NormalTextureRes = NormTexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_OwnShadowmapActive = true;
 		m_PtrObj->m_SamplerState = SamplerState::LinearWrap;
 		m_PtrObj->m_ShadowmapUse = false;
@@ -80,10 +81,10 @@ namespace basecross {
 	}
 
 	void SquareObject::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTnTStaticRenderer>(L"BcPNTnTStaticRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTnTStaticRenderer>(L"BcPNTnTStaticRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -253,6 +254,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = m_SquareMesh;
 		m_PtrObj->m_TextureRes = TexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_SamplerState = SamplerState::LinearWrap;
 
 	}
@@ -305,10 +307,10 @@ namespace basecross {
 		pD3D11DeviceContext->Unmap(m_SquareMesh->GetVertexBuffer().Get(), 0);
 
 
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		//カメラの位置
-		Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
-		Vec3 CameraAt = PtrGameStage->GetCamera().m_CamerAt;
+		Vec3 CameraEye = PtrStage->GetCamera().m_CamerEye;
+		Vec3 CameraAt = PtrStage->GetCamera().m_CamerAt;
 		switch (m_DrawOption) {
 		case SquareDrawOption::Billboard:
 		{
@@ -339,10 +341,10 @@ namespace basecross {
 			m_Pos
 		);
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<SimplePCTStaticRenderer>(L"SimplePCTStaticRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<SimplePCTStaticRenderer>(L"SimplePCTStaticRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -405,6 +407,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = MeshPtr;
 		//アフィン変換
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_UsedModelColor = false;
 		m_PtrObj->m_UsedModelTextre = true;
 		m_PtrObj->m_OwnShadowmapActive = m_OwnShadowActive;
@@ -415,6 +418,7 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = MeshPtr;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 	}
 
 	void StaticChara::OnUpdate() {
@@ -422,15 +426,21 @@ namespace basecross {
 	}
 
 	void StaticChara::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 	void StaticChara::OnDraw() {
+		
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<SimplePNTStaticModelRenderer2>(L"SimplePNTStaticModelRenderer2");
+			shptr = GetStage<Stage>()->FindTagGameObject<SimplePNTStaticModelRenderer2>(L"SimplePNTStaticModelRenderer2");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -488,6 +498,7 @@ namespace basecross {
 		m_PtrObj = make_shared<SimpleDrawObject>();
 		m_PtrObj->m_MeshRes = MeshPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_UsedModelColor = false;
 		m_PtrObj->m_UsedModelTextre = true;
 		m_PtrObj->m_OwnShadowmapActive = m_OwnShadowActive;
@@ -501,6 +512,7 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = MeshPtr;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 	}
 
@@ -512,16 +524,21 @@ namespace basecross {
 
 	void BoneChara::OnDrawShadowmap() {
 		m_PtrShadowmapObj->m_pLocalBoneVec = &m_PtrObj->m_LocalBonesMatrix;
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 
 	void BoneChara::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<SimplePNTBoneModelRenderer2>(L"SimplePNTBoneModelRenderer2");
+			shptr = GetStage<Stage>()->FindTagGameObject<SimplePNTBoneModelRenderer2>(L"SimplePNTBoneModelRenderer2");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -583,6 +600,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = m_SphereMesh;
 		m_PtrObj->m_TextureRes = TexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_OwnShadowmapActive = m_OwnShadowActive;
 		m_PtrObj->m_ShadowmapUse = true;
 
@@ -591,18 +609,24 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = m_SphereMesh;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 	}
 
 	void SimpleSphereObject::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 	void SimpleSphereObject::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<SimplePNTStaticRenderer2>(L"SimplePNTStaticRenderer2");
+			shptr = GetStage<Stage>()->FindTagGameObject<SimplePNTStaticRenderer2>(L"SimplePNTStaticRenderer2");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -663,6 +687,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = m_SphereMesh;
 		m_PtrObj->m_TextureRes = TexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_OwnShadowmapActive = false;
 		m_PtrObj->m_ShadowmapUse = true;
 		m_PtrObj->m_FogEnabled = true;
@@ -676,18 +701,24 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = m_SphereMesh;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 	}
 
 	void BcSphereObject::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 	void BcSphereObject::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTStaticRenderer>(L"BcPNTStaticRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTStaticRenderer>(L"BcPNTStaticRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -744,6 +775,7 @@ namespace basecross {
 		m_PtrObj->m_TextureRes = TexPtr;
 		m_PtrObj->m_NormalTextureRes = NormTexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->m_OwnShadowmapActive = true;
 		m_PtrObj->m_ShadowmapUse = true;
 		m_PtrObj->m_FogEnabled = true;
@@ -757,21 +789,27 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = MeshPtr;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 
 	}
 
 	void BcBoxObject::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 
 	void BcBoxObject::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTnTStaticRenderer>(L"BcPNTnTStaticRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTnTStaticRenderer>(L"BcPNTnTStaticRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -840,12 +878,14 @@ namespace basecross {
 		m_PtrObj->m_FogEnd = -30.0f;
 		m_PtrObj->m_MeshRes = MeshPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 		//シャドウマップ描画データの構築
 		m_PtrShadowmapObj = make_shared<ShadowmapObject>();
 		m_PtrShadowmapObj->m_MeshRes = MeshPtr;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 
 	}
@@ -855,16 +895,21 @@ namespace basecross {
 	}
 
 	void BcStaticChara::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 
 	void BcStaticChara::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTStaticModelRenderer>(L"BcPNTStaticModelRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTStaticModelRenderer>(L"BcPNTStaticModelRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -937,6 +982,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = MeshPtr;
 		m_PtrObj->m_NormalTextureRes = NormTexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 		//シャドウマップ描画データの構築
 		m_PtrShadowmapObj = make_shared<ShadowmapObject>();
@@ -945,6 +991,7 @@ namespace basecross {
 		m_PtrShadowmapObj->m_IsNormalmap = true;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 
 	}
@@ -952,15 +999,20 @@ namespace basecross {
 	}
 
 	void BcStaticNormalChara::OnDrawShadowmap() {
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 	void BcStaticNormalChara::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTnTStaticModelRenderer>(L"BcPNTnTStaticModelRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTnTStaticModelRenderer>(L"BcPNTnTStaticModelRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -1030,6 +1082,7 @@ namespace basecross {
 		m_PtrObj->m_FogEnd = -30.0f;
 		m_PtrObj->m_MeshRes = MeshPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->BoneInit();
 		m_PtrObj->AddAnimation(L"Default", 0, 100, true, 20.0f);
 		m_PtrObj->ChangeCurrentAnimation(L"Default");
@@ -1039,6 +1092,7 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = MeshPtr;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 	}
 
@@ -1049,17 +1103,22 @@ namespace basecross {
 	}
 
 	void BcBoneChara::OnDrawShadowmap() {
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrShadowmapObj->m_pLocalBoneVec = &m_PtrObj->m_LocalBonesMatrix;
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 
 	void BcBoneChara::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTBoneModelRenderer>(L"BcPNTBoneModelRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTBoneModelRenderer>(L"BcPNTBoneModelRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);
@@ -1133,6 +1192,7 @@ namespace basecross {
 		m_PtrObj->m_MeshRes = MeshPtr;
 		m_PtrObj->m_NormalTextureRes = NormTexPtr;
 		m_PtrObj->m_WorldMatrix = World;
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrObj->BoneInit();
 		m_PtrObj->AddAnimation(L"Default", 0, 100, true, 20.0f);
 		m_PtrObj->ChangeCurrentAnimation(L"Default");
@@ -1144,6 +1204,7 @@ namespace basecross {
 		m_PtrShadowmapObj->m_IsNormalmap = true;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 
 	}
 
@@ -1154,17 +1215,22 @@ namespace basecross {
 	}
 
 	void BcBoneNormalChara::OnDrawShadowmap() {
+		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
 		m_PtrShadowmapObj->m_pLocalBoneVec = &m_PtrObj->m_LocalBonesMatrix;
-		auto shptr = GetStage<GameStage>()->GetShadowmapRenderer();
+		auto shptr = m_ShadowmapRenderer.lock();
+		if (!shptr) {
+			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
+			m_ShadowmapRenderer = shptr;
+		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
 
 
 	void BcBoneNormalChara::OnDraw() {
+		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
 		auto shptr = m_Renderer.lock();
 		if (!shptr) {
-			auto PtrGameStage = GetStage<GameStage>();
-			shptr = PtrGameStage->FindTagGameObject<BcPNTnTBoneModelRenderer>(L"BcPNTnTBoneModelRenderer");
+			shptr = GetStage<Stage>()->FindTagGameObject<BcPNTnTBoneModelRenderer>(L"BcPNTnTBoneModelRenderer");
 			m_Renderer = shptr;
 		}
 		shptr->AddDrawObject(m_PtrObj);

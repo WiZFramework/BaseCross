@@ -11,6 +11,13 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ステージ（シーンで管理するインターフェイス）
 	//--------------------------------------------------------------------------------------
+	void Stage::OnPreCreate() {
+		//Rigidbodyマネージャの初期化
+		m_RigidbodyManager
+			= ObjectFactory::Create<RigidbodyManager>(GetThis<Stage>());
+	}
+
+
 	//追加オブジェクトの指定
 	void Stage::PushBackGameObject(const shared_ptr<GameObject>& Ptr) {
 		//このステージはクリエイト後である
@@ -36,6 +43,7 @@ namespace basecross {
 			}
 			it++;
 		}
+		m_RigidbodyManager->RemoveOwnRigidbody(targetobj);
 	}
 	//追加や削除待ちになってるオブジェクトを追加削除する
 	void Stage::SetWaitToObjectVec() {
@@ -61,6 +69,29 @@ namespace basecross {
 			}
 		}
 	}
+
+	shared_ptr<RigidbodyManager> Stage::GetRigidbodyManager() const {
+		return m_RigidbodyManager;
+	}
+
+	shared_ptr<Rigidbody> Stage::AddRigidbody(const Rigidbody& body) {
+		return m_RigidbodyManager->AddRigidbody(body);
+	}
+
+	void Stage::RemoveOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
+		m_RigidbodyManager->RemoveOwnRigidbody(OwnerPtr);
+	}
+
+	const vector<shared_ptr<Rigidbody>>& Stage::GetRigidbodyVec()const {
+		return m_RigidbodyManager->GetRigidbodyVec();
+	}
+	const vector<CollisionState>& Stage::GetCollisionStateVec()const {
+		return m_RigidbodyManager->GetCollisionStateVec();
+	}
+	shared_ptr<Rigidbody> Stage::GetOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
+		return m_RigidbodyManager->GetOwnRigidbody(OwnerPtr);
+	}
+
 
 
 

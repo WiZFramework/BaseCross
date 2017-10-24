@@ -15,8 +15,12 @@ namespace basecross {
 	///	シャドウマップ描画に使用する構造体
 	//--------------------------------------------------------------------------------------
 	struct ShadowmapObject {
+		//メッシュ
 		shared_ptr<MeshResource> m_MeshRes;
+		//ワールド行列
 		Mat4x4 m_WorldMatrix;
+		//描画用カメラ
+		Camera m_Camera;
 		vector<Mat4x4>* m_pLocalBoneVec;
 		//法線マップを使用するか
 		bool m_IsNormalmap;
@@ -401,6 +405,8 @@ namespace basecross {
 		SamplerState m_SamplerState;
 		//ワールド行列
 		Mat4x4 m_WorldMatrix;
+		//描画用カメラ
+		Camera m_Camera;
 		//モデルに入っている色を使うかどうか
 		bool m_UsedModelColor;
 		//モデルに入っているテクスチャを使うかどうか
@@ -428,6 +434,7 @@ namespace basecross {
 			m_RasterizerState(RasterizerState::CullBack),
 			m_SamplerState(SamplerState::LinearClamp),
 			m_WorldMatrix(),
+			m_Camera(),
 			m_UsedModelColor(true),
 			m_UsedModelTextre(true),
 			m_OwnShadowmapActive(false),
@@ -481,7 +488,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void DrawStaticVec(const vector<shared_ptr<SimpleDrawObject>>& ObjectVec) {
-			auto PtrGameStage = GetStage<GameStage>();
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 			auto RenderState = Dev->GetRenderState();
@@ -587,7 +593,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void DrawModelVec(const vector<shared_ptr<SimpleDrawObject>>& ObjectVec) {
-			auto PtrGameStage = GetStage<GameStage>();
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 			auto RenderState = Dev->GetRenderState();
@@ -729,7 +734,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_VShaderShadow, typename T_PShader, typename T_PShaderShadow>
 		void Draw(bool IsModel) {
-			auto PtrGameStage = GetStage<GameStage>();
+			auto PtrStage = GetStage<Stage>();
 			//サブ関数呼び出し(不透明)
 			if (IsModel) {
 				DrawModelVec<T_VShader, T_PShader>(m_DrawObjectVec);
@@ -740,7 +745,7 @@ namespace basecross {
 				DrawStaticVec<T_VShaderShadow, T_PShaderShadow>(m_ShadowDrawObjectVec);
 			}
 			//カメラの位置
-			Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
+			Vec3 CameraEye = PtrStage->GetCamera().m_CamerEye;
 			//--------------------------------------------------------
 			//透明の3Dオブジェクトをカメラからの距離でソート
 			//以下は、オブジェクトを引数に取りboolを返すラムダ式
@@ -780,7 +785,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void Draw(bool IsModel) {
-			auto PtrGameStage = GetStage<GameStage>();
+			auto PtrStage = GetStage<Stage>();
 			//サブ関数呼び出し(不透明)
 			if (IsModel) {
 				DrawModelVec<T_VShader, T_PShader>(m_DrawObjectVec);
@@ -789,7 +794,7 @@ namespace basecross {
 				DrawStaticVec<T_VShader, T_PShader>(m_DrawObjectVec);
 			}
 			//カメラの位置
-			Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
+			Vec3 CameraEye = PtrStage->GetCamera().m_CamerEye;
 			//--------------------------------------------------------
 			//透明の3Dオブジェクトをカメラからの距離でソート
 			//以下は、オブジェクトを引数に取りboolを返すラムダ式
@@ -1153,6 +1158,8 @@ namespace basecross {
 		SamplerState m_SamplerState;
 		//ワールド行列
 		Mat4x4 m_WorldMatrix;
+		//描画用カメラ
+		Camera m_Camera;
 		//透明度
 		float m_Alpha;
 		//モデルに入っている色を使うかどうか
@@ -1195,6 +1202,7 @@ namespace basecross {
 			m_RasterizerState(RasterizerState::CullBack),
 			m_SamplerState(SamplerState::LinearClamp),
 			m_WorldMatrix(),
+			m_Camera(),
 			m_Alpha(1.0f),
 			m_UsedModelColor(true),
 			m_UsedModelTextre(true),
@@ -1258,7 +1266,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void DrawStaticVec(const vector<shared_ptr<BcDrawObject>>& ObjectVec) {
-			auto PtrGameStage = GetStage<GameStage>();
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 			auto RenderState = Dev->GetRenderState();
@@ -1379,7 +1386,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void DrawModelVec(const vector<shared_ptr<BcDrawObject>>& ObjectVec) {
-			auto PtrGameStage = GetStage<GameStage>();
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 			auto RenderState = Dev->GetRenderState();
@@ -1552,7 +1558,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_VShaderShadow, typename T_PShader, typename T_PShaderShadow>
 		void Draw(bool IsModel) {
-			auto PtrGameStage = GetStage<GameStage>();
+			auto PtrStage = GetStage<Stage>();
 			//サブ関数呼び出し(不透明)
 			if (IsModel) {
 				DrawModelVec<T_VShader, T_PShader>(m_DrawObjectVec);
@@ -1563,7 +1569,7 @@ namespace basecross {
 				DrawStaticVec<T_VShaderShadow, T_PShaderShadow>(m_ShadowDrawObjectVec);
 			}
 			//カメラの位置
-			Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
+			Vec3 CameraEye = PtrStage->GetCamera().m_CamerEye;
 			//--------------------------------------------------------
 			//透明の3Dオブジェクトをカメラからの距離でソート
 			//以下は、オブジェクトを引数に取りboolを返すラムダ式

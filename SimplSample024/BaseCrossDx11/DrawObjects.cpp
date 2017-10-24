@@ -34,7 +34,7 @@ namespace basecross {
 
 	void ShadowmapRenderer::OnDrawShadowmap() {
 
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
@@ -49,7 +49,7 @@ namespace basecross {
 			//位置の取得
 			auto Pos = v->m_WorldMatrix.transInMatrix();
 			Vec4 LightDir4;
-			PtrGameStage->GetLightDir(LightDir4);
+			PtrStage->GetLightDir(LightDir4);
 			Vec3 LightDir(LightDir4.x, LightDir4.y, LightDir4.z);
 			Vec3 PosSpan = LightDir;
 			PosSpan *= 0.1f;
@@ -64,7 +64,7 @@ namespace basecross {
 				Pos				//位置
 			);
 			LightDir = LightDir  * -1.0;
-			Vec3 LightAt = PtrGameStage->GetCamera().m_CamerAt;
+			Vec3 LightAt = v->m_Camera.m_CamerAt;
 			Vec3 LightEye = LightAt + (LightDir * m_LightHeight);
 			//ライトのビューと射影を計算
 			LightView = XMMatrixLookAtLH(LightEye, LightAt, Vec3(0, 1.0f, 0));
@@ -173,9 +173,9 @@ namespace basecross {
 	}
 
 	void SimpleRenderer::SetConstants(const shared_ptr<SimpleDrawObject>& Obj, SimpleConstants& Cb) {
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		//マルチライトを得る
-		auto& MLight = PtrGameStage->GetMultiLights();
+		auto& MLight = PtrStage->GetMultiLights();
 		//行列の定義
 		bsm::Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
@@ -183,9 +183,9 @@ namespace basecross {
 		//転置する
 		World.transpose();
 		//カメラを得る
-		PtrGameStage->GetCamera().GetViewProjMatrix(ViewMat, ProjMat);
+		Obj->m_Camera.GetViewProjMatrix(ViewMat, ProjMat);
 		Vec4 LightDir;
-		PtrGameStage->GetLightDir(LightDir);
+		PtrStage->GetLightDir(LightDir);
 		//転置する
 		ViewMat.transpose();
 		//転置する
@@ -202,13 +202,12 @@ namespace basecross {
 		//ライティング
 		Cb.LightDir = LightDir;
 		Cb.LightDir.w = 1.0f;
-		Cb.EyePos = PtrGameStage->GetCamera().m_CamerEye;
+		Cb.EyePos = Obj->m_Camera.m_CamerEye;
 		Cb.EyePos.w = 1.0f;
 		Vec3 CalcLightDir(LightDir.x, LightDir.y, LightDir.z);
 		CalcLightDir = -1.0 * CalcLightDir;
-		Vec3 LightAt = PtrGameStage->GetCamera().m_CamerAt;
+		Vec3 LightAt = Obj->m_Camera.m_CamerAt;
 		Vec3 LightEye = CalcLightDir;
-		auto ShadowObj = PtrGameStage->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
 		LightEye *= ShadowmapRenderer::m_LightHeight;
 		LightEye = LightAt + LightEye;
 		Cb.LightPos = LightEye;
@@ -399,17 +398,17 @@ namespace basecross {
 	}
 
 	void BcRenderer::SetConstants(const shared_ptr<BcDrawObject>& Obj, BasicConstants& BcCb) {
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
 		//マルチライトを得る
-		auto& MLight = PtrGameStage->GetMultiLights();
+		auto& MLight = PtrStage->GetMultiLights();
 		//ワールド行列
 		Mat4x4 world = Obj->m_WorldMatrix;
 		//ビュート射影行列の定義
 		Mat4x4 view, proj;
-		PtrGameStage->GetCamera().GetViewProjMatrix(view, proj);
+		Obj->m_Camera.GetViewProjMatrix(view, proj);
 		//行列の設定
 		auto worldView = world * view;
 		BcCb.worldViewProj = XMMatrixTranspose(XMMatrixMultiply(worldView, proj));
@@ -484,14 +483,14 @@ namespace basecross {
 			SingleLight Light;
 			MLight.GetMainLight(Light);
 			bsm::Vec3 CalcLightDir(Light.m_Directional * -1.0);
-			bsm::Vec3 LightAt(PtrGameStage->GetCamera().m_CamerAt);
+			bsm::Vec3 LightAt(Obj->m_Camera.m_CamerAt);
 			bsm::Vec3 LightEye(CalcLightDir);
 			LightEye *= ShadowmapRenderer::m_LightHeight;
 			LightEye = LightAt + LightEye;
 			bsm::Vec4 LightEye4(LightEye, 1.0f);
 			LightEye4.w = 1.0f;
 			BcCb.lightPos = LightEye4;
-			bsm::Vec4 eyePos4(PtrGameStage->GetCamera().m_CamerEye, 1.0f);
+			bsm::Vec4 eyePos4(Obj->m_Camera.m_CamerEye, 1.0f);
 			eyePos4.w = 1.0f;
 			BcCb.eyePos = eyePos4;
 			bsm::Mat4x4 LightView, LightProj;

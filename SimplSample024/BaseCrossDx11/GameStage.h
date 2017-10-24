@@ -14,19 +14,11 @@ namespace basecross {
 	///	ゲームステージ
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
-		//マルチライト
-		MultiLights m_MultiLights;
-		//カメラ
-		Camera m_Camera;
-		//Rigidbodyマネージャ
-		shared_ptr<RigidbodyManager> m_RigidbodyManager;
 		//描画オブジェクトの追加
 		void CreateDrawObjects();
 		//以下、別に保存しておく
 		//文字列描画オブジェクト
 		shared_ptr<StringDrawObject> m_StringDrawObject;
-		//シャドウマップ描画オブジェクト
-		shared_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 		//複数使用する法線付きボックスの登録（リソース登録する）
 		void RegisterNormalBox();
 	public:
@@ -36,60 +28,12 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		GameStage();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
 		virtual ~GameStage() {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief カメラの取得
-		@return	カメラの参照（内容変更できない）
-		*/
-		//--------------------------------------------------------------------------------------
-		const Camera& GetCamera()const {
-			return m_Camera;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief カメラの取得
-		@return	カメラの参照（内容変更できる）
-		*/
-		//--------------------------------------------------------------------------------------
-		Camera& GetCamera(){
-			return m_Camera;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief メインライト向きの取得
-		@param[out]	LightDir	ライト向き受け取る参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void GetLightDir(Vec4& LightDir)const {
-			LightDir = m_MultiLights.m_Directional[m_MultiLights.m_MainColorIndex];
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief マルチライトの取得
-		@return	マルチライトの参照
-		*/
-		//--------------------------------------------------------------------------------------
-		const MultiLights& GetMultiLights()const {
-			return m_MultiLights;
-		}
-		MultiLights& GetMultiLights(){
-			return m_MultiLights;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief シャドウマップ描画オブジェクトの取得
-		@return	シャドウマップ描画オブジェクト
-		*/
-		//--------------------------------------------------------------------------------------
-		shared_ptr<ShadowmapRenderer> GetShadowmapRenderer(){
-			if (!m_ShadowmapRenderer) {
-				m_ShadowmapRenderer = FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
-			}
-			return m_ShadowmapRenderer;
-		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -125,58 +69,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	Rigidbodyマネージャを得る
-		@return	Rigidbodyマネージャ
-		*/
-		//--------------------------------------------------------------------------------------
-		shared_ptr<RigidbodyManager> GetRigidbodyManager() const {
-			return m_RigidbodyManager;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief Rigidbodyを登録する
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void AddRigidbody(const Rigidbody& body) {
-			GetRigidbodyVec().push_back(body);
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief Rigidbodyの配列を得る
-		@return	Rigidbodyの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<Rigidbody>& GetRigidbodyVec()const {
-			return m_RigidbodyManager->GetRigidbodyVec();
-		}
-		vector<Rigidbody>& GetRigidbodyVec() {
-			return m_RigidbodyManager->GetRigidbodyVec();
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突情報の配列を得る
-		@return	衝突情報の配列
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<CollisionState>& GetCollisionStateVec()const {
-			return m_RigidbodyManager->GetCollisionStateVec();
-		}
-		vector<CollisionState>& GetCollisionStateVec() {
-			return m_RigidbodyManager->GetCollisionStateVec();
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 指定のオーナーのRigidbodyを得る
-		@param[in]	OwnerPtr	オーナーのポインタ
-		@return	指定のオーナーのRigidbody
-		*/
-		//--------------------------------------------------------------------------------------
-		Rigidbody& GetOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
-			return m_RigidbodyManager->GetOwnRigidbody(OwnerPtr);
-		}
 	};
 
 

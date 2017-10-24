@@ -596,15 +596,49 @@ namespace basecross {
 	{}
 	RigidbodyManager::~RigidbodyManager() {}
 
+	shared_ptr<Rigidbody>  RigidbodyManager::GetOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
+		for (auto& v : m_RigidbodyVec) {
+			auto shptr = v->m_Owner.lock();
+			if (shptr == OwnerPtr) {
+				return v;
+			}
+		}
+		throw BaseException(
+			L"指定のRigidbodyが見つかりません",
+			L"!Rigidbody",
+			L"RigidbodyManager::GetOwnRigidbody()"
+		);
+	}
+
+	void RigidbodyManager::RemoveOwnRigidbody(const shared_ptr<GameObject>& OwnerPtr) {
+		auto it = m_RigidbodyVec.begin();
+		while (it != m_RigidbodyVec.end()) {
+			auto shptr = (*it)->m_Owner.lock();
+			if (shptr == OwnerPtr) {
+				m_RigidbodyVec.erase(it);
+				return;
+			}
+			it++;
+		}
+	}
+
+
+
 	//ターン毎の初期化
 	void RigidbodyManager::InitRigidbody() {
 		//1つ前の位置にセットとフォースの初期化
 		for (auto& v : m_RigidbodyVec) {
-			v.SetToBefore();
-			v.m_Force = Vec3(0);
+			v->SetToBefore();
+			v->m_Force = Vec3(0);
 		}
 	}
 
+	shared_ptr<Rigidbody> RigidbodyManager::AddRigidbody(const Rigidbody& body) {
+		size_t index = m_RigidbodyVec.size();
+		auto shptr = make_shared<Rigidbody>(body);
+		m_RigidbodyVec.push_back(shptr);
+		return m_RigidbodyVec[index];
+	}
 
 
 	//衝突判定
@@ -642,10 +676,10 @@ namespace basecross {
 
 	void RigidbodyManager::CollisionDest(Rigidbody& Src) {
 		for (auto& v : m_RigidbodyVec) {
-			if (v.m_IsCollisionActive) {
-				if (Src.m_Owner.lock() != v.m_Owner.lock()) {
+			if (v->m_IsCollisionActive) {
+				if (Src.m_Owner.lock() != v->m_Owner.lock()) {
 					CollisionState state;
-					if (CollisionTest(Src, v, state)) {
+					if (CollisionTest(Src, *v, state)) {
 						m_CollisionStateVec.push_back(state);
 					}
 				}
@@ -658,16 +692,16 @@ namespace basecross {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//フォースから速度に変換
 		for (auto& v : m_RigidbodyVec) {
-			Vec3 accel = v.m_Force * v.m_Mass;
-			v.m_Velocity += accel * ElapsedTime;
+			Vec3 accel = v->m_Force * v->m_Mass;
+			v->m_Velocity += accel * ElapsedTime;
 		}
 
 		//衝突判定を行い、ヒットがあれば速度を変更する
 		if (m_RigidbodyVec.size() >= 2) {
 			//衝突判定
 			for (auto& v : m_RigidbodyVec) {
-				if (v.m_IsCollisionActive) {
-					CollisionDest(v);
+				if (v->m_IsCollisionActive) {
+					CollisionDest(*v);
 				}
 			}
 		}
@@ -692,7 +726,7 @@ namespace basecross {
 
 		//設定された速度をもとに衝突無しのオブジェクトの位置の決定
 		for (auto& v : m_RigidbodyVec) {
-			v.Move(ElapsedTime);
+			v->Move(ElapsedTime);
 		}
 
 		//エスケープ処理
@@ -729,10 +763,10 @@ namespace basecross {
 	}
 
 	void RigidbodyManager::OnDraw() {
-		auto& camera = GetStage<GameStage>()->GetCamera();
+		auto& camera = GetStage<Stage>()->GetCamera();
 		for (auto& v : m_RigidbodyVec) {
-			if (v.m_IsDrawActive) {
-				v.DrawWireFlame(camera);
+			if (v->m_IsDrawActive) {
+				v->DrawWireFlame(camera);
 			}
 		}
 	}

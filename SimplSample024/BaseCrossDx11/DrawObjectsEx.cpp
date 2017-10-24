@@ -159,10 +159,10 @@ namespace basecross {
 			//パーティクルスプライトが上限を超えた
 			return;
 		}
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		//カメラの位置
-		Vec3 CameraEye = PtrGameStage->GetCamera().m_CamerEye;
-		Vec3 CameraAt = PtrGameStage->GetCamera().m_CamerAt;
+		Vec3 CameraEye = PtrStage->GetCamera().m_CamerEye;
+		Vec3 CameraAt = PtrStage->GetCamera().m_CamerAt;
 		Vec3 WorldPos = rParticleSprite.m_LocalPos + EmitterPos;
 		float ToCaneraLength = bsm::length(CameraEye - WorldPos);
 		Vec3 LocalScale;
@@ -230,7 +230,7 @@ namespace basecross {
 	}
 
 	void ParticleDrawObject::OnDraw() {
-		auto PtrGameStage = GetStage<GameStage>();
+		auto PtrStage = GetStage<Stage>();
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
@@ -328,7 +328,7 @@ namespace basecross {
 
 		//ビュー行列の決定
 		Mat4x4 View, Proj;
-		PtrGameStage->GetCamera().GetViewProjMatrix(View, Proj);
+		PtrStage->GetCamera().GetViewProjMatrix(View, Proj);
 		//転置する
 		View.transpose();
 		//転置する

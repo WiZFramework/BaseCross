@@ -223,6 +223,8 @@ namespace basecross {
 		weak_ptr<SimplePNTStaticModelRenderer2> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -284,6 +286,8 @@ namespace basecross {
 		weak_ptr<SimplePNTBoneModelRenderer2> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -353,6 +357,8 @@ namespace basecross {
 		weak_ptr<SimplePNTStaticRenderer2> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 		bool m_OwnShadowActive;
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -435,6 +441,8 @@ namespace basecross {
 		weak_ptr<BcPNTStaticRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 頂点の作成
@@ -511,6 +519,8 @@ namespace basecross {
 		weak_ptr<BcPNTnTStaticRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -581,6 +591,8 @@ namespace basecross {
 		weak_ptr<BcPNTStaticModelRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -643,6 +655,8 @@ namespace basecross {
 		weak_ptr<BcPNTnTStaticModelRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -706,6 +720,8 @@ namespace basecross {
 		weak_ptr<BcPNTBoneModelRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -767,6 +783,8 @@ namespace basecross {
 		weak_ptr<BcPNTnTBoneModelRenderer> m_Renderer;
 		//シャドウマップ用描画データ
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
+		//シャドウマップ描画オブジェクト(weak_ptr)
+		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

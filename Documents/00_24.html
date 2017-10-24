@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０２．シンプルバージョンでゲームの実装(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０２４．３Ｄ描画に必要な機能とは(Dx11版)</h3>
+　このサンプルは<b>SimplSample024</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。<br />
+<p>&nbsp;</p>
+<img src="img/0024a.png" width="80%"/>
+<p>図0024a</p>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　このサンプルには、いわゆる<b>３Ｄ描画に必要な最低限の機能</b>が実装されています。（サウンド及び、データ読み込み等はのぞく）。<br />
+　あらかじめ言っておきたいのは、この項に紹介する実装方法は、無限の実装方法の１例にすぎない、ということです。<br />
+　ゲームに限らず、アプリケーションを作成する場合、様々な機能を個別に実装していたのではコードが重なる部分が出てきます。そのため、よく使われる部分は一つのクラスや関数にまとめ、効率化をはかります。<br />
+　こういう<b>よく使われる機能</b>をまとめておくのが、いわゆる<b>ライブラリ</b>です。これが大きくなっていけば<b>フレームワーク</b>と言ったりします。<b>物理エンジン</b>なんて<b>エンジン</b>という言い方をする場合もあります。<br />
+　個別のコンテンツ（アプリケーション）を作成する場合、そういったライブラリの存在は、とっても便利ですし、効率的に開発を進めることができます。<br />
+　しかし、往々にしてそれらの<b>ライブラリ</b>は<b>個別の実装方法</b>を<b>狭める</b>結果となりうます。<br />
+　また実際に書けばかなり厄介な部分を、ライブラリ関数を呼び出したりクラスを実体化することで実装できてしまうので、プログラミングの学習には不向きな面も出てきてしまいます。<br />
+<br />
+　<b>BaseCross</b>では、<b>フルバージョン</b>においては、初心者でもある程度記述できるように<b>ライブラリ</b>の部分を強化してあります。しかし、<b>フルバージョン</b>の機能に頼りきってしまうと、<b>自分の実装</b>という部分が欠落していきます。<br/>
+　そのためできるだけ<b>ライブラリ</b>の部分を最小化した<b>シンプルバージョン</b>が存在するわけですが、本来なら<b>SimpleSample021</b>などをひな型にして、シェーダや基本的な設計を独自に考えてもらいたいわけですが、それは初心者には敷居が高いと思われますし、基本的なエンジンであるDX11の知識もある程度必要になります。<br />
+　そのため<b>フルバージョン</b>と<b>シンプルバージョン</b>の中間にいちするようなサンプルを記述した次第です。<br/>
+　このサンプルには様々な実装がされているわけですが<b>Libs</b>ディレクトリにはありません。コンテンツ側に記述がされています。ぜひ<b>実装をどんどん修正カスタマイズ</b>してみてください。<br />
+<br />
+<h4>■描画オブジェクト■</h4>
+　このサンプルで実装される<b>描画オブジェクト</b>は<b>SimpleSample021から023</b>で紹介したものと基本的には同じような実装ですが、汎用的に使えるように修正がされています。<br />
+　つまり、<b>PNT頂点</b>や<b>PCT頂点</b>のメッシュの描画を全く別の<b>描画オブジェクト</b>を使うのではなく<b>描画オブジェクト</b>を階層的に記述し、<b>Dx11へのアクセス部分</b>を複数記述しなくても済むような設計になっています。<br />
+　具体的には以下の表を見てください。これらは<b>DrawObjects.h/cpp</b>に記述されています。
+<table>
+<tr>
+<th>系列</th>
+<th>Simple系</th>
+<th>Basic系</th>
+<th>シャドウマップ</th>
+</tr>
+<tr>
+<th>コンスタントバッファ</th>
+<td>SimpleConstants構造体</td>
+<td>BasicConstants構造体</td>
+<td>ShadowConstants構造体</td>
+</tr>
+<tr>
+<th>描画データ（親）</th>
+<td colspan="2" class="center">DrawObjectBase構造体</td>
+<td>なし</td>
+</tr>
+<tr>
+<th>描画データ（派生）</th>
+<td>SimpleDrawObject構造体</td>
+<td>BcDrawObject構造体</td>
+<td>ShadowmapObject構造体</td>
+</tr>
+<tr>
+<th>描画オブジェクト（親）</th>
+<td>SimpleRendererクラス</td>
+<td>BcRendererクラス</td>
+<td>なし</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PCTStatic）</th>
+<td>SimplePCTStaticRendererクラス</td>
+<td>なし</td>
+<td>なし</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTStatic）<br/>
+シャドウマップ無し</th>
+<td>SimplePNTStaticRendererクラス</td>
+<td>BcPNTStaticRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTStatic）<br />
+シャドウマップあり</th>
+<td>SimplePNTStaticRenderer2クラス</td>
+<td>BcPNTStaticRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTStaticModel）<br/>
+シャドウマップ無し</th>
+<td>SimplePNTStaticModelRendererクラス</td>
+<td>BcPNTStaticModelRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTStaticModel）<br/>
+シャドウマップあり</th>
+<td>SimplePNTStaticModelRenderer2クラス</td>
+<td>BcPNTStaticModelRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTBone）<br/>
+シャドウマップ無し</th>
+<td>SimplePNTBoneModelRendererクラス</td>
+<td>BcPNTBoneModelRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTBone）<br/>
+シャドウマップあり</th>
+<td>SimplePNTBoneModelRenderer2クラス</td>
+<td>BcPNTBoneModelRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTnTStatic）</th>
+<td>なし</td>
+<td>BcPNTnTStaticRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th>描画オブジェクト（PNTnTStaticModel）</th>
+<td>なし</td>
+<td>BcPNTnTStaticModelRendererクラス</td>
+<td>ShadowmapRendererクラス</td>
+</tr>
+<tr>
+<th class="nobottom">描画オブジェクト（PNTnTBoneModel）</th>
+<td class="nobottom">なし</td>
+<td class="nobottom">BcPNTnTBoneModelRendererクラス</td>
+<td class="nobottom">ShadowmapRendererクラス</td>
+</tr>
+</table>
+　描画に使うクラスには<b>系列</b>があります。<b>Simple系</b>と<b>Basic系</b>です。また、シャドウマップの描画クラスは別になります。<br />
+　<b>Simple系</b>は単純なシェーダです。ライティングをする場合<b>PNT頂点</b>でも、ライトは１個です。<b>Basic系</b>はリアルな表現をします。ライトは３つです。<b>DirectXTK</b>のシェーダをベースに、影表現を加えた形になっています。<br />
+　表の<b>行</b>は、コスタントバッファ、描画データ、そして各頂点フォーマットごとの使用されるシェーダを表したものです。<br />　系列ごとに、<b>コンスタントバッファ</b>は共通になっています。<b>Simple系</b>と<b>Basic系</b>そして<b>シャドウマップ用</b>の<b>コンスタントバッファ</b>があります。<br />
+　<b>コンスタントバッファ</b>を各ゲームオブジェクトが意識することはほとんどありません。<b>描画データ</b>に適切なデータを指定すれば、その内容が<b>コンスタントバッファ</b>に反映されます。<br />
+　<b>描画データ</b>は系列共通の親として、<b>DrawObjectBase構造体</b>があります。このクラスを直接使用することはありません。派生クラスである<b>SimpleDrawObject構造体（Simple系）</b>もしくは<b>BcDrawObject構造体（Basic系）</b>を使用します。シャドウマップの描画データは親クラスはありません。<b>ShadowmapObject</b>を使用します。<br />
+　<b>描画オブジェクト</b>は各系列の派生クラスを使用します。頂点フォーマットやシャドウマップの有り無しなどで使用する描画オブジェクトが変わります。<br />
+　シャドウマップの描画オブジェクトはすべて共通（<b>ShadowmapRenderer</b>）です。<b>PCT頂点</b>の場合は、そもそもライティングをしませんのでシャドウマップは使用しません。<br />
+　各頂点ごとの<b>描画オブジェクト</b>は表のとおりです。例えば<b>Simple系でシャドウマップ付きのスタティックなオブジェクト</b>を実装したい場合は、描画データは<b>SimpleDrawObject構造体</b>、描画オブジェクトは<b>SimplePNTStaticRenderer2クラス</b>を使用します。<br />
+<br />
+<h4>■描画ブジェクトの実装■</h4>
+　<b>描画オブジェクト</b>は<b>GameObjectの派生クラス</b>として実装します。形式的には、配置されるキャラクタ等と同じです。しかし、<b>配置オブジェクトとの違い</b>は、<b>自分自身はなにもUpdateしないしDrawもしない</b>ということです。<b>OnUpdate関数</b>は<b>空関数</b>になってますし<b>OnDraw()関数</b>は、<b>登録された（蓄積した）描画データを描画する</b>という実装になります。<b>描画データの登録</b>は<b>毎ターン毎に初期化</b>されます。その関係で、<b>描画オブジェクトのAddGameObject()</b>は、<b>すべての配置オブジェクトの後</b>に行います。<b>GameObject</b>はステージ上の配列として管理されます。ですので、後にAddGameObject()されたオブジェクトは、OnUpdateにせよOnDrawにせよ、後に呼ばれることになります。<br />
+　実際には<b>GameStage::CreateDrawObjects()関数</b>にまとめてあります。この関数は<b>すべての３Ｄオブジェクトの配置</b>が終わった後で呼ぶようにします。なお、２Ｄオブジェクト（スプライト）である<b>RotateSpriteクラス</b>などは、３Ｄの描画オブジェクトのあとに配置します。<br />
+<br />
+<h4>■ゲームオブジェクトの実装■</h4>
+　サンプルを起動すると、上記のような様々な表現が表示されますが、センターから右側の<b>赤いボーンキャラ</b>、<b>女の子</b>そして<b>２つの球体</b>が<b>Simple系</b>になります。<b>Simple系</b>か<b>Basic系</b>の違いを確認するのはカメラを大きく引いてみるとよいでしょう<b>フォグ</b>が実装されているのが<b>Basic系</b>です。<br />
+　ではゲームオブジェクトの基本的なつくりについて述べます。例として、<b>Simple系</b>のスタティックなモデルである、右側の女の子を例に説明します。以下の図版の女の子です。
+<p>&nbsp;</p>
+<img src="img/0024b.png" width="80%"/>
+<p>図0024b</p>
+<p>&nbsp;</p>
+　この２つのゲームオブジェクトは<b>StaticCharaクラス</b>です<b>Character.h/cpp</b>に記述があります。以下がヘッダ部です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// Staticキャラ
+//--------------------------------------------------------------------------------------
+class StaticChara : public GameObject {
+    Vec3 m_Scale;               ///&lt;スケーリング
+    Quat m_Qt;          ///&lt;回転
+    Vec3 m_Pos;             ///&lt;位置
+    Mat4x4 m_MeshToTransformMatrix;
+    bool m_OwnShadowActive;
+    //描画データ
+    shared_ptr&lt;SimpleDrawObject> m_PtrObj;
+    //描画オブジェクト(weak_ptr)
+    weak_ptr&lt;SimplePNTStaticModelRenderer2> m_Renderer;
+    //シャドウマップ用描画データ
+    shared_ptr&lt;ShadowmapObject> m_PtrShadowmapObj;
+    //シャドウマップ描画オブジェクト(weak_ptr)
+    weak_ptr&lt;ShadowmapRenderer> m_ShadowmapRenderer;
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    @param[in]  StagePtr    ステージのポインタ
+    @param[in]  StartPos    位置
+    @param[in]  OwnShadowActive 影描画するかどうか
+    */
+    //--------------------------------------------------------------------------------------
+    StaticChara(const shared_ptr&lt;Stage>& StagePtr, const Vec3& StartPos,bool OwnShadowActive);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~StaticChara();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 更新
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate()override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  シャドウマップの描画処理(仮想関数)
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDrawShadowmap() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 描画
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnDraw()override;
+};
+</pre>
+</div>
+　いろんなプライベートデータがあります。まず<b>m_Scale、m_Qt、m_Pos</b>ですが、それぞれ、スケーリング、回転、位置の<b>初期値</b>を入れておく変数です。このゲームオブジェクトは<b>Rigidbody</b>を持っています。ですので、ゲーム動作中はこれらの変数を使用することはありません。しかし、<b>リスポーン</b>する場合などに<b>初期値に戻る</b>のような処理をする場合にこれらの変数はとっておくとよいでしょう。<br />
+　<b>m_MeshToTransformMatrix</b>は、<b>モデル</b>と<b>Rigidbody上のデータ</b>の差分を記述しておく行列です。多くのケースで、<b>ゲーム上の単位</b>と<b>モデルの単位</b>が違うことがあります。しかしその差分を行列化しておくことで、<b>単位の変換</b>が容易になります。<br />
+　<b>m_OwnShadowActive</b>は<b>影を受け止めるかどうか</b>です。<b>シャドウマップ</b>ではありません。<b>シャドウマップ</b>は<b>影を出すかどうか</b>です。前のサンプルで述べた通り、影には<b>出す側と受ける側</b>があります。このフラグは<b>受ける側</b>のフラグです。描画されている女の子は２体ありまして、向かって右のほうは<b>影を受け止め</b>ます。このフラグはコンストラクタで渡されます。<br />
+　<b>m_PtrObj</b>は描画データのポインタ（shared_ptr）です。前のサンプルでは、関数内のローカル変数になってましたが、<b>shared_ptrに最適化</b>しました。こうしておくことで、描画オブジェクトにポインタを渡せますので、負荷は最小限になります。<br />
+　<b>m_Renderer</b>は<b>描画オブジェクトのポインタ</b>です。こちらは<b>weak_ptr</b>となっています。<b>描画オブジェクト</b>はゲームステージに<b>shared_ptr</b>として実装されます。各オブジェクトでは<b>自分自身を描画するオブジェクト</b>を保持しておくと便利ですが、そのまま<b>shared_ptr</b>で持つと、<b>持ち合い</b>になってしまう危険（現時点ではならないが、実装を進める中でなってしまう危険）があります。ですので、<b>weak_ptr</b>として持ちます。<br />
+　<b>shared_ptr</b>と<b>weak_ptr</b>のどちらで持つかは、設計の考え方に深く影響します。このサンプルでは、一部の例外を除き、<b>実装はshared_ptr、その参照はweak_ptr</b>という考え方で実装されます。この考え方を徹底しておくと、まずメモリリークが発生することはありません。<br />
+　シャドウマップ用のもの<b>m_PtrShadowmapObjとm_ShadowmapRenderer</b>も同様の考え方です。<b>描画データはshared_ptr、描画オブジェクトはweak_ptr</b>です。<br />
+　さて、実体ですが、まず、ポイントは<b>StaticChara::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void StaticChara::OnCreate() {
+
+    //Rigidbodyの初期化
+    auto PtrGameStage = GetStage&lt;GameStage>();
+    Rigidbody body;
+    body.m_Owner = GetThis&lt;GameObject>();
+    body.m_Mass = 1.0f;
+    body.m_Scale = m_Scale;
+    body.m_Quat = m_Qt;
+    body.m_Pos = m_Pos;
+    body.m_CollType = CollType::typeCAPSULE;
+    body.m_IsFixed = true;
+//      body.m_IsDrawActive = true;
+    body.SetToBefore();
+    PtrGameStage->AddRigidbody(body);
+
+    //メッシュとトランスフォームの差分の設定
+    m_MeshToTransformMatrix.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, -1.0f, 0.0f)
+    );
+    //行列の定義
+    Mat4x4 World;
+    World.affineTransformation(
+        m_Scale,
+        Vec3(0, 0, 0),
+        m_Qt,
+        m_Pos
+    );
+    //差分を計算
+    World = m_MeshToTransformMatrix * World;
+    //メッシュ
+    auto MeshPtr = App::GetApp()->GetResource&lt;MeshResource>(L"MODEL_MESH");
+
+    //描画データの構築
+    m_PtrObj = make_shared&lt;SimpleDrawObject>();
+    m_PtrObj->m_MeshRes = MeshPtr;
+    //アフィン変換
+    m_PtrObj->m_WorldMatrix = World;
+    m_PtrObj->m_Camera = GetStage&lt;Stage>()->GetCamera();
+    m_PtrObj->m_UsedModelColor = false;
+    m_PtrObj->m_UsedModelTextre = true;
+    m_PtrObj->m_OwnShadowmapActive = m_OwnShadowActive;
+    m_PtrObj->m_ShadowmapUse = true;
+
+    //シャドウマップ描画データの構築
+    m_PtrShadowmapObj = make_shared&lt;ShadowmapObject>();
+    m_PtrShadowmapObj->m_MeshRes = MeshPtr;
+    //描画データの行列をコピー
+    m_PtrShadowmapObj->m_WorldMatrix = World;
+    m_PtrShadowmapObj->m_Camera = GetStage&lt;Stage>()->GetCamera();
+}
+</pre>
+</div>
+　まず述べておきたいのは<b>シンプルバージョン</b>のサンプルですので、座標変換の基本は<b>行列</b>になります。フルバージョンでは<b>スケーリング、回転、位置</b>を個別にコンポーネントに指定すれば、ワールド行列の作成はライブラリがやってくれますが、このサンプルではそうはいきません。最終的に描画に使用する<b>ワールド行列</b>は各オブジェクトごとに設定します。<br />
+　<b>ワールド行列</b>を設定してるのは、<b>m_PtrObjとm_PtrShadowmapObjの初期化</b>です。また、ここでは、このオブジェクトを描画するのに使用するカメラも設定します。このカメラの値を、ステージから持ってくるのではなく独自の設定にすると、オブジェクト特有のカメラを使用できます。<br />
+　また、このキャラクタは<b>Rigidbody</b>を使用してます。衝突判定のコリジョンを表示したい場合は、
+<div class="box1">
+<pre>、
+        body.m_IsDrawActive = true;
+
+</pre>
+</div>
+<br />
+　のようにコメントを削除します。<br />
+<br />
+<h4>■ゲームオブジェクトの更新■</h4>
+　このキャラクタは動きませんが、動かす場合は<b>StaticChara::OnUpdate()</b>に記述するか、あるいは<b>StaticChara::OnUpdate2()</b>を多重定義して記述します。そのあたりはプレイヤーが参考になるでしょう。<br/>
+<br />
+<h4>■ゲームオブジェクトの描画■</h4>
+　描画は<b>シャドウマップの描画とオブジェクトの描画</b>があります。
+<div class="box1">
+<pre>、
+void StaticChara::OnDrawShadowmap() {
+    m_PtrShadowmapObj->m_Camera = GetStage&lt;Stage>()->GetCamera();
+    auto shptr = m_ShadowmapRenderer.lock();
+    if (!shptr) {
+        shptr = 
+        GetStage&lt;Stage>()->FindTagGameObject&lt;ShadowmapRenderer>(L"ShadowmapRenderer");
+        m_ShadowmapRenderer = shptr;
+    }
+    shptr->AddDrawObject(m_PtrShadowmapObj);
+}
+
+void StaticChara::OnDraw() {
+    
+    m_PtrObj->m_Camera = GetStage&lt;Stage>()->GetCamera();
+    auto shptr = m_Renderer.lock();
+    if (!shptr) {
+        shptr = 
+        GetStage&lt;Stage>()->FindTagGameObject&lt;SimplePNTStaticModelRenderer2>(L"SimplePNTStaticModelRenderer2");
+        m_Renderer = shptr;
+    }
+    shptr->AddDrawObject(m_PtrObj);
+}
+</pre>
+</div>
+　ここで気を付けたいのは、カメラの設定を忘れないようにすることです。オブジェクトは静止していても、カメラは動いている可能性があります。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_23.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

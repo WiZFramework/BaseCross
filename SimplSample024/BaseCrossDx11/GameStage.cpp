@@ -16,19 +16,18 @@ namespace basecross {
 	}
 
 	void GameStage::RegisterNormalBox() {
-		vector<VertexPositionNormalTexture> vertices;
-		vector<VertexPositionNormalTangentTexture> new_vertices;
-		vector<uint16_t> indices;
-		MeshUtill::CreateCube(1.0f, vertices, indices);
-		BcRenderer::ConvertToNormalVertex(vertices, new_vertices);
-		App::GetApp()->RegisterResource(L"NORMAL_BOX",
-			MeshResource::CreateMeshResource(new_vertices, indices, false));
+		if (!App::GetApp()->CheckResource<MeshResource>(L"NORMAL_BOX")) {
+			vector<VertexPositionNormalTexture> vertices;
+			vector<VertexPositionNormalTangentTexture> new_vertices;
+			vector<uint16_t> indices;
+			MeshUtill::CreateCube(1.0f, vertices, indices);
+			BcRenderer::ConvertToNormalVertex(vertices, new_vertices);
+			App::GetApp()->RegisterResource(L"NORMAL_BOX",
+				MeshResource::CreateMeshResource(new_vertices, indices, false));
+		}
 	}
 
 	void GameStage::OnCreate() {
-		//Rigidbodyマネージャの初期化
-		m_RigidbodyManager
-			= ObjectFactory::Create<RigidbodyManager>(GetThis<GameStage>());
 
 		//シャドウマップの描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
@@ -298,13 +297,13 @@ namespace basecross {
 
 	void GameStage::OnUpdateStage() {
 		//ターン毎の初期化
-		m_RigidbodyManager->InitRigidbody();
+		GetRigidbodyManager()->InitRigidbody();
 		for (auto& v : GetGameObjectVec()) {
 			//各オブジェクトの更新
 			v->OnUpdate();
 		}
 		//Rigidbodyマネージャの更新（衝突判定など）
-		m_RigidbodyManager->OnUpdate();
+		GetRigidbodyManager()->OnUpdate();
 		for (auto& v : GetGameObjectVec()) {
 			//各オブジェクトの最終更新
 			v->OnUpdate2();
@@ -312,11 +311,12 @@ namespace basecross {
 		//自分自身の更新(カメラ)
 		this->OnUpdate();
 		//Rigidbodyマネージャの最終更新（衝突判定情報のクリア）
-		m_RigidbodyManager->OnUpdate2();
+		GetRigidbodyManager()->OnUpdate2();
 	}
 
 
 	void GameStage::OnUpdate() {
+		auto& camera = GetCamera();
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
 		if (CntlVec[0].bConnected) {
@@ -324,44 +324,44 @@ namespace basecross {
 			//Dパッド下
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
 				//カメラ位置を引く
-				m_Camera.m_CameraArmLen += 0.1f;
-				if (m_Camera.m_CameraArmLen >= 50.0f) {
-					m_Camera.m_CameraArmLen = 50.0f;
+				camera.m_CameraArmLen += 0.1f;
+				if (GetCamera().m_CameraArmLen >= 50.0f) {
+					GetCamera().m_CameraArmLen = 50.0f;
 				}
 			}
 			//Dパッド上
 			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
 				//カメラ位置を寄る
-				m_Camera.m_CameraArmLen -= 0.1f;
-				if (m_Camera.m_CameraArmLen <= 2.0f) {
-					m_Camera.m_CameraArmLen = 2.0f;
+				camera.m_CameraArmLen -= 0.1f;
+				if (GetCamera().m_CameraArmLen <= 2.0f) {
+					camera.m_CameraArmLen = 2.0f;
 				}
 			}
 
 			if (CntlVec[0].fThumbRX != 0) {
-				m_Camera.m_CameraXZRad += CntlVec[0].fThumbRX * 0.02f;
-				if (abs(m_Camera.m_CameraXZRad) >= XM_2PI) {
-					m_Camera.m_CameraXZRad = 0;
+				camera.m_CameraXZRad += CntlVec[0].fThumbRX * 0.02f;
+				if (abs(camera.m_CameraXZRad) >= XM_2PI) {
+					camera.m_CameraXZRad = 0;
 				}
 			}
 			if (CntlVec[0].fThumbRY != 0) {
-				m_Camera.m_CameraYRad -= CntlVec[0].fThumbRY * 0.02f;
-				if (m_Camera.m_CameraYRad >= XM_PIDIV2 - 0.1f) {
-					m_Camera.m_CameraYRad = XM_PIDIV2 - 0.1f;
+				camera.m_CameraYRad -= CntlVec[0].fThumbRY * 0.02f;
+				if (camera.m_CameraYRad >= XM_PIDIV2 - 0.1f) {
+					camera.m_CameraYRad = XM_PIDIV2 - 0.1f;
 				}
-				else if (m_Camera.m_CameraYRad <= 0.2) {
-					m_Camera.m_CameraYRad = 0.2;
+				else if (camera.m_CameraYRad <= 0.2) {
+					camera.m_CameraYRad = 0.2;
 				}
 			}
 
-			m_Camera.m_CamerAt = FindTagGameObject<GameObject>(L"Player")->GetPosition();
+			camera.m_CamerAt = FindTagGameObject<GameObject>(L"Player")->GetPosition();
 			Vec3 CameraLocalEye =
 				Vec3(
-					sin(m_Camera.m_CameraXZRad) * m_Camera.m_CameraArmLen * sin(m_Camera.m_CameraYRad),
-					cos(m_Camera.m_CameraYRad) * m_Camera.m_CameraArmLen,
-					-cos(m_Camera.m_CameraXZRad) * m_Camera.m_CameraArmLen * sin(m_Camera.m_CameraYRad)
+					sin(camera.m_CameraXZRad) * camera.m_CameraArmLen * sin(camera.m_CameraYRad),
+					cos(camera.m_CameraYRad) * camera.m_CameraArmLen,
+					-cos(camera.m_CameraXZRad) * camera.m_CameraArmLen * sin(camera.m_CameraYRad)
 				);
-			m_Camera.m_CamerEye = m_Camera.m_CamerAt + CameraLocalEye;
+			camera.m_CamerEye = camera.m_CamerAt + CameraLocalEye;
 			//Bボタン
 			if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
 				PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToEmptyStage");
