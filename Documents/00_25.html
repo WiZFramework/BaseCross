@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>０２．シンプルバージョンでゲームの実装(Dx11版)</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０２５．行列操作とステートマシン(Dx11版)</h3>
+　このサンプルは<b>SimplSample025</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx11版</b>しかありません。<b>Dx12版</b>はありませんのでご了承ください。<br />
+　サンプルを起動すると以下の画面が現れます。コントローラで操作でき、Aボタンでジャンプします。Bボタンで、いわゆる<b>ステージ</b>の切り替えができます。<br />
+　Xボタンを押すと、追従している球体が、オーバースローのような動きをします。
+<p>&nbsp;</p>
+<img src="img/0025a.png" width="80%"/>
+<p>図0025a</p>
+<p>&nbsp;</p>
+<h3>【サンプルのポイント】</h3>
+　このサンプルは<b>行列による親子関係</b>と<b>ステートマシン</b>のサンプルになります。<br />
+<br />
+<h4>■行列による親子関係■</h4>
+　<b>行列（いわゆるワールド行列）</b>には、<b>スケーリング、回転、位置情報</b>が入ってます。ワールド行列に、ビュー行列と射影行列を掛けると、ハードウェア上の<b>デバイス座標</b>に変換ができます。<br />
+　このことは、これまでのいくつかのサンプルや、あるいは<b>頂点シェーダ</b>内の記述で説明してきました。<br />
+　<b>ワールド座標</b>は、もう一つ面白い操作ができます。<b>他のワールド座標を掛けると、その座標系になる</b>という特徴です。<br />
+　例えば<b>オブジェクトの親子関係</b>を実装するときに、非常に便利です。<br />
+　このサンプルを起動すると、プレイヤーに球体が集まってきます。これは、球体が<b>親子関係</b>に構成されていて、子の球体は自分の親を追いかけて、定位置につこうとします。<br />
+　このサンプルのは、<b>SimpleSample024</b>に修正を加えたものです。<b>SimpleSample024</b>から<b>プレイヤー</b>など一部のオブジェクトを残し、ほかを削除したのち、<b>親子関係の球体</b>である<b>ChildObjectクラス</b>を実装しました。<br />
+　<b>ChildObjectクラス</b>は<b>Character.h/cpp</b>に実装がされています。以下が宣言です。
+
+<div class="box1">
+<pre>
+class ChildObject : public GameObject,public MatrixInterface {
+
+//中略
+    //親オブジェクト
+    weak_ptr&lt;GameObject> m_ParentPtr;
+
+    //このオブジェクトのプレイヤーから見たローカル行列
+    Mat4x4 m_PlayerLocalMatrix;
+    //プレイヤーの直後（先頭）の場合の補間係数
+    float m_LerpToParent;
+    //このオブジェクトのチャイルドオブジェクトから見たローカル行列
+    Mat4x4 m_ChildLocalMatrix;
+    //チャイルド後の場合の補間係数
+    float m_LerpToChild;
+    //Attack1の場合の目標となる回転
+    float m_Attack1ToRot;
+    //ステートマシーン
+    unique_ptr&lt;StateMachine&lt;ChildObject>>  m_StateMachine;
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief コンストラクタ
+    @param[in]  StagePtr    ステージのポインタ
+    @param[in]  ParentPtr   親のポインタ
+    @param[in]  TextureResName  テクスチャリソース名
+    @param[in]  Scale   スケーリング
+    @param[in]  Qt  初期回転
+    @param[in]  Pos 位置
+    @param[in]  OwnShadowActive 影描画するかどうか
+    */
+    //--------------------------------------------------------------------------------------
+    ChildObject(const shared_ptr&lt;Stage>& StagePtr,
+        const shared_ptr&lt;GameObject>& ParentPtr,
+        const wstring& TextureResName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos,
+        bool OwnShadowActive);
+//中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  ステートマシンを得る
+    @return ステートマシン
+    */
+    //--------------------------------------------------------------------------------------
+    unique_ptr&lt; StateMachine&lt;ChildObject> >& GetStateMachine() {
+        return m_StateMachine;
+    }
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief ワールド行列の取得
+    @return ワールド行列
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void GetWorldMatrix(Mat4x4& m) const override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 追従する行動の開始
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void ComplianceStartBehavior();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 攻撃１行動の開始
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void Attack1StartBehavior();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 攻撃１行動の継続
+    @return 行動が終了したらtrue
+    */
+    //--------------------------------------------------------------------------------------
+    bool Attack1ExcuteBehavior();
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief ステート共通処理
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    void UpdateBehavior();
+};
+</pre>
+</div>
+　このサンプルの特徴に直接関係がない変数や関数は略してあります。このサンプルでは<b>親子関係</b>と<b>ステートマシン</b>が主題です。<br />
+　まず、このクラスの親クラスですが<b>MatrixInterface</b>というインターフェイスクラスを継承しています。以下がその実装です。
+<div class="box1">
+<pre>
+class MatrixInterface {
+protected:
+    MatrixInterface() {}
+    virtual ~MatrixInterface() {}
+public:
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief ワールド行列の取得（純粋仮想関数）
+    @return ワールド行列
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void GetWorldMatrix(Mat4x4& m) const = 0;
+};
+</pre>
+</div>
+　このように、
+<div class="box1">
+<pre>
+    virtual void GetWorldMatrix(Mat4x4& m) const = 0;
+</pre>
+</div>
+　という<b>純粋仮想関数</b>を宣言しています。この関数はそのオブジェクトの<b>ワールド行列</b>を取得する関数で、継承先では必ず実装しなければなりません。<br />
+<br />
+　そして、コンストラクタですが、
+<div class="box1">
+<pre>
+    ChildObject(const shared_ptr&lt;Stage>& StagePtr,
+        <span class="red">const shared_ptr&lt;GameObject>& ParentPtr,</span>
+        const wstring& TextureResName, const Vec3& Scale, const Quat& Qt, const Vec3& Pos,
+        bool OwnShadowActive);
+
+</pre>
+</div>
+　赤くなっているところのように、<b>親子関係を結ぶ親クラス</b>を引数に持ちます。この引数は<b>メンバイニシャライズ</b>で<b>m_ParentPtr</b>に代入されます。<br />
+　説明が前後しますが、このクラスのゲームステージへの配置は<b>GameStage::OnCreate()</b>内で以下のように記述されます。
+<div class="box1">
+<pre>
+//プレイヤーの作成
+shared_ptr&lt;GameObject> Par = 
+    AddGameObject&lt;Player>(
+    L"TRACE_TX",
+    true,
+    Vec3(0.0f, 0.125f, 0.0f)
+    );
+
+for (int i = 0; i &lt; 10; i++) {
+    float x = (float)(i + 1);
+    Par = AddGameObject&lt;ChildObject>(
+        Par,
+        L"SKY_TX",
+        Vec3(0.25f, 0.25f, 0.25f),
+        Quat(),
+        Vec3(x, 0.125f, 0.0f),
+        false);
+
+}
+</pre>
+</div>
+　このように<b>Par変数</b>は最初は<b>プレイヤー</b>続いて<b>ChildObject</b>のポインタが保持されます。<b>AddGameObject</b>の戻り値を次のインスタンスの引数に渡す格好なので、数珠つなぎに<b>親子関係</b>を構築することができます。<br />
+<br />
+　このように親子関係で構築されたオブジェクトの<b>更新処理</b>はどのようになっているでしょうか。このクラスはステートマシンが実装されているので、複数の関数でその処理が書かれてますが、一番重要な関数は<b>ChildObject::UpdateBehavior()</b>です。この関数はステートが変化しても毎ターン呼ばれます。
+<div class="box1">
+<pre>
+void ChildObject::UpdateBehavior(){
+    //前回のターンからの経過時間を求める
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    auto shptr = m_ParentPtr.lock();
+    //親のワールド行列を取得する変数
+    Mat4x4 ParMat;
+    if (shptr) {
+        ParentFlg flg = ParentFlg::NoParent;
+        //行列取得用のインターフェイスを持ってるかどうか
+        auto matintptr = dynamic_pointer_cast&lt;MatrixInterface>(shptr);
+        if (matintptr) {
+            matintptr->GetWorldMatrix(ParMat);
+            if (shptr->FindTag(L"Player")) {
+                flg = ParentFlg::Player;
+            }
+            else if (shptr->FindTag(L"ChildObject")) {
+                flg = ParentFlg::Child;
+            }
+        }
+        Mat4x4 World;
+        World.identity();
+        float LerpNum = 0.2f;
+        switch (flg) {
+        case ParentFlg::Player:
+            //行列の定義
+            World = m_PlayerLocalMatrix;
+            LerpNum = m_LerpToParent;
+            break;
+        case ParentFlg::Child:
+            //行列の定義
+            World = m_ChildLocalMatrix;
+            LerpNum = m_LerpToChild;
+            break;
+        default:
+            break;
+        }
+        if (flg != ParentFlg::NoParent) {
+            <span class="red">//スケーリングを1.0にした行列に変換
+            ParMat.scaleIdentity();
+            //行列の反映
+            World *= ParMat;</span>
+            //この時点でWorldは目標となる位置
+            Vec3 toPos = World.transInMatrix();
+            //補間処理で移動位置を決定
+            auto CalcPos = Lerp::CalculateLerp(m_Rigidbody->m_BeforePos, toPos, 0, 1.0f, LerpNum, Lerp::rate::Linear);
+            Vec3 DammiPos;
+            World.decompose(m_Rigidbody->m_Scale, m_Rigidbody->m_Quat, DammiPos);
+            Vec3 Velo = CalcPos - m_Rigidbody->m_BeforePos;
+            Velo /= ElapsedTime;
+            m_Rigidbody->m_Velocity = Velo;
+        }
+    }
+}
+</pre>
+</div>
+　この関数の中でもとくに赤くなっているところが<b>行列による親子関係</b>を実装するのにポイントになるところです。<br />
+　この部分に来る前に<b>ParMat</b>には<b>親のオブジェクトのワールド行列</b>が代入されています。Worldは自分の<b>ローカル行列</b>です。変数名は<b>World</b>ですが、これはこの後の処理でワールド行列に変換されるのでこの名前になっています。<br />
+　ローカル行列は<b>親からの相対関係</b>を記した行列です。<b>親がプレイヤー</b>か<b>親がChildObject</b>かによって、取得する行列を変えるようになってます。<br />
+　そのようにしておいて、まず、ParMat行列を<b>スケーリングを1.0にした</b>行列にします。
+<div class="box1">
+<pre>
+            ParMat.scaleIdentity();
+</pre>
+</div>
+　というのは、Mat4x4クラスのメンバ関数で、<b>スケーリングを1.0にする</b>メンバ関数です。どうしてこのような処理をするかというと、<b>親子関係</b>には親のスケーリングは必要ないからです。スケーリングは<b>自分自身のローカル行列のスケーリング</b>を使用します。<br />
+　そのうえで
+<div class="box1">
+<pre>
+            //行列の反映
+            World *= ParMat;
+</pre>
+</div>
+　で、自分のローカル行列に親のワールド行列を掛け算します。こうするとWorldには、<b>親の支配下にあるワールド行列</b>が代入されます。<br/>
+<br />
+　さて、そのような関係がありますので、<b>m_PlayerLocalMatrix、m_LerpToParent、m_ChildLocalMatrix、m_LerpToChild</b>の4つの変数によって、子供の動きが変化するのがわかると思います。<b>m_LerpToParentとm_LerpToChild</b>は<b>補間係数</b>です。<b>0.0から1.0</b>までの間を指定し、低い数字のほうがゆっくりした動きになります。<b>ChildObject::UpdateBehavior()</b>の残りの処理は、作成したワールド行列を<b>スケール、回転、位置</b>に分解し、位置に関しては<b>前のターンからの移動距離</b>を出して、それから<b>Velocity</b>を導き出します。<br />
+　ここで注意したいのは<b>Rigidbodyのm_Posを直接変えてはいけない</b>ということです。このサンプルは実装されてませんが（止めてある）、衝突判定を実装する場合に、<b>Rigidbodyのm_Pos</b>を直接変えるとうまく動きません。<br />
+<br />
+<h4>■ステートマシンの実装■</h4>
+　このサンプルには、<b>フルバージョン</b>でも説明されている<b>ステートマシン</b>が実装されています。<b>ステートマシン</b>はシンプルバージョンでも簡単に実装出来ます。<br />
+　上記したように、<b>m_PlayerLocalMatrix、m_LerpToParent、m_ChildLocalMatrix、m_LerpToChild</b>の4つの変数が、このオブジェクトのポイントです。ですので、各ステートではこの4つの変数を変えることで<b>状態</b>を変更します。<br />
+　サンプルに実装されている<b>ステート</b>は<b>ChildComplianceState（追従するステート）</b>と<b>ChildAttack1State（攻撃ステート）</b>です。初期値は<b>ChildComplianceState</b>です。<br />
+　これらのステートの主な違いは、<b>m_PlayerLocalMatrix、m_LerpToParent、m_ChildLocalMatrix、m_LerpToChild</b>の変数をそれぞれ設定する部分です。<br />
+　例えば<b>ChildComplianceState</b>のスタート時の設定では、<b>ChildObject::ComplianceStartBehavior()関数</b>が呼ばれます。以下が実体ですが
+<div class="box1">
+<pre>
+void ChildObject::ComplianceStartBehavior() {
+    //ローカル行列の定義
+    m_PlayerLocalMatrix.affineTransformation(
+        m_Rigidbody->m_Scale,
+        Vec3(0, 0, 0),
+        Quat(),
+        Vec3(0, 0, -0.25f)
+    );
+    //このステートではチャイルドの場合も同じ
+    m_ChildLocalMatrix = m_PlayerLocalMatrix;
+    m_LerpToParent = m_LerpToChild = 0.2f;
+}
+</pre>
+</div>
+　このように4つの変数を設定します。これらの値で、<b>プレイヤーに追随する動作</b>を設定することになります。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_24.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
