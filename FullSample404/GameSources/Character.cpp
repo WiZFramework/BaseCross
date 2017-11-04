@@ -181,7 +181,6 @@ namespace basecross{
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-
 		//描画コンポーネント
 		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		PtrDraw->SetFogEnabled(true);

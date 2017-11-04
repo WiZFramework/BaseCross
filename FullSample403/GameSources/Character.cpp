@@ -54,7 +54,7 @@ namespace basecross{
 
 	void PcSphere::OnUpdate() {
 		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionColor>();
+		Beh->ExpandAndContract<VertexPositionColor, PCStaticDraw>();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ namespace basecross{
 	}
 	void PtSphere::OnUpdate() {
 		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionTexture>();
+		Beh->ExpandAndContract<VertexPositionTexture, PTStaticDraw>();
 	}
 
 
@@ -149,7 +149,7 @@ namespace basecross{
 
 	void PctSphere::OnUpdate() {
 		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionColorTexture>();
+		Beh->ExpandAndContract<VertexPositionColorTexture, PCTStaticDraw>();
 	}
 
 
@@ -257,7 +257,6 @@ namespace basecross{
 		auto PtrDraw = AddComponent<PNTStaticModelDraw>();
 		PtrDraw->SetMeshResource(L"MODEL_MESH");
 		PtrDraw->SetMeshToTransformMatrix(SpanMat);
-
 
 	}
 

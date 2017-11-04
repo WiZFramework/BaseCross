@@ -39,14 +39,14 @@ namespace basecross {
 		@return	‚È‚µ
 		*/
 		//--------------------------------------------------------------------------------------
-		template<typename T>
+		template<typename T,typename T2>
 		void ExpandAndContract() {
 			float ElapsedTime = App::GetApp()->GetElapsedTime();
 			m_TotalTime += ElapsedTime;
 			if (m_TotalTime >= XM_2PI) {
 				m_TotalTime = 0;
 			}
-			auto PtrDraw = GetGameObject()->GetDynamicComponent<StaticBaseDraw>();
+			auto PtrDraw = GetGameObject()->GetDynamicComponent<T2>();
 			const vector<T>& BackupVec = PtrDraw->GetOriginalMeshResource()->GetBackupVerteces<T>();
 			vector<T> new_vec;
 			for (auto& v : BackupVec) {
