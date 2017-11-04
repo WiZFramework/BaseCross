@@ -53,24 +53,61 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
+	///	一つのメッシュデータ(MultiMeshで使用)
+	//--------------------------------------------------------------------------------------
+	struct MeshPrimData {
+		//頂点バッファ
+		ComPtr<ID3D11Buffer> m_VertexBuffer;
+		//インデックスバッファ
+		ComPtr<ID3D11Buffer> m_IndexBuffer;
+		//頂点の数
+		UINT m_NumVertices;
+		//インデックスの数
+		UINT m_NumIndicis;
+		//このメッシュの形インデックス
+		type_index m_MeshTypeIndex;
+		//ストライド数
+		UINT m_NumStride;
+		//描画トポロジー
+		D3D11_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
+		//バックアップデータ
+		shared_ptr<BackupDataBase> m_BackUpData;
+		//メッシュととタンスフォームの差分行列（メッシュ単位で設定する場合）
+		bsm::Mat4x4 m_MeshToTransformMatrix;
+		//メッシュの差分行列を設定するかどうか
+		bool m_UseMeshToTransformMatrix;
+		//テクスチャリソース(メッシュ単位で設定する場合)
+		weak_ptr<TextureResource> m_TextureResource;
+		//マテリアルの配列（モデルで使用）
+		vector<MaterialEx> m_MaterialExVec;
+		//以下、ボーン用
+		//ボーンかどうか
+		bool m_IsSkining;
+		//ボーンの数
+		UINT m_BoneCount;
+		//サンプリング数
+		UINT m_SampleCount;
+		//サンプリングされたボーン行列
+		vector<bsm::Mat4x4> m_SampleMatrixVec;
+		MeshPrimData():
+			m_IsSkining(false),
+			m_BoneCount(0),
+			m_SampleCount(0),
+			m_MeshTypeIndex(typeid(VertexPosition)),	//便宜上VertexPositionに初期化
+			m_NumStride(sizeof(VertexPosition)),
+			m_PrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST),
+			m_MeshToTransformMatrix(),
+			m_UseMeshToTransformMatrix(false)
+		{}
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	メッシュリソース
 	//--------------------------------------------------------------------------------------
 	class MeshResource : public BaseResource {
 		friend class ObjectFactory;
-		ComPtr<ID3D11Buffer> m_VertexBuffer;	//頂点バッファ
-		ComPtr<ID3D11Buffer> m_IndexBuffer;	//インデックスバッファ
-		UINT m_NumVertices;				//頂点の数
-		UINT m_NumIndicis;				//インデックスの数
-		type_index m_MeshTypeIndex;		//このメッシュの形
-		UINT m_NumStride;				//ストライド数
-		D3D11_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;	//描画トポロジー
-		shared_ptr<BackupDataBase> m_BackUpData;
-		vector<MaterialEx> m_MaterialExVec;	//マテリアルの配列（モデルで使用）
-		//以下、ボーン用
-		bool m_IsSkining;
-		UINT m_BoneCount;	//ボーンの数
-		UINT m_SampleCount;	//サンプリング数
-		vector<bsm::Mat4x4> m_SampleMatrixVec;	//サンプリングされたボーン行列
+		MeshPrimData m_MeshPrimData;
 	protected:
 		//派生クラスからのみアクセスできるアクセサ
 		//--------------------------------------------------------------------------------------
@@ -81,7 +118,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetVertexBuffer(ComPtr<ID3D11Buffer>& VertexBuffer) {
-			m_VertexBuffer = VertexBuffer;
+			m_MeshPrimData.m_VertexBuffer = VertexBuffer;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -92,7 +129,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetNumVertices(UINT NumVertices) {
-			m_NumVertices = NumVertices;
+			m_MeshPrimData.m_NumVertices = NumVertices;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -102,7 +139,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetIndexBuffer(ComPtr<ID3D11Buffer>& IndexBuffer) {
-			m_IndexBuffer = IndexBuffer;
+			m_MeshPrimData.m_IndexBuffer = IndexBuffer;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -113,7 +150,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetNumIndicis(UINT NumIndicis) {
-			m_NumIndicis = NumIndicis;
+			m_MeshPrimData.m_NumIndicis = NumIndicis;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -124,8 +161,8 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T>
 		void SetVertexType() {
-			m_MeshTypeIndex = typeid(T);
-			m_NumStride = sizeof(T);
+			m_MeshPrimData.m_MeshTypeIndex = typeid(T);
+			m_MeshPrimData.m_NumStride = sizeof(T);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -149,7 +186,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D11Buffer> GetVertexBuffer() const {
-			return m_VertexBuffer;
+			return m_MeshPrimData.m_VertexBuffer;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -158,7 +195,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D11Buffer> GetIndexBuffer() const {
-			return m_IndexBuffer;
+			return m_MeshPrimData.m_IndexBuffer;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -167,7 +204,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		UINT GetNumVertices() const {
-			return m_NumVertices;
+			return m_MeshPrimData.m_NumVertices;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -176,7 +213,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		UINT GetNumIndicis() const {
-			return m_NumIndicis;
+			return m_MeshPrimData.m_NumIndicis;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -185,7 +222,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		UINT GetNumStride() const {
-			return m_NumStride;
+			return m_MeshPrimData.m_NumStride;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -194,7 +231,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const {
-			return m_PrimitiveTopology;
+			return m_MeshPrimData.m_PrimitiveTopology;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -204,7 +241,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology){
-			m_PrimitiveTopology = Topology;
+			m_MeshPrimData.m_PrimitiveTopology = Topology;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -213,9 +250,84 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		type_index GetTypeIndex() const {
-			return m_MeshTypeIndex;
+			return m_MeshPrimData.m_MeshTypeIndex;
 		}
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュとワールド行列の間を補完する行列の取得(メッシュに設定する場合)<br />
+		メッシュのサイズや向き、中心の位置がゲームオブジェクトのワールド行列と差異がある場合、<br />
+		その間を補完する行列を設定できる。
+		@return	メッシュとワールド行列の間を補完する行列
+		*/
+		//--------------------------------------------------------------------------------------
+		const bsm::Mat4x4& GetMeshToTransformMatrix() const {
+			return m_MeshPrimData.m_MeshToTransformMatrix;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュとワールド行列の間を補完する行列の取得(メッシュに設定する場合)<br />
+		メッシュのサイズや向き、中心の位置がゲームオブジェクトのワールド行列と差異がある場合、<br />
+		その間を補完する行列を設定できる。
+		@param[in]	Mat	設定する行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMeshToTransformMatrix(const bsm::Mat4x4& Mat) {
+			m_MeshPrimData.m_MeshToTransformMatrix = Mat;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうか
+		@return　メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうか
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsUseMeshToTransformMatrix() const {
+			return m_MeshPrimData.m_UseMeshToTransformMatrix;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうかを設定
+		@param[in]	b	使用するならtrue
+		@return　なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetUseMeshToTransformMatrix(bool b){
+			m_MeshPrimData.m_UseMeshToTransformMatrix = b;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの設定(メッシュ毎の場合)
+		@param[in]	TextureRes	テクスチャリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureResource(const shared_ptr<TextureResource>& TextureRes) {
+			m_MeshPrimData.m_TextureResource = TextureRes;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの設定(メッシュ毎の場合)
+		@param[in]	TextureKey	登録されているテクスチャキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureResource(const wstring& TextureKey) {
+			this->SetTextureResource(App::GetApp()->GetResource<TextureResource>(TextureKey));
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの取得(メッシュ毎の場合)
+		@return	テクスチャリソース
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<TextureResource> GetTextureResource() const {
+			//テクスチャがなければnullを返す
+			auto shptr = m_MeshPrimData.m_TextureResource.lock();
+			if (shptr) {
+				return shptr;
+			}
+			return nullptr;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	マテリアル配列の取得
@@ -223,7 +335,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const vector<MaterialEx>& GetMaterialExVec()const {
-			return m_MaterialExVec;
+			return m_MeshPrimData.m_MaterialExVec;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -232,7 +344,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		vector<MaterialEx>& GetMaterialExVec(){
-			return m_MaterialExVec;
+			return m_MeshPrimData.m_MaterialExVec;
 		}
 
 		//--------------------------------------------------------------------------------------
@@ -242,7 +354,7 @@ namespace basecross {
 		@return	スキニングする場合はtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool IsSkining() const { return m_IsSkining; }
+		virtual bool IsSkining() const { return m_MeshPrimData.m_IsSkining; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ボーン数を得る
@@ -250,7 +362,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		UINT GetBoneCount() const {
-			return m_BoneCount;
+			return m_MeshPrimData.m_BoneCount;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -259,7 +371,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		UINT GetSampleCount() const {
-			return m_SampleCount;
+			return m_MeshPrimData.m_SampleCount;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -268,7 +380,26 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const vector<bsm::Mat4x4>& GetSampleMatrixVec() const {
-			return m_SampleMatrixVec;
+			return m_MeshPrimData.m_SampleMatrixVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータを得る
+		@return	メッシュデータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const MeshPrimData& GetMashData()const {
+			return m_MeshPrimData;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータを設定する
+		@param[out]	data	取得するデータの参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMashData(const MeshPrimData& data) {
+			m_MeshPrimData = data;
 		}
 		//リソース構築
 		//--------------------------------------------------------------------------------------
@@ -575,8 +706,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateStaticModelMeshWithTangent(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（ボーンメッシュ）
@@ -618,28 +747,28 @@ namespace basecross {
 			auto Ptr = ObjectFactory::Create<MeshResource>();
 			//バッファの作成
 			if (AccessWrite) {
-				Util::DemandCreate(Ptr->m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
+				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
 				{
 					auto PtrBackup = shared_ptr< BackupData<T> >(new  BackupData<T>());
 					for (auto& v : vertices) {
 						PtrBackup->m_Vertices.push_back(v);
 					}
-					Ptr->m_BackUpData = PtrBackup;
+					Ptr->m_MeshPrimData.m_BackUpData = PtrBackup;
 					//頂点バッファの作成
 					MeshResource::CreateDynamicPrimitiveVertexBuffer(pDx11Device, vertices, pResult);
 				});
 			}
 			else {
-				Util::DemandCreate(Ptr->m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
+				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
 				{
 					//頂点バッファの作成
 					MeshResource::CreatePrimitiveBuffer(pDx11Device, vertices, D3D11_BIND_VERTEX_BUFFER, pResult);
 				});
 			}
 			//頂点数の設定
-			Ptr->m_NumVertices = static_cast<UINT>(vertices.size());
-			Ptr->m_MeshTypeIndex = typeid(T);
-			Ptr->m_NumStride = sizeof(T);
+			Ptr->m_MeshPrimData.m_NumVertices = static_cast<UINT>(vertices.size());
+			Ptr->m_MeshPrimData.m_MeshTypeIndex = typeid(T);
+			Ptr->m_MeshPrimData.m_NumStride = sizeof(T);
 			return Ptr;
 		}
 		//--------------------------------------------------------------------------------------
@@ -662,36 +791,43 @@ namespace basecross {
 			auto Ptr = ObjectFactory::Create<MeshResource>();
 			//バッファの作成
 			if (AccessWrite) {
-				Util::DemandCreate(Ptr->m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
+				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
 				{
 					auto PtrBackup = shared_ptr< BackupData<T> >(new  BackupData<T>());
 					for (auto& v : vertices) {
 						PtrBackup->m_Vertices.push_back(v);
 					}
-					Ptr->m_BackUpData = PtrBackup;
+					Ptr->m_MeshPrimData.m_BackUpData = PtrBackup;
 					//頂点バッファの作成
 					MeshResource::CreateDynamicPrimitiveVertexBuffer(pDx11Device, vertices, pResult);
 				});
 			}
 			else {
-				Util::DemandCreate(Ptr->m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
+				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
 				{
 					//頂点バッファの作成
 					MeshResource::CreatePrimitiveBuffer(pDx11Device, vertices, D3D11_BIND_VERTEX_BUFFER, pResult);
 				});
 			}
 			//頂点数の設定
-			Ptr->m_NumVertices = static_cast<UINT>(vertices.size());
+			Ptr->m_MeshPrimData.m_NumVertices = static_cast<UINT>(vertices.size());
 			//インデックスの作成
-			Util::DemandCreate(Ptr->m_IndexBuffer, Mutex, [&](ID3D11Buffer** pResult)
+			Util::DemandCreate(Ptr->m_MeshPrimData.m_IndexBuffer, Mutex, [&](ID3D11Buffer** pResult)
 			{
+				if (Ptr->m_MeshPrimData.m_BackUpData) {
+					auto PtrBackup = dynamic_pointer_cast<BackupData<T>>(Ptr->m_MeshPrimData.m_BackUpData);
+					for (auto& v : indices) {
+						PtrBackup->m_Indices.push_back(v);
+					}
+				}
 				//インデックスバッファの作成
 				MeshResource::CreatePrimitiveBuffer(pDx11Device, indices, D3D11_BIND_INDEX_BUFFER, pResult);
 			});
+
 			//インデックス数の設定
-			Ptr->m_NumIndicis = static_cast<UINT>(indices.size());
-			Ptr->m_MeshTypeIndex = typeid(T);
-			Ptr->m_NumStride = sizeof(T);
+			Ptr->m_MeshPrimData.m_NumIndicis = static_cast<UINT>(indices.size());
+			Ptr->m_MeshPrimData.m_MeshTypeIndex = typeid(T);
+			Ptr->m_MeshPrimData.m_NumStride = sizeof(T);
 			return Ptr;
 		}
 		//--------------------------------------------------------------------------------------
@@ -706,7 +842,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T>
 		vector<T>& GetBackupVerteces() const {
-			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_BackUpData);
+			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimData.m_BackUpData);
 			if (!Ptr) {
 				throw BaseException(
 					L"バックアップをT型にキャストできません",
@@ -727,7 +863,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T>
 		void UpdateVirtexBuffer(const vector<T>& NewBuffer) {
-			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_BackUpData);
+			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimData.m_BackUpData);
 			if (!Ptr) {
 				throw BaseException(
 					L"バックアップをT型にキャストできません",
@@ -770,6 +906,548 @@ namespace basecross {
 			//アンマップ
 			pID3D11DeviceContext->Unmap(pVertexBuffer, 0);
 
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	マルチメッシュリソース
+	//--------------------------------------------------------------------------------------
+	class MultiMeshResource : public BaseResource {
+		friend class ObjectFactory;
+		//メッシュデータの配列
+		vector<MeshPrimData> m_MeshPrimDataVec;
+		//配列の上限チェック(エラーの場合は例外)
+		void CheckMeshVecCount(size_t Index)const {
+			if (Index >= m_MeshPrimDataVec.size()) {
+				throw BaseException(
+					L"メッシュ配列の上限を超えました",
+					L"if (Index >= m_MeshPrimDataVec.size())",
+					L"MultiMeshResource::CheckVecCount()"
+				);
+			}
+		}
+	protected:
+		//派生クラスからのみアクセスできるアクセサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点バッファの設定
+		@param[in]	VertexBuffer	頂点バッファ
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetVertexBuffer(const ComPtr<ID3D11Buffer>& VertexBuffer, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_VertexBuffer = VertexBuffer;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点数の設定<br />
+		頂点バッファの数と合わせなければならないので、慎重に使用する
+		@param[in]	NumVertices	頂点数
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetNumVertices(UINT NumVertices, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_NumVertices = NumVertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インデックスバッファの設定
+		@param[in]	IndexBuffer	インデックスバッファ
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetIndexBuffer(const ComPtr<ID3D11Buffer>& IndexBuffer, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_IndexBuffer = IndexBuffer;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インデックス数の設定<br />
+		インデックスバッファの数と合わせなければならないので、慎重に使用する
+		@param[in]	IndexBuffer	インデックスバッファ
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetNumIndicis(UINT NumIndicis, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_NumIndicis = NumIndicis;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点の型とストライドを設定する
+		@tparam	T	頂点の型
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void SetVertexType(size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_MeshTypeIndex = typeid(T);
+			m_MeshPrimDataVec[Index].m_NumStride = sizeof(T);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトコンストラクタ<br />
+		構築はスタティック関数を利用する
+		*/
+		//--------------------------------------------------------------------------------------
+		MultiMeshResource();
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~MultiMeshResource();
+		//アクセサ
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの数の取得
+		@return	メッシュデータの数
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t GetMeshVecCount() const {
+			return m_MeshPrimDataVec.size();
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの配列の取得
+		@return	メッシュデータの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<MeshPrimData>& GetMeshVec() const {
+			return m_MeshPrimDataVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの配列の取得（書き換え用）
+		@return	メッシュデータの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		vector<MeshPrimData>& GetMeshVec(){
+			return m_MeshPrimDataVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの追加
+		@return	追加されたインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t AddMesh(const MeshPrimData& Data) {
+			auto retcount = m_MeshPrimDataVec.size();
+			m_MeshPrimDataVec.push_back(Data);
+			return retcount;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの追加。メッシュデータ内のComPtrは共有されるので注意
+		@param[in]	Res	メッシュリソース
+		@return	追加されたインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t AddMesh(const shared_ptr<MeshResource>& Res) {
+			auto retcount = m_MeshPrimDataVec.size();
+			m_MeshPrimDataVec.push_back(Res->GetMashData());
+			return retcount;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータの追加。メッシュデータ内のComPtrは共有されるので注意
+		@param[in]	MeshKey	メッシュキー
+		@return	追加されたインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		size_t AddMesh(const wstring& MeshKey) {
+			return AddMesh(App::GetApp()->GetResource<MeshResource>(MeshKey));
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュリソースの追加
+		@tparam	T	頂点の型
+		@param[in]	vertices	頂点の配列
+		@param[in]	AccessWrite	上書き可能かどうか
+		@return	追加されたインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		size_t AddMesh(const vector<T>& vertices, bool AccessWrite) {
+			auto Ptr = MeshResource::CreateMeshResource<T>(vertices, AccessWrite);
+			return AddMesh(Ptr->GetMeshData());
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュリソースの追加
+		@tparam	T	頂点の型
+		@param[in]	vertices	頂点の配列
+		@param[in]	indices	インデックスの配列
+		@param[in]	AccessWrite	上書き可能かどうか
+		@return	追加されたインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		size_t AddMesh(const vector<T>& vertices, const vector<uint16_t>& indices, bool AccessWrite) {
+			auto Ptr = MeshResource::CreateMeshResource<T>(vertices, indices, AccessWrite);
+			return AddMesh(Ptr->GetMeshData());
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータを削除する（すぐに削除するので、インデックスを管理する場合は注意）
+		@param[out]	Index	削除するインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void RemoveMashData(size_t Index){
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec.erase(m_MeshPrimDataVec.begin() + Index);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュデータを得る
+		@param[out]	data	取得するデータの参照
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetMashData(MeshPrimData& data, size_t Index)const {
+			CheckMeshVecCount(Index);
+			data = m_MeshPrimDataVec[Index];
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点バッファの取得
+		@param[in]	Index	データ配列のインデックス
+		@return	頂点バッファ
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11Buffer> GetVertexBuffer(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_VertexBuffer;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インデックスバッファの取得
+		@param[in]	Index	データ配列のインデックス
+		@return	インデックスバッファ
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11Buffer> GetIndexBuffer(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_IndexBuffer;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点数の取得
+		@param[in]	Index	データ配列のインデックス
+		@return	頂点数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetNumVertices(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return  m_MeshPrimDataVec[Index].m_NumVertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	インデックス数の取得
+		@param[in]	Index	データ配列のインデックス
+		@return	インデックス数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetNumIndicis(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_NumIndicis;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ストライド数の取得
+		@param[in]	Index	データ配列のインデックス
+		@return	ストライド数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetNumStride(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_NumStride;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画トポロジーの取得
+		@param[in]	Index	データ配列のインデックス
+		@return	描画トポロジー
+		*/
+		//--------------------------------------------------------------------------------------
+		D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_PrimitiveTopology;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	描画トポロジーの設定
+		@param[in]	Topology	描画トポロジー
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_PrimitiveTopology = Topology;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	type_indexの取得
+		@param[in]	Index	データ配列のインデックス
+		@return	type_index
+		*/
+		//--------------------------------------------------------------------------------------
+		type_index GetTypeIndex(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_MeshTypeIndex;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュとワールド行列の間を補完する行列の取得(メッシュに設定する場合)<br />
+		メッシュのサイズや向き、中心の位置がゲームオブジェクトのワールド行列と差異がある場合、<br />
+		その間を補完する行列を設定できる。
+		@return	メッシュとワールド行列の間を補完する行列
+		*/
+		//--------------------------------------------------------------------------------------
+		const bsm::Mat4x4& GetMeshToTransformMatrix(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_MeshToTransformMatrix;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュとワールド行列の間を補完する行列の取得(メッシュに設定する場合)<br />
+		メッシュのサイズや向き、中心の位置がゲームオブジェクトのワールド行列と差異がある場合、<br />
+		その間を補完する行列を設定できる。
+		@param[in]	Mat	設定する行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMeshToTransformMatrix(const bsm::Mat4x4& Mat, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_MeshToTransformMatrix = Mat;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうか
+		@return　メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうか
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsUseMeshToTransformMatrix(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_UseMeshToTransformMatrix;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュに設定したメッシュとワールド行列の間を補完する行列を使うかどうかを設定
+		@param[in]	b	使用するならtrue
+		@return　なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetUseMeshToTransformMatrix(bool b, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_UseMeshToTransformMatrix = b;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの設定(メッシュ毎の場合)
+		@param[in]	TextureRes	テクスチャリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureResource(const shared_ptr<TextureResource>& TextureRes, size_t Index) {
+			CheckMeshVecCount(Index);
+			m_MeshPrimDataVec[Index].m_TextureResource = TextureRes;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの設定(メッシュ毎の場合)
+		@param[in]	TextureKey	登録されているテクスチャキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetTextureResource(const wstring& TextureKey, size_t Index) {
+			CheckMeshVecCount(Index);
+			this->SetTextureResource(App::GetApp()->GetResource<TextureResource>(TextureKey), Index);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	テクスチャリソースの取得(メッシュ毎の場合)
+		@return	テクスチャリソース
+		*/
+		//--------------------------------------------------------------------------------------
+		shared_ptr<TextureResource> GetTextureResource(size_t Index) const {
+			CheckMeshVecCount(Index);
+			//テクスチャがなければnullを返す
+			auto shptr = m_MeshPrimDataVec[Index].m_TextureResource.lock();
+			if (shptr) {
+				return shptr;
+			}
+			return nullptr;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マテリアル配列の取得
+		@param[in]	Index	データ配列のインデックス
+		@return	マテリアルの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<MaterialEx>& GetMaterialExVec(size_t Index)const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_MaterialExVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マテリアル配列の取得(書き込み用)
+		@param[in]	Index	データ配列のインデックス
+		@return	マテリアルの配列
+		*/
+		//--------------------------------------------------------------------------------------
+		vector<MaterialEx>& GetMaterialExVec(size_t Index) {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_MaterialExVec;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキニングするかどうか.<br />
+		仮想関数なので、派生クラスで独自に多重定義する
+		@param[in]	Index	データ配列のインデックス
+		@return	スキニングする場合はtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool IsSkining(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_IsSkining;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ボーン数を得る
+		@param[in]	Index	データ配列のインデックス
+		@return	ボーン数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetBoneCount(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_BoneCount;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	サンプリング数を得る
+		@param[in]	Index	データ配列のインデックス
+		@return	サンプリング数
+		*/
+		//--------------------------------------------------------------------------------------
+		UINT GetSampleCount(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_SampleCount;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	サンプリングされた行列の配列を得る
+		@param[in]	Index	データ配列のインデックス
+		@return	サンプリングされた行列の配列の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<bsm::Mat4x4>& GetSampleMatrixVec(size_t Index) const {
+			CheckMeshVecCount(Index);
+			return m_MeshPrimDataVec[Index].m_SampleMatrixVec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	バックアップデータの取得
+		@tparam	T	頂点の型
+		@param[in]	Index	データ配列のインデックス
+		@return	バックアップデータの配列。
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		vector<T>& GetBackupVerteces(size_t Index) const {
+			CheckMeshVecCount(Index);
+			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimDataVec[Index].m_BackUpData);
+			if (!Ptr) {
+				throw BaseException(
+					L"バックアップをT型にキャストできません",
+					Util::GetWSTypeName<T>(),
+					L"MultiMeshResource::GetBackupVerteces<T>()"
+				);
+			}
+			return Ptr->m_Vertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	頂点の変更.<br />
+		AccessWriteがtrueで作成されたリソースは、頂点の配列によって頂点を変更する。
+		@tparam	T	頂点の型
+		@param[in]	NewBuffer	頂点の配列
+		@param[in]	Index	データ配列のインデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		void UpdateVirtexBuffer(const vector<T>& NewBuffer, size_t Index) {
+			CheckMeshVecCount(Index);
+			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimDataVec[Index].m_BackUpData);
+			if (!Ptr) {
+				throw BaseException(
+					L"バックアップをT型にキャストできません",
+					Util::GetWSTypeName<T>(),
+					L"MultiMeshResource::UpdateVirtexBuffer<T>()"
+				);
+			}
+
+			if (NewBuffer.size() != Ptr->m_Vertices.size()) {
+				// Map失敗
+				throw BaseException(
+					L"変更する頂点の数がバックアップと違います",
+					L"if (NewBuffer.size() != Ptr->m_Vertices.size())",
+					L"MultiMeshResource::UpdateVirtexBuffer<T>()"
+				);
+			}
+			//座標を変更する
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+			//頂点バッファをリソースから取り出す
+			auto pVertexBuffer = GetVertexBuffer(Index).Get();
+
+			//D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
+			D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
+			D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+			//頂点のマップ
+			if (FAILED(pID3D11DeviceContext->Map(pVertexBuffer, 0, mapType, 0, &mappedBuffer))) {
+				// Map失敗
+				throw BaseException(
+					L"頂点のMapに失敗しました。",
+					L"if(FAILED(pID3D11DeviceContext->Map()))",
+					L"MultiMeshResource::UpdateVirtexBuffer<T>()"
+				);
+			}
+			//頂点の変更
+			T* vertices = (T*)mappedBuffer.pData;
+			for (size_t i = 0; i < NewBuffer.size(); i++) {
+				vertices[i] = NewBuffer[i];
+			}
+			//アンマップ
+			pID3D11DeviceContext->Unmap(pVertexBuffer, 0);
+
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースの作成
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static  shared_ptr<MultiMeshResource> CreateMultiMeshResource() {
+			auto Ptr = ObjectFactory::Create<MultiMeshResource>();
+			return Ptr;
 		}
 	};
 

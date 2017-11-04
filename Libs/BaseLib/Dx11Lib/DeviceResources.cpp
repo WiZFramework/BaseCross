@@ -175,21 +175,11 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	class MeshResource : public MeshResource;
-	/*!
-	@brief Dx11プリミティブメッシュクラス.<br />
-	プリミティブメッシュは、スタティック関数を使って生成する
-	*/
+	///	メッシュリソース
 	//--------------------------------------------------------------------------------------
 	//構築
 	MeshResource::MeshResource() :
-		BaseResource(),
-		m_IsSkining(false),
-		m_BoneCount(0),
-		m_SampleCount(0),
-		m_MeshTypeIndex(typeid(VertexPosition)),	//便宜上VertexPositionに初期化
-		m_NumStride(sizeof(VertexPosition)),
-		m_PrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
+		BaseResource()
 	{}
 	//破棄
 	MeshResource::~MeshResource() {}
@@ -745,9 +735,9 @@ namespace basecross {
 			vector<MaterialEx> Materials;
 			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
-			Ptr->m_MaterialExVec.clear();
+			Ptr->m_MeshPrimData.m_MaterialExVec.clear();
 			for (auto& v : Materials) {
-				Ptr->m_MaterialExVec.push_back(v);
+				Ptr->m_MeshPrimData.m_MaterialExVec.push_back(v);
 			}
 			return Ptr;
 		}
@@ -766,7 +756,7 @@ namespace basecross {
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
-			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,indices, Materials);
+			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
 			if (vertices.size() > 0) {
 				//binデータにはタンジェントは入ってなかった
 				new_pntnt_vertices.clear();
@@ -783,9 +773,9 @@ namespace basecross {
 				MeshUtill::SetNormalTangent(new_pntnt_vertices);
 			}
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTexture>(new_pntnt_vertices, indices, AccessWrite);
-			Ptr->m_MaterialExVec.clear();
+			Ptr->m_MeshPrimData.m_MaterialExVec.clear();
 			for (auto& v : Materials) {
-				Ptr->m_MaterialExVec.push_back(v);
+				Ptr->m_MeshPrimData.m_MaterialExVec.push_back(v);
 			}
 			return Ptr;
 		}
@@ -793,7 +783,6 @@ namespace basecross {
 			throw;
 		}
 	}
-
 
 
 	shared_ptr<MeshResource> MeshResource::CreateBoneModelMesh(const wstring& BinDataDir,
@@ -817,17 +806,17 @@ namespace basecross {
 				indices, Materials,
 				SampleMatrices, BoneCount, SampleCount);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTextureSkinning>(vertices, indices, AccessWrite);
-			Ptr->m_MaterialExVec.clear();
+			Ptr->GetMaterialExVec().clear();
 			for (auto& v : Materials) {
-				Ptr->m_MaterialExVec.push_back(v);
+				Ptr->GetMaterialExVec().push_back(v);
 			}
-			Ptr->m_SampleMatrixVec.clear();
+			Ptr->m_MeshPrimData.m_SampleMatrixVec.clear();
 			for (auto& v : SampleMatrices) {
-				Ptr->m_SampleMatrixVec.push_back(v);
+				Ptr->m_MeshPrimData.m_SampleMatrixVec.push_back(v);
 			}
-			Ptr->m_BoneCount = BoneCount;
-			Ptr->m_SampleCount = SampleCount;
-			Ptr->m_IsSkining = true;
+			Ptr->m_MeshPrimData.m_BoneCount = BoneCount;
+			Ptr->m_MeshPrimData.m_SampleCount = SampleCount;
+			Ptr->m_MeshPrimData.m_IsSkining = true;
 			return Ptr;
 		}
 		catch (...) {
@@ -876,17 +865,17 @@ namespace basecross {
 			}
 
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTangentTextureSkinning>(new_pntnt_vertices, indices, AccessWrite);
-			Ptr->m_MaterialExVec.clear();
+			Ptr->m_MeshPrimData.m_MaterialExVec.clear();
 			for (auto& v : Materials) {
-				Ptr->m_MaterialExVec.push_back(v);
+				Ptr->m_MeshPrimData.m_MaterialExVec.push_back(v);
 			}
-			Ptr->m_SampleMatrixVec.clear();
+			Ptr->m_MeshPrimData.m_SampleMatrixVec.clear();
 			for (auto& v : SampleMatrices) {
-				Ptr->m_SampleMatrixVec.push_back(v);
+				Ptr->m_MeshPrimData.m_SampleMatrixVec.push_back(v);
 			}
-			Ptr->m_BoneCount = BoneCount;
-			Ptr->m_SampleCount = SampleCount;
-			Ptr->m_IsSkining = true;
+			Ptr->m_MeshPrimData.m_BoneCount = BoneCount;
+			Ptr->m_MeshPrimData.m_SampleCount = SampleCount;
+			Ptr->m_MeshPrimData.m_IsSkining = true;
 			return Ptr;
 		}
 		catch (...) {
@@ -895,6 +884,14 @@ namespace basecross {
 
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	マルチメッシュリソース
+	//--------------------------------------------------------------------------------------
+	MultiMeshResource::MultiMeshResource() :
+		BaseResource()
+	{}
+	//破棄
+	MultiMeshResource::~MultiMeshResource() {}
 
 
 	//--------------------------------------------------------------------------------------

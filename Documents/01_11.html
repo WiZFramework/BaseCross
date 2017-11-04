@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１１１．マルチメッシュ</h3>
+　このサンプルは<b>FullTutorial011</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<b>リリースモード</b>でのビルトをお勧めします。<br />
+<p>&nbsp;</p>
+<img src="img/0111a.png" width="80%"/>
+<p>図0111a</p>
+<p>&nbsp;</p>
+<br/>
+<h4>マルチメッシュとは</h4>
+　今項のテーマは<b>マルチメッシュ</b>です。どういう機能かというと<b>複数のメッシュをまとめる</b>機能です。<b>BaseCross</b>には複数の<b>プリミティブ（球体や立方体やコーン、トーラスなど）</b>が実装可能ですが、それぞれは単純な形状です。ですから<b>モデルを使わずに</b>これらの形状だけでゲームを作製しようとすると、なんとなく単純すぎる場合があります。<br />
+　言い方を変えれば<b>３Ｄモデル作成ツールを使わずに</b>ゲームを作成する場合、単純な形状のみになってしまいますので、<b>それらを組み合わせて一つのオブジェクトにする</b>機能というわけです。<br />
+　上記実行画面を見ていただくとわかりますが、画面上には<b>木</b>が配置されています。このオブジェクトは<b>１つのシリンダーと２つのコーン</b>を組み合わせて作成した<b>マルチメッシュ</b>です。<br />
+　この項のサンプルはこのような<b>メッシュを組み合わせたメッシュ</b>の作成方法を紹介しています。<br />
+　なおこのサンプルの<b>木</b>以外のオブジェクトは、<b>FullTutorial004</b>と同じです。<br />
+<br />
+<h4>マルチメッシュとは</h4>
+　<b>木</b>のクラスは<b>Treeクラス</b>です。<b>Character.h/cpp</b>に実装があります。以下がヘッダ部です。
+<div class="box1">
+<pre>
+class Tree : public GameObject {
+    Vec3 m_Pos;
+    <span class="red">shared_ptr&lt;MultiMeshResource> m_MultiMeshResource;</span>
+public:
+    //構築と破棄
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  StagePtr    ステージ
+    */
+    //--------------------------------------------------------------------------------------
+    Tree(const shared_ptr&lt;Stage>& StagePtr, const Vec3& Pos);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~Tree() {}
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  初期化
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  更新
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnUpdate() override {}
+};
+</pre>
+</div>
+　このように実装する関数はごくわずかです。変化もしませんので<b>OnUpdate()仮想関数</b>は空関数となっています。<br />
+　赤くなっている部分が<b>マルチメッシュ</b>です。マルチメッシュはインスタンスごとに保持していてもメモリは圧迫しませんので、メンバ変数としています。<br />
+<br />
+　以下が実体部の<b>Tree::OnCreate()関数</b>です。もっぱら<b>マルチメッシュ関連</b>の実装になります。
+<div class="box1">
+<pre>
+void Tree::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetPosition(m_Pos);
+    PtrTransform->SetScale(0.5f, 1.0f, 0.5f);
+    PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+    //capsuleの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionCapsule>();
+    PtrColl->SetFixed(true);
+//      PtrColl->SetDrawActive(true);
+
+    shared_ptr&lt;MeshResource> TreeMesh, LeafMesh1, LeafMesh2;
+    if (!App::GetApp()->CheckResource&lt;MeshResource>(L"TREE_MESH")) {
+        TreeMesh =MeshResource::CreateCylinder(1.0f, 1.0f, 18, false);
+        Mat4x4 TransToMat;
+        TransToMat.affineTransformation(
+            Vec3(1.0f,1.0f,1.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.0f, 0.0f)
+            );
+        TreeMesh->SetMeshToTransformMatrix(TransToMat);
+        TreeMesh->SetUseMeshToTransformMatrix(true);
+        App::GetApp()->RegisterResource(L"TREE_MESH", TreeMesh);
+    }
+    else {
+        TreeMesh = App::GetApp()->GetResource&lt;MeshResource>(L"TREE_MESH");
+    }
+    //このメッシュ特有のテクスチャとして登録
+    TreeMesh->SetTextureResource(L"BROWN_TX");
+
+
+    if (!App::GetApp()->CheckResource&lt;MeshResource>(L"LEAF_MESH_1")) {
+        LeafMesh1 = MeshResource::CreateCone(1.0f, 1.0f,18,false);
+        Mat4x4 TransToMat;
+        TransToMat.affineTransformation(
+            Vec3(3.0f, 0.5f, 3.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.4f, 0.0f)
+        );
+        LeafMesh1->SetMeshToTransformMatrix(TransToMat);
+        LeafMesh1->SetUseMeshToTransformMatrix(true);
+        App::GetApp()->RegisterResource(L"LEAF_MESH_1", LeafMesh1);
+    }
+    else {
+        LeafMesh1 = App::GetApp()->GetResource&lt;MeshResource>(L"LEAF_MESH_1");
+    }
+    //このメッシュ特有のテクスチャとして登録
+    LeafMesh1->SetTextureResource(L"GREEN_TX");
+
+    if (!App::GetApp()->CheckResource&lt;MeshResource>(L"LEAF_MESH_2")) {
+        LeafMesh2 = MeshResource::CreateCone(1.0f, 1.0f, 18, false);
+        Mat4x4 TransToMat;
+        TransToMat.affineTransformation(
+            Vec3(2.0f, 0.5f, 2.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.7f, 0.0f)
+        );
+        LeafMesh2->SetMeshToTransformMatrix(TransToMat);
+        LeafMesh2->SetUseMeshToTransformMatrix(true);
+        App::GetApp()->RegisterResource(L"LEAF_MESH_2", LeafMesh2);
+    }
+    else {
+        LeafMesh2 = App::GetApp()->GetResource&lt;MeshResource>(L"LEAF_MESH_2");
+    }
+    //このメッシュ特有のテクスチャとして登録
+    LeafMesh2->SetTextureResource(L"GREEN_TX");
+
+    //このオブジェクトはマルチメッシュを使う
+    m_MultiMeshResource = ObjectFactory::Create&lt;MultiMeshResource>();
+    m_MultiMeshResource->AddMesh(TreeMesh);
+    m_MultiMeshResource->AddMesh(LeafMesh1);
+    m_MultiMeshResource->AddMesh(LeafMesh2);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMultiMeshResource(m_MultiMeshResource);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画するマルチメッシュを設定
+    PtrDraw->SetMultiMeshResource(m_MultiMeshResource);
+
+}
+</pre>
+</div>
+　<b>マルチメッシュ</b>を作成する前に<b>そのンンスタンスのTransform</b>を確定させます。衝突判定も設定します。<br />
+　複数のメッシュをまとめるわけですが<b>衝突判定</b>は一つです。ここでは<b>CollisionCapsule</b>を使用しています。<br />
+　また<b>マルチメッシュ</b>に参加させる<b>単体のメッシュ</b>を作成します。こちらは最初のインスタンスが作成されたときにリソース化して、ほかのインスタンスが再利用できるようにします。<br />
+　以下は、<b>上部の葉っぱ</b>のメッシュに関する処理です。
+<div class="box1">
+<pre>
+    if (!App::GetApp()->CheckResource&lt;MeshResource>(L"LEAF_MESH_2")) {
+        LeafMesh2 = MeshResource::CreateCone(1.0f, 1.0f, 18, false);
+        Mat4x4 TransToMat;
+        TransToMat.affineTransformation(
+            Vec3(2.0f, 0.5f, 2.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, 0.7f, 0.0f)
+        );
+        LeafMesh2->SetMeshToTransformMatrix(TransToMat);
+        LeafMesh2->SetUseMeshToTransformMatrix(true);
+        App::GetApp()->RegisterResource(L"LEAF_MESH_2", LeafMesh2);
+    }
+    else {
+        LeafMesh2 = App::GetApp()->GetResource&lt;MeshResource>(L"LEAF_MESH_2");
+    }
+    //このメッシュ特有のテクスチャとして登録
+    LeafMesh2->SetTextureResource(L"GREEN_TX");
+</pre>
+</div>
+　このように<b>メッシュがリソースに登録がないかチェックして、なければメッシュを作成する</b>という処理をしています。<br />
+　<b>メッシュリソース</b>である<b>MeshResourceクラス</b>はそのメッシュ独自の<b>MeshToTransformMatrix</b>を設定することができます。前者は<b>ワールド行列に対する相対的な行列</b>です。葉っぱは上下どちらも<b>コーン</b>というプリミティブを使用していますので、<b>ワールド行列に対する大きさや位置関係</b>などを設定することで、<b>上下の葉っぱ</b>を表現します。<br />
+　<b>MeshToTransformMatrix</b>を設定した後
+<div class="box1">
+<pre>
+        LeafMesh2->SetMeshToTransformMatrix(TransToMat);
+        LeafMesh2->SetUseMeshToTransformMatrix(true);
+</pre>
+</div>
+　とすれば、その相対行列を使用するようになります。<br />
+　テクスチャも同様、<b>そのメッシュ独自のもの</b>を設定できます。
+<div class="box1">
+<pre>
+    //このメッシュ特有のテクスチャとして登録
+    LeafMesh2->SetTextureResource(L"GREEN_TX");
+</pre>
+</div>
+　とします。<b>L"GREEN_TX"</b>というのはあらかじめ<b>Scene.cpp</b>でリソース化されたテクスチャです。<br />
+　これらの<b>部品</b>を作成したら、それらの部品をまとめます。
+<div class="box1">
+<pre>
+    //このオブジェクトはマルチメッシュを使う
+    m_MultiMeshResource = ObjectFactory::Create&lt;MultiMeshResource>();
+    m_MultiMeshResource->AddMesh(TreeMesh);
+    m_MultiMeshResource->AddMesh(LeafMesh1);
+    m_MultiMeshResource->AddMesh(LeafMesh2);
+</pre>
+</div>
+　このように<b>m_MultiMeshResource</b>を構築してそこに<b>部品（各メッシュ）</b>を登録します。<br />
+　<b>MultiMeshResource</b>は<b>リソース登録</b>も可能ですが、前述したように、単体のメッシュと違い、内部に頂点バッファなどのメモリを圧迫するデータは持ちませんので、<b>リソース登録</b>しなくても問題ありません。<br />
+<br />
+　最後に、シャドウマップと描画コンポーネントへの登録を行います。
+<div class="box1">
+<pre>
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMultiMeshResource(m_MultiMeshResource);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画するマルチメッシュを設定
+    PtrDraw->SetMultiMeshResource(m_MultiMeshResource);
+</pre>
+</div>
+　<b>シャドウマップ、描画コンポーネント</b>両方とも<b>SetMultiMeshResourceメンバ関数</b>で、<b>マルチメッシュリソースの登録</b>を行います。<br />
+<br/>
+　<b>GameStageクラス</b>では、複数の<b>Treeクラス</b>インスタンスを実装しています。以下がその部分です。
+<div class="box1">
+<pre>
+    //木の作成
+    void GameStage::CreateTrees() {
+        for (float x = -22.0f; x &lt; 22.0f; x += 4.0f) {
+            for (float z = -22.0f; z &lt; 22.0f; z += 4.0f) {
+                AddGameObject&lt;Tree>(Vec3(x, 0.5f, z));
+            }
+        }
+    }
+</pre>
+</div>
+　構造さえわかれば、いろんな組み合わせが可能かと思います。<br />
+　<b>BaseCross</b>で作成できるプリミティブはライブラリ中<b>MeshHelper.h</b>や<b>DeviceResources.h</b>の<b>MeshResourceクラス</b>に記述があります。確認してみましょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_10.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

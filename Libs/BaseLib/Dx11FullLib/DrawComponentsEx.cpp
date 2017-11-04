@@ -137,23 +137,23 @@ namespace basecross {
 	/// PNTnTピクセルシェーダ(ピクセルライティング)
 	//--------------------------------------------------------------------------------------
 	//影無し
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPL, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPL.cso");
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPL, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPL.cso")
 	//影つき
-	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPLShadow, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPLShadow.cso");
-
-
-
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNTnTPLShadow, App::GetApp()->GetShadersPath() + L"BcPSPNTnTPLShadow.cso")
 
 	//--------------------------------------------------------------------------------------
-	//	BcStaticBaseDraw::Impl
+	///	Bc描画に使用する構造体(影対応)
 	//--------------------------------------------------------------------------------------
-	struct BcStaticBaseDraw::Impl {
-		//メッシュリソース
-		weak_ptr<MeshResource> m_MeshResource;
+	struct BcDrawObject :public DrawObjectBase {
 		//頂点変更する場合のメッシュ（オリジナル）
 		shared_ptr<MeshResource> m_OriginalMeshResource;
 		//オリジナルメッシュを使うかどうか
 		bool m_UseOriginalMeshResource;
+		//テクスチャリソース
+		weak_ptr<TextureResource> m_TextureResource;
+		//NormalMapテクスチャ
+		weak_ptr<TextureResource> m_NormalMapTextureResource;
+		vector<weak_ptr<TextureResource>> m_NormalMapTextureResourceVec;
 		//エミッシブ色
 		bsm::Col4 m_Emissive;
 		//デフューズ色
@@ -180,8 +180,6 @@ namespace basecross {
 		bsm::Col4 m_LightDiffuseColor[MaxDirectionalLights];
 		//ライトのスペキュラー色
 		bsm::Col4 m_LightSpecularColor[MaxDirectionalLights];
-		//デフォルトのライティングを設定する
-		static void EnableDefaultLighting(BcStaticBaseDraw* Draw);
 		//フォグが有効かどうか
 		bool m_FogEnabled;
 		//フォグの開始位置
@@ -192,7 +190,15 @@ namespace basecross {
 		bsm::Col4 m_FogColor;
 		//フォグベクトル
 		bsm::Vec3 m_FogVector;
-		Impl() :
+		//影を投影するかどうか
+		bool m_OwnShadowActive;
+		//モデルに入っているDiffuseを使うかどうか
+		bool m_ModelDiffusePriority;
+		//モデルに入っているEmissiveを使うかどうか
+		bool m_ModelEmissivePriority;
+		//モデルに入っているテクスチャを使うかどうか
+		bool m_ModelTextureEnabled;
+		BcDrawObject() :
 			m_UseOriginalMeshResource(false),
 			m_Emissive(0.0f, 0.0f, 0.0f, 0.0),
 			m_Diffuse(1.0f, 1.0f, 1.0f, 1.0f),
@@ -206,7 +212,11 @@ namespace basecross {
 			m_FogStart(-25.0f),
 			m_FogEnd(-40.0f),
 			m_FogColor(0.8f, 0.8f, 0.8f, 1.0f),
-			m_FogVector(0.0, 0.0, 1.0f)
+			m_FogVector(0.0, 0.0, 1.0f),
+			m_OwnShadowActive(false),
+			m_ModelDiffusePriority(true),
+			m_ModelEmissivePriority(true),
+			m_ModelTextureEnabled(true)
 		{
 			static const XMVECTORF32 defaultSpecular = { 1, 1, 1, 16 };
 			static const bsm::Vec3 defaultLightDirection = { 0, -1, 0 };
@@ -214,144 +224,193 @@ namespace basecross {
 			for (int i = 0; i < MaxDirectionalLights; i++)
 			{
 				m_LightDirection[i] = defaultLightDirection;
-				m_LightDiffuseColor[i] =  g_XMZero;
-				m_LightSpecularColor[i] =  g_XMZero;
+				m_LightDiffuseColor[i] = g_XMZero;
+				m_LightSpecularColor[i] = g_XMZero;
 			}
 		}
 	};
 
+
 	//--------------------------------------------------------------------------------------
-	///	Basic描画コンポーネントの親(3D描画)
+	//	BcBaseDraw::Impl
 	//--------------------------------------------------------------------------------------
-	BcStaticBaseDraw::BcStaticBaseDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+	struct BcBaseDraw::Impl {
+		BcDrawObject m_BcDrawObject;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Bc描画オブジェクトの親
+	//--------------------------------------------------------------------------------------
+	BcBaseDraw::BcBaseDraw(const shared_ptr<GameObject>& GameObjectPtr) :
 		DrawComponent(GameObjectPtr),
-		pImpl(new Impl()) {}
-
-	BcStaticBaseDraw::~BcStaticBaseDraw() {}
-
-
-	bool BcStaticBaseDraw::IsOriginalMeshUse() const {
-		return pImpl->m_UseOriginalMeshResource;
+		pImpl(new Impl())
+	{
+		//パイプラインステートをデフォルトの３D
+		SetBlendState(BlendState::Opaque);
+		SetDepthStencilState(DepthStencilState::Default);
+		SetRasterizerState(RasterizerState::CullBack);
+		SetSamplerState(SamplerState::LinearClamp);
 	}
 
-	void BcStaticBaseDraw::SetOriginalMeshUse(bool b) {
-		pImpl->m_UseOriginalMeshResource = b;
-	}
-
-	shared_ptr<MeshResource> BcStaticBaseDraw::GetOriginalMeshResource() const {
-		return pImpl->m_OriginalMeshResource;
-	}
-	void BcStaticBaseDraw::SetOriginalMeshResource(const shared_ptr<MeshResource>& MeshRes) {
-		pImpl->m_OriginalMeshResource = MeshRes;
-	}
+	BcBaseDraw::~BcBaseDraw() {}
 
 
-	shared_ptr<MeshResource> BcStaticBaseDraw::GetMeshResource() const {
+	bool BcBaseDraw::IsOriginalMeshUse() const {
+		return pImpl->m_BcDrawObject.m_UseOriginalMeshResource;
+	}
+
+	void BcBaseDraw::SetOriginalMeshUse(bool b) {
+		pImpl->m_BcDrawObject.m_UseOriginalMeshResource = b;
+	}
+
+	shared_ptr<MeshResource> BcBaseDraw::GetOriginalMeshResource() const {
+		return pImpl->m_BcDrawObject.m_OriginalMeshResource;
+	}
+	void BcBaseDraw::SetOriginalMeshResource(const shared_ptr<MeshResource>& MeshRes) {
+		pImpl->m_BcDrawObject.m_OriginalMeshResource = MeshRes;
+	}
+
+
+	shared_ptr<MeshResource> BcBaseDraw::GetMeshResource() const {
 		if (IsOriginalMeshUse()) {
-			return pImpl->m_OriginalMeshResource;
+			return pImpl->m_BcDrawObject.m_OriginalMeshResource;
 		}
 		else {
-			auto shptr = pImpl->m_MeshResource.lock();
+			auto shptr = pImpl->m_BcDrawObject.m_MeshResource.lock();
 			if (shptr) {
 				return shptr;
 			}
 		}
 		return nullptr;
 	}
-	void BcStaticBaseDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
-		pImpl->m_MeshResource = MeshRes;
+	void BcBaseDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
+		pImpl->m_BcDrawObject.m_MeshResource = MeshRes;
 	}
 
-	void BcStaticBaseDraw::SetMeshResource(const wstring& MeshKey) {
+	void BcBaseDraw::SetMeshResource(const wstring& MeshKey) {
 		this->SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
 
-
-	bsm::Col4 BcStaticBaseDraw::GetEmissive() const {
-		return (bsm::Col4)pImpl->m_Emissive;
-	}
-	void BcStaticBaseDraw::SetEmissive(const bsm::Col4& col) {
-		pImpl->m_Emissive = col;
-	}
-	bsm::Col4 BcStaticBaseDraw::GetDiffuse() const {
-		return pImpl->m_Diffuse;
-	}
-	void BcStaticBaseDraw::SetDiffuse(const bsm::Col4& col) {
-		pImpl->m_Diffuse = col;
+	shared_ptr<TextureResource> BcBaseDraw::GetTextureResource() const {
+		//テクスチャがなければnullを返す
+		auto shptr = pImpl->m_BcDrawObject.m_TextureResource.lock();
+		if (shptr) {
+			return shptr;
+		}
+		return nullptr;
 	}
 
-	bsm::Col4 BcStaticBaseDraw::GetSpecularColor() const {
-		bsm::Col4 ret = pImpl->m_SpecularColorAndPower;
+
+	void BcBaseDraw::SetTextureResource(const shared_ptr<TextureResource>& TextureRes) {
+		pImpl->m_BcDrawObject.m_TextureResource = TextureRes;
+	}
+
+	void BcBaseDraw::SetTextureResource(const wstring& TextureKey) {
+		this->SetTextureResource(App::GetApp()->GetResource<TextureResource>(TextureKey));
+	}
+
+	shared_ptr<MultiMeshResource> BcBaseDraw::GetMultiMeshResource() const {
+		//なければnullを返す
+		auto shptr = pImpl->m_BcDrawObject.m_MultiMeshResource.lock();
+		if (shptr) {
+			return shptr;
+		}
+		return nullptr;
+	}
+
+	void BcBaseDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
+		pImpl->m_BcDrawObject.m_MultiMeshResource = MeshResourcePtr;
+	}
+	void BcBaseDraw::SetMultiMeshResource(const wstring& ResKey) {
+		this->SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
+	}
+
+
+	bsm::Col4 BcBaseDraw::GetEmissive() const {
+		return pImpl->m_BcDrawObject.m_Emissive;
+	}
+	void BcBaseDraw::SetEmissive(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_Emissive = col;
+	}
+	bsm::Col4 BcBaseDraw::GetDiffuse() const {
+		return pImpl->m_BcDrawObject.m_Diffuse;
+	}
+	void BcBaseDraw::SetDiffuse(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_Diffuse = col;
+	}
+
+	bsm::Col4 BcBaseDraw::GetSpecularColor() const {
+		bsm::Col4 ret = pImpl->m_BcDrawObject.m_SpecularColorAndPower;
 		ret.w = 0.0f;
 		return ret;
 	}
-	void BcStaticBaseDraw::SetSpecularColor(const bsm::Col4& col) {
-		pImpl->m_SpecularColorAndPower = XMVectorSelect(pImpl->m_SpecularColorAndPower, col, g_XMSelect1110);
+	void BcBaseDraw::SetSpecularColor(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_SpecularColorAndPower = XMVectorSelect(pImpl->m_BcDrawObject.m_SpecularColorAndPower, col, g_XMSelect1110);
 	}
 
-	void BcStaticBaseDraw::DisableSpecular() {
-		pImpl->m_SpecularColorAndPower = g_XMIdentityR3;
+	void BcBaseDraw::DisableSpecular() {
+		pImpl->m_BcDrawObject.m_SpecularColorAndPower = g_XMIdentityR3;
 	}
 
-	float BcStaticBaseDraw::GetSpecularPower() const {
-		return pImpl->m_SpecularColorAndPower.w;
-	}
-
-
-	void BcStaticBaseDraw::SetSpecularPower(float pow) {
-		pImpl->m_SpecularColorAndPower.w = pow;
+	float BcBaseDraw::GetSpecularPower() const {
+		return pImpl->m_BcDrawObject.m_SpecularColorAndPower.w;
 	}
 
 
-
-	bsm::Col4 BcStaticBaseDraw::GetSpecularColorAndPower() const {
-		return pImpl->m_SpecularColorAndPower;
-	}
-	void BcStaticBaseDraw::SetSpecularColorAndPower(const bsm::Col4& col) {
-		pImpl->m_SpecularColorAndPower = col;
+	void BcBaseDraw::SetSpecularPower(float pow) {
+		pImpl->m_BcDrawObject.m_SpecularColorAndPower.w = pow;
 	}
 
-	float BcStaticBaseDraw::GetAlpha() const {
-		return pImpl->m_Alpha;
+
+
+	bsm::Col4 BcBaseDraw::GetSpecularColorAndPower() const {
+		return pImpl->m_BcDrawObject.m_SpecularColorAndPower;
+	}
+	void BcBaseDraw::SetSpecularColorAndPower(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_SpecularColorAndPower = col;
 	}
 
-	void BcStaticBaseDraw::SetAlpha(float a) {
-		pImpl->m_Alpha = a;
+	float BcBaseDraw::GetAlpha() const {
+		return pImpl->m_BcDrawObject.m_Alpha;
 	}
 
-	bsm::Col4 BcStaticBaseDraw::GetColorAndAlpha() const {
-		bsm::Col4 ret = pImpl->m_Diffuse;
-		ret.w = pImpl->m_Alpha;
+	void BcBaseDraw::SetAlpha(float a) {
+		pImpl->m_BcDrawObject.m_Alpha = a;
+	}
+
+	bsm::Col4 BcBaseDraw::GetColorAndAlpha() const {
+		bsm::Col4 ret = pImpl->m_BcDrawObject.m_Diffuse;
+		ret.w = pImpl->m_BcDrawObject.m_Alpha;
 		return ret;
 	}
 
-	void BcStaticBaseDraw::SetColorAndAlpha(const bsm::Col4& col) {
-		pImpl->m_Diffuse = col;
-		pImpl->m_Alpha = col.w;
+	void BcBaseDraw::SetColorAndAlpha(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_Diffuse = col;
+		pImpl->m_BcDrawObject.m_Alpha = col.w;
 	}
-	bool BcStaticBaseDraw::IsLightingEnabled() const {
-		return pImpl->m_LightingEnabled;
+	bool BcBaseDraw::IsLightingEnabled() const {
+		return pImpl->m_BcDrawObject.m_LightingEnabled;
 	}
-	bool BcStaticBaseDraw::GetLightingEnabled() const {
-		return pImpl->m_LightingEnabled;
+	bool BcBaseDraw::GetLightingEnabled() const {
+		return pImpl->m_BcDrawObject.m_LightingEnabled;
 
 	}
-	void BcStaticBaseDraw::SetLightingEnabled(bool value) {
-		pImpl->m_LightingEnabled = value;
+	void BcBaseDraw::SetLightingEnabled(bool value) {
+		pImpl->m_BcDrawObject.m_LightingEnabled = value;
 	}
-	bool BcStaticBaseDraw::GetPerPixelLighting() const {
-		return pImpl->m_PreferPerPixelLighting;
-	}
-
-	bool BcStaticBaseDraw::IsPerPixelLighting() const {
-		return pImpl->m_PreferPerPixelLighting;
-
-	}
-	void BcStaticBaseDraw::SetPerPixelLighting(bool value) {
-		pImpl->m_PreferPerPixelLighting = value;
+	bool BcBaseDraw::GetPerPixelLighting() const {
+		return pImpl->m_BcDrawObject.m_PreferPerPixelLighting;
 	}
 
-	void BcStaticBaseDraw::SetLightingParamaters() {
+	bool BcBaseDraw::IsPerPixelLighting() const {
+		return pImpl->m_BcDrawObject.m_PreferPerPixelLighting;
+
+	}
+	void BcBaseDraw::SetPerPixelLighting(bool value) {
+		pImpl->m_BcDrawObject.m_PreferPerPixelLighting = value;
+	}
+
+	void BcBaseDraw::SetLightingParamaters() {
 		//ライトを得る
 		auto PtrLightObj = GetGameObject()->GetStage()->GetLight();
 		auto PtrMultiLight = dynamic_pointer_cast<MultiLight>(PtrLightObj);
@@ -380,28 +439,28 @@ namespace basecross {
 	}
 
 
-	bool BcStaticBaseDraw::GetBiasedNormals() const {
-		return pImpl->m_BiasedNormals;
+	bool BcBaseDraw::GetBiasedNormals() const {
+		return pImpl->m_BcDrawObject.m_BiasedNormals;
 	}
 
-	bool BcStaticBaseDraw::IsBiasedNormals() const {
-		return pImpl->m_BiasedNormals;
+	bool BcBaseDraw::IsBiasedNormals() const {
+		return pImpl->m_BcDrawObject.m_BiasedNormals;
 	}
 
-	void BcStaticBaseDraw::SetBiasedNormals(bool value) {
-		pImpl->m_BiasedNormals = value;
+	void BcBaseDraw::SetBiasedNormals(bool value) {
+		pImpl->m_BcDrawObject.m_BiasedNormals = value;
 	}
 
-	bsm::Col4 BcStaticBaseDraw::GetAmbientLightColor()const {
-		return pImpl->m_AmbientLightColor;
+	bsm::Col4 BcBaseDraw::GetAmbientLightColor()const {
+		return pImpl->m_BcDrawObject.m_AmbientLightColor;
 	}
 
-	void BcStaticBaseDraw::SetAmbientLightColor(const bsm::Col4& value) {
-		pImpl->m_AmbientLightColor = value;
+	void BcBaseDraw::SetAmbientLightColor(const bsm::Col4& value) {
+		pImpl->m_BcDrawObject.m_AmbientLightColor = value;
 	}
-	void BcStaticBaseDraw::ValidateLightIndex(int whichLight)
+	void BcBaseDraw::ValidateLightIndex(int whichLight)
 	{
-		if (whichLight < 0 || whichLight >= Impl::MaxDirectionalLights)
+		if (whichLight < 0 || whichLight >= BcDrawObject::MaxDirectionalLights)
 		{
 			throw BaseException(
 				L"ライトのインデックスが範囲外です",
@@ -411,94 +470,186 @@ namespace basecross {
 		}
 	}
 
-	int BcStaticBaseDraw::GetMaxDirectionalLights() {
-		return Impl::MaxDirectionalLights;
+	int BcBaseDraw::GetMaxDirectionalLights() {
+		return BcDrawObject::MaxDirectionalLights;
 	}
 
-	bool BcStaticBaseDraw::GetLightEnabled(int whichLight)const {
+	bool BcBaseDraw::GetLightEnabled(int whichLight)const {
 		ValidateLightIndex(whichLight);
-		return pImpl->m_LightEnabled[whichLight];
+		return pImpl->m_BcDrawObject.m_LightEnabled[whichLight];
 	}
 
-	bool BcStaticBaseDraw::IsLightEnabled(int whichLight)const {
+	bool BcBaseDraw::IsLightEnabled(int whichLight)const {
 		ValidateLightIndex(whichLight);
-		return pImpl->m_LightEnabled[whichLight];
+		return pImpl->m_BcDrawObject.m_LightEnabled[whichLight];
 	}
-	void BcStaticBaseDraw::SetLightEnabled(int whichLight, bool value) {
+	void BcBaseDraw::SetLightEnabled(int whichLight, bool value) {
 		ValidateLightIndex(whichLight);
-		pImpl->m_LightEnabled[whichLight] = value;
+		pImpl->m_BcDrawObject.m_LightEnabled[whichLight] = value;
 	}
 
-	bsm::Vec3 BcStaticBaseDraw::GetLightDirection(int whichLight) const {
+	bsm::Vec3 BcBaseDraw::GetLightDirection(int whichLight) const {
 		ValidateLightIndex(whichLight);
-		return pImpl->m_LightDirection[whichLight];
+		return pImpl->m_BcDrawObject.m_LightDirection[whichLight];
 	}
 
-	void BcStaticBaseDraw::SetLightDirection(int whichLight, const bsm::Vec3& value) {
+	void BcBaseDraw::SetLightDirection(int whichLight, const bsm::Vec3& value) {
 		ValidateLightIndex(whichLight);
-		pImpl->m_LightDirection[whichLight] = value;
+		pImpl->m_BcDrawObject.m_LightDirection[whichLight] = value;
 	}
 
-	bsm::Col4 BcStaticBaseDraw::GetLightDiffuseColor(int whichLight) const {
+	bsm::Col4 BcBaseDraw::GetLightDiffuseColor(int whichLight) const {
 		ValidateLightIndex(whichLight);
-		return pImpl->m_LightDiffuseColor[whichLight];
+		return pImpl->m_BcDrawObject.m_LightDiffuseColor[whichLight];
 	}
 
 
-	void BcStaticBaseDraw::SetLightDiffuseColor(int whichLight, const bsm::Col4& value) {
+	void BcBaseDraw::SetLightDiffuseColor(int whichLight, const bsm::Col4& value) {
 		ValidateLightIndex(whichLight);
-		pImpl->m_LightDiffuseColor[whichLight] = value;
+		pImpl->m_BcDrawObject.m_LightDiffuseColor[whichLight] = value;
 	}
 
-	bsm::Col4 BcStaticBaseDraw::GetLightSpecularColor(int whichLight) const {
+	bsm::Col4 BcBaseDraw::GetLightSpecularColor(int whichLight) const {
 		ValidateLightIndex(whichLight);
-		return pImpl->m_LightSpecularColor[whichLight];
+		return pImpl->m_BcDrawObject.m_LightSpecularColor[whichLight];
 	}
 
-	void BcStaticBaseDraw::SetLightSpecularColor(int whichLight, const bsm::Col4& value) {
+	void BcBaseDraw::SetLightSpecularColor(int whichLight, const bsm::Col4& value) {
 		ValidateLightIndex(whichLight);
-		pImpl->m_LightSpecularColor[whichLight] = value;
+		pImpl->m_BcDrawObject.m_LightSpecularColor[whichLight] = value;
 	}
 
 
-	bool BcStaticBaseDraw::GetFogEnabled() const {
-		return pImpl->m_FogEnabled;
+	bool BcBaseDraw::GetFogEnabled() const {
+		return pImpl->m_BcDrawObject.m_FogEnabled;
 
 	}
-	bool BcStaticBaseDraw::IsFogEnabled() const {
-		return pImpl->m_FogEnabled;
+	bool BcBaseDraw::IsFogEnabled() const {
+		return pImpl->m_BcDrawObject.m_FogEnabled;
 	}
-	void BcStaticBaseDraw::SetFogEnabled(bool b) {
-		pImpl->m_FogEnabled = b;
-	}
-
-	float BcStaticBaseDraw::GetFogStart() const {
-		return pImpl->m_FogStart;
+	void BcBaseDraw::SetFogEnabled(bool b) {
+		pImpl->m_BcDrawObject.m_FogEnabled = b;
 	}
 
-	void BcStaticBaseDraw::SetFogStart(float value) {
+	float BcBaseDraw::GetFogStart() const {
+		return pImpl->m_BcDrawObject.m_FogStart;
+	}
+
+	void BcBaseDraw::SetFogStart(float value) {
 		//常にマイナス値
-		pImpl->m_FogStart = -(abs(value));
+		pImpl->m_BcDrawObject.m_FogStart = -(abs(value));
 	}
 
-	float BcStaticBaseDraw::GetFogEnd() const {
-		return pImpl->m_FogEnd;
+	float BcBaseDraw::GetFogEnd() const {
+		return pImpl->m_BcDrawObject.m_FogEnd;
 	}
-	void BcStaticBaseDraw::SetFogEnd(float value) {
+	void BcBaseDraw::SetFogEnd(float value) {
 		//常にマイナス値
-		pImpl->m_FogEnd = -(abs(value));
+		pImpl->m_BcDrawObject.m_FogEnd = -(abs(value));
 	}
 
 
 
-	bsm::Col4 BcStaticBaseDraw::GetFogColor() const {
-		return pImpl->m_FogColor;
+	bsm::Col4 BcBaseDraw::GetFogColor() const {
+		return pImpl->m_BcDrawObject.m_FogColor;
 	}
-	void BcStaticBaseDraw::SetFogColor(const bsm::Col4& col) {
-		pImpl->m_FogColor = col;
+	void BcBaseDraw::SetFogColor(const bsm::Col4& col) {
+		pImpl->m_BcDrawObject.m_FogColor = col;
+	}
+	bool BcBaseDraw::GetOwnShadowActive() const {
+		return pImpl->m_BcDrawObject.m_OwnShadowActive;
+	}
+	bool BcBaseDraw::IsOwnShadowActive() const {
+		return pImpl->m_BcDrawObject.m_OwnShadowActive;
+	}
+	void BcBaseDraw::SetOwnShadowActive(bool b) {
+		pImpl->m_BcDrawObject.m_OwnShadowActive = b;
 	}
 
-	void BcStaticBaseDraw::SetConstants(BasicConstants& BcCb, bool shadowUse) {
+	bool BcBaseDraw::GetModelDiffusePriority() const {
+		return pImpl->m_BcDrawObject.m_ModelDiffusePriority;
+
+	}
+	bool BcBaseDraw::IsModelDiffusePriority() const {
+		return pImpl->m_BcDrawObject.m_ModelDiffusePriority;
+
+	}
+	void BcBaseDraw::SetModelDiffusePriority(bool b) {
+		pImpl->m_BcDrawObject.m_ModelDiffusePriority = b;
+	}
+	bool BcBaseDraw::GetModelEmissivePriority() const {
+		return pImpl->m_BcDrawObject.m_ModelEmissivePriority;
+	}
+	bool BcBaseDraw::IsModelEmissivePriority() const {
+		return pImpl->m_BcDrawObject.m_ModelEmissivePriority;
+	}
+	void BcBaseDraw::SetModelEmissivePriority(bool b) {
+		pImpl->m_BcDrawObject.m_ModelEmissivePriority = b;
+	}
+
+
+	bool BcBaseDraw::GetModelTextureEnabled() const {
+		return pImpl->m_BcDrawObject.m_ModelTextureEnabled;
+
+	}
+	bool BcBaseDraw::IsModelTextureEnabled() const {
+		return pImpl->m_BcDrawObject.m_ModelTextureEnabled;
+	}
+	void BcBaseDraw::SetModelTextureEnabled(bool b) {
+		pImpl->m_BcDrawObject.m_ModelTextureEnabled = b;
+	}
+
+	shared_ptr<TextureResource> BcBaseDraw::GetNormalMapTextureResource() const {
+		auto shptr = pImpl->m_BcDrawObject.m_NormalMapTextureResource.lock();
+		if (shptr) {
+			return shptr;
+		}
+		return nullptr;
+	}
+	void BcBaseDraw::SetNormalMapTextureResource(const shared_ptr<TextureResource>& TextureRes) {
+		pImpl->m_BcDrawObject.m_NormalMapTextureResource = TextureRes;
+
+	}
+	void BcBaseDraw::SetNormalMapTextureResource(const wstring& TextureKey) {
+		pImpl->m_BcDrawObject.m_NormalMapTextureResource = App::GetApp()->GetResource<TextureResource>(TextureKey);
+	}
+
+
+	const vector<weak_ptr<TextureResource>>& BcBaseDraw::GetNormalMapTextureResourceVec() const {
+		return pImpl->m_BcDrawObject.m_NormalMapTextureResourceVec;
+
+	}
+	vector<weak_ptr<TextureResource>>& BcBaseDraw::GetNormalMapTextureResourceVec() {
+		return pImpl->m_BcDrawObject.m_NormalMapTextureResourceVec;
+	}
+
+	void BcBaseDraw::BoneInit() {
+		pImpl->m_BcDrawObject.BoneInit();
+	}
+
+	void BcBaseDraw::InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
+		pImpl->m_BcDrawObject.InterpolationMatrix(m1, m2, t, out);
+	}
+
+	void BcBaseDraw::AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
+		float SamplesParSecond) {
+		pImpl->m_BcDrawObject.AddAnimation(Name, StartSample, SampleLength, Loop, SamplesParSecond);
+	}
+	void  BcBaseDraw::ChangeCurrentAnimation(const wstring& AnemationName, float StartTime) {
+		pImpl->m_BcDrawObject.ChangeCurrentAnimation(AnemationName, StartTime);
+	}
+	const wstring& BcBaseDraw::GetCurrentAnimation() const {
+		return pImpl->m_BcDrawObject.m_CurrentAnimeName;
+
+	}
+	bool BcBaseDraw::UpdateAnimation(float ElapsedTime) {
+		return pImpl->m_BcDrawObject.UpdateAnimation(ElapsedTime);
+	}
+	const vector< bsm::Mat4x4 >* BcBaseDraw::GetVecLocalBonesPtr() const {
+		return &pImpl->m_BcDrawObject.m_LocalBonesMatrix;
+	}
+
+	void BcBaseDraw::SetConstants(BasicConstants& BcCb, const MeshPrimData& data) {
 		//行列の定義
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
 		//カメラを得る
@@ -516,7 +667,13 @@ namespace basecross {
 		}
 		auto StageLight = GetGameObject()->OnGetDrawLight();
 		//ワールド行列
-		bsm::Mat4x4 world = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
+		bsm::Mat4x4 world;
+		if (data.m_UseMeshToTransformMatrix) {
+			world = data.m_MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+		}
+		else {
+			world = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
+		}
 		//ビュー行列
 		bsm::Mat4x4 view = CameraPtr->GetViewMatrix();
 		//射影行列
@@ -605,16 +762,16 @@ namespace basecross {
 		BcCb.diffuseColor = XMVectorSelect(alphaVector, diffuse * alphaVector, g_XMSelect1110);
 
 		//影用
-		if (shadowUse) {
+		if (GetOwnShadowActive()) {
 			bsm::Vec3 CalcLightDir(StageLight.m_Directional * -1.0);
 			bsm::Vec3 LightAt(CameraPtr->GetAt());
 			bsm::Vec3 LightEye(CalcLightDir);
 			LightEye *= Shadowmap::GetLightHeight();
 			LightEye = LightAt + LightEye;
-			bsm::Vec4 LightEye4(LightEye,1.0f);
+			bsm::Vec4 LightEye4(LightEye, 1.0f);
 			LightEye4.w = 1.0f;
 			BcCb.lightPos = LightEye4;
-			bsm::Vec4 eyePos4(CameraPtr->GetEye(),1.0f);
+			bsm::Vec4 eyePos4(CameraPtr->GetEye(), 1.0f);
 			eyePos4.w = 1.0f;
 			BcCb.eyePos = eyePos4;
 			bsm::Mat4x4 LightView, LightProj;
@@ -625,202 +782,140 @@ namespace basecross {
 			BcCb.lightView = bsm::transpose(LightView);
 			BcCb.lightProjection = bsm::transpose(LightProj);
 		}
-	}
-
-	void BcStaticBaseDraw::SetTextureAndSampler(ID3D11DeviceContext2* pD3D11DeviceContext, const shared_ptr<TextureResource>& TexRes) {
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//テクスチャとサンプラー
-		if (TexRes) {
-			pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
-			//サンプラーは設定に任せる
-			SetDeviceSamplerState();
-		}
-		else {
-			//シェーダーリソースもクリア
-			pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-			//サンプラーもクリア
-			pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
+		//ボーンの設定
+		size_t BoneSz = pImpl->m_BcDrawObject.m_LocalBonesMatrix.size();
+		if (BoneSz > 0) {
+			UINT cb_count = 0;
+			for (size_t b = 0; b < BoneSz; b++) {
+				bsm::Mat4x4 mat = pImpl->m_BcDrawObject.m_LocalBonesMatrix[b];
+				mat.transpose();
+				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
+				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+				cb_count += 3;
+			}
 		}
 	}
 
-	void BcStaticBaseDraw::SetTextureAndSamplerWithTangent(ID3D11DeviceContext2* pD3D11DeviceContext, bool IsOwnShadow,
-		const shared_ptr<TextureResource>& TexRes,
-		const shared_ptr<TextureResource>& NormalTexRes) {
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//テクスチャとサンプラー
-		//影付き無しでセットする位置が違う
-		if (IsOwnShadow) {
-			if (TexRes) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
-			//法線マップ
-			//２番目に入れる
-			pD3D11DeviceContext->PSSetShaderResources(2, 1, NormalTexRes->GetShaderResourceView().GetAddressOf());
-		}
-		else {
-			if (TexRes) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, TexRes->GetShaderResourceView().GetAddressOf());
-				//サンプラーは設定に任せる
-				SetDeviceSamplerState();
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				pD3D11DeviceContext->PSSetSamplers(0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, pNullSR);
-			}
-			//法線マップ
-			//1番目に入れる
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, NormalTexRes->GetShaderResourceView().GetAddressOf());
-		}
-
-
-	}
-
-
-
-
 	//--------------------------------------------------------------------------------------
-	//	BcPCStaticDraw::Impl
+	///BcPCStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	struct BcPCStaticDraw::Impl {
-		Impl()
-		{}
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	BcPCStatic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	BcPCStaticDraw::BcPCStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcStaticBaseDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPCStaticDraw::BcPCStaticDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPCStaticDraw::~BcPCStaticDraw() {}
-
 	void BcPCStaticDraw::OnCreate() {
 		SetLightingEnabled(false);
 	}
-
 	void BcPCStaticDraw::OnDraw() {
-		DrawStaticNoLight<BcVSPCStatic, BcPSPCStatic>();
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			DrawStatic<BcVSPCStatic, BcPSPCStatic>(PtrMeshResource->GetMashData());
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				DrawStatic<BcVSPCStatic, BcPSPCStatic>(vec[i]);
+			}
+		}
+		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->InitializeStates();
 	}
 
-
 	//--------------------------------------------------------------------------------------
-	//	BcPTStaticDraw::Impl
+	///	BasicPTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	struct BcPTStaticDraw::Impl {
-		Impl() 
-		{}
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	BcPTStatic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	BcPTStaticDraw::BcPTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcStaticBaseDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPTStaticDraw::BcPTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPTStaticDraw::~BcPTStaticDraw() {}
-
 	void BcPTStaticDraw::OnCreate() {
 		SetLightingEnabled(false);
 	}
-
 	void BcPTStaticDraw::OnDraw() {
-		DrawStaticNoLight<BcVSPTStatic, BcPSPTStatic>();
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			DrawStatic<BcVSPTStatic, BcPSPTStatic>(PtrMeshResource->GetMashData());
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				DrawStatic<BcVSPTStatic, BcPSPTStatic>(vec[i]);
+			}
+		}
+		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->InitializeStates();
 	}
 
 	//--------------------------------------------------------------------------------------
-	//	BcPCTStaticDraw::Impl
+	///	BasicPCTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	struct BcPCTStaticDraw::Impl {
-		Impl()
-		{}
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	BasicPCT描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	BcPCTStaticDraw::BcPCTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcStaticBaseDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
-	BcPCTStaticDraw::~BcPCTStaticDraw() {}
+	BcPCTStaticDraw::BcPCTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
+	BcPCTStaticDraw::~BcPCTStaticDraw(){}
 
 	void BcPCTStaticDraw::OnCreate() {
 		SetLightingEnabled(false);
 	}
-
 	void BcPCTStaticDraw::OnDraw() {
-		DrawStaticNoLight<BcVSPCTStatic, BcPSPTStatic>();
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			DrawStatic<BcVSPCTStatic, BcPSPTStatic>(PtrMeshResource->GetMashData());
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				DrawStatic<BcVSPCTStatic, BcPSPTStatic>(vec[i]);
+			}
+		}
+		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->InitializeStates();
 	}
 
+
+
+
 	//--------------------------------------------------------------------------------------
-	//	BcPNTStaticDraw::Impl
+	///	BcPNTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	struct BcPNTStaticDraw::Impl {
-		bool m_OwnShadowActive;
-		Impl():
-			m_OwnShadowActive(false)
-		{}
-	};
-	//--------------------------------------------------------------------------------------
-	///	BasicPNT描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	BcPNTStaticDraw::BcPNTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcStaticBaseDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPNTStaticDraw::BcPNTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPNTStaticDraw::~BcPNTStaticDraw() {}
-
-
-	bool BcPNTStaticDraw::GetOwnShadowActive() const {
-		return pImpl->m_OwnShadowActive;
-	}
-	bool BcPNTStaticDraw::IsOwnShadowActive() const {
-		return pImpl->m_OwnShadowActive;
-	}
-	void BcPNTStaticDraw::SetOwnShadowActive(bool b) {
-		pImpl->m_OwnShadowActive = b;
-	}
 
 	void BcPNTStaticDraw::OnCreate() {
 		SetLightingEnabled(true);
@@ -829,252 +924,140 @@ namespace basecross {
 			SetLightEnabled(i, true);
 		}
 	}
-
 	void BcPNTStaticDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
-		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTStaticDraw::OnDraw()"
-			);
-		}
-		auto shTex = GetTextureResource();
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを設定
-		SetLightingParamaters();
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-		if (shTex) {
-			//テクスチャがある
-			BcCb.activeFlg.y = 1;
-		}
-		else {
-			//テクスチャがない
-			BcCb.activeFlg.y = 0;
-		}
-		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-		//コンスタントバッファの設定
-		ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-		ID3D11Buffer* pNullConstantBuffer = nullptr;
-		//頂点シェーダに渡す
-		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-		//ピクセルシェーダに渡す
-		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-
-		//シェーダの設定
-		if (IsPerPixelLighting()) {
-			//ピクセルライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBnShadow::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLShadow::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPLShadow::GetPtr()->GetShader(), nullptr, 0);
-			}
-			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBn::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPL::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPL::GetPtr()->GetShader(), nullptr, 0);
-			}
-		}
-		else {
-			//頂点ライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLBnShadow::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLShadow::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVLShadow::GetPtr()->GetShader(), nullptr, 0);
-			}
-			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLBn::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVL::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVL::GetPtr()->GetShader(), nullptr, 0);
-			}
-		}
-
-		//テクスチャとサンプラー
-		SetTextureAndSampler(pD3D11DeviceContext, shTex);
-
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-		//透明処理なら
 		if (GetGameObject()->GetAlphaActive()) {
-			//ブレンドステート
-			//透明処理
-			if (GetBlendState() == BlendState::Additive) {
-				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//シェーダの設定
+			if (IsPerPixelLighting()) {
+				//ピクセルライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawStatic<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawStatic<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
+				}
+				else {
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawStatic<BcVSPNTStaticPLBn, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawStatic<BcVSPNTStaticPL, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
+				}
 			}
 			else {
-				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				//頂点ライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawStatic<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawStatic<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
+				}
+				else {
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawStatic<BcVSPNTStaticVLBn, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawStatic<BcVSPNTStaticVL, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
+				}
 			}
-			//ラスタライザステート(裏描画)
-			pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
-			//ラスタライザステート（表描画）
-			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
 		}
-		else {
-			//透明処理しない
-			//ブレンドステートは設定に任せる
-			SetDeviceBlendState();
-			//ラスタライザステートは設定に任せる
-			SetDeviceRasterizerState();
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				if (IsPerPixelLighting()) {
+					//ピクセルライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawStatic<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawStatic<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawStatic<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawStatic<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
+						}
+					}
+				}
+				else {
+					//頂点ライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawStatic<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawStatic<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawStatic<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawStatic<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+						}
+					}
+				}
+			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
-
 	}
 
-	//--------------------------------------------------------------------------------------
-	//	BcPNTStaticModelDraw::Impl
-	//--------------------------------------------------------------------------------------
-	struct BcPNTStaticModelDraw::Impl {
-		bool m_ModelDiffusePriority;
-		bool m_ModelEmissivePriority;
-		bool m_ModelTextureEnabled;
-		Impl() :
-			m_ModelDiffusePriority(true),
-			m_ModelEmissivePriority(true),
-			m_ModelTextureEnabled(true)
-		{}
-	};
-
 
 	//--------------------------------------------------------------------------------------
-	///	BasicPNTモデル描画コンポーネント
+	///	BasicPNTStaticモデル描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	BcPNTStaticModelDraw::BcPNTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcPNTStaticDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPNTStaticModelDraw::BcPNTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPNTStaticModelDraw::~BcPNTStaticModelDraw() {}
-
-
-	bool BcPNTStaticModelDraw::GetModelDiffusePriority() const {
-		return pImpl->m_ModelDiffusePriority;
-
-	}
-	bool BcPNTStaticModelDraw::IsModelDiffusePriority() const {
-		return pImpl->m_ModelDiffusePriority;
-
-	}
-	void BcPNTStaticModelDraw::SetModelDiffusePriority(bool b) {
-		pImpl->m_ModelDiffusePriority = b;
-	}
-	bool BcPNTStaticModelDraw::GetModelEmissivePriority() const {
-		return pImpl->m_ModelEmissivePriority;
-	}
-	bool BcPNTStaticModelDraw::IsModelEmissivePriority() const {
-		return pImpl->m_ModelEmissivePriority;
-	}
-	void BcPNTStaticModelDraw::SetModelEmissivePriority(bool b) {
-		pImpl->m_ModelEmissivePriority = b;
-	}
-
-
-	bool BcPNTStaticModelDraw::GetModelTextureEnabled() const {
-		return pImpl->m_ModelTextureEnabled;
-
-	}
-	bool BcPNTStaticModelDraw::IsModelTextureEnabled() const {
-		return pImpl->m_ModelTextureEnabled;
-	}
-	void BcPNTStaticModelDraw::SeModelTextureEnabled(bool b) {
-		pImpl->m_ModelTextureEnabled = b;
-	}
-
-
-
 
 	void BcPNTStaticModelDraw::OnCreate() {
 		SetLightingEnabled(true);
@@ -1083,250 +1066,147 @@ namespace basecross {
 			SetLightEnabled(i, true);
 		}
 	}
-
 	void BcPNTStaticModelDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
 		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTStaticModelDraw::OnDraw()"
-			);
-		}
-		//ライトを設定
-		SetLightingParamaters();
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
-
-
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//シェーダの設定
-		if (IsPerPixelLighting()) {
-			//ピクセルライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBnShadow::GetPtr()->GetInputLayout());
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//シェーダの設定
+			if (IsPerPixelLighting()) {
+				//ピクセルライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLShadow::GetPtr()->GetInputLayout());
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTStaticPLBn, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTStaticPL, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPLShadow::GetPtr()->GetShader(), nullptr, 0);
 			}
 			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPLBn::GetPtr()->GetInputLayout());
+				//頂点ライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticPL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticPL::GetPtr()->GetInputLayout());
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTStaticVLBn, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTStaticVL, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPL::GetPtr()->GetShader(), nullptr, 0);
 			}
 		}
-		else {
-			//頂点ライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLBnShadow::GetPtr()->GetInputLayout());
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				if (IsPerPixelLighting()) {
+					//ピクセルライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
+						}
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLShadow::GetPtr()->GetInputLayout());
+					//頂点ライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+						}
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVLShadow::GetPtr()->GetShader(), nullptr, 0);
-			}
-			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVLBn::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTStaticVL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTStaticVL::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVL::GetPtr()->GetShader(), nullptr, 0);
-			}
-		}
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-		//これよりマテリアルごとの描画
-		auto& MatVec = MeshRes->GetMaterialExVec();
-		for (auto& m : MatVec) {
-			if (m.m_TextureResource && IsModelTextureEnabled()) {
-				//テクスチャがありテクスチャが有効である
-				BcCb.activeFlg.y = 1;
-			}
-			else {
-				//テクスチャがない
-				BcCb.activeFlg.y = 0;
-			}
-			if (IsModelDiffusePriority()) {
-				BcCb.diffuseColor = m.m_Diffuse;
-			}
-			if (IsModelEmissivePriority()) {
-				bsm::Col4 Em4 = m.m_Emissive;
-				Em4.w = 0.0f;
-				BcCb.emissiveColor = Em4;
-			}
-			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-			ID3D11Buffer* pNullConstantBuffer = nullptr;
-			//頂点シェーダに渡す
-			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ピクセルシェーダに渡す
-			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//テクスチャとサンプラー
-			SetTextureAndSampler(pD3D11DeviceContext, m.m_TextureResource);
-			//透明処理なら
-			if (GetGameObject()->GetAlphaActive()) {
-				//ブレンドステート
-				//透明処理
-				if (GetBlendState() == BlendState::Additive) {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
-				}
-				else {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
-				}
-				//ラスタライザステート(裏描画)
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				//ラスタライザステート（表描画）
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-			}
-			else {
-				//透明処理しない
-				//ブレンドステートは設定に任せる
-				SetDeviceBlendState();
-				//ラスタライザステートは設定に任せる
-				SetDeviceRasterizerState();
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
 			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
-
-
 	//--------------------------------------------------------------------------------------
-	//	BcPNTBoneModelDraw::Impl
+	///	BcPNTBoneModel描画コンポーネント（ボーンモデル描画用）
 	//--------------------------------------------------------------------------------------
-	struct BcPNTBoneModelDraw::Impl {
-		vector<bsm::Mat4x4> m_LocalBonesMatrix;
-		map<wstring, AnimationData> m_AnimationMap;
-		wstring m_CurrentAnimeName;
-		float m_CurrentAnimeTime;
-		Impl() :
-			m_CurrentAnimeName(L""),
-			m_CurrentAnimeTime(0)
-		{}
-		~Impl() {}
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	BcPNTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
-	//--------------------------------------------------------------------------------------
-	BcPNTBoneModelDraw::BcPNTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcPNTStaticModelDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPNTBoneModelDraw::BcPNTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPNTBoneModelDraw::~BcPNTBoneModelDraw() {}
 
-
 	void BcPNTBoneModelDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
-		if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0) {
-			throw BaseException(
-				L"メッシュがボーンメッシュではありません",
-				L"if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0)",
-				L"BcPNTBoneModelDraw::SetMeshResource()"
-			);
-
-		}
-		//先頭のボーン数の行列で初期化
-		pImpl->m_LocalBonesMatrix.resize(MeshRes->GetBoneCount());
-		auto& SampleMatrixVec = MeshRes->GetSampleMatrixVec();
-		for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-			pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[i];
-		}
-		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		BcBaseDraw::SetMeshResource(MeshRes);
+		BoneInit();
 	}
 
 	void BcPNTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
 		BcPNTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
-
 
 
 	void BcPNTBoneModelDraw::OnCreate() {
@@ -1337,442 +1217,139 @@ namespace basecross {
 		}
 	}
 
-	void BcPNTBoneModelDraw::AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
-		float SamplesParSecond) {
-		if (Name == L"") {
-			throw BaseException(
-				L"アニメーション名が空白です",
-				L"if (Name == L\"\")",
-				L"BcPNTBoneModelDraw::AddAnimation()"
-			);
-		}
-		if (StartSample < 0 || SampleLength < 0) {
-			throw BaseException(
-				L"開始サンプルかサンプル数が0未満です",
-				L"if (StartSample < 0 || SampleLength < 0)",
-				L"BcPNTBoneModelDraw::AddAnimation()"
-			);
-		}
-		if (SamplesParSecond <= 0.0f) {
-			throw BaseException(
-				L"サンプル毎秒が0以下です",
-				L"if (SamplesParSecond <= 0.0f)",
-				L"BcPNTBoneModelDraw::AddAnimation()"
-			);
-		}
-		//重複キーがあれば差し替える
-		AnimationData Data((UINT)StartSample, (UINT)SampleLength, Loop, SamplesParSecond);
-		pImpl->m_AnimationMap[Name] = Data;
-		if (pImpl->m_AnimationMap.size() == 1) {
-			//1つしか登録がなかったら、カレントアニメは該当アニメとなる
-			ChangeCurrentAnimation(Name, 0);
-		}
-
-
-	}
-
-	void BcPNTBoneModelDraw::ChangeCurrentAnimation(const wstring& AnemationName, float StartTime) {
-		if (AnemationName == L"") {
-			throw BaseException(
-				L"アニメーション名が空白です",
-				L"if (AnemationName == L\"\")",
-				L"BcPNTBoneModelDraw::SetCurrentAnimation()"
-			);
-		}
-		auto it = pImpl->m_AnimationMap.find(AnemationName);
-		if (it != pImpl->m_AnimationMap.end()) {
-			//指定の名前が見つかった
-			pImpl->m_CurrentAnimeName = AnemationName;
-			pImpl->m_CurrentAnimeTime = StartTime;
-			//アニメーションは終了していない
-			it->second.m_IsAnimeEnd = false;
-		}
-		else {
-			//見つからない
-			throw BaseException(
-				L"指定のアニメーションは登録されてません",
-				AnemationName,
-				L"BcPNTBoneModelDraw::SetCurrentAnimation()"
-			);
-		}
-	}
-
-	const wstring& BcPNTBoneModelDraw::GetCurrentAnimation() const {
-		return pImpl->m_CurrentAnimeName;
-	}
-
-	bool BcPNTBoneModelDraw::UpdateAnimation(float ElapsedTime) {
-		if (ElapsedTime < 0.0f) {
-			throw BaseException(
-				L"アニメーション更新にマイナスは設定できません",
-				L"if (ElapsedTime < 0.0f)",
-				L"BcPNTBoneModelDraw::UpdateAnimation()"
-			);
-		}
-		if (pImpl->m_CurrentAnimeName == L"") {
-			//見つからない
-			throw BaseException(
-				L"カレントアニメーションが設定されてません",
-				L"if (pImpl->m_CurrentAnimeName == L\"\")",
-				L"BcPNTBoneModelDraw::UpdateAnimation()"
-			);
-		}
-		auto PtrMesh = GetMeshResource();
-		UINT SampleCount = PtrMesh->GetSampleCount();
-		auto& SampleMatrixVec = PtrMesh->GetSampleMatrixVec();
-		UINT BoneCount = PtrMesh->GetBoneCount();
-		auto& TgtAnimeData = pImpl->m_AnimationMap[pImpl->m_CurrentAnimeName];
-		if (TgtAnimeData.m_StartSample >= SampleCount) {
-			//スタートのサンプルが最後のサンプル以降だった
-			TgtAnimeData.m_StartSample = SampleCount - 1;
-			TgtAnimeData.m_SampleLength = 0;
-			UINT UITgtSample = TgtAnimeData.m_StartSample;
-			//最後のサンプルを表示
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-			}
-			pImpl->m_CurrentAnimeTime = 0;
-			if (TgtAnimeData.m_IsLoop) {
-				TgtAnimeData.m_IsAnimeEnd = false;
-				return false;
-			}
-			else {
-				TgtAnimeData.m_IsAnimeEnd = true;
-				return true;
-			}
-		}
-		//すでにアニメが終了している
-		if (TgtAnimeData.m_IsAnimeEnd) {
-			//現在のローカル行列を使用
-			return true;
-		}
-		//カレントタイムを更新
-		pImpl->m_CurrentAnimeTime += ElapsedTime;
-		//スタート位置を計算
-		auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + pImpl->m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
-		UINT UITgtSample = (UINT)FLOATTgtSample;
-		UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
-		if (UILastSample >= SampleCount) {
-			UILastSample = SampleCount - 1;
-		}
-		if (UITgtSample >= UILastSample) {
-			UITgtSample = UILastSample - 1;
-			//最後のサンプルを表示
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-			}
-			if (TgtAnimeData.m_IsLoop) {
-				TgtAnimeData.m_IsAnimeEnd = false;
-				//ループするのでカレントタイムを0にする
-				pImpl->m_CurrentAnimeTime = 0;
-				return false;
-			}
-			else {
-				pImpl->m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
-				TgtAnimeData.m_IsAnimeEnd = true;
-				return true;
-			}
-		}
-		else {
-			//サンプルとサンプルの間の割合を計算
-			FLOATTgtSample -= (float)UITgtSample;
-			UINT UINextSample = UITgtSample + 1;
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				InterpolationMatrix(
-					SampleMatrixVec[BoneCount * UITgtSample + i],
-					SampleMatrixVec[BoneCount * UINextSample + i],
-					FLOATTgtSample, pImpl->m_LocalBonesMatrix[i]);
-			}
-			//アニメは終わってない
-			return false;
-		}
-	}
-
-
-	void BcPNTBoneModelDraw::InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
-		bsm::Vec3 Scale1, Pos1;
-		bsm::Quat Qt1;
-		m1.decompose(Scale1, Qt1, Pos1);
-		Qt1.normalize();
-
-		bsm::Vec3 Scale2, Pos2;
-		bsm::Quat Qt2;
-
-		m2.decompose(Scale2, Qt2, Pos2);
-		Qt2.normalize();
-
-		bsm::Vec3 ScaleOut, PosOut;
-		bsm::Quat QtOut;
-
-		ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
-		PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
-		QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
-		out.affineTransformation(ScaleOut,bsm::Vec3(0,0,0), QtOut, PosOut);
-	}
-
-
-	const vector< bsm::Mat4x4 >* BcPNTBoneModelDraw::GetVecLocalBonesPtr() const {
-		return &pImpl->m_LocalBonesMatrix;
-	}
-
-
 	void BcPNTBoneModelDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
 		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTStaticModelDraw::OnDraw()"
-			);
-		}
-		//ライトを設定
-		SetLightingParamaters();
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
-		//ボーンの設定
-		size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
-		UINT cb_count = 0;
-		for (size_t b = 0; b < BoneSz; b++) {
-			bsm::Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
-			mat.transpose();
-			BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
-			BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-			BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-			cb_count += 3;
-		}
-
-
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//シェーダの設定
-		if (IsPerPixelLighting()) {
-			//ピクセルライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLBnShadow::GetPtr()->GetInputLayout());
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//シェーダの設定
+			if (IsPerPixelLighting()) {
+				//ピクセルライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTBonePLBnShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTBonePLShadow, BcPSPNTPLShadow>(PtrMeshResource->GetMashData());
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLShadow::GetPtr()->GetInputLayout());
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTBonePLBn, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTBonePL, BcPSPNTPL>(PtrMeshResource->GetMashData());
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPLShadow::GetPtr()->GetShader(), nullptr, 0);
 			}
 			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePLBn::GetPtr()->GetInputLayout());
+				//頂点ライティング
+				if (IsOwnShadowActive()) {
+					//影付き
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTBoneVLBnShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTBoneVLShadow, BcPSPNTVLShadow>(PtrMeshResource->GetMashData());
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBonePL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBonePL::GetPtr()->GetInputLayout());
+					//影無し
+					if (IsBiasedNormals()) {
+						//バイアス付き
+						DrawModel<BcVSPNTBoneVLBn, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
+					else {
+						//バイアス無し
+						DrawModel<BcVSPNTBoneVL, BcPSPNTVL>(PtrMeshResource->GetMashData());
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTPL::GetPtr()->GetShader(), nullptr, 0);
 			}
 		}
-		else {
-			//頂点ライティング
-			if (IsOwnShadowActive()) {
-				//影付き
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLBnShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLBnShadow::GetPtr()->GetInputLayout());
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				if (IsPerPixelLighting()) {
+					//ピクセルライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTBonePLBnShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTBonePLShadow, BcPSPNTPLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTBonePLBn, BcPSPNTPL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTBonePL, BcPSPNTPL>(vec[i]);
+						}
+					}
 				}
 				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLShadow::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLShadow::GetPtr()->GetInputLayout());
+					//頂点ライティング
+					if (IsOwnShadowActive()) {
+						//影付き
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTBoneVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTBoneVLShadow, BcPSPNTVLShadow>(vec[i]);
+						}
+					}
+					else {
+						//影無し
+						if (IsBiasedNormals()) {
+							//バイアス付き
+							DrawModel<BcVSPNTBoneVLBn, BcPSPNTVL>(vec[i]);
+						}
+						else {
+							//バイアス無し
+							DrawModel<BcVSPNTBoneVL, BcPSPNTVL>(vec[i]);
+						}
+					}
 				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVLShadow::GetPtr()->GetShader(), nullptr, 0);
-			}
-			else {
-				//影無し
-				if (IsBiasedNormals()) {
-					//バイアス付き
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVLBn::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVLBn::GetPtr()->GetInputLayout());
-				}
-				else {
-					//バイアス無し
-					pD3D11DeviceContext->VSSetShader(BcVSPNTBoneVL::GetPtr()->GetShader(), nullptr, 0);
-					//インプットレイアウトの設定
-					pD3D11DeviceContext->IASetInputLayout(BcVSPNTBoneVL::GetPtr()->GetInputLayout());
-				}
-				pD3D11DeviceContext->PSSetShader(BcPSPNTVL::GetPtr()->GetShader(), nullptr, 0);
-			}
-		}
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-
-		//これよりマテリアルごとの描画
-		auto& MatVec = MeshRes->GetMaterialExVec();
-		for (auto& m : MatVec) {
-			if (m.m_TextureResource && IsModelTextureEnabled()) {
-				//テクスチャがありテクスチャが有効である
-				BcCb.activeFlg.y = 1;
-			}
-			else {
-				//テクスチャがない
-				BcCb.activeFlg.y = 0;
-			}
-			if (IsModelDiffusePriority()) {
-				BcCb.diffuseColor = m.m_Diffuse;
-			}
-			if (IsModelEmissivePriority()) {
-				bsm::Col4 Em4 = m.m_Emissive;
-				Em4.w = 0.0f;
-				BcCb.emissiveColor = Em4;
-			}
-			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-			ID3D11Buffer* pNullConstantBuffer = nullptr;
-			//頂点シェーダに渡す
-			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ピクセルシェーダに渡す
-			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//テクスチャとサンプラー
-			SetTextureAndSampler(pD3D11DeviceContext, m.m_TextureResource);
-			//透明処理なら
-			if (GetGameObject()->GetAlphaActive()) {
-				//ブレンドステート
-				//透明処理
-				if (GetBlendState() == BlendState::Additive) {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
-				}
-				else {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
-				}
-				//ラスタライザステート(裏描画)
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				//ラスタライザステート（表描画）
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-			}
-			else {
-				//透明処理しない
-				//ブレンドステートは設定に任せる
-				SetDeviceBlendState();
-				//ラスタライザステートは設定に任せる
-				SetDeviceRasterizerState();
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
 			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
 
-
-
 	//--------------------------------------------------------------------------------------
-	//	BcPNTnTStaticDraw::Impl
-	//--------------------------------------------------------------------------------------
-	struct BcPNTnTStaticDraw::Impl {
-		//NormalMapテクスチャ
-		weak_ptr<TextureResource> m_NormalMapTextureResource;
-
-		bool m_OwnShadowActive;
-		Impl() :
-			m_OwnShadowActive(false)
-		{}
-	};
-	//--------------------------------------------------------------------------------------
-	///	BasicPNT描画コンポーネント
+	///	BasicPNTnTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	BcPNTnTStaticDraw::BcPNTnTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcStaticBaseDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+		BcBaseDraw(GameObjectPtr)
+	{}
 	BcPNTnTStaticDraw::~BcPNTnTStaticDraw() {}
-
-
-	bool BcPNTnTStaticDraw::GetOwnShadowActive() const {
-		return pImpl->m_OwnShadowActive;
-	}
-	bool BcPNTnTStaticDraw::IsOwnShadowActive() const {
-		return pImpl->m_OwnShadowActive;
-	}
-	void BcPNTnTStaticDraw::SetOwnShadowActive(bool b) {
-		pImpl->m_OwnShadowActive = b;
-	}
-
-	shared_ptr<TextureResource> BcPNTnTStaticDraw::GetNormalMapTextureResource() const {
-		auto shptr = pImpl->m_NormalMapTextureResource.lock();
-		if (shptr) {
-			return shptr;
-		}
-		return nullptr;
-	}
-	void BcPNTnTStaticDraw::SetNormalMapTextureResource(const shared_ptr<TextureResource>& TextureRes) {
-		pImpl->m_NormalMapTextureResource = TextureRes;
-
-	}
-	void BcPNTnTStaticDraw::SetNormalMapTextureResource(const wstring& TextureKey) {
-		pImpl->m_NormalMapTextureResource = App::GetApp()->GetResource<TextureResource>(TextureKey);
-	}
-
-
-
 	void BcPNTnTStaticDraw::OnCreate() {
 		SetLightingEnabled(true);
 		//マルチライトの設定
@@ -1780,211 +1357,61 @@ namespace basecross {
 			SetLightEnabled(i, true);
 		}
 	}
-
 	void BcPNTnTStaticDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
-		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTnTStaticDraw::OnDraw()"
-			);
-		}
-		auto shNormalTex = GetNormalMapTextureResource();
-		if (!shNormalTex) {
-			throw BaseException(
-				L"法線マップのテクスチャがありません",
-				L"if (!shNormalTex)",
-				L"BcPNTnTStaticDraw::OnDraw()"
-			);
-		}
-
-		auto shTex = GetTextureResource();
-
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを設定
-		SetLightingParamaters();
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-		if (shTex) {
-			//テクスチャがある
-			BcCb.activeFlg.y = 1;
-		}
-		else {
-			//テクスチャがない
-			BcCb.activeFlg.y = 0;
-		}
-		//コンスタントバッファの更新
-		pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-		//コンスタントバッファの設定
-		ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-		ID3D11Buffer* pNullConstantBuffer = nullptr;
-		//頂点シェーダに渡す
-		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-		//ピクセルシェーダに渡す
-		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-
-		//シェーダの設定
-		//ピクセルライティングのみ
-		if (IsOwnShadowActive()) {
-			//影付き
-			//バイアス無し
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPLShadow::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPLShadow::GetPtr()->GetShader(), nullptr, 0);
-		}
-		else {
-			//影無し
-			//バイアス無し
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPL::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPL::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
-		}
-		//テクスチャとサンプラー
-		SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), shTex, shNormalTex);
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			//常に1番目
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-
-
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-		//透明処理なら
 		if (GetGameObject()->GetAlphaActive()) {
-			//ブレンドステート
-			//透明処理
-			if (GetBlendState() == BlendState::Additive) {
-				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//ピクセルライティングのみ
+			if (IsOwnShadowActive()) {
+				//影付き
+				//バイアス無し
+				DrawStatic<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(PtrMeshResource->GetMashData());
 			}
 			else {
-				pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+				//影無し
+				//バイアス無し
+				DrawStatic<BcVSPNTnTStaticPL, BcPSPNTnTPL>(PtrMeshResource->GetMashData());
 			}
-			//ラスタライザステート(裏描画)
-			pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
-			//ラスタライザステート（表描画）
-			pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
 		}
-		else {
-			//透明処理しない
-			//ブレンドステートは設定に任せる
-			SetDeviceBlendState();
-			//ラスタライザステートは設定に任せる
-			SetDeviceRasterizerState();
-			//描画
-			pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//ピクセルライティングのみ
+				if (IsOwnShadowActive()) {
+					//影付き
+					//バイアス無し
+					DrawStatic<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
+				}
+				else {
+					//影無し
+					//バイアス無し
+					DrawStatic<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
+				}
+			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
-
 	}
-
-
-	//--------------------------------------------------------------------------------------
-	//	BcPNTnTStaticModelDraw::Impl
-	//--------------------------------------------------------------------------------------
-	struct BcPNTnTStaticModelDraw::Impl {
-		bool m_ModelDiffusePriority;
-		bool m_ModelEmissivePriority;
-		bool m_ModelTextureEnabled;
-		Impl() :
-			m_ModelDiffusePriority(true),
-			m_ModelEmissivePriority(true),
-			m_ModelTextureEnabled(true)
-		{}
-	};
-
 
 	//--------------------------------------------------------------------------------------
 	///	BasicPNTnTモデル描画コンポーネント
 	//--------------------------------------------------------------------------------------
-	BcPNTnTStaticModelDraw::BcPNTnTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcPNTnTStaticDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
-	BcPNTnTStaticModelDraw::~BcPNTnTStaticModelDraw() {}
-
-
-	bool BcPNTnTStaticModelDraw::GetModelDiffusePriority() const {
-		return pImpl->m_ModelDiffusePriority;
+	BcPNTnTStaticModelDraw::BcPNTnTStaticModelDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
+	BcPNTnTStaticModelDraw::~BcPNTnTStaticModelDraw() {
 
 	}
-	bool BcPNTnTStaticModelDraw::IsModelDiffusePriority() const {
-		return pImpl->m_ModelDiffusePriority;
-
-	}
-	void BcPNTnTStaticModelDraw::SetModelDiffusePriority(bool b) {
-		pImpl->m_ModelDiffusePriority = b;
-	}
-	bool BcPNTnTStaticModelDraw::GetModelEmissivePriority() const {
-		return pImpl->m_ModelEmissivePriority;
-	}
-	bool BcPNTnTStaticModelDraw::IsModelEmissivePriority() const {
-		return pImpl->m_ModelEmissivePriority;
-	}
-	void BcPNTnTStaticModelDraw::SetModelEmissivePriority(bool b) {
-		pImpl->m_ModelEmissivePriority = b;
-	}
-
-
-	bool BcPNTnTStaticModelDraw::GetModelTextureEnabled() const {
-		return pImpl->m_ModelTextureEnabled;
-
-	}
-	bool BcPNTnTStaticModelDraw::IsModelTextureEnabled() const {
-		return pImpl->m_ModelTextureEnabled;
-	}
-	void BcPNTnTStaticModelDraw::SeModelTextureEnabled(bool b) {
-		pImpl->m_ModelTextureEnabled = b;
-	}
-
-
-
-
 	void BcPNTnTStaticModelDraw::OnCreate() {
 		SetLightingEnabled(true);
 		//マルチライトの設定
@@ -1992,211 +1419,69 @@ namespace basecross {
 			SetLightEnabled(i, true);
 		}
 	}
-
 	void BcPNTnTStaticModelDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
 		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTStaticModelDraw::OnDraw()"
-			);
-		}
-		auto shNormalTex = GetNormalMapTextureResource();
-		if (!shNormalTex) {
-			throw BaseException(
-				L"法線マップのテクスチャがありません",
-				L"if (!shNormalTex)",
-				L"BcPNTnTStaticModelDraw::OnDraw()"
-			);
-		}
-
-
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを設定
-		SetLightingParamaters();
-		//シェーダの設定
-		//ピクセルライティングのみ
-		if (IsOwnShadowActive()) {
-			//影付き
-			//バイアス無しのみ
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPLShadow::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPLShadow::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPLShadow::GetPtr()->GetShader(), nullptr, 0);
-		}
-		else {
-			//影無し
-			//バイアス無しのみ
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTStaticPL::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTStaticPL::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
-		}
-
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
-		//これよりマテリアルごとの描画
-		auto& MatVec = MeshRes->GetMaterialExVec();
-		for (auto& m : MatVec) {
-			if (m.m_TextureResource && IsModelTextureEnabled()) {
-				//テクスチャがありテクスチャが有効である
-				BcCb.activeFlg.y = 1;
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//シェーダの設定
+			//ピクセルライティングのみ
+			if (IsOwnShadowActive()) {
+				//影付き
+				//バイアス無しのみ
+				DrawModel<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(PtrMeshResource->GetMashData());
 			}
 			else {
-				//テクスチャがない
-				BcCb.activeFlg.y = 0;
+				//影無し
+				//バイアス無しのみ
+				DrawModel<BcVSPNTnTStaticPL, BcPSPNTnTPL>(PtrMeshResource->GetMashData());
 			}
-			if (IsModelDiffusePriority()) {
-				BcCb.diffuseColor = m.m_Diffuse;
-			}
-			if (IsModelEmissivePriority()) {
-				bsm::Col4 Em4 = m.m_Emissive;
-				Em4.w = 0.0f;
-				BcCb.emissiveColor = Em4;
-			}
-			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-			ID3D11Buffer* pNullConstantBuffer = nullptr;
-			//頂点シェーダに渡す
-			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ピクセルシェーダに渡す
-			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//テクスチャとサンプラー
-			SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), m.m_TextureResource, shNormalTex);
-			//透明処理なら
-			if (GetGameObject()->GetAlphaActive()) {
-				//ブレンドステート
-				//透明処理
-				if (GetBlendState() == BlendState::Additive) {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				//ピクセルライティングのみ
+				if (IsOwnShadowActive()) {
+					//影付き
+					//バイアス無しのみ
+					DrawModel<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
 				}
 				else {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+					//影無し
+					//バイアス無しのみ
+					DrawModel<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
 				}
-				//ラスタライザステート(裏描画)
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				//ラスタライザステート（表描画）
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-			}
-			else {
-				//透明処理しない
-				//ブレンドステートは設定に任せる
-				SetDeviceBlendState();
-				//ラスタライザステートは設定に任せる
-				SetDeviceRasterizerState();
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
 			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	BcPNTnTBoneModelDraw::Impl
-	//--------------------------------------------------------------------------------------
-	struct BcPNTnTBoneModelDraw::Impl {
-		vector<bsm::Mat4x4> m_LocalBonesMatrix;
-		map<wstring, AnimationData> m_AnimationMap;
-		wstring m_CurrentAnimeName;
-		float m_CurrentAnimeTime;
-		Impl() :
-			m_CurrentAnimeName(L""),
-			m_CurrentAnimeTime(0)
-		{}
-		~Impl() {}
-	};
-
 
 	//--------------------------------------------------------------------------------------
 	///	BcPNTnTBoneModelDraw描画コンポーネント（ボーンモデル描画用）
 	//--------------------------------------------------------------------------------------
-	BcPNTnTBoneModelDraw::BcPNTnTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		BcPNTnTStaticModelDraw(GameObjectPtr),
-		pImpl(new Impl())
-	{
-		//パイプラインステートをデフォルトの３D
-		SetBlendState(BlendState::Opaque);
-		SetDepthStencilState(DepthStencilState::Default);
-		SetRasterizerState(RasterizerState::CullBack);
-		SetSamplerState(SamplerState::LinearClamp);
-	}
+	BcPNTnTBoneModelDraw::BcPNTnTBoneModelDraw(const shared_ptr<GameObject>& GameObjectPtr):
+		BcBaseDraw(GameObjectPtr)
+	{}
+
 	BcPNTnTBoneModelDraw::~BcPNTnTBoneModelDraw() {}
-
-
 	void BcPNTnTBoneModelDraw::SetMeshResource(const shared_ptr<MeshResource>& MeshRes) {
-		if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0) {
-			throw BaseException(
-				L"メッシュがボーンメッシュではありません",
-				L"if (!MeshRes->IsSkining() || MeshRes->GetBoneCount() == 0 || MeshRes->GetSampleCount() == 0)",
-				L"BcPNTnTBoneModelDraw::SetMeshResource()"
-			);
-
-		}
-		//先頭のボーン数の行列で初期化
-		pImpl->m_LocalBonesMatrix.resize(MeshRes->GetBoneCount());
-		auto& SampleMatrixVec = MeshRes->GetSampleMatrixVec();
-		for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-			pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[i];
-		}
-		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		BcBaseDraw::SetMeshResource(MeshRes);
+		BoneInit();
 	}
-
 	void BcPNTnTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
 		BcPNTnTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
-
-
-
 	void BcPNTnTBoneModelDraw::OnCreate() {
 		SetLightingEnabled(true);
 		//マルチライトの設定
@@ -2204,341 +1489,55 @@ namespace basecross {
 			SetLightEnabled(i, true);
 		}
 	}
-
-	void BcPNTnTBoneModelDraw::AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
-		float SamplesParSecond) {
-		if (Name == L"") {
-			throw BaseException(
-				L"アニメーション名が空白です",
-				L"if (Name == L\"\")",
-				L"BcPNTnTBoneModelDraw::AddAnimation()"
-			);
-		}
-		if (StartSample < 0 || SampleLength < 0) {
-			throw BaseException(
-				L"開始サンプルかサンプル数が0未満です",
-				L"if (StartSample < 0 || SampleLength < 0)",
-				L"BcPNTnTBoneModelDraw::AddAnimation()"
-			);
-		}
-		if (SamplesParSecond <= 0.0f) {
-			throw BaseException(
-				L"サンプル毎秒が0以下です",
-				L"if (SamplesParSecond <= 0.0f)",
-				L"BcPNTnTBoneModelDraw::AddAnimation()"
-			);
-		}
-		//重複キーがあれば差し替える
-		AnimationData Data((UINT)StartSample, (UINT)SampleLength, Loop, SamplesParSecond);
-		pImpl->m_AnimationMap[Name] = Data;
-		if (pImpl->m_AnimationMap.size() == 1) {
-			//1つしか登録がなかったら、カレントアニメは該当アニメとなる
-			ChangeCurrentAnimation(Name, 0);
-		}
-	}
-
-	void BcPNTnTBoneModelDraw::ChangeCurrentAnimation(const wstring& AnemationName, float StartTime) {
-		if (AnemationName == L"") {
-			throw BaseException(
-				L"アニメーション名が空白です",
-				L"if (AnemationName == L\"\")",
-				L"BcPNTnTBoneModelDraw::SetCurrentAnimation()"
-			);
-		}
-		auto it = pImpl->m_AnimationMap.find(AnemationName);
-		if (it != pImpl->m_AnimationMap.end()) {
-			//指定の名前が見つかった
-			pImpl->m_CurrentAnimeName = AnemationName;
-			pImpl->m_CurrentAnimeTime = StartTime;
-			//アニメーションは終了していない
-			it->second.m_IsAnimeEnd = false;
-		}
-		else {
-			//見つからない
-			throw BaseException(
-				L"指定のアニメーションは登録されてません",
-				AnemationName,
-				L"BcPNTnTBoneModelDraw::SetCurrentAnimation()"
-			);
-		}
-	}
-
-	const wstring& BcPNTnTBoneModelDraw::GetCurrentAnimation() const {
-		return pImpl->m_CurrentAnimeName;
-	}
-
-	bool BcPNTnTBoneModelDraw::UpdateAnimation(float ElapsedTime) {
-		if (ElapsedTime < 0.0f) {
-			throw BaseException(
-				L"アニメーション更新にマイナスは設定できません",
-				L"if (ElapsedTime < 0.0f)",
-				L"BcPNTnTBoneModelDraw::UpdateAnimation()"
-			);
-		}
-		if (pImpl->m_CurrentAnimeName == L"") {
-			//見つからない
-			throw BaseException(
-				L"カレントアニメーションが設定されてません",
-				L"if (pImpl->m_CurrentAnimeName == L\"\")",
-				L"BcPNTnTBoneModelDraw::UpdateAnimation()"
-			);
-		}
-		auto PtrMesh = GetMeshResource();
-		UINT SampleCount = PtrMesh->GetSampleCount();
-		auto& SampleMatrixVec = PtrMesh->GetSampleMatrixVec();
-		UINT BoneCount = PtrMesh->GetBoneCount();
-		auto& TgtAnimeData = pImpl->m_AnimationMap[pImpl->m_CurrentAnimeName];
-		if (TgtAnimeData.m_StartSample >= SampleCount) {
-			//スタートのサンプルが最後のサンプル以降だった
-			TgtAnimeData.m_StartSample = SampleCount - 1;
-			TgtAnimeData.m_SampleLength = 0;
-			UINT UITgtSample = TgtAnimeData.m_StartSample;
-			//最後のサンプルを表示
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-			}
-			pImpl->m_CurrentAnimeTime = 0;
-			if (TgtAnimeData.m_IsLoop) {
-				TgtAnimeData.m_IsAnimeEnd = false;
-				return false;
-			}
-			else {
-				TgtAnimeData.m_IsAnimeEnd = true;
-				return true;
-			}
-		}
-		//すでにアニメが終了している
-		if (TgtAnimeData.m_IsAnimeEnd) {
-			//現在のローカル行列を使用
-			return true;
-		}
-		//カレントタイムを更新
-		pImpl->m_CurrentAnimeTime += ElapsedTime;
-		//スタート位置を計算
-		auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + pImpl->m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
-		UINT UITgtSample = (UINT)FLOATTgtSample;
-		UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
-		if (UILastSample >= SampleCount) {
-			UILastSample = SampleCount - 1;
-		}
-		if (UITgtSample >= UILastSample) {
-			UITgtSample = UILastSample - 1;
-			//最後のサンプルを表示
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				pImpl->m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-			}
-			if (TgtAnimeData.m_IsLoop) {
-				TgtAnimeData.m_IsAnimeEnd = false;
-				//ループするのでカレントタイムを0にする
-				pImpl->m_CurrentAnimeTime = 0;
-				return false;
-			}
-			else {
-				pImpl->m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
-				TgtAnimeData.m_IsAnimeEnd = true;
-				return true;
-			}
-		}
-		else {
-			//サンプルとサンプルの間の割合を計算
-			FLOATTgtSample -= (float)UITgtSample;
-			UINT UINextSample = UITgtSample + 1;
-			for (UINT i = 0; i < pImpl->m_LocalBonesMatrix.size(); i++) {
-				InterpolationMatrix(
-					SampleMatrixVec[BoneCount * UITgtSample + i],
-					SampleMatrixVec[BoneCount * UINextSample + i],
-					FLOATTgtSample, pImpl->m_LocalBonesMatrix[i]);
-			}
-			//アニメは終わってない
-			return false;
-		}
-	}
-
-
-	void BcPNTnTBoneModelDraw::InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
-		bsm::Vec3 Scale1, Pos1;
-		bsm::Quat Qt1;
-		m1.decompose(Scale1, Qt1, Pos1);
-		Qt1.normalize();
-
-		bsm::Vec3 Scale2, Pos2;
-		bsm::Quat Qt2;
-
-		m2.decompose(Scale2, Qt2, Pos2);
-		Qt2.normalize();
-
-		bsm::Vec3 ScaleOut, PosOut;
-		bsm::Quat QtOut;
-
-		ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
-		PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
-		QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
-		out.affineTransformation(ScaleOut, bsm::Vec3(0,0,0),QtOut, PosOut);
-	}
-
-
-	const vector< bsm::Mat4x4 >* BcPNTnTBoneModelDraw::GetVecLocalBonesPtr() const {
-		return &pImpl->m_LocalBonesMatrix;
-	}
-
-
 	void BcPNTnTBoneModelDraw::OnDraw() {
-		auto PtrStage = GetGameObject()->GetStage();
-		if (!PtrStage) {
-			return;
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
 		}
-		//メッシュがなければ描画しない
-		auto MeshRes = GetMeshResource();
-		if (!MeshRes) {
-			throw BaseException(
-				L"メッシュが作成されていません",
-				L"if (!MeshRes)",
-				L"BcPNTnTBoneModelDraw::OnDraw()"
-			);
-		}
-		auto shNormalTex = GetNormalMapTextureResource();
-		if (!shNormalTex) {
-			throw BaseException(
-				L"法線マップのテクスチャがありません",
-				L"if (!shNormalTex)",
-				L"BcPNTnTBoneModelDraw::OnDraw()"
-			);
-		}
-
-
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-		auto RenderState = Dev->GetRenderState();
-		ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-		ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-		//ライトを設定
-		SetLightingParamaters();
-		//シェーダの設定
-		//ピクセルライティングのみ
-		if (IsOwnShadowActive()) {
-			//影付き
-			//バイアス無しのみ
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTBonePLShadow::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTBonePLShadow::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPLShadow::GetPtr()->GetShader(), nullptr, 0);
-		}
-		else {
-			//影無し
-			//バイアス無しのみ
-			pD3D11DeviceContext->VSSetShader(BcVSPNTnTBonePL::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(BcVSPNTnTBonePL::GetPtr()->GetInputLayout());
-			pD3D11DeviceContext->PSSetShader(BcPSPNTnTPL::GetPtr()->GetShader(), nullptr, 0);
-		}
-
-		//影とサンプラー
-		if (IsOwnShadowActive()) {
-			//シャドウマップのレンダラーターゲット
-			auto ShadowmapPtr = Dev->GetShadowMapRenderTarget();
-			ID3D11ShaderResourceView* pShadowSRV = ShadowmapPtr->GetShaderResourceView();
-			pD3D11DeviceContext->PSSetShaderResources(1, 1, &pShadowSRV);
-			//シャドウマップサンプラー
-			ID3D11SamplerState* pShadowSampler = RenderState->GetComparisonLinear();
-			pD3D11DeviceContext->PSSetSamplers(1, 1, &pShadowSampler);
-		}
-
-		//ストライドとオフセット
-		UINT stride = MeshRes->GetNumStride();
-		UINT offset = 0;
-		//頂点バッファのセット
-		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
-		//描画方法（3角形）
-		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		//デプスステンシルステートは設定に任せる
-		SetDeviceDepthStencilState();
-
-		//コンスタントバッファの設定
-		BasicConstants BcCb;
-		ZeroMemory(&BcCb, sizeof(BcCb));
-		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
-		}
-		else {
-			SetConstants(BcCb);
-		}
-
-		//これよりマテリアルごとの描画
-		auto& MatVec = MeshRes->GetMaterialExVec();
-		for (auto& m : MatVec) {
-			if (m.m_TextureResource && IsModelTextureEnabled()) {
-				//テクスチャがありテクスチャが有効である
-				BcCb.activeFlg.y = 1;
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//シェーダの設定
+			//ピクセルライティングのみ
+			if (IsOwnShadowActive()) {
+				//影付き
+				//バイアス無しのみ
+				DrawModel<BcVSPNTnTBonePLShadow, BcPSPNTnTPLShadow>(PtrMeshResource->GetMashData());
 			}
 			else {
-				//テクスチャがない
-				BcCb.activeFlg.y = 0;
+				//影無し
+				//バイアス無しのみ
+				DrawModel<BcVSPNTnTBonePL, BcPSPNTnTPL>(PtrMeshResource->GetMashData());
 			}
-			if (IsModelDiffusePriority()) {
-				BcCb.diffuseColor = m.m_Diffuse;
-			}
-			if (IsModelEmissivePriority()) {
-				bsm::Col4 Em4 = m.m_Emissive;
-				Em4.w = 0.0f;
-				BcCb.emissiveColor = Em4;
-			}
-			//ボーンの設定
-			size_t BoneSz = pImpl->m_LocalBonesMatrix.size();
-			UINT cb_count = 0;
-			for (size_t b = 0; b < BoneSz; b++) {
-				bsm::Mat4x4 mat = pImpl->m_LocalBonesMatrix[b];
-				mat.transpose();
-				BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
-				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-				cb_count += 3;
-			}
-
-			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBBasic::GetPtr()->GetBuffer(), 0, nullptr, &BcCb, 0, 0);
-			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBBasic::GetPtr()->GetBuffer();
-			ID3D11Buffer* pNullConstantBuffer = nullptr;
-			//頂点シェーダに渡す
-			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ピクセルシェーダに渡す
-			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//テクスチャとサンプラー
-			SetTextureAndSamplerWithTangent(pD3D11DeviceContext, IsOwnShadowActive(), m.m_TextureResource, shNormalTex);
-			//透明処理なら
-			if (GetGameObject()->GetAlphaActive()) {
-				//ブレンドステート
-				//透明処理
-				if (GetBlendState() == BlendState::Additive) {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAdditive(), nullptr, 0xffffffff);
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				//ピクセルライティングのみ
+				if (IsOwnShadowActive()) {
+					//影付き
+					//バイアス無しのみ
+					DrawModel<BcVSPNTnTBonePLShadow, BcPSPNTnTPLShadow>(vec[i]);
 				}
 				else {
-					pD3D11DeviceContext->OMSetBlendState(RenderState->GetAlphaBlendEx(), nullptr, 0xffffffff);
+					//影無し
+					//バイアス無しのみ
+					DrawModel<BcVSPNTnTBonePL, BcPSPNTnTPL>(vec[i]);
 				}
-				//ラスタライザステート(裏描画)
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullFront());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-				//ラスタライザステート（表描画）
-				pD3D11DeviceContext->RSSetState(RenderState->GetCullBack());
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
-			}
-			else {
-				//透明処理しない
-				//ブレンドステートは設定に任せる
-				SetDeviceBlendState();
-				//ラスタライザステートは設定に任せる
-				SetDeviceRasterizerState();
-				//描画
-				pD3D11DeviceContext->DrawIndexed(m.m_IndexCount, m.m_StartIndex, 0);
 			}
 		}
 		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
+
+
 
 
 }
