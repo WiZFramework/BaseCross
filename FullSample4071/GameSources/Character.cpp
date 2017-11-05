@@ -102,7 +102,7 @@ namespace basecross{
 	//	ジオメトリシェーダを使った独自の描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	CustomPNCStaticDraw::CustomPNCStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		StaticBaseDraw(GameObjectPtr) {}
+		SmBaseDraw(GameObjectPtr) {}
 	//操作
 	void CustomPNCStaticDraw::OnDraw() {
 		auto PtrGameObject = GetGameObject();
