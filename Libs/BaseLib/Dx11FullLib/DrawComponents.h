@@ -1174,6 +1174,32 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	現在のアニメーションデータを得る
+		@return	現在のアニメーションデータ
+		*/
+		//--------------------------------------------------------------------------------------
+		AnimationData& GetAnimationData() {
+			auto MeshRes = m_MeshResource.lock();
+			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
+				if (m_CurrentAnimeName == L"") {
+					//見つからない
+					throw BaseException(
+						L"カレントアニメーションが設定されてません",
+						L"if (m_CurrentAnimeName == L\"\")",
+						L"DrawObjectBase::GetAnimationData()"
+					);
+					return m_AnimationMap[m_CurrentAnimeName];
+				}
+			}
+			//ボーンデータではない
+			throw BaseException(
+				L"ボーン付きのメッシュではありません",
+				L"!MeshRes->IsSkining()",
+				L"DrawObjectBase::GetAnimationData()"
+			);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	現在のアニメーションを進める
 		@param[in]	ElapsedTime	経過時間
 		@return	アニメーションが終了すればtrue
@@ -1985,6 +2011,20 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const wstring& GetCurrentAnimation() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションタイムを得る
+		@return	アニメーションタイム
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetCurrentAnimationTime() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のアニメーションが終了しているかどうか
+		@return	修了していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsTargetAnimeEnd() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のアニメーションを進める

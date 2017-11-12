@@ -1131,7 +1131,7 @@ namespace basecross {
 			);
 
 		}
-		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		BcPNTStaticModelDraw::SetMeshResource(MeshRes);
 		//ボーンがあれば読み込む
 		SetBoneVec();
 	}
@@ -1415,10 +1415,10 @@ namespace basecross {
 		BasicConstants BcCb;
 		ZeroMemory(&BcCb, sizeof(BcCb));
 		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
+			SetConstants(BcCb, MeshRes->GetMashData());
 		}
 		else {
-			SetConstants(BcCb);
+			SetConstants(BcCb, MeshRes->GetMashData());
 		}
 
 		//これよりマテリアルごとの描画
@@ -1600,7 +1600,7 @@ namespace basecross {
 			);
 
 		}
-		BcStaticBaseDraw::SetMeshResource(MeshRes);
+		BcPNTnTStaticModelDraw::SetMeshResource(MeshRes);
 		//ボーンがあれば読み込む
 		SetBoneVec();
 	}
@@ -1842,10 +1842,10 @@ namespace basecross {
 		BasicConstants BcCb;
 		ZeroMemory(&BcCb, sizeof(BcCb));
 		if (IsOwnShadowActive()) {
-			SetConstants(BcCb, true);
+			SetConstants(BcCb, MeshRes->GetMashData());
 		}
 		else {
-			SetConstants(BcCb);
+			SetConstants(BcCb, MeshRes->GetMashData());
 		}
 
 		//これよりマテリアルごとの描画

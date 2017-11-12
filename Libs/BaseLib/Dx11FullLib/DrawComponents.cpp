@@ -1520,6 +1520,16 @@ namespace basecross {
 
 	}
 
+	float SmBaseDraw::GetCurrentAnimationTime() const {
+		return pImpl->m_SmDrawObject.m_CurrentAnimeTime;
+	}
+
+	bool SmBaseDraw::IsTargetAnimeEnd() const {
+		auto& AnimData = pImpl->m_SmDrawObject.GetAnimationData();
+		return AnimData.m_IsAnimeEnd;
+	}
+
+
 	bool SmBaseDraw::UpdateAnimation(float ElapsedTime) {
 		return pImpl->m_SmDrawObject.UpdateAnimation(ElapsedTime);
 
