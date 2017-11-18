@@ -251,6 +251,7 @@ namespace basecross {
 		AnimeMatrix,	///< アニメーション行列
 		VertexWithTangent,	///< タンジェント付き頂点
 		SkinedVertexWithTangent,	///< スキンタンジェント付き頂点
+		MashCount,				///< メッシュ数（マルチメッシュ用）
 		End = 100	///< 終了
 	};
 

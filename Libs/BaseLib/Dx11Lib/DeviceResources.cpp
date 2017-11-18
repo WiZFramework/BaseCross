@@ -357,31 +357,19 @@ namespace basecross {
 		}
 	}
 
-	void MeshResource::ReadBaseData(const wstring& BinDataDir, const wstring& BinDataFile,
+	void MeshResource::ReadBaseData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 		vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
 		vector<uint16_t>& indices, vector<MaterialEx>& materials) {
 		vertices.clear();
 		vertices_withtan.clear();
 		indices.clear();
 		materials.clear();
-		wstring DataFile = BinDataDir + BinDataFile;
-		BinaryReader Reader(DataFile);
-		//ヘッダの読み込み
-		auto pHeader = Reader.ReadArray<char>(16);
-		string str = pHeader;
-		if (str != "BDV1.0") {
-			throw BaseException(
-				L"データ形式が違います",
-				DataFile,
-				L"MeshResource::ReadBaseData()"
-			);
-		}
 		//頂点の読み込み
 		auto blockHeader = Reader.Read<BlockHeader>();
 		if (!(blockHeader.m_Type == BlockType::Vertex || blockHeader.m_Type == BlockType::VertexWithTangent)) {
 			throw BaseException(
 				L"頂点のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
@@ -424,7 +412,7 @@ namespace basecross {
 		else {
 			throw BaseException(
 				L"頂点の型が違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
@@ -434,7 +422,7 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::Index) {
 			throw BaseException(
 				L"インデックスのヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
@@ -451,7 +439,7 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::MaterialCount) {
 			throw BaseException(
 				L"マテリアル数のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
@@ -462,7 +450,7 @@ namespace basecross {
 			if (blockHeader.m_Type != BlockType::Material) {
 				throw BaseException(
 					L"マテリアルのヘッダが違います",
-					DataFile,
+					BinDataFile,
 					L"MeshResource::ReadBaseData()"
 				);
 			}
@@ -511,42 +499,29 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::End) {
 			throw BaseException(
 				L"Endヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
+
 	}
-
-
-
-	void MeshResource::ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
+	void MeshResource::ReadBaseBoneData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 		vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
 		vector<uint16_t>& indices, vector<MaterialEx>& materials,
 		vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount) {
+
 		vertices.clear();
 		vertices_withtan.clear();
 		indices.clear();
 		materials.clear();
 		bonematrix.clear();
 
-		wstring DataFile = BinDataDir + BinDataFile;
-		BinaryReader Reader(DataFile);
-		//ヘッダの読み込み
-		auto pHeader = Reader.ReadArray<char>(16);
-		string str = pHeader;
-		if (str != "BDV1.0") {
-			throw BaseException(
-				L"データ形式が違います",
-				DataFile,
-				L"MeshResource::ReadBaseBoneData()"
-			);
-		}
 		//頂点の読み込み
 		auto blockHeader = Reader.Read<BlockHeader>();
 		if (!(blockHeader.m_Type == BlockType::SkinedVertex || blockHeader.m_Type == BlockType::SkinedVertexWithTangent)) {
 			throw BaseException(
 				L"頂点(スキン処理)のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
@@ -596,14 +571,12 @@ namespace basecross {
 
 		}
 
-
-
 		//インデックスの読み込み
 		blockHeader = Reader.Read<BlockHeader>();
 		if (blockHeader.m_Type != BlockType::Index) {
 			throw BaseException(
 				L"インデックスのヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
@@ -620,7 +593,7 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::MaterialCount) {
 			throw BaseException(
 				L"マテリアル数のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseData()"
 			);
 		}
@@ -631,7 +604,7 @@ namespace basecross {
 			if (blockHeader.m_Type != BlockType::Material) {
 				throw BaseException(
 					L"マテリアルのヘッダが違います",
-					DataFile,
+					BinDataFile,
 					L"MeshResource::ReadBaseBoneData()"
 				);
 			}
@@ -679,7 +652,7 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::BoneCount) {
 			throw BaseException(
 				L"ボーン数のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
@@ -689,7 +662,7 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::AnimeMatrix) {
 			throw BaseException(
 				L"アニメーション行列のヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
@@ -713,17 +686,14 @@ namespace basecross {
 		if (blockHeader.m_Type != BlockType::End) {
 			throw BaseException(
 				L"終了ヘッダが違います",
-				DataFile,
+				BinDataFile,
 				L"MeshResource::ReadBaseBoneData()"
 			);
 		}
-
-
 	}
 
-
-
-	shared_ptr<MeshResource> MeshResource::CreateStaticModelMesh(const wstring& BinDataDir, const wstring& BinDataFile, bool AccessWrite) {
+	shared_ptr<MeshResource> MeshResource::CreateStaticModelMeshBase(BinaryReader& Reader, const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
 		try {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
@@ -733,7 +703,7 @@ namespace basecross {
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
-			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
+			ReadBaseData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 			Ptr->m_MeshPrimData.m_MaterialExVec.clear();
 			for (auto& v : Materials) {
@@ -746,7 +716,8 @@ namespace basecross {
 		}
 	}
 
-	shared_ptr<MeshResource> MeshResource::CreateStaticModelMeshWithTangent(const wstring& BinDataDir, const wstring& BinDataFile, bool AccessWrite) {
+	shared_ptr<MeshResource> MeshResource::CreateStaticModelMeshWithTangentBase(BinaryReader& Reader, const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
 		try {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
@@ -756,7 +727,7 @@ namespace basecross {
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
-			ReadBaseData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
+			ReadBaseData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
 			if (vertices.size() > 0) {
 				//binデータにはタンジェントは入ってなかった
 				new_pntnt_vertices.clear();
@@ -785,7 +756,8 @@ namespace basecross {
 	}
 
 
-	shared_ptr<MeshResource> MeshResource::CreateBoneModelMesh(const wstring& BinDataDir,
+
+	shared_ptr<MeshResource> MeshResource::CreateBoneModelMeshBase(BinaryReader& Reader, const wstring& BinDataDir,
 		const wstring& BinDataFile, bool AccessWrite) {
 		try {
 			//頂点配列
@@ -802,7 +774,7 @@ namespace basecross {
 			UINT BoneCount;
 			//サンプル数
 			UINT SampleCount;
-			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
+			ReadBaseBoneData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
 				indices, Materials,
 				SampleMatrices, BoneCount, SampleCount);
 			auto Ptr = MeshResource::CreateMeshResource<VertexPositionNormalTextureSkinning>(vertices, indices, AccessWrite);
@@ -822,17 +794,15 @@ namespace basecross {
 		catch (...) {
 			throw;
 		}
-
 	}
 
-	shared_ptr<MeshResource> MeshResource::CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
+	shared_ptr<MeshResource> MeshResource::CreateBoneModelMeshWithTangentBase(BinaryReader& Reader, const wstring& BinDataDir,
 		const wstring& BinDataFile, bool AccessWrite) {
 		try {
 			//頂点配列
 			vector<VertexPositionNormalTextureSkinning> vertices;
 			//タンジェント付きにコンバートする配列
 			vector<VertexPositionNormalTangentTextureSkinning> new_pntnt_vertices;
-
 			//インデックスを作成するための配列
 			vector<uint16_t> indices;
 			//マテリアルを設定する配列
@@ -843,7 +813,7 @@ namespace basecross {
 			UINT BoneCount;
 			//サンプル数
 			UINT SampleCount;
-			ReadBaseBoneData(BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
+			ReadBaseBoneData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices,
 				indices, Materials,
 				SampleMatrices, BoneCount, SampleCount);
 			if (vertices.size() > 0) {
@@ -881,7 +851,96 @@ namespace basecross {
 		catch (...) {
 			throw;
 		}
+	}
 
+
+
+	shared_ptr<MeshResource> MeshResource::CreateStaticModelMesh(const wstring& BinDataDir, const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.0") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MeshResource::CreateStaticModelMesh()"
+				);
+			}
+			return CreateStaticModelMeshBase(Reader,BinDataDir,BinDataFile,AccessWrite);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	shared_ptr<MeshResource> MeshResource::CreateStaticModelMeshWithTangent(const wstring& BinDataDir, const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.0") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MeshResource::CreateStaticModelMeshWithTangent()"
+				);
+			}
+			return CreateStaticModelMeshWithTangentBase(Reader,BinDataDir,BinDataFile,AccessWrite);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
+	shared_ptr<MeshResource> MeshResource::CreateBoneModelMesh(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.0") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MeshResource::CreateBoneModelMesh()"
+				);
+			}
+			return CreateBoneModelMeshBase(Reader,BinDataDir,BinDataFile,AccessWrite);
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+
+	shared_ptr<MeshResource> MeshResource::CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.0") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MeshResource::CreateBoneModelMeshWithTangent()"
+				);
+			}
+			return CreateBoneModelMeshWithTangentBase(Reader,BinDataDir,BinDataFile,AccessWrite);
+		}
+		catch (...) {
+			throw;
+		}
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -892,6 +951,157 @@ namespace basecross {
 	{}
 	//破棄
 	MultiMeshResource::~MultiMeshResource() {}
+
+
+	shared_ptr<MultiMeshResource> MultiMeshResource::CreateStaticModelMultiMesh(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.1") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MultiMeshResource::CreateStaticModelMultiMesh()"
+				);
+			}
+			//メッシュ数の読み込み
+			auto blockHeader = Reader.Read<BlockHeader>();
+			if (!(blockHeader.m_Type == BlockType::MashCount)) {
+				throw BaseException(
+					L"メッシュy数のヘッダが違います",
+					BinDataFile,
+					L"MultiMeshResource::CreateStaticModelMultiMesh()"
+				);
+			}
+			auto MultiMeshPtr = CreateMultiMeshResource();
+			for (size_t i = 0; i < blockHeader.m_Size; i++) {
+				auto MeshPtr = MeshResource::CreateStaticModelMeshBase(Reader, BinDataDir, BinDataFile, AccessWrite);
+				MultiMeshPtr->AddMesh(MeshPtr);
+			}
+			return MultiMeshPtr;
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+
+
+	shared_ptr<MultiMeshResource> MultiMeshResource::CreateStaticModelMultiMeshWithTangent(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.1") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MultiMeshResource::CreateStaticModelMultiMeshWithTangent()"
+				);
+			}
+			//メッシュ数の読み込み
+			auto blockHeader = Reader.Read<BlockHeader>();
+			if (!(blockHeader.m_Type == BlockType::MashCount)) {
+				throw BaseException(
+					L"メッシュy数のヘッダが違います",
+					BinDataFile,
+					L"MultiMeshResource::CreateStaticModelMultiMeshWithTangent()"
+				);
+			}
+			auto MultiMeshPtr = CreateMultiMeshResource();
+			for (size_t i = 0; i < blockHeader.m_Size; i++) {
+				auto MeshPtr = MeshResource::CreateStaticModelMeshWithTangentBase(Reader, BinDataDir, BinDataFile, AccessWrite);
+				MultiMeshPtr->AddMesh(MeshPtr);
+			}
+			return MultiMeshPtr;
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
+	shared_ptr<MultiMeshResource> MultiMeshResource::CreateBoneModelMultiMesh(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite) {
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.1") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MultiMeshResource::CreateBoneModelMultiMesh()"
+				);
+			}
+			//メッシュ数の読み込み
+			auto blockHeader = Reader.Read<BlockHeader>();
+			if (!(blockHeader.m_Type == BlockType::MashCount)) {
+				throw BaseException(
+					L"メッシュy数のヘッダが違います",
+					BinDataFile,
+					L"MultiMeshResource::CreateBoneModelMultiMesh()"
+				);
+			}
+			auto MultiMeshPtr = CreateMultiMeshResource();
+			for (size_t i = 0; i < blockHeader.m_Size; i++) {
+				auto MeshPtr = MeshResource::CreateBoneModelMeshBase(Reader, BinDataDir, BinDataFile, AccessWrite);
+				MultiMeshPtr->AddMesh(MeshPtr);
+			}
+			return MultiMeshPtr;
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	shared_ptr<MultiMeshResource> MultiMeshResource::CreateBoneModelMultiMeshWithTangent(const wstring& BinDataDir,
+		const wstring& BinDataFile, bool AccessWrite){
+		try {
+			wstring DataFile = BinDataDir + BinDataFile;
+			BinaryReader Reader(DataFile);
+			//ヘッダの読み込み
+			auto pHeader = Reader.ReadArray<char>(16);
+			string str = pHeader;
+			if (str != "BDV1.1") {
+				throw BaseException(
+					L"データ形式が違います",
+					DataFile,
+					L"MultiMeshResource::CreateBoneModelMultiMeshWithTangent()"
+				);
+			}
+			//メッシュ数の読み込み
+			auto blockHeader = Reader.Read<BlockHeader>();
+			if (!(blockHeader.m_Type == BlockType::MashCount)) {
+				throw BaseException(
+					L"メッシュy数のヘッダが違います",
+					BinDataFile,
+					L"MultiMeshResource::CreateBoneModelMultiMeshWithTangent()"
+				);
+			}
+			auto MultiMeshPtr = CreateMultiMeshResource();
+			for (size_t i = 0; i < blockHeader.m_Size; i++) {
+				auto MeshPtr = MeshResource::CreateBoneModelMeshWithTangentBase(Reader, BinDataDir, BinDataFile, AccessWrite);
+				MultiMeshPtr->AddMesh(MeshPtr);
+			}
+			return MultiMeshPtr;
+		}
+		catch (...) {
+			throw;
+		}
+
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------

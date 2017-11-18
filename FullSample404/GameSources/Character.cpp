@@ -271,10 +271,56 @@ namespace basecross{
 			PtrDraw->SetMeshResource(L"MODEL_MESH");
 			PtrDraw->SetMeshToTransformMatrix(SpanMat);
 		}
-
-
-
 	}
+
+	//--------------------------------------------------------------------------------------
+	///	Staticキャラ(マルチメッシュ版)
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	StaticMultiMeshChara::StaticMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse) :
+		GameObject(StagePtr),
+		m_StartPos(StartPos),
+		m_TamgentUse(TamgentUse)
+	{}
+	StaticMultiMeshChara::~StaticMultiMeshChara() {}
+
+	//初期化
+	void StaticMultiMeshChara::OnCreate() {
+		//初期位置などの設定
+		auto Ptr = AddComponent<Transform>();
+		Ptr->SetScale(0.5f, 0.5f, 0.5f);
+		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+		Ptr->SetPosition(m_StartPos);
+
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
+		);
+
+		//影をつける（シャドウマップを描画する）
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		ShadowPtr->SetMultiMeshResource(L"ObjectOnly_MESH");
+		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+		if (m_TamgentUse) {
+			auto PtrDraw = AddComponent<BcPNTnTStaticModelDraw>();
+			PtrDraw->SetFogEnabled(true);
+			PtrDraw->SetMultiMeshResource(L"ObjectOnly_MESH_WITH_TAN");
+			PtrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
+			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+		}
+		else {
+			auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
+			PtrDraw->SetFogEnabled(true);
+			PtrDraw->SetMultiMeshResource(L"ObjectOnly_MESH");
+			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+		}
+	}
+
 
 
 
@@ -342,6 +388,84 @@ namespace basecross{
 
 	//更新
 	void BoneChara::OnUpdate() {
+		//アニメーションを更新する
+		if (m_TamgentUse) {
+			auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
+			float ElapsedTime = App::GetApp()->GetElapsedTime();
+			PtrDraw->UpdateAnimation(ElapsedTime);
+
+		}
+		else {
+			auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
+			float ElapsedTime = App::GetApp()->GetElapsedTime();
+			PtrDraw->UpdateAnimation(ElapsedTime);
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	Boneキャラ(マルチメッシュ版)
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	BoneMultiMeshChara::BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse) :
+		GameObject(StagePtr),
+		m_StartPos(StartPos),
+		m_TamgentUse(TamgentUse)
+	{
+	}
+	BoneMultiMeshChara::~BoneMultiMeshChara() {}
+
+	//初期化
+	void BoneMultiMeshChara::OnCreate() {
+		//初期位置などの設定
+		auto Ptr = AddComponent<Transform>();
+		Ptr->SetScale(0.5f, 0.5f, 0.5f);
+		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+		Ptr->SetPosition(m_StartPos);
+
+		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+		SpanMat.affineTransformation(
+			Vec3(1.0f, 1.0f, 1.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, 0.0f, 0.0f)
+		);
+
+		//影をつける（シャドウマップを描画する）
+		auto ShadowPtr = AddComponent<Shadowmap>();
+
+		//影の形（メッシュ）を設定
+		ShadowPtr->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
+		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+		if (m_TamgentUse) {
+			//描画コンポーネントの設定
+			auto PtrDraw = AddComponent<BcPNTnTBoneModelDraw>();
+			PtrDraw->SetFogEnabled(true);
+			//描画するメッシュを設定
+			PtrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH_WITH_TAN");
+			PtrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
+			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			PtrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
+			PtrDraw->ChangeCurrentAnimation(L"Default");
+		}
+		else {
+			//描画コンポーネントの設定
+			auto PtrDraw = AddComponent<BcPNTBoneModelDraw>();
+			PtrDraw->SetFogEnabled(true);
+			//描画するメッシュを設定
+			PtrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
+			PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+			PtrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
+			PtrDraw->ChangeCurrentAnimation(L"Default");
+
+		}
+	}
+
+	//更新
+	void BoneMultiMeshChara::OnUpdate() {
 		//アニメーションを更新する
 		if (m_TamgentUse) {
 			auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();

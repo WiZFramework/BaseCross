@@ -619,7 +619,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr);
+		virtual void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	マルチメッシュリソースを設定する
@@ -1187,6 +1187,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列を得る（マルチメッシュ版）
+		@return	ローカルボーン行列配列の先頭ポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< bsm::Mat4x4 >* GetVecMultiLocalBonesPtr(size_t index) const override;
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1445,6 +1452,22 @@ namespace basecross {
 		void SetMeshResource(const wstring& MeshKey);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	MeshResourcePtr	メッシュリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	ResKey	メッシュリソースのキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMultiMeshResource(const wstring& ResKey);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	OnCreate処理
 		@return	なし
 		*/
@@ -1586,6 +1609,22 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetMeshResource(const wstring& MeshKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	MeshResourcePtr	メッシュリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	ResKey	メッシュリソースのキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMultiMeshResource(const wstring& ResKey);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理

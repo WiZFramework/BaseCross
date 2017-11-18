@@ -89,6 +89,8 @@ namespace basecross {
 		UINT m_SampleCount;
 		//サンプリングされたボーン行列
 		vector<bsm::Mat4x4> m_SampleMatrixVec;
+		//マルチメッシュの場合のメッシュインデックス
+		UINT m_MultiMeshIndex;
 		MeshPrimData():
 			m_IsSkining(false),
 			m_BoneCount(0),
@@ -97,7 +99,8 @@ namespace basecross {
 			m_NumStride(sizeof(VertexPosition)),
 			m_PrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST),
 			m_MeshToTransformMatrix(),
-			m_UseMeshToTransformMatrix(false)
+			m_UseMeshToTransformMatrix(false),
+			m_MultiMeshIndex(0)
 		{}
 	};
 
@@ -654,6 +657,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュデータの読み込み（スタティックメッシュ）
+		@param[in]	Reader	リーダー
 		@param[in]	BinDataDir	基準ディレクトリ
 		@param[in]	BinDataFile	データファイル名
 		@param[out]	vertices	頂点の参照
@@ -662,12 +666,13 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		static void ReadBaseData(const wstring& BinDataDir, const wstring& BinDataFile,
+		static void ReadBaseData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 			vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
 			vector<uint16_t>& indices, vector<MaterialEx>& materials);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュデータの読み込み（ボーンメッシュ）
+		@param[in]	Reader	リーダー
 		@param[in]	BinDataDir	基準ディレクトリ
 		@param[in]	BinDataFile	データファイル名
 		@param[out]	vertices	頂点の参照
@@ -679,10 +684,61 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		static void ReadBaseBoneData(const wstring& BinDataDir, const wstring& BinDataFile,
+		static void ReadBaseBoneData(BinaryReader& Reader,const wstring& BinDataDir, const wstring& BinDataFile,
 			vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
 			vector<uint16_t>& indices, vector<MaterialEx>& materials,
 			vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルメッシュの作成（スタティックメッシュ・リーダ指定版）
+		@param[in]	Reader	リーダー
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateStaticModelMeshBase(BinaryReader& Reader, const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タンジェント付きオリジナルメッシュの作成（スタティックメッシュ・リーダ指定版）
+		@param[in]	Reader	リーダー
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateStaticModelMeshWithTangentBase(BinaryReader& Reader, const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルメッシュの作成（ボーンメッシュ・リーダ指定版）
+		@param[in]	Reader	リーダー
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateBoneModelMeshBase(BinaryReader& Reader, const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タンジェント付きオリジナルメッシュの作成（ボーンメッシュ・リーダ指定版）
+		@param[in]	Reader	リーダー
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MeshResource> CreateBoneModelMeshWithTangentBase(BinaryReader& Reader, const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（スタティックメッシュ）
@@ -694,7 +750,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateStaticModelMesh(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	タンジェント付きオリジナルメッシュの作成（スタティックメッシュ）
@@ -719,7 +774,7 @@ namespace basecross {
 			const wstring& BinDataFile, bool AccessWrite = false);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	オリジナルメッシュの作成（ボーンメッシュ）
+		@brief	タンジェント付きオリジナルメッシュの作成（ボーンメッシュ）
 		@param[in]	BinDataDir	基準ディレクトリ
 		@param[in]	BinDataFile	データファイル名
 		@param[in]	AccessWrite = false	頂点を変更できるかどうか
@@ -728,7 +783,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	メッシュリソースの作成
@@ -1045,6 +1099,9 @@ namespace basecross {
 		size_t AddMesh(const MeshPrimData& Data) {
 			auto retcount = m_MeshPrimDataVec.size();
 			m_MeshPrimDataVec.push_back(Data);
+			for (size_t i = 0; i < m_MeshPrimDataVec.size(); i++) {
+				m_MeshPrimDataVec[i].m_MultiMeshIndex = i;
+			}
 			return retcount;
 		}
 		//--------------------------------------------------------------------------------------
@@ -1057,6 +1114,9 @@ namespace basecross {
 		size_t AddMesh(const shared_ptr<MeshResource>& Res) {
 			auto retcount = m_MeshPrimDataVec.size();
 			m_MeshPrimDataVec.push_back(Res->GetMashData());
+			for (size_t i = 0; i < m_MeshPrimDataVec.size(); i++) {
+				m_MeshPrimDataVec[i].m_MultiMeshIndex = i;
+			}
 			return retcount;
 		}
 		//--------------------------------------------------------------------------------------
@@ -1108,6 +1168,9 @@ namespace basecross {
 		void RemoveMashData(size_t Index){
 			CheckMeshVecCount(Index);
 			m_MeshPrimDataVec.erase(m_MeshPrimDataVec.begin() + Index);
+			for (size_t i = 0; i < m_MeshPrimDataVec.size(); i++) {
+				m_MeshPrimDataVec[i].m_MultiMeshIndex = i;
+			}
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1449,6 +1512,51 @@ namespace basecross {
 			auto Ptr = ObjectFactory::Create<MultiMeshResource>();
 			return Ptr;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルマルチメッシュの作成（スタティックメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MultiMeshResource> CreateStaticModelMultiMesh(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タンジェント付きオリジナルマルチメッシュの作成（スタティックメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MultiMeshResource> CreateStaticModelMultiMeshWithTangent(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	オリジナルマルチメッシュの作成（ボーンメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MultiMeshResource> CreateBoneModelMultiMesh(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	タンジェント付きオリジナルマルチメッシュの作成（ボーンメッシュ）
+		@param[in]	BinDataDir	基準ディレクトリ
+		@param[in]	BinDataFile	データファイル名
+		@param[in]	AccessWrite = false	頂点を変更できるかどうか
+		@return	リソースのスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<MultiMeshResource> CreateBoneModelMultiMeshWithTangent(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false);
+
 	};
 
 	class AudioResource;

@@ -68,8 +68,12 @@ namespace basecross {
 	void GameStage::CreateChara() {
 		AddGameObject<StaticChara>(Vec3(2.5f, 0.0f, 0.0f),false);
 		AddGameObject<StaticChara>(Vec3(5.0f, 0.0f, 0.0f),true);
+		AddGameObject<StaticMultiMeshChara>(Vec3(2.5f, 0.0f, -2.0f), false);
+		AddGameObject<StaticMultiMeshChara>(Vec3(5.0f, 0.0f, -2.0f), true);
 		AddGameObject<BoneChara>(Vec3(-5.0f, 0.0f, 0.0f),false);
 		AddGameObject<BoneChara>(Vec3(-2.5f, 0.0f, 0.0f),true);
+		AddGameObject<BoneMultiMeshChara>(Vec3(-5.0f, 0.0f, -2.0f), false);
+		AddGameObject<BoneMultiMeshChara>(Vec3(-2.5f, 0.0f, -2.0f), true);
 	}
 
 

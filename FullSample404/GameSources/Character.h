@@ -100,6 +100,21 @@ namespace basecross{
 		virtual void OnCreate() override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	Staticキャラ(マルチメッシュ版)
+	//--------------------------------------------------------------------------------------
+	class StaticMultiMeshChara : public GameObject {
+		Vec3 m_StartPos;
+		bool m_TamgentUse;
+	public:
+		//構築と破棄
+		StaticMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
+		virtual ~StaticMultiMeshChara();
+		//初期化
+		virtual void OnCreate() override;
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	Boneキャラ
@@ -115,6 +130,22 @@ namespace basecross{
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	Boneキャラ(マルチメッシュ版)
+	//--------------------------------------------------------------------------------------
+	class BoneMultiMeshChara : public GameObject {
+		Vec3 m_StartPos;
+		bool m_TamgentUse;
+	public:
+		//構築と破棄
+		BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
+		virtual ~BoneMultiMeshChara();
+		//初期化
+		virtual void OnCreate() override;
+		virtual void OnUpdate() override;
+	};
+
 
 
 

@@ -294,6 +294,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const { return nullptr; }
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	各オブジェクトごとにボーンを所持しておくポインタ（マルチメッシュ版）<br />
+		シャドウマップなどから参照できるように仮想関数にする<br />
+		派生クラスでボーンを所持する場合は多重定義する
+		@return	ボーン行列の配列のポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< bsm::Mat4x4 >* GetVecMultiLocalBonesPtr(size_t index) const { return nullptr; }
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1026,6 +1035,8 @@ namespace basecross {
 		//以下、ボーンモデル用
 		//ローカルボーン行列の配列
 		vector<bsm::Mat4x4> m_LocalBonesMatrix;
+		//ローカルボーン行列の配列(マルチメッシュ用)
+		vector<vector<bsm::Mat4x4>> m_MultiLocalBonesMatrix;
 		//アニメーション定義のマップ
 		map<wstring, AnimationData> m_AnimationMap;
 		//現在のアニメーション名
@@ -1057,6 +1068,19 @@ namespace basecross {
 					m_LocalBonesMatrix[i] = SampleMatrixVec[i];
 				}
 			}
+			//マルチメッシュ用
+			auto MultiMeshRes = m_MultiMeshResource.lock();
+			if (MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0) {
+				m_MultiLocalBonesMatrix.resize(MultiMeshRes->GetMeshVecCount());
+				for (size_t i = 0; i < MultiMeshRes->GetMeshVecCount(); i++) {
+					m_MultiLocalBonesMatrix[i].resize(MultiMeshRes->GetBoneCount(i));
+					auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(i);
+					for (UINT j = 0; j < m_MultiLocalBonesMatrix[i].size(); j++) {
+						m_MultiLocalBonesMatrix[i][j] = SampleMatrixVec[j];
+					}
+				}
+			}
+
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1068,7 +1092,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void ChangeCurrentAnimation(const wstring& AnemationName, float StartTime = 0.0f) {
 			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
+			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
+			//マルチメッシュ用
+			auto MultiMeshRes = m_MultiMeshResource.lock();
+			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
+			if (MeshResFlg || MultiMeshResFlg) {
 				if (AnemationName == L"") {
 					throw BaseException(
 						L"アニメーション名が空白です",
@@ -1108,7 +1136,11 @@ namespace basecross {
 		void AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
 			float SamplesParSecond = 30.0f) {
 			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
+			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
+			//マルチメッシュ用
+			auto MultiMeshRes = m_MultiMeshResource.lock();
+			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
+			if (MeshResFlg || MultiMeshResFlg) {
 				if (Name == L"") {
 					throw BaseException(
 						L"アニメーション名が空白です",
@@ -1150,27 +1182,24 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void InterpolationMatrix(const bsm::Mat4x4& m1, const bsm::Mat4x4& m2, float t, bsm::Mat4x4& out) {
-			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
-				bsm::Vec3 Scale1, Pos1;
-				bsm::Quat Qt1;
-				m1.decompose(Scale1, Qt1, Pos1);
-				Qt1.normalize();
+			bsm::Vec3 Scale1, Pos1;
+			bsm::Quat Qt1;
+			m1.decompose(Scale1, Qt1, Pos1);
+			Qt1.normalize();
 
-				bsm::Vec3 Scale2, Pos2;
-				bsm::Quat Qt2;
+			bsm::Vec3 Scale2, Pos2;
+			bsm::Quat Qt2;
 
-				m2.decompose(Scale2, Qt2, Pos2);
-				Qt2.normalize();
+			m2.decompose(Scale2, Qt2, Pos2);
+			Qt2.normalize();
 
-				bsm::Vec3 ScaleOut, PosOut;
-				bsm::Quat QtOut;
+			bsm::Vec3 ScaleOut, PosOut;
+			bsm::Quat QtOut;
 
-				ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
-				PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
-				QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
-				out.affineTransformation(ScaleOut, bsm::Vec3(0, 0, 0), QtOut, PosOut);
-			}
+			ScaleOut = Lerp::CalculateLerp(Scale1, Scale2, 0.0f, 1.0f, t, Lerp::Linear);
+			PosOut = Lerp::CalculateLerp(Pos1, Pos2, 0.0f, 1.0f, t, Lerp::Linear);
+			QtOut = XMQuaternionSlerp(Qt1, Qt2, t);
+			out.affineTransformation(ScaleOut, bsm::Vec3(0, 0, 0), QtOut, PosOut);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1180,7 +1209,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		AnimationData& GetAnimationData() {
 			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
+			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
+			//マルチメッシュ用
+			auto MultiMeshRes = m_MultiMeshResource.lock();
+			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
+			if (MeshResFlg || MultiMeshResFlg) {
 				if (m_CurrentAnimeName == L"") {
 					//見つからない
 					throw BaseException(
@@ -1188,8 +1221,8 @@ namespace basecross {
 						L"if (m_CurrentAnimeName == L\"\")",
 						L"DrawObjectBase::GetAnimationData()"
 					);
-					return m_AnimationMap[m_CurrentAnimeName];
 				}
+				return m_AnimationMap[m_CurrentAnimeName];
 			}
 			//ボーンデータではない
 			throw BaseException(
@@ -1207,7 +1240,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		bool UpdateAnimation(float ElapsedTime) {
 			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
+			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
+			//マルチメッシュ用
+			auto MultiMeshRes = m_MultiMeshResource.lock();
+			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
+			if (MeshResFlg || MultiMeshResFlg) {
 				if (ElapsedTime < 0.0f) {
 					throw BaseException(
 						L"アニメーション更新にマイナスは設定できません",
@@ -1223,74 +1260,160 @@ namespace basecross {
 						L"DrawObjectBase::UpdateAnimation()"
 					);
 				}
-				auto PtrMesh = MeshRes;
-				UINT SampleCount = PtrMesh->GetSampleCount();
-				auto& SampleMatrixVec = PtrMesh->GetSampleMatrixVec();
-				UINT BoneCount = PtrMesh->GetBoneCount();
-				auto& TgtAnimeData = m_AnimationMap[m_CurrentAnimeName];
-				if (TgtAnimeData.m_StartSample >= SampleCount) {
-					//スタートのサンプルが最後のサンプル以降だった
-					TgtAnimeData.m_StartSample = SampleCount - 1;
-					TgtAnimeData.m_SampleLength = 0;
-					UINT UITgtSample = TgtAnimeData.m_StartSample;
-					//最後のサンプルを表示
-					for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-						m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
+				if (MeshResFlg) {
+					auto PtrMesh = MeshRes;
+					UINT SampleCount = PtrMesh->GetSampleCount();
+					auto& SampleMatrixVec = PtrMesh->GetSampleMatrixVec();
+					UINT BoneCount = PtrMesh->GetBoneCount();
+					auto& TgtAnimeData = m_AnimationMap[m_CurrentAnimeName];
+					if (TgtAnimeData.m_StartSample >= SampleCount) {
+						//スタートのサンプルが最後のサンプル以降だった
+						TgtAnimeData.m_StartSample = SampleCount - 1;
+						TgtAnimeData.m_SampleLength = 0;
+						UINT UITgtSample = TgtAnimeData.m_StartSample;
+						//最後のサンプルを表示
+						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
+							m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
+						}
+						m_CurrentAnimeTime = 0;
+						if (TgtAnimeData.m_IsLoop) {
+							TgtAnimeData.m_IsAnimeEnd = false;
+							return false;
+						}
+						else {
+							TgtAnimeData.m_IsAnimeEnd = true;
+							return true;
+						}
 					}
-					m_CurrentAnimeTime = 0;
-					if (TgtAnimeData.m_IsLoop) {
-						TgtAnimeData.m_IsAnimeEnd = false;
-						return false;
-					}
-					else {
-						TgtAnimeData.m_IsAnimeEnd = true;
+					//すでにアニメが終了している
+					if (TgtAnimeData.m_IsAnimeEnd) {
+						//現在のローカル行列を使用
 						return true;
 					}
-				}
-				//すでにアニメが終了している
-				if (TgtAnimeData.m_IsAnimeEnd) {
-					//現在のローカル行列を使用
+					//カレントタイムを更新
+					m_CurrentAnimeTime += ElapsedTime;
+					//スタート位置を計算
+					auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
+					UINT UITgtSample = (UINT)FLOATTgtSample;
+					UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
+					if (UILastSample >= SampleCount) {
+						UILastSample = SampleCount - 1;
+					}
+					if (UITgtSample >= UILastSample) {
+						UITgtSample = UILastSample - 1;
+						//最後のサンプルを表示
+						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
+							m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
+						}
+						if (TgtAnimeData.m_IsLoop) {
+							TgtAnimeData.m_IsAnimeEnd = false;
+							//ループするのでカレントタイムを0にする
+							m_CurrentAnimeTime = 0;
+							return false;
+						}
+						else {
+							m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
+							TgtAnimeData.m_IsAnimeEnd = true;
+							return true;
+						}
+					}
+					else {
+						//サンプルとサンプルの間の割合を計算
+						FLOATTgtSample -= (float)UITgtSample;
+						UINT UINextSample = UITgtSample + 1;
+						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
+							InterpolationMatrix(
+								SampleMatrixVec[BoneCount * UITgtSample + i],
+								SampleMatrixVec[BoneCount * UINextSample + i],
+								FLOATTgtSample, m_LocalBonesMatrix[i]);
+						}
+						//アニメは終わってない
+						return false;
+					}
 					return true;
 				}
-				//カレントタイムを更新
-				m_CurrentAnimeTime += ElapsedTime;
-				//スタート位置を計算
-				auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
-				UINT UITgtSample = (UINT)FLOATTgtSample;
-				UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
-				if (UILastSample >= SampleCount) {
-					UILastSample = SampleCount - 1;
-				}
-				if (UITgtSample >= UILastSample) {
-					UITgtSample = UILastSample - 1;
-					//最後のサンプルを表示
-					for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-						m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-					}
-					if (TgtAnimeData.m_IsLoop) {
-						TgtAnimeData.m_IsAnimeEnd = false;
-						//ループするのでカレントタイムを0にする
+				else if (MultiMeshResFlg) {
+					//サンプル数は最初のメッシュのを使用
+					UINT SampleCount = MultiMeshRes->GetSampleCount(0);
+					auto& TgtAnimeData = m_AnimationMap[m_CurrentAnimeName];
+					if (TgtAnimeData.m_StartSample >= SampleCount) {
+						//スタートのサンプルが最後のサンプル以降だった
+						TgtAnimeData.m_StartSample = SampleCount - 1;
+						TgtAnimeData.m_SampleLength = 0;
+						UINT UITgtSample = TgtAnimeData.m_StartSample;
+						//最後のサンプルを表示
+						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
+							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
+							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
+							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
+								m_MultiLocalBonesMatrix[mc][i] = SampleMatrixVec[BoneCount * UITgtSample + i];
+							}
+						}
 						m_CurrentAnimeTime = 0;
-						return false;
+						if (TgtAnimeData.m_IsLoop) {
+							TgtAnimeData.m_IsAnimeEnd = false;
+							return false;
+						}
+						else {
+							TgtAnimeData.m_IsAnimeEnd = true;
+							return true;
+						}
 					}
-					else {
-						m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
-						TgtAnimeData.m_IsAnimeEnd = true;
+					//すでにアニメが終了している
+					if (TgtAnimeData.m_IsAnimeEnd) {
+						//現在のローカル行列を使用
 						return true;
 					}
-				}
-				else {
-					//サンプルとサンプルの間の割合を計算
-					FLOATTgtSample -= (float)UITgtSample;
-					UINT UINextSample = UITgtSample + 1;
-					for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-						InterpolationMatrix(
-							SampleMatrixVec[BoneCount * UITgtSample + i],
-							SampleMatrixVec[BoneCount * UINextSample + i],
-							FLOATTgtSample, m_LocalBonesMatrix[i]);
+					//カレントタイムを更新
+					m_CurrentAnimeTime += ElapsedTime;
+					//スタート位置を計算
+					auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
+					UINT UITgtSample = (UINT)FLOATTgtSample;
+					UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
+					if (UILastSample >= SampleCount) {
+						UILastSample = SampleCount - 1;
 					}
-					//アニメは終わってない
-					return false;
+					if (UITgtSample >= UILastSample) {
+						UITgtSample = UILastSample - 1;
+						//最後のサンプルを表示
+						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
+							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
+							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
+							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
+								m_MultiLocalBonesMatrix[mc][i] = SampleMatrixVec[BoneCount * UITgtSample + i];
+							}
+						}
+						if (TgtAnimeData.m_IsLoop) {
+							TgtAnimeData.m_IsAnimeEnd = false;
+							//ループするのでカレントタイムを0にする
+							m_CurrentAnimeTime = 0;
+							return false;
+						}
+						else {
+							m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
+							TgtAnimeData.m_IsAnimeEnd = true;
+							return true;
+						}
+					}
+					else {
+						//サンプルとサンプルの間の割合を計算
+						FLOATTgtSample -= (float)UITgtSample;
+						UINT UINextSample = UITgtSample + 1;
+						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
+							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
+							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
+
+							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
+								InterpolationMatrix(
+									SampleMatrixVec[BoneCount * UITgtSample + i],
+									SampleMatrixVec[BoneCount * UINextSample + i],
+									FLOATTgtSample, m_MultiLocalBonesMatrix[mc][i]);
+							}
+						}
+						//アニメは終わってない
+						return false;
+					}
+					return true;
 				}
 			}
 			return true;
@@ -1821,7 +1944,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr);
+		virtual void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	マルチメッシュリソースを設定する
@@ -2040,6 +2163,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列を得る（マルチメッシュ版）
+		@return	ローカルボーン行列配列の先頭ポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual const vector< bsm::Mat4x4 >* GetVecMultiLocalBonesPtr(size_t index) const override;
 		//インスタンス描画用
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2354,6 +2484,22 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetMeshResource(const wstring& MeshKey);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	MeshResourcePtr	メッシュリソース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	マルチメッシュリソースを設定する
+		@param[in]	ResKey	メッシュリソースのキー
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMultiMeshResource(const wstring& ResKey);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	OnCreate処理

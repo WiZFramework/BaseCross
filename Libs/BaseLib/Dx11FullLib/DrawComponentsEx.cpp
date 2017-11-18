@@ -660,6 +660,14 @@ namespace basecross {
 		return &pImpl->m_BcDrawObject.m_LocalBonesMatrix;
 	}
 
+	const vector< bsm::Mat4x4 >* BcBaseDraw::GetVecMultiLocalBonesPtr(size_t index) const {
+		if (pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix.size() > index) {
+			return &(pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix[index]);
+		}
+		return nullptr;
+	}
+
+
 	void BcBaseDraw::SetConstants(BasicConstants& BcCb, const MeshPrimData& data) {
 		//行列の定義
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
@@ -804,6 +812,22 @@ namespace basecross {
 				BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
 				BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
 				cb_count += 3;
+			}
+		}
+		else if (pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix.size() > data.m_MultiMeshIndex) {
+			//マルチメッシュのボーンがあった
+			//ボーンの設定
+			BoneSz = pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex].size();
+			if (BoneSz > 0) {
+				UINT cb_count = 0;
+				for (size_t b = 0; b < BoneSz; b++) {
+					bsm::Mat4x4 mat = pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex][b];
+					mat.transpose();
+					BcCb.bones[cb_count] = ((XMMATRIX)mat).r[0];
+					BcCb.bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+					BcCb.bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+					cb_count += 3;
+				}
 			}
 		}
 	}
@@ -1219,6 +1243,14 @@ namespace basecross {
 		BcPNTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
 
+	void BcPNTBoneModelDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
+		BcBaseDraw::SetMultiMeshResource(MeshResourcePtr);
+		BoneInit();
+	}
+
+	void BcPNTBoneModelDraw::SetMultiMeshResource(const wstring& ResKey) {
+		BcPNTBoneModelDraw::SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
+	}
 
 	void BcPNTBoneModelDraw::OnCreate() {
 		SetLightingEnabled(true);
@@ -1493,6 +1525,17 @@ namespace basecross {
 	void BcPNTnTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
 		BcPNTnTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
+
+	void BcPNTnTBoneModelDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
+		BcBaseDraw::SetMultiMeshResource(MeshResourcePtr);
+		BoneInit();
+	}
+
+	void BcPNTnTBoneModelDraw::SetMultiMeshResource(const wstring& ResKey) {
+		BcPNTnTBoneModelDraw::SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
+	}
+
+
 	void BcPNTnTBoneModelDraw::OnCreate() {
 		SetLightingEnabled(true);
 		//マルチライトの設定

@@ -32,6 +32,15 @@ namespace basecross{
 		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
 		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
 
+		//スタティックモデル(マルチメッシュ)の通常リソース
+		auto StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+
+		//ボーンモデル(マルチメッシュ)の通常リソース
+		auto MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
+
+
 	}
 
 	void Scene::OnCreate() {

@@ -67,11 +67,11 @@ namespace basecross {
 		DrawComp->SetTextureResource(L"SKY_TX");
 	}
 
-	//FbxMeshObjectの作成
+	//FbxMeshContainerの作成
 	void GameStage::CreateFbxMeshObject() {
-		auto FbxMeshObjectPtr = AddGameObject<FbxMeshObject>();
+		auto FbxMeshObjectPtr = AddGameObject<FbxMeshContainer>();
 		//シェア配列に追加
-		SetSharedGameObject(L"FbxMeshObject", FbxMeshObjectPtr);
+		SetSharedGameObject(L"FbxMeshContainer", FbxMeshObjectPtr);
 
 	}
 
@@ -94,7 +94,7 @@ namespace basecross {
 	void GameStage::ReadFbxFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale, const Vec3& Position,
 		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
-			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+			auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 			PtrFbxObj->ResetFbxMesh(Dir, FileName, MeshIndex, Scale, Position, IsReadStatic, WithTangent, NormalFileName, TextureWrap);
 		}
 		catch (...) {
@@ -104,7 +104,7 @@ namespace basecross {
 
 	void GameStage::SaveStaticBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale) {
 		try {
-			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+			auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 			PtrFbxObj->SaveStaticBinFile(Dir, FileName, MeshIndex, Scale);
 		}
 		catch (...) {
@@ -115,7 +115,7 @@ namespace basecross {
 	void GameStage::SaveSkinBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale,
 		UINT FrameParSec, UINT Start, UINT End) {
 		try {
-			auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+			auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 			PtrFbxObj->SaveSkinBinFile(Dir, FileName, MeshIndex, Scale, FrameParSec, Start, End);
 		}
 		catch (...) {
@@ -126,28 +126,28 @@ namespace basecross {
 
 
 	void GameStage::ClearFbxMesh() {
-		auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+		auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 		PtrFbxObj->ClearFbxMesh();
 	}
 
 
 	bool GameStage::CheckSkinMesh() {
-		auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+		auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 		return PtrFbxObj->CheckSkinMesh();
 	}
 
 	bool GameStage::CheckMesh() {
-		auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+		auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 		return PtrFbxObj->CheckMesh();
 	}
 
 	void GameStage::MoveFbxFile(UINT FrameRate, UINT StartTime, UINT EndTime, bool IsLoop) {
-		auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+		auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 		PtrFbxObj->MoveFbxMesh(FrameRate, StartTime, EndTime, IsLoop);
 	}
 
 	void GameStage::AnimePoseStart() {
-		auto PtrFbxObj = GetSharedGameObject<FbxMeshObject>(L"FbxMeshObject");
+		auto PtrFbxObj = GetSharedGameObject<FbxMeshContainer>(L"FbxMeshContainer");
 		PtrFbxObj->AnimePoseStart();
 	}
 

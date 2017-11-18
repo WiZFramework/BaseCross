@@ -30,6 +30,7 @@ namespace basecross{
 		//ボーンモデルの通常リソース
 		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
 		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+
 		//ボーンモデルのタンジェント付きリソース
 		ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");
 		App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", ModelMesh);
@@ -37,6 +38,17 @@ namespace basecross{
 		strTexture = DataDir + L"Chara_R_narmal.png";
 		App::GetApp()->RegisterTexture(L"Chara_R_NORMAL_TX", strTexture);
 
+		//ボーンモデル(マルチメッシュ)の通常リソース
+		auto MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
+
+		//ボーンモデル(マルチメッシュ)のタンジェント付きリソース
+		MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMeshWithTangent(DataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH_WITH_TAN", MultiModelMesh);
+
+		//法線マップ
+		strTexture = DataDir + L"Tx_Checker_Normal.png";
+		App::GetApp()->RegisterTexture(L"OBJECT_NORMAL_TX", strTexture);
 
 
 		//スタティックモデルの通常リソース
@@ -48,6 +60,17 @@ namespace basecross{
 		//法線マップ
 		strTexture = DataDir + L"Character_2_normal.png";
 		App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);
+
+		//スタティックモデル(マルチメッシュ)の通常リソース
+		auto StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+
+		//スタティックモデル(マルチメッシュ)のタンジェント付きリソース
+		StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMeshWithTangent(DataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH_WITH_TAN", StaticMultiModelMesh);
+
+
+
 		
 
 	}

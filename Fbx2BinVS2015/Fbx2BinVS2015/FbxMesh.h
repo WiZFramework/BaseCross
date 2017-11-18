@@ -589,10 +589,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class FbxMeshObject : public GameObject {
 		wstring m_DataDir;
-		wstring m_FbxFileName;
-		wstring m_FbxResName;
 		size_t m_MeshIndex;
-		wstring m_FbxMeshResName;
+
+		shared_ptr<FbxMeshResource2> m_PtrFbxMesh;
 
 		float m_CharaLocalScale;
 		Vec3 m_CharaLocalPosition;
@@ -606,7 +605,58 @@ namespace basecross {
 
 	public:
 		FbxMeshObject(const shared_ptr<Stage>& StagePtr);
+
+
 		virtual ~FbxMeshObject() {}
+
+		void ResetFbxMesh(const wstring& DirName,const shared_ptr<FbxSceneResource>& SceneRes, size_t MeshIndex, float Scale, const Vec3& Position,
+			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap);
+
+		bool CheckSkinMesh();
+		bool CheckMesh();
+
+
+		void MoveFbxMesh(UINT FrameRate,UINT StartTime,UINT EndTime,bool IsLoop);
+
+		void AnimePoseStart();
+
+
+		void SaveStaticBinFile(ofstream& ofs, float Scale);
+		void SaveSkinBinFile(ofstream& ofs, float Scale,UINT FrameParSec, UINT Start, UINT End);
+
+
+		//初期化
+		virtual void OnCreate() override;
+		virtual void OnUpdate() override;
+		virtual void OnUpdate2() override;
+
+
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	class FbxMeshContainer : public GameObject;
+	//	用途: FBXメッシュオブジェクトのコンテナ
+	//--------------------------------------------------------------------------------------
+	class FbxMeshContainer : public GameObject {
+		wstring m_DataDir;
+		wstring m_FbxFileName;
+		wstring m_FbxResName;
+
+		float m_CharaLocalScale;
+		Vec3 m_CharaLocalPosition;
+		bool m_IsReadStaticMesh;
+		bool m_WithTangent;
+		//テクスチャをラッピング処理するかどうか
+		BOOL m_TextureWrap;
+
+		//アニメーション実行中かどうか
+		bool m_IsAnimeRun;
+
+		vector<shared_ptr<FbxMeshObject>> m_FbxMeshObjectVec;
+
+	public:
+		FbxMeshContainer(const shared_ptr<Stage>& StagePtr);
+		virtual ~FbxMeshContainer() {}
 		void ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vec3& Position,
 			bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap);
 
@@ -617,22 +667,23 @@ namespace basecross {
 		bool CheckMesh();
 
 
-		void MoveFbxMesh(UINT FrameRate,UINT StartTime,UINT EndTime,bool IsLoop);
+		void MoveFbxMesh(UINT FrameRate, UINT StartTime, UINT EndTime, bool IsLoop);
 
 		void AnimePoseStart();
 
 		void SaveStaticBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale);
 		void SaveSkinBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale,
-			UINT FrameParSec,UINT Start,UINT End);
+			UINT FrameParSec, UINT Start, UINT End);
 
 
 		//初期化
 		virtual void OnCreate() override;
-		virtual void OnUpdate() override;
-		virtual void OnUpdate2() override;
+		virtual void OnUpdate() override {}
+		virtual void OnUpdate2() override {}
 
 
 	};
+
 
 
 }

@@ -78,17 +78,12 @@ namespace basecross {
 		}
 	}
 
-
-
 	void FbxMeshResource2::GetMaterialVec(vector<MaterialEx>& materials) {
-
 		DWORD MaterialCount = pImpl->m_FbxMesh->GetNode()->GetMaterialCount();
-
 		//マテリアルの設定
 		//テクスチャファイル名作成のためのワーク配列
 		wchar_t Buff[MAX_PATH];
 		setlocale(LC_CTYPE, "jpn");
-
 		if (pImpl->m_FbxSceneResource.expired()) {
 			//失敗した
 			throw BaseException(
@@ -98,7 +93,6 @@ namespace basecross {
 
 		}
 		auto FbxSceneResourcePtr = pImpl->m_FbxSceneResource.lock();
-
 		for (DWORD i = 0; i < MaterialCount; i++) {
 			//マテリアル取得
 			MaterialEx material;
@@ -107,51 +101,180 @@ namespace basecross {
 			FbxSurfaceMaterial*			pMaterial = pImpl->m_FbxMesh->GetNode()->GetMaterial(i);
 			FbxSurfacePhong*			pPhong = (FbxSurfacePhong*)pMaterial;
 			FbxPropertyT<FbxDouble3>	color;
-			color = pPhong->Ambient;
-			//アンビエントは使用しない
-			material.m_Ambient = Col4(0,0,0,0);
-//			material.m_Ambient = Col4(0.5f, 0.5f, 0.5f, 1.0f);
-			//			material.m_Ambient = Color4((float)color.Get()[ 0 ], (float)color.Get()[ 1 ], (float)color.Get()[ 2 ], 1.0f);
-			color = pPhong->Diffuse;
-			//デフィーズはテクスチャを使うのでフル
-			material.m_Diffuse = Col4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
-			//			material.m_Specular = Col4(0.0f,0.0f,0.0f,0.4f);
-			material.m_Specular = Col4((float)color.Get()[0] * 0.5f, (float)color.Get()[1] * 0.5f, (float)color.Get()[2] * 0.5f, 0.4f);
-			color = pPhong->Emissive;
-			//エミッシブはDirectXTKデフォルト
-			//material.m_Emissive = Col4(0.05333332f,0.09882354f,0.1819608f,1.0f);
-			material.m_Emissive = Col4(0,0,0,0);
-//			material.m_Emissive = Col4((float)color.Get()[0], (float)color.Get()[1], (float)color.Get()[2], 1.0f);
 
-			//マテリアルに関連付けられているテクスチャを読み込む
-			const FbxProperty	fbxProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
-			//テクスチャからファイル情報を抜き出す
-			FbxFileTexture*	pFbxFileTexture = fbxProperty.GetSrcObject< FbxFileTexture >(i);
-			TextureResource* pTexture = 0;
-			if (pFbxFileTexture) {
-				//テクスチャファイル名からパスを排除しファイル名+拡張子として合成する
-				char szTextureFilename[256], szFileExt[8];
-				_splitpath_s(pFbxFileTexture->GetFileName(), nullptr, 0, nullptr, 0, szTextureFilename, 256, szFileExt, 8);
-				//ファイル名の合成
-				string sTextureFilename(szTextureFilename);
-				sTextureFilename += szFileExt;
-				//UNIコードに変換
-				size_t size = 0;
-				mbstowcs_s(&size, Buff, sTextureFilename.c_str(), MAX_PATH - 1);
-				wstring strWork = FbxSceneResourcePtr->GetDataDir() + Buff;
-				//pFbxFileTextureからラップモードを取得してテクスチャを作成
-				auto PtrTexture = TextureResource::CreateTextureResource(strWork.c_str());
-				material.m_TextureResource = PtrTexture;
+			auto impl = GetImplementation(pMaterial, FBXSDK_IMPLEMENTATION_CGFX);
+			if (!impl) {
+				impl = GetImplementation(pMaterial, FBXSDK_IMPLEMENTATION_HLSL);
 			}
+			//implが取得できない
+			if (!impl) {
+				if (pMaterial->GetClassId().Is(FbxSurfacePhong::ClassId)) {
+					auto p_phong = (FbxSurfacePhong*)pMaterial;
+					//ディフーズ
+					{
+						auto v = p_phong->Diffuse.Get();
+						material.m_Diffuse = Col4((float)v[0], (float)v[1], (float)v[2], 1.0f);
+					}
+					//アンビエント
+					{
+						auto v = p_phong->Ambient.Get();
+						material.m_Ambient = Col4((float)v[0], (float)v[1], (float)v[2], 0);
+					}
+					//スペキュラー
+					{
+						auto v = p_phong->Specular.Get();
+						material.m_Specular = Col4((float)v[0], (float)v[1], (float)v[2], 0);
+					}
+					//光沢
+					{
+						auto v = p_phong->Shininess.Get();
+						//無視
+					}
+					//スペキュラファクタ
+					{
+						auto v = p_phong->SpecularFactor.Get();
+						material.m_Specular.w = (float)v;
+					}
+					//エミッシブ
+					{
+						auto v = p_phong->Emissive.Get();
+						material.m_Emissive = Col4((float)v[0], (float)v[1], (float)v[2], 0);
+					}
+					//透過度（デフィーズに設定）
+					{
+						auto v = p_phong->TransparencyFactor.Get();
+						material.m_Diffuse.w = (float)v;
+					}
+					//反射度
+					{
+						auto v = p_phong->ReflectionFactor.Get();
+						//無視
+					}
+				}
+				else if (pMaterial->GetClassId().Is(FbxSurfaceLambert::ClassId)) {
+					auto p_lam = (FbxSurfaceLambert*)pMaterial;
+					//ディフーズ
+					{
+						auto v = p_lam->Diffuse.Get();
+						material.m_Diffuse = Col4((float)v[0], (float)v[1], (float)v[2], 1.0f);
+					}
+					//アンビエント
+					{
+						auto v = p_lam->Ambient.Get();
+						material.m_Ambient = Col4((float)v[0], (float)v[1], (float)v[2], 0);
+					}
+					//エミッシブ
+					{
+						auto v = p_lam->Emissive.Get();
+						material.m_Emissive = Col4((float)v[0], (float)v[1], (float)v[2], 0);
+					}
+					//透過度（デフィーズに設定）
+					{
+						auto v = p_lam->TransparencyFactor.Get();
+						material.m_Diffuse.w = (float)v;
+					}
+				}
+				//マテリアルに関連付けられているテクスチャを読み込む
+				const FbxProperty	fbxProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
+				//テクスチャからファイル情報を抜き出す
+				FbxFileTexture*	pFbxFileTexture = fbxProperty.GetSrcObject< FbxFileTexture >(i);
+				TextureResource* pTexture = 0;
+				if (pFbxFileTexture) {
+					//テクスチャファイル名からパスを排除しファイル名+拡張子として合成する
+					char szTextureFilename[256], szFileExt[8];
+					_splitpath_s(pFbxFileTexture->GetFileName(), nullptr, 0, nullptr, 0, szTextureFilename, 256, szFileExt, 8);
+					//ファイル名の合成
+					string sTextureFilename(szTextureFilename);
+					sTextureFilename += szFileExt;
+					//UNIコードに変換
+					size_t size = 0;
+					mbstowcs_s(&size, Buff, sTextureFilename.c_str(), MAX_PATH - 1);
+					wstring strWork = FbxSceneResourcePtr->GetDataDir() + Buff;
+					//pFbxFileTextureからラップモードを取得してテクスチャを作成
+					auto PtrTexture = TextureResource::CreateTextureResource(strWork.c_str());
+					material.m_TextureResource = PtrTexture;
+				}
+				else {
+					//テクスチャがない場合はnullptrを設定
+					material.m_TextureResource = nullptr;
+				}
+			}
+			//implが取得できた
 			else {
-				//テクスチャがない場合はnullptrを設定
-				material.m_TextureResource = nullptr;
+				auto p_root_table = impl->GetRootTable();
+				auto entry_count = p_root_table->GetEntryCount();
+				for (size_t table = 0; table < entry_count; ++table) {
+					auto entry_table = p_root_table->GetEntry(table);
+					auto entry_type = entry_table.GetEntryType(true);
+					FbxProperty prop;
+					//プロパティを取得する
+					if (strcmp(FbxPropertyEntryView::sEntryType, entry_type) == 0)
+					{
+						prop = pMaterial->FindPropertyHierarchical(entry_table.GetSource());
+						if (!prop.IsValid())
+						{
+							prop = pMaterial->RootProperty.FindHierarchical(entry_table.GetSource());
+						}
+					}
+					else if (strcmp(FbxConstantEntryView::sEntryType, entry_type) == 0)
+					{
+						prop = impl->GetConstants().FindHierarchical(entry_table.GetSource());
+					}
+					//プロパティが取得できなければ処理をキャンセル
+					if (!prop.IsValid()) {
+						continue;
+					}
+					auto str = entry_table.GetSource();
+					//とりあえずソースの名前取得
+					//テクスチャからファイル情報を抜き出す
+					FbxFileTexture*	pFbxFileTexture = prop.GetSrcObject< FbxFileTexture >(i);
+					TextureResource* pTexture = 0;
+					if (pFbxFileTexture) {
+						//テクスチャファイル名からパスを排除しファイル名+拡張子として合成する
+						char szTextureFilename[256], szFileExt[8];
+						_splitpath_s(pFbxFileTexture->GetFileName(), nullptr, 0, nullptr, 0, szTextureFilename, 256, szFileExt, 8);
+						//ファイル名の合成
+						string sTextureFilename(szTextureFilename);
+						sTextureFilename += szFileExt;
+						//UNIコードに変換
+						size_t size = 0;
+						mbstowcs_s(&size, Buff, sTextureFilename.c_str(), MAX_PATH - 1);
+						wstring strWork = FbxSceneResourcePtr->GetDataDir() + Buff;
+						//pFbxFileTextureからラップモードを取得してテクスチャを作成
+						auto PtrTexture = TextureResource::CreateTextureResource(strWork.c_str());
+						material.m_TextureResource = PtrTexture;
+					}
+					else {
+						//テクスチャがない場合はnullptrを設定
+						material.m_TextureResource = nullptr;
+						//テクスチャじゃなければなんかなのでなんか必要なものを登録する
+						auto source_type_name = std::string(str);
+						//名前からなんか検索する
+						auto Find = [&](const char* a) {
+							if (source_type_name.find(a) == std::string::npos) return false;
+							return true;
+						};
+						//おそらくmaya上でのエミッシブ値
+						if (Find("LitColor")) {
+							auto val = prop.Get<FbxDouble3>();
+							material.m_Emissive = Col4((float)val[0], (float)val[1], (float)val[2], 0);
+						}
+						else if (Find("FalloffPower")) {
+							auto val = prop.Get<FbxDouble>();
+							//無視
+						}
+						else if (Find("SpecularPower")) {
+							auto val = prop.Get<FbxDouble>();
+							material.m_Specular.w = (float)val;
+						}
+					}
+
+				}
 			}
 			//マテリアル配列に追加
 			materials.push_back(material);
 		}
 	}
-
 
 	void FbxMeshResource2::GetStaticVerticesIndicesMaterials(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
 		vector<MaterialEx>& materials) {
@@ -199,16 +322,13 @@ namespace basecross {
 						Vec3(static_cast< float >(vPos[0]), static_cast< float >(vPos[1]), -static_cast< float >(vPos[2])),
 						//法線の設定
 						//Z座標がFbxとは符号が逆になる（DirectXは左手座標系）
-//						Vec3(static_cast< float >(-vNormal[0]), -static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						Vec3(static_cast< float >(vNormal[0]), static_cast< float >(vNormal[1]), -static_cast< float >(vNormal[2])),
 						//UV値の設定
 						//Vの値が、1.0から引いた値になる
 						Vec2(static_cast< float >(vUV[0]), 1.0f - static_cast< float >(vUV[1]))
 					);
-
 				int tangentCount = pImpl->m_FbxMesh->GetElementTangentCount();
 				int binormalCount = pImpl->m_FbxMesh->GetElementBinormalCount();
-
 			}
 		}
 		//インデックス
@@ -236,6 +356,7 @@ namespace basecross {
 			StarIndex += materials[i].m_IndexCount;
 		}
 	}
+
 
 	void FbxMeshResource2::GetStaticVerticesIndicesMaterialsWithTangent(vector<VertexPositionNormalTangentTexture>& vertices,
 		vector<uint16_t>& indices, vector<MaterialEx>& materials) {
@@ -278,8 +399,6 @@ namespace basecross {
 				pImpl->m_FbxMesh->GetPolygonVertexNormal(i, j, vNormal);
 				//UV値を得る
 				pImpl->m_FbxMesh->GetPolygonVertexUV(i, j, sUVSetName, vUV, bUnmapped);
-
-
 				Vec4 Tan(0,0,0,0);
 				if (TanPtr) {
 					Tan.x = (float)TanPtr->GetDirectArray().GetAt(iIndex)[0];
@@ -287,7 +406,6 @@ namespace basecross {
 					Tan.z = (float)TanPtr->GetDirectArray().GetAt(iIndex)[2];
 					Tan.w = (float)TanPtr->GetDirectArray().GetAt(iIndex)[3];
 				}
-
 				vertices[iIndex] =
 					VertexPositionNormalTangentTexture(
 						//頂点の設定
@@ -520,18 +638,15 @@ namespace basecross {
 			FbxAMatrix	mBindPose, mCurrentPose;
 			pImpl->m_FbxSkin->GetCluster(i)->GetTransformLinkMatrix(mBindPose);
 			mCurrentPose = pImpl->m_FbxSkin->GetCluster(i)->GetLink()->EvaluateGlobalTransform(pImpl->m_timePeriod * 0);
-
 			for (int r = 0; r < 4; r++) {
 				for (int c = 0; c < 4; c++) {
 					bone.m_BindPose(r, c) = static_cast< float >(mBindPose.Get(r, c));
 					bone.m_CurrentPose(r, c) = static_cast< float >(mCurrentPose.Get(r, c));
 				}
 			}
-
 			Mat4x4	mMirror, mBindInverse;
 			mMirror.identity();
 			mMirror(2, 2) = -1.0f;
-
 			bone.m_BindPose *= mMirror;
 			bone.m_CurrentPose *= mMirror;
 			mBindInverse = inverse(bone.m_BindPose);
@@ -1965,10 +2080,7 @@ namespace basecross {
 	FbxMeshObject::FbxMeshObject(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
 		m_DataDir(L""),
-		m_FbxFileName(L""),
-		m_FbxResName(L""),
 		m_MeshIndex(0),
-		m_FbxMeshResName(L""),
 		m_CharaLocalScale(1.0f),
 		m_CharaLocalPosition(0,0,0),
 		m_IsReadStaticMesh(false),
@@ -1988,7 +2100,6 @@ namespace basecross {
 		PtrString->SetText(L"");
 		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
-		SetAlphaActive(true);
 
 
 	}
@@ -2015,96 +2126,57 @@ namespace basecross {
 	}
 
 	void FbxMeshObject::OnUpdate2() {
-		//文字列表示
-		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
-		wstring FPS(L"FPS: ");
-		FPS += Util::UintToWStr(fps);
-		FPS += L"\n";
-		wstring CurrentTime = L"";
-		wstring AnimeRun = L"";
-		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
-		auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
-		if (PtrBoneDraw) {
-			CurrentTime += Util::FloatToWStr(PtrBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
-			if (m_IsAnimeRun) {
-				AnimeRun = L"ANIME: RUN\n";
+		if (m_MeshIndex == 0) {
+			//メッシュインデックスが0の場合のみ文字列表示
+			auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+			wstring FPS(L"FPS: ");
+			FPS += Util::UintToWStr(fps);
+			FPS += L"\n";
+			wstring CurrentTime = L"";
+			wstring AnimeRun = L"";
+			auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
+			auto PtrTanBoneDraw = GetComponent<BcFbxPNTnTBoneModelDraw>(false);
+			if (PtrBoneDraw) {
+				CurrentTime += Util::FloatToWStr(PtrBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
+				if (m_IsAnimeRun) {
+					AnimeRun = L"ANIME: RUN\n";
+				}
+				else {
+					AnimeRun = L"ANIME: STOP\n";
+				}
 			}
-			else {
-				AnimeRun = L"ANIME: STOP\n";
+			else if (PtrTanBoneDraw) {
+				CurrentTime += Util::FloatToWStr(PtrTanBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
+				if (m_IsAnimeRun) {
+					AnimeRun = L"ANIME: RUN\n";
+				}
+				else {
+					AnimeRun = L"ANIME: STOP\n";
+				}
 			}
-		}
-		else if (PtrTanBoneDraw) {
-			CurrentTime += Util::FloatToWStr(PtrTanBoneDraw->GetCurrentTime(), 6, Util::FloatModify::Fixed) + L"\n";
-			if (m_IsAnimeRun) {
-				AnimeRun = L"ANIME: RUN\n";
-			}
-			else {
-				AnimeRun = L"ANIME: STOP\n";
-			}
-		}
 
-		wstring str = FPS + CurrentTime + AnimeRun;
-		//文字列をつける
-		auto PtrString = GetComponent<StringSprite>();
-		PtrString->SetText(str);
-	}
-
-
-	void FbxMeshObject::ClearFbxMesh() {
-		try {
-			if (m_FbxMeshResName != L"") {
-				App::GetApp()->UnRegisterResource<FbxMeshResource2>(m_FbxMeshResName);
-				m_FbxMeshResName = L"";
-			}
-			if (m_FbxResName != L"") {
-				App::GetApp()->UnRegisterResource<FbxSceneResource>(m_FbxResName);
-				m_FbxResName = L"";
-			}
-		}
-		catch (...) {
-			throw;
+			wstring str = FPS + CurrentTime + AnimeRun;
+			//文字列をつける
+			auto PtrString = GetComponent<StringSprite>();
+			PtrString->SetText(str);
 		}
 	}
 
-	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vec3& Position,
+
+
+
+	void FbxMeshObject::ResetFbxMesh(const wstring& DirName, const shared_ptr<FbxSceneResource>& SceneRes,
+		size_t MeshIndex, float Scale, const Vec3& Position,
 		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
 		try {
-			if (m_FbxMeshResName != L"") {
-				App::GetApp()->UnRegisterResource<FbxMeshResource2>(m_FbxMeshResName);
-				m_FbxMeshResName = L"";
-			}
-			if (m_FbxResName != L"") {
-				App::GetApp()->UnRegisterResource<FbxSceneResource>(m_FbxResName);
-				m_FbxResName = L"";
-			}
 			m_DataDir = DirName;
-			m_FbxFileName = FbxName;
-			m_FbxResName = FbxName;
 			m_MeshIndex = MeshIndex;
-			m_FbxMeshResName = m_FbxResName + Util::UintToWStr(m_MeshIndex);
 			m_CharaLocalScale = Scale;
 			m_CharaLocalPosition = Position;
 			m_IsReadStaticMesh = IsReadStatic;
 			m_WithTangent = WithTangent;
 			m_TextureWrap = TextureWrap;
-
-			shared_ptr<FbxSceneResource> PtrFbxScene;
-			if (App::GetApp()->CheckResource<FbxSceneResource>(m_FbxResName)) {
-				PtrFbxScene = App::GetApp()->GetResource<FbxSceneResource>(m_FbxResName);
-			}
-			else {
-				PtrFbxScene = FbxSceneResource::CreateFbxScene(DirName, FbxName,"", m_IsReadStaticMesh, m_WithTangent);
-				App::GetApp()->RegisterResource(m_FbxResName, PtrFbxScene);
-			}
-
-			shared_ptr<FbxMeshResource2> PtrFbxMesh;
-			if (App::GetApp()->CheckResource<FbxMeshResource2>(m_FbxMeshResName)) {
-				PtrFbxMesh = App::GetApp()->GetResource<FbxMeshResource2>(m_FbxMeshResName);
-			}
-			else {
-				PtrFbxMesh = PtrFbxScene->GetFbxMeshResource(m_MeshIndex);
-				App::GetApp()->RegisterResource(m_FbxMeshResName, PtrFbxMesh);
-			}
+			m_PtrFbxMesh = SceneRes->GetFbxMeshResource(m_MeshIndex);
 			//モデルの行列
 			auto Ptr = GetComponent<Transform>();
 			Ptr->SetScale(m_CharaLocalScale, m_CharaLocalScale, m_CharaLocalScale);
@@ -2112,14 +2184,14 @@ namespace basecross {
 			Ptr->SetPosition(m_CharaLocalPosition);
 
 			auto ShadowPtr = AddComponent<Shadowmap>();
-			ShadowPtr->SetMeshResource(PtrFbxMesh);
+			ShadowPtr->SetMeshResource(m_PtrFbxMesh);
 
 			RemoveComponent<BcPNTStaticModelDraw>();
 			RemoveComponent<BcPNTnTStaticModelDraw>();
 			RemoveComponent<BcFbxPNTBoneModelDraw>();
 			RemoveComponent<BcFbxPNTnTBoneModelDraw>();
 
-			if (PtrFbxMesh->IsSkining()) {
+			if (m_PtrFbxMesh->IsSkining() && !m_IsReadStaticMesh) {
 				if (WithTangent) {
 					if (App::GetApp()->CheckResource<TextureResource>(L"NORMAL_TX")) {
 						App::GetApp()->UnRegisterResource<TextureResource>(L"NORMAL_TX");
@@ -2127,7 +2199,7 @@ namespace basecross {
 					App::GetApp()->RegisterTexture(L"NORMAL_TX", NormalFileName);
 					auto PtrDraw = AddComponent<BcFbxPNTnTBoneModelDraw>();
 					PtrDraw->SetFogEnabled(true);
-					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetMeshResource(m_PtrFbxMesh);
 					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
 					PtrDraw->AddAnimation("start", 0, 1, true, 30);
 					PtrDraw->SetCurrentAnimation("start");
@@ -2141,7 +2213,7 @@ namespace basecross {
 				else {
 					auto PtrDraw = AddComponent<BcFbxPNTBoneModelDraw>();
 					PtrDraw->SetFogEnabled(true);
-					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetMeshResource(m_PtrFbxMesh);
 					PtrDraw->AddAnimation("start", 0, 1, true, 30);
 					PtrDraw->SetCurrentAnimation("start");
 					if (m_TextureWrap) {
@@ -2160,7 +2232,7 @@ namespace basecross {
 					App::GetApp()->RegisterTexture(L"NORMAL_TX", NormalFileName);
 					auto PtrDraw = AddComponent<BcPNTnTStaticModelDraw>();
 					PtrDraw->SetFogEnabled(true);
-					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetMeshResource(m_PtrFbxMesh);
 					PtrDraw->SetNormalMapTextureResource(L"NORMAL_TX");
 					if (m_TextureWrap) {
 						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
@@ -2172,7 +2244,7 @@ namespace basecross {
 				else {
 					auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
 					PtrDraw->SetFogEnabled(true);
-					PtrDraw->SetMeshResource(PtrFbxMesh);
+					PtrDraw->SetMeshResource(m_PtrFbxMesh);
 					if (m_TextureWrap) {
 						PtrDraw->SetSamplerState(SamplerState::LinearWrap);
 					}
@@ -2185,7 +2257,10 @@ namespace basecross {
 		catch (...) {
 			throw;
 		}
+
 	}
+
+
 
 	bool FbxMeshObject::CheckSkinMesh() {
 		auto PtrBoneDraw = GetComponent<BcFbxPNTBoneModelDraw>(false);
@@ -2286,12 +2361,9 @@ namespace basecross {
 		}
 	}
 
-	void FbxMeshObject::SaveStaticBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale) {
+
+	void FbxMeshObject::SaveStaticBinFile(ofstream& ofs, float Scale) {
 		try {
-			string header("BDV1.0");
-			if (header.size() < 16) {
-				header.resize(16, '\0');
-			}
 			vector<VertexPositionNormalTexture> vertices;
 			vector<VertexPositionNormalTangentTexture> vertices_withtan;
 
@@ -2316,10 +2388,7 @@ namespace basecross {
 				}
 			}
 
-			wstring filename = Dir + FileName;
-
-			ofstream ofs(filename, ios::out | ios::binary);
-			ofs.write(header.c_str(), 16);
+			//ofs.write(header.c_str(), 16);
 			//頂点の保存
 			BlockHeader VerTexHeader;
 			if (m_WithTangent) {
@@ -2391,7 +2460,6 @@ namespace basecross {
 			EndHeader.m_Type = BlockType::End;
 			EndHeader.m_Size = 0;
 			ofs.write((const char*)&EndHeader, sizeof(BlockHeader));
-			ofs.close();
 
 		}
 		catch (...) {
@@ -2401,13 +2469,8 @@ namespace basecross {
 	}
 
 
-	void  FbxMeshObject::SaveSkinBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale,
-		UINT FrameParSec, UINT Start, UINT End) {
+	void FbxMeshObject::SaveSkinBinFile(ofstream& ofs, float Scale, UINT FrameParSec, UINT Start, UINT End) {
 		try {
-			string header("BDV1.0");
-			if (header.size() < 16) {
-				header.resize(16, '\0');
-			}
 			vector<VertexPositionNormalTextureSkinning> vertices;
 			vector<VertexPositionNormalTangentTextureSkinning> vertices_withtan;
 			vector<uint16_t> indices;
@@ -2478,14 +2541,6 @@ namespace basecross {
 					}
 				}
 			}
-
-
-
-
-
-			wstring filename = Dir + FileName;
-			ofstream ofs(filename, ios::out | ios::binary);
-			ofs.write(header.c_str(), 16);
 			//頂点の保存
 			BlockHeader VerTexHeader;
 			if (m_WithTangent) {
@@ -2571,15 +2626,203 @@ namespace basecross {
 			EndHeader.m_Type = BlockType::End;
 			EndHeader.m_Size = 0;
 			ofs.write((const char*)&EndHeader, sizeof(BlockHeader));
-
-
-			ofs.close();
 		}
 		catch (...) {
 			throw;
 		}
 
 	}
+
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class FbxMeshContainer : public GameObject;
+	//	用途: FBXメッシュオブジェクトのコンテナ
+	//--------------------------------------------------------------------------------------
+	FbxMeshContainer::FbxMeshContainer(const shared_ptr<Stage>& StagePtr) :
+		GameObject(StagePtr),
+		m_DataDir(L""),
+		m_FbxFileName(L""),
+		m_FbxResName(L""),
+		m_CharaLocalScale(1.0f),
+		m_CharaLocalPosition(0, 0, 0),
+		m_IsReadStaticMesh(false),
+		m_WithTangent(false),
+		m_IsAnimeRun(false),
+		m_TextureWrap(false)
+	{}
+	void FbxMeshContainer::OnCreate() {
+		//初期位置などの設定
+		auto Ptr = GetComponent<Transform>();
+		Ptr->SetScale(1.0f, 1.0f, 1.0f);
+		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+		Ptr->SetPosition(0, 0.0f, 0);
+
+		SetAlphaActive(true);
+
+	}
+
+	void FbxMeshContainer::ClearFbxMesh() {
+		try {
+			for (auto& v : m_FbxMeshObjectVec) {
+				GetStage()->RemoveGameObject<FbxMeshObject>(v);
+			}
+			m_FbxMeshObjectVec.clear();
+			if (m_FbxResName != L"") {
+				App::GetApp()->UnRegisterResource<FbxSceneResource>(m_FbxResName);
+				m_FbxResName = L"";
+			}
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
+	void FbxMeshContainer::ResetFbxMesh(const wstring& DirName, const wstring& FbxName, size_t MeshIndex, float Scale, const Vec3& Position,
+		bool IsReadStatic, bool WithTangent, const wstring& NormalFileName, bool TextureWrap) {
+		try {
+			ClearFbxMesh();
+			m_DataDir = DirName;
+			m_FbxFileName = FbxName;
+			m_FbxResName = FbxName;
+			m_CharaLocalScale = Scale;
+			m_CharaLocalPosition = Position;
+			m_IsReadStaticMesh = IsReadStatic;
+			m_WithTangent = WithTangent;
+			m_TextureWrap = TextureWrap;
+
+			shared_ptr<FbxSceneResource> PtrFbxScene;
+			PtrFbxScene = FbxSceneResource::CreateFbxScene(DirName, FbxName, "", m_IsReadStaticMesh, m_WithTangent);
+			App::GetApp()->RegisterResource(m_FbxResName, PtrFbxScene);
+
+			//シーンに合わせてオブジェクト作成
+			size_t MeshSize = PtrFbxScene->GetFbxMeshResourceSize();
+			for (size_t i = 0; i < MeshSize; i++) {
+				auto ObjPtr = GetStage()->AddGameObject<FbxMeshObject>();
+				ObjPtr->ResetFbxMesh(DirName, PtrFbxScene, i, Scale, Position,
+					m_IsReadStaticMesh, WithTangent, NormalFileName, TextureWrap);
+				m_FbxMeshObjectVec.push_back(ObjPtr);
+
+			}
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+	bool FbxMeshContainer::CheckSkinMesh() {
+		bool ret = true;
+		//すべてのメッシュがスキンメッシュならtrue
+		for (auto& v : m_FbxMeshObjectVec) {
+			if (!v->CheckSkinMesh()) {
+				ret = false;
+			}
+		}
+		return ret;
+	}
+	bool FbxMeshContainer::CheckMesh() {
+		bool ret = true;
+		//すべてのメッシュが有効ならtrue
+		for (auto& v : m_FbxMeshObjectVec) {
+			if (!v->CheckMesh()) {
+				ret = false;
+			}
+		}
+		return ret;
+	}
+
+
+	void FbxMeshContainer::MoveFbxMesh(UINT FrameRate, UINT StartTime, UINT EndTime, bool IsLoop) {
+		for (auto& v : m_FbxMeshObjectVec) {
+			v->MoveFbxMesh(FrameRate,StartTime,EndTime,IsLoop);
+		}
+	}
+
+	void FbxMeshContainer::AnimePoseStart() {
+		for (auto& v : m_FbxMeshObjectVec) {
+			v->AnimePoseStart();
+		}
+
+	}
+
+	void FbxMeshContainer::SaveStaticBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale) {
+		if (m_FbxMeshObjectVec.size() > 0) {
+			UINT version = 1;
+			if (m_FbxMeshObjectVec.size() == 1) {
+				version = 0;
+			}
+			wstring filename = Dir + FileName;
+			ofstream ofs(filename, ios::out | ios::binary);
+			//バージョンの保存
+			string header;
+			if (version == 0) {
+				//単体メッシュ
+				header = "BDV1.0";
+			}
+			else {
+				//マルチメッシュ
+				header = "BDV1.1";
+			}
+			if (header.size() < 16) {
+				header.resize(16, '\0');
+			}
+			ofs.write(header.c_str(), 16);
+			if (version == 1) {
+				//マルチメッシュの場合メッシュ数を保存（ブロックヘッダのみ）
+				BlockHeader MeshCountHeader;
+				MeshCountHeader.m_Type = BlockType::MashCount;
+				MeshCountHeader.m_Size = m_FbxMeshObjectVec.size();
+				ofs.write((const char*)&MeshCountHeader, sizeof(BlockHeader));
+			}
+			for (auto&v : m_FbxMeshObjectVec) {
+				v->SaveStaticBinFile(ofs, Scale);
+			}
+			ofs.close();
+		}
+	}
+	void FbxMeshContainer::SaveSkinBinFile(const wstring& Dir, const wstring& FileName, size_t MeshIndex, float Scale,
+		UINT FrameParSec, UINT Start, UINT End) {
+		if (m_FbxMeshObjectVec.size() > 0) {
+			UINT version = 1;
+			if (m_FbxMeshObjectVec.size() == 1) {
+				version = 0;
+			}
+			wstring filename = Dir + FileName;
+			ofstream ofs(filename, ios::out | ios::binary);
+			//バージョンの保存
+			string header;
+			if (version == 0) {
+				//単体メッシュ
+				header = "BDV1.0";
+			}
+			else {
+				//マルチメッシュ
+				header = "BDV1.1";
+			}
+			if (header.size() < 16) {
+				header.resize(16, '\0');
+			}
+			ofs.write(header.c_str(), 16);
+			if (version == 1) {
+				//マルチメッシュの場合メッシュ数を保存（ブロックヘッダのみ）
+				BlockHeader MeshCountHeader;
+				MeshCountHeader.m_Type = BlockType::MashCount;
+				MeshCountHeader.m_Size = m_FbxMeshObjectVec.size();
+				ofs.write((const char*)&MeshCountHeader, sizeof(BlockHeader));
+			}
+			for (auto&v : m_FbxMeshObjectVec) {
+				v->SaveSkinBinFile(ofs, Scale, FrameParSec, Start, End);
+			}
+			ofs.close();
+		}
+	}
+
+
+
+
 
 
 }

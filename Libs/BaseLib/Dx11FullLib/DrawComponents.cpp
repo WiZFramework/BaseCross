@@ -406,9 +406,33 @@ namespace basecross {
 
 		bool IsSkin = false;
 		bool IsSkinStride = false;
-		if (data.m_IsSkining) {
+		auto MeshPtr = pImpl->m_MeshResource.lock();
+		bool MeshFlg = MeshPtr && MeshPtr->IsSkining();
+		auto MultiMeshPtr = pImpl->m_MultiMeshResource.lock();
+		bool MultiMeshFlg = MultiMeshPtr && MultiMeshPtr->IsSkining(0);
+		if (MeshFlg) {
 			auto DrawCompPtr = GetGameObject()->GetDynamicComponent<DrawComponent>(false);
 			if (auto* pLocalBoneVec = DrawCompPtr->GetVecLocalBonesPtr()) {
+				if (pLocalBoneVec) {
+					//ボーンの設定
+					size_t BoneSz = pLocalBoneVec->size();
+					UINT cb_count = 0;
+					for (size_t b = 0; b < BoneSz; b++) {
+						bsm::Mat4x4 mat = pLocalBoneVec->at(b);
+						mat.transpose();
+						Cb.Bones[cb_count] = ((XMMATRIX)mat).r[0];
+						Cb.Bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+						Cb.Bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+						cb_count += 3;
+					}
+					IsSkin = true;
+				}
+			}
+			IsSkinStride = true;
+		}
+		else if (MultiMeshFlg) {
+			auto DrawCompPtr = GetGameObject()->GetDynamicComponent<DrawComponent>(false);
+			if (auto* pLocalBoneVec = DrawCompPtr->GetVecMultiLocalBonesPtr(data.m_MultiMeshIndex)) {
 				if (pLocalBoneVec) {
 					//ボーンの設定
 					size_t BoneSz = pLocalBoneVec->size();
@@ -1281,6 +1305,22 @@ namespace basecross {
 				cb_count += 3;
 			}
 		}
+		else if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() > data.m_MultiMeshIndex) {
+			//マルチメッシュのボーンがあった
+			//ボーンの設定
+			BoneSz = pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex].size();
+			if (BoneSz > 0) {
+				UINT cb_count = 0;
+				for (size_t b = 0; b < BoneSz; b++) {
+					bsm::Mat4x4 mat = pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex][b];
+					mat.transpose();
+					SmCb.Bones[cb_count] = ((XMMATRIX)mat).r[0];
+					SmCb.Bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
+					SmCb.Bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
+					cb_count += 3;
+				}
+			}
+		}
 	}
 
 	//行列バッファの作成
@@ -1539,6 +1579,14 @@ namespace basecross {
 		return &pImpl->m_SmDrawObject.m_LocalBonesMatrix;
 	}
 
+	const vector< bsm::Mat4x4 >* SmBaseDraw::GetVecMultiLocalBonesPtr(size_t index) const {
+		if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() > index) {
+			return &(pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[index]);
+		}
+		return nullptr;
+	}
+
+
 	size_t SmBaseDraw::GetMaxInstance() const {
 		return pImpl->m_SmDrawObject.m_MaxInstance;
 	}
@@ -1796,6 +1844,25 @@ namespace basecross {
 				DrawModel<VSPNTStatic, PSPNTStatic>(PtrMeshResource->GetMashData());
 			}
 		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				if (GetOwnShadowActive()) {
+					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+						DrawModel<VSPNTStaticShadow, PSPNTStaticShadow2>(vec[i]);
+					}
+					else {
+						DrawModel<VSPNTStaticShadow, PSPNTStaticShadow>(vec[i]);
+					}
+				}
+				else {
+					DrawModel<VSPNTStatic, PSPNTStatic>(vec[i]);
+				}
+			}
+		}
 		//後始末
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
@@ -1818,6 +1885,16 @@ namespace basecross {
 	void PNTBoneModelDraw::SetMeshResource(const wstring& MeshKey) {
 		PNTBoneModelDraw::SetMeshResource(App::GetApp()->GetResource<MeshResource>(MeshKey));
 	}
+
+	void PNTBoneModelDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
+		SmBaseDraw::SetMultiMeshResource(MeshResourcePtr);
+		BoneInit();
+
+	}
+	void PNTBoneModelDraw::SetMultiMeshResource(const wstring& ResKey) {
+		PNTBoneModelDraw::SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
+	}
+
 
 
 	void PNTBoneModelDraw::OnCreate() {
@@ -1851,6 +1928,26 @@ namespace basecross {
 				DrawModel<VSPNTBone, PSPNTStatic>(PtrMeshResource->GetMashData());
 			}
 		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				if (GetOwnShadowActive()) {
+					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+						DrawModel<VSPNTBoneShadow, PSPNTStaticShadow2>(vec[i]);
+					}
+					else {
+						DrawModel<VSPNTBoneShadow, PSPNTStaticShadow>(vec[i]);
+					}
+				}
+				else {
+					DrawModel<VSPNTBone, PSPNTStatic>(vec[i]);
+				}
+			}
+		}
+
 		//後始末
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
