@@ -267,10 +267,18 @@ void Scene::CreateResourses() {
     auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
     App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
 
+    //スタティックモデル(マルチメッシュ)の通常リソース
+    auto StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
+    App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+    //ボーンモデル(マルチメッシュ)の通常リソース
+    auto MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
+    App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
 }
 </pre>
 </div>
-　このようにして<b>リソース登録</b>した<b>L"Chara_R_MESH"</b>を使用します。以下は<b>BoneChara::OnCreate()関数</b>です。
+　このようにして<b>リソース登録</b>した<b>L"Chara_R_MESH"</b>を使用します。<br />
+　また、ここで<b>マルチメッシュ</b>として作成されるモデルの実装も行ってます。<b>L"ObjectOnly_MESH"</b>と<b>L"Object_WalkAnimation_MESH"</b>です。この二つのモデルは<b>1つのFBXファイルに複数のメッシュがある場合</b>のモデルをデータ変換したものです。BaseCrossでは<b>マルチメッシュ</b>と称しています。<br />
+　以下は<b>BoneChara::OnCreate()関数</b>です。<br/>
 <div class="box1">
 <pre>
 //初期化
@@ -324,6 +332,59 @@ void BoneChara::OnUpdate() {
 }
 </pre>
 </div>
+　以下は<b>マルチメッシュ</b>である<b>BoneMultiMeshChara</b>の<b>BoneMultiMeshChara::OnCreate()</b>です。
+<div class="box1">
+<pre>
+//初期化
+void BoneMultiMeshChara::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(0.5f, 0.5f, 0.5f);
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(m_StartPos);
+
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+
+    //影の形（メッシュ）を設定
+    <span class="red">ShadowPtr->SetMultiMeshResource(L"Object_WalkAnimation_MESH");</span>
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;PNTBoneModelDraw>();
+    //描画するメッシュを設定
+    <span class="red">PtrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH");</span>
+    PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+
+    PtrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
+    PtrDraw->ChangeCurrentAnimation(L"Default");
+
+}
+</pre>
+</div>
+　赤くなっているところに注意してください。<b>SetMultiMeshResource()関数</b>で、<b>マルチメッシュ</b>を各コンポーネントに設定しています。<br />
+　もう一つ注意してほしいのは、<b>単体のメッシュ</b>と<b>マルチメッシュ</b>は一つのコンポーネントに同居できないということです。<br />
+　以下は、<b>OnUpdate()</b>です。
+<div class="box1">
+<pre>
+//更新
+void BoneMultiMeshChara::OnUpdate() {
+    auto PtrDraw = GetComponent&lt;PNTBoneModelDraw>();
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    PtrDraw->UpdateAnimation(ElapsedTime);
+}
+</pre>
+</div>
+　こちらは単体のメッシュと変わりありません。<br />
 <br />
 <h4>スタティックモデル</h4>
 　以下は<b>スタティックモデル</b>の作成です。<b>StaticChara::OnCreate()関数</b>に記述します。
@@ -359,6 +420,38 @@ void StaticChara::OnCreate() {
 }
 </pre>
 </div>
+　こちらも<b>ボーンモデル</b>同様<b>マルチメッシュ</b>のオブジェクトがあります。<b>StaticMultiMeshChara</b>です。以下が<b>StaticMultiMeshChara::OnCreate()</b>です。
+<div class="box1">
+<pre>
+//初期化
+void StaticMultiMeshChara::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(0.5f, 0.5f, 0.5f);
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(m_StartPos);
+
+    Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
+    SpanMat.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f)
+    );
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    <span class="red">ShadowPtr->SetMultiMeshResource(L"ObjectOnly_MESH");</span>
+    ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+
+    auto PtrDraw = AddComponent&lt;PNTStaticModelDraw>();
+    <span class="red">PtrDraw->SetMultiMeshResource(L"ObjectOnly_MESH");</span>
+    PtrDraw->SetMeshToTransformMatrix(SpanMat);
+}
+</pre>
+</div>
+　こちらも、赤くなっているところは<b>マルチメッシュ</b>を登録しているところです。<br/>
 <br />
 <h4>GameStageへの配置</h4>
 　以上が各オブジェクトの初期化や更新です。最後に<b>GameStage::OnCreate()</b>で各オブジェクトを<b>AddGameObject</b>します。

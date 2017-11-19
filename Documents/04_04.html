@@ -46,7 +46,7 @@ void PtSphere::OnCreate() {
 <p>図0404b</p>
 <br/>
 <h4>モデルの描画</h4>
-　モデルをリアルな描画にしたのが手前の4体です。左２つはアニメーションが入ってます。<br />
+　モデルをリアルな描画にしたのが手前の8体です。左４つはアニメーションが入ってます。<br />
 　以下はボーンモデルの描画ですが<b>タンジェントがついているものとついてないもの</b>の違いを確認してください。
 <p>&nbsp;</p>
 <img src="img/0404c.png" width="80%"/>
@@ -116,34 +116,58 @@ void BoneChara::OnCreate() {
 <div class="box1">
 <pre>
 void Scene::CreateResourses() {
-    //中略
+//中略
 
     //ボーンモデルの通常リソース
     auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
     App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+
     //ボーンモデルのタンジェント付きリソース
-    <span class="red">ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");</span>
+    ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");
     App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", ModelMesh);
     //法線マップ
     strTexture = DataDir + L"Chara_R_narmal.png";
     App::GetApp()->RegisterTexture(L"Chara_R_NORMAL_TX", strTexture);
 
+    //ボーンモデル(マルチメッシュ)の通常リソース
+    auto MultiModelMesh 
+    = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
+    App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
+
+    //ボーンモデル(マルチメッシュ)のタンジェント付きリソース
+    MultiModelMesh 
+    = MultiMeshResource::CreateBoneModelMultiMeshWithTangent(DataDir, L"Object_WalkAnimation.bmf");
+    App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH_WITH_TAN", MultiModelMesh);
+
+    //法線マップ
+    strTexture = DataDir + L"Tx_Checker_Normal.png";
+    App::GetApp()->RegisterTexture(L"OBJECT_NORMAL_TX", strTexture);
+
     //スタティックモデルの通常リソース
     auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
     App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
     //スタティックモデルのタンジェント付きリソース
-    <span class="red">StaticModelMesh 
-        = MeshResource::CreateStaticModelMeshWithTangent(DataDir, L"Character_01.bmf");</span>
+    StaticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(DataDir, L"Character_01.bmf");
     App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", StaticModelMesh);
     //法線マップ
     strTexture = DataDir + L"Character_2_normal.png";
     App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);
 
+    //スタティックモデル(マルチメッシュ)の通常リソース
+    auto StaticMultiModelMesh 
+    = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
+    App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+
+    //スタティックモデル(マルチメッシュ)のタンジェント付きリソース
+    StaticMultiModelMesh 
+    = MultiMeshResource::CreateStaticModelMultiMeshWithTangent(DataDir, L"ObjectOnly.bmf");
+    App::GetApp()->RegisterResource(L"ObjectOnly_MESH_WITH_TAN", StaticMultiModelMesh);
 
 }
 </pre>
 </div>
-　このように<b>リアルな描画</b>を実装するためには、基本的に<b>描画コンポーネント</b>の変更や、<b>タンジェント付きのリソースを作成</b>すればいいわけですが、ゲームによって<b>どこまでリアルな描画が必要かどうか</b>が違うと思いますので、前項のような描画が良いかどうかはしっかり検討して実装するといいと思います。
+　このように<b>リアルな描画</b>を実装するためには、基本的に<b>描画コンポーネント</b>の変更や、<b>タンジェント付きのリソースを作成</b>すればいいわけですが、ゲームによって<b>どこまでリアルな描画が必要かどうか</b>が違うと思いますので、前項のような描画が良いかどうかはしっかり検討して実装するといいと思います。<br/>
+　また、このサンプルにも前項に使用した<b>マルチメッシュ</b>のモデルも<b>タンジェント付き</b>と<b>タンジェント無し</b>で実装されています。設置方法は前項と大きく変わりませんので、確認してみましょう。
 </div>
 <!-- /コンテンツ　-->
 <hr>
