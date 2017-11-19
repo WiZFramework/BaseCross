@@ -5,14 +5,23 @@
 
 @uBaseCrossv‚ÍuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ð–ÚŽw‚·ƒQ[ƒ€‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚Å‚·B
 @‚±‚ê‚Ü‚ÅŒöŠJ‚µ‚Ä‚«‚Ü‚µ‚½uDxBase2015vuDxBase2016v‚ÌŒãŒp‚É‚ ‚½‚è‚Ü‚·B
-@2017”N7ŒŽŒ»ÝAuBaseCrossv‚ÍDx11”Å‚É‚Â‚«‚Ü‚µ‚Ä‚Í‚¨‚¨‚Þ‚Ë‚Ü‚Æ‚Ü‚Á‚Ä‚«‚Ü‚µ‚½B
+@2017”N11ŒŽŒ»ÝAuBaseCrossv‚ÍDx11”Å‚É‚Â‚«‚Ü‚µ‚Ä‚Í‚¨‚¨‚Þ‚Ë‚Ü‚Æ‚Ü‚Á‚Ä‚«‚Ü‚µ‚½B
 
 @‚Ü‚½uBaseCrossv‚É‚Íƒ‚ƒfƒ‹‚Ìƒf[ƒ^•ÏŠ·ƒc[ƒ‹uFbx2BinVS2015v‚ªŠÜ‚Ü‚ê‚Ü‚·B
 @‚±‚Ìƒc[ƒ‹‚ðƒrƒ‹ƒh‚·‚é‚É‚ÍuFBXSDKv‚¨‚æ‚ÑuMFCv‚ª•K—v‚Æ‚È‚è‚Ü‚·B
 @iƒQ[ƒ€‚ÌƒTƒ“ƒvƒ‹“™‚ðƒrƒ‹ƒh‚·‚é‚¾‚¯‚Å‚ ‚ê‚ÎA‚±‚ê‚ç‚Í•K—v‚ ‚è‚Ü‚¹‚ñj
 
+@uBaseCrossv‚Ìƒ_ƒEƒ“ƒ[ƒh•û–@‚ÍA‚±‚Ì•¶‘‚ª•\Ž¦‚³‚ê‚Ä‚¢‚éƒy[ƒW‚ÌA‰E‘¤‚É‚ ‚è‚Ü‚·AuDownloadZIPv‚Ìƒ{ƒ^ƒ“‚ðƒNƒŠƒbƒN‚µ‚ÄAƒpƒ\ƒRƒ““™‚Éƒ_ƒEƒ“ƒ[ƒh‚µ‚Ä‚­‚¾‚³‚¢B
+@‚Ü‚¸‚ÍuDirectX11v‚ÆuDirectX12v‚ÌuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ÌŽÀ‘•‚ði‚ß‚Ä‚Ü‚¢‚è‚Ü‚·B
 
-@‰ß‹Ž§ì‚µ‚½uDxBase2015v‚âuDxBase2016v‚Æ‚¢‚¤ƒtƒŒ[ƒ€ƒ[ƒN‚à‚ ‚è‚Ü‚·B
+@XV‚â’Ç‰Áî•ñ‚Ífacebook‚É‚ÄÐ‰î‚¢‚½‚µ‚Ü‚·B
+@‚Ü‚½AƒhƒLƒ…ƒƒ“ƒg‚Ì•”•ª‚ðƒIƒ“ƒ‰ƒCƒ“ŒöŠJ‚µ‚Ü‚µ‚½B
+
+https://wizframework.github.io/Documents/
+
+@ƒ_ƒEƒ“ƒ[ƒh‚·‚é‘O‚É‚Ç‚ñ‚È‚à‚Ì‚©Œ©‚Ä‚Ý‚½‚¢•û‚È‚ÇA‚²—˜—p‚­‚¾‚³‚¢B
+
+@2017”N‰ÄŒ»Ýƒƒ“ƒeƒiƒ“ƒX‚Ís‚Á‚Ä‚È‚Ü‚¹‚ñ‚ªA‰ß‹Ž‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚ÍˆÈ‰º‚É‚È‚è‚Ü‚·B
 uDxBase2015v‚Í
 https://github.com/WiZFramework/DxBase2015
 uDxBase2016v‚Í
@@ -21,17 +30,8 @@ https://github.com/WiZFramework/DxBase2016
 @‚Ü‚½AuDxBase2016v‚ÅŽg—p‚·‚éƒ‚ƒfƒ‹‚Ìƒf[ƒ^•ÏŠ·ƒc[ƒ‹uFbx2Binv‚Í
 https://github.com/WiZFramework/DxBaseTools
 ‚©‚çƒ_ƒEƒ“ƒ[ƒh‚Å‚«‚Ü‚·B
-@Žg—p•û–@“™‚ÍŠeƒŒƒ|ƒWƒgƒŠ‚ðŽQÆ‚­‚¾‚³‚¢B‚½‚¾2017”N‰ÄŒ»ÝAuDxBase2015ADxBase2016AFbx2Binv‚Íƒƒ“ƒeƒiƒ“ƒX‚ðs‚Á‚Ä‚¨‚è‚Ü‚¹‚ñB‚Å‚«‚ê‚ÎuBaseCrossv‚ð‚²—˜—p‚­‚¾‚³‚¢B
-
-
-@uBaseCrossv‚Ìƒ_ƒEƒ“ƒ[ƒh•û–@‚ÍA‚±‚Ì•¶‘‚ª•\Ž¦‚³‚ê‚Ä‚¢‚éƒy[ƒW‚ÌA‰E‘¤‚É‚ ‚è‚Ü‚·AuDownloadZIPv‚Ìƒ{ƒ^ƒ“‚ðƒNƒŠƒbƒN‚µ‚ÄAƒpƒ\ƒRƒ““™‚Éƒ_ƒEƒ“ƒ[ƒh‚µ‚Ä‚­‚¾‚³‚¢B
-@‚Ü‚¸‚ÍuDirectX11v‚ÆuDirectX12v‚ÌuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ÌŽÀ‘•‚ði‚ß‚Ä‚Ü‚¢‚è‚Ü‚·B
-
-@XV‚â’Ç‰Áî•ñ‚ÍƒuƒƒOAfacebook‚É‚ÄÐ‰î‚¢‚½‚µ‚Ü‚·B
-
-BaseCrossƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒN
-ŠJ”­“úŽu-ŽÀŒ±‚ÆŽÀ‘•‚Æ-v
-http://gameproject.jp/
+@Žg—p•û–@“™‚ÍŠeƒŒƒ|ƒWƒgƒŠ‚ðŽQÆ‚­‚¾‚³‚¢B
+@ƒƒ“ƒeƒiƒ“ƒX‚µ‚Ä‚È‚¢‚Ì‚ÅA‚Å‚«‚ê‚ÎuBaseCrossv‚ð‚²—˜—p‚­‚¾‚³‚¢B
 
 
 @‚Ü‚½A“®ì‚ðŠm”F‚·‚é‚É‚ÍˆÈ‰º‚ÌŠÂ‹«‚ª•K—v‚Å‚·
@@ -56,6 +56,14 @@ Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo
 2017”N02ŒŽ28“ú@readmeC³B2017t§ì‚Ì‚½‚ß‚ÌC³‚Ð‚Æ‚Ü‚¸Š®—¹
 2017”N03ŒŽ16“ú@readmeC³B2017tƒVƒF[ƒ_C³‚Ð‚Æ‚Ü‚¸Š®—¹B
 2017”N08ŒŽ05“ú@readmeC³BƒhƒLƒ…ƒƒ“ƒg‘S‘Ì“I‚ÉŒ©’¼‚µB
+2017”N11ŒŽ14“ú@ƒhƒLƒ…ƒƒ“ƒgƒIƒ“ƒ‰ƒCƒ“ŒöŠJB
 
 
-@@@@@@@@@@@@@@@@@@@@@2017”NV‰Ä@ŽRƒmˆä@–õiWiZƒQ[ƒ€‰È”ñí‹ÎuŽtFC++’S“–j
+BaseCrossƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒN“úŽ
+ŠJ”­“úŽu-ŽÀŒ±‚ÆŽÀ‘•‚Æ-v
+http://gameproject.jp/
+‚à‚ ‚è‚Ü‚·‚ªA‚µ‚Î‚ç‚­XV‚ªŽ~‚Ü‚Á‚Ä‚Ü‚·B
+
+
+
+@@@@@@@@@@@@@@@@@@@@@2017”N“~@ŽRƒmˆä@–õiWiZƒQ[ƒ€‰È”ñí‹ÎuŽtFC++’S“–j
