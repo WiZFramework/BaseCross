@@ -40,7 +40,7 @@ namespace basecross {
 	const float contactBias = 0.1f;
 	const float contactSlop = 0.001f;
 	const uint32_t iteration = 10;
-	const Vec3 gravity(0.0f, -9.8f, 0.0f);
+	const bsm::Vec3 gravity(0.0f, -9.8f, 0.0f);
 
 	enum class PsMotionType {
 		MotionTypeActive,
@@ -48,23 +48,23 @@ namespace basecross {
 	};
 
 	struct PsState {
-		Vec3	m_position;
-		Quat	m_orientation;
-		Vec3	m_linearVelocity;
-		Vec3	m_angularVelocity;
+		bsm::Vec3	m_position;
+		bsm::Quat	m_orientation;
+		bsm::Vec3	m_linearVelocity;
+		bsm::Vec3	m_angularVelocity;
 		PsMotionType m_motionType;
 		void reset()
 		{
-			m_position = Vec3(0.0f);
+			m_position = bsm::Vec3(0.0f);
 			m_orientation.identity();
-			m_linearVelocity = Vec3(0.0f);
-			m_angularVelocity = Vec3(0.0f);
+			m_linearVelocity = bsm::Vec3(0.0f);
+			m_angularVelocity = bsm::Vec3(0.0f);
 			m_motionType = PsMotionType::MotionTypeActive;
 		}
 	};
 
 	struct PsRigidBody {
-		Mat3x3     m_inertia;
+		bsm::Mat3x3     m_inertia;
 		float       m_mass;
 		float       m_restitution;
 		float       m_friction;
@@ -92,14 +92,14 @@ namespace basecross {
 	struct PsFacet {
 		uint8_t vertId[3];
 		uint8_t edgeId[3];
-		Vec3 normal;
+		bsm::Vec3 normal;
 	};
 
 	struct PsConvexMesh {
 		uint8_t m_numVertices;
 		uint8_t m_numFacets;
 		uint8_t m_numEdges; ///< エッジ数
-		Vec3 m_vertices[PS_CONVEX_MESH_MAX_VERTICES]; ///< 頂点配列
+		bsm::Vec3 m_vertices[PS_CONVEX_MESH_MAX_VERTICES]; ///< 頂点配列
 		PsEdge m_edges[PS_CONVEX_MESH_MAX_EDGES]; ///< エッジ配列
 		PsFacet m_facets[PS_CONVEX_MESH_MAX_FACETS]; ///< 面配列
 		void reset()
@@ -116,29 +116,29 @@ namespace basecross {
 
 	struct PsShape {
 		PsConvexMesh m_geometry;
-		Vec3 m_offsetPosition;
-		Quat m_offsetOrientation;
+		bsm::Vec3 m_offsetPosition;
+		bsm::Quat m_offsetOrientation;
 		PsShapeType m_PsShapeType;
-		Vec3 m_Scale;
+		bsm::Vec3 m_Scale;
 		void reset()
 		{
 			m_geometry.reset();
-			m_offsetPosition = Vec3(0.0f);
+			m_offsetPosition = bsm::Vec3(0.0f);
 			m_offsetOrientation.identity();
-			m_Scale = Vec3(1.0f, 1.0f, 1.0f);
+			m_Scale = bsm::Vec3(1.0f, 1.0f, 1.0f);
 		}
 	};
 
 	struct PsCollidable {
 		uint8_t m_numShapes;
 		PsShape m_shapes[PS_NUM_SHAPES];
-		Vec3 m_center;
-		Vec3 m_half;
+		bsm::Vec3 m_center;
+		bsm::Vec3 m_half;
 		void reset()
 		{
 			m_numShapes = 0;
-			m_center = Vec3(0.0f);
-			m_half = Vec3(0.0f);
+			m_center = bsm::Vec3(0.0f);
+			m_half = bsm::Vec3(0.0f);
 		}
 		uint32_t addShape(const PsShape &shape)
 		{
@@ -157,7 +157,7 @@ namespace basecross {
 		void finish()
 		{
 			// AABBを計算する
-			Vec3 aabbMax(-PS_FLT_MAX), aabbMin(PS_FLT_MAX);
+			bsm::Vec3 aabbMax(-PS_FLT_MAX), aabbMin(PS_FLT_MAX);
 			for (uint32_t i = 0; i<m_numShapes; i++) {
 				const PsConvexMesh &mesh = m_shapes[i].m_geometry;
 				for (uint32_t v = 0; v<mesh.m_numVertices; v++) {
@@ -171,7 +171,7 @@ namespace basecross {
 	};
 
 	struct PsConstraint {
-		Vec3 axis;
+		bsm::Vec3 axis;
 		float jacDiagInv;
 		float rhs;
 		float lowerLimit;
@@ -183,8 +183,8 @@ namespace basecross {
 		float bias;
 		uint32_t rigidBodyA;
 		uint32_t rigidBodyB;
-		Vec3 anchorA;
-		Vec3 anchorB;
+		bsm::Vec3 anchorA;
+		bsm::Vec3 anchorB;
 		PsConstraint constraint;
 		void reset()
 		{
@@ -195,9 +195,9 @@ namespace basecross {
 
 	struct PsContactPoint {
 		float distance;
-		Vec3 pointA;
-		Vec3 pointB;
-		Vec3 normal;
+		bsm::Vec3 pointA;
+		bsm::Vec3 pointB;
+		bsm::Vec3 normal;
 		PsConstraint constraints[3];
 		void reset()
 		{
@@ -215,23 +215,23 @@ namespace basecross {
 		float m_friction;
 		PsContactPoint m_contactPoints[PS_NUM_CONTACTS];
 
-		int findNearestContactPoint(const Vec3 &newPointA, const Vec3 &newPointB, const Vec3 &newNormal);
+		int findNearestContactPoint(const bsm::Vec3 &newPointA, const bsm::Vec3 &newPointB, const bsm::Vec3 &newNormal);
 
-		int sort4ContactPoints(const Vec3 &newPoint, float newDistance);
+		int sort4ContactPoints(const bsm::Vec3 &newPoint, float newDistance);
 
 		void removeContactPoint(int i);
 
 		void reset();
 
-		void refresh(const Vec3 &pA, const Quat &qA, const Vec3 &pB, const Quat &qB);
+		void refresh(const bsm::Vec3 &pA, const bsm::Quat &qA, const bsm::Vec3 &pB, const bsm::Quat &qB);
 
 		void merge(const PsContact &contact);
 
 		void addContact(
 			float penetrationDepth,
-			const Vec3 &normal,
-			const Vec3 &contactPointA,
-			const Vec3 &contactPointB);
+			const bsm::Vec3 &normal,
+			const bsm::Vec3 &contactPointA,
+			const bsm::Vec3 &contactPointB);
 	};
 
 
@@ -304,7 +304,7 @@ namespace basecross {
 			return collidables[i];
 		}
 
-		void DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const Mat4x4& world);
+		void DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& world);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -330,7 +330,7 @@ namespace basecross {
 		@return	形状のインデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		uint32_t AddSingleShape(PsShapeType ShapeType, PsMotionType MotionType,const Vec3& Scale,const Quat& Qt,const Vec3& Pos);
+		uint32_t AddSingleShape(PsShapeType ShapeType, PsMotionType MotionType,const bsm::Vec3& Scale,const bsm::Quat& Qt,const bsm::Vec3& Pos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 形状の現在の位置と回転を得る
@@ -340,7 +340,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetShapeQuatPos(uint32_t TransIndex,Quat& RetQt,Vec3& RetPos);
+		void GetShapeQuatPos(uint32_t TransIndex,bsm::Quat& RetQt,bsm::Vec3& RetPos);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

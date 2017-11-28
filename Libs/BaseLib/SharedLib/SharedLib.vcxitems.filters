@@ -36,6 +36,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)BehaviorSteering.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)PhysicsObject.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Components.cpp">
@@ -63,6 +66,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)BehaviorSteering.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)PhysicsObject.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

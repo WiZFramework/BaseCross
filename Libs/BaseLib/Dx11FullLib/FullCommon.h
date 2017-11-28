@@ -28,5 +28,7 @@
 #include "../SharedLib/BehaviorSteering.h"
 //ゲームオブジェクト、ステージなど
 #include "../SharedLib/GameObject.h"
+//物理計算
+#include "../SharedLib/PhysicsObject.h"
 //スプライトスタジオ５
 #include "../SharedLib/SpriteStudio5.h"

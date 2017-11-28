@@ -72,11 +72,11 @@ namespace basecross {
 	}
 
 	inline
-	Mat3x3 PsCalcInertiaBox(const Vec3 &halfExtent, float mass)
+	bsm::Mat3x3 PsCalcInertiaBox(const bsm::Vec3 &halfExtent, float mass)
 	{
-		Vec3 sqrSz = halfExtent * 2.0f;
-		sqrSz = mulPerElem(sqrSz, sqrSz);
-		Mat3x3 inertia;
+		bsm::Vec3 sqrSz = halfExtent * 2.0f;
+		sqrSz = bsm::mulPerElem(sqrSz, sqrSz);
+		bsm::Mat3x3 inertia;
 		inertia.identity();
 		inertia[0][0] = (mass*(sqrSz[1] + sqrSz[2])) / 12.0f;
 		inertia[1][1] = (mass*(sqrSz[0] + sqrSz[2])) / 12.0f;
@@ -87,7 +87,7 @@ namespace basecross {
 	bool PsCreateConvexMesh(PsConvexMesh *convexMesh,
 		const float *vertices, uint32_t numVertices,
 		const uint16_t *indices, uint32_t numIndices,
-		const Vec3 &scale)
+		const bsm::Vec3 &scale)
 	{
 		assert(convexMesh);
 		assert(vertices);
@@ -104,20 +104,20 @@ namespace basecross {
 			convexMesh->m_vertices[i][0] = vertices[i * 3];
 			convexMesh->m_vertices[i][1] = vertices[i * 3 + 1];
 			convexMesh->m_vertices[i][2] = vertices[i * 3 + 2];
-			convexMesh->m_vertices[i] = mulPerElem(scale, convexMesh->m_vertices[i]);
+			convexMesh->m_vertices[i] = bsm::mulPerElem(scale, convexMesh->m_vertices[i]);
 		}
 		convexMesh->m_numVertices = numVertices;
 
 		uint32_t nf = 0;
 		for (uint32_t i = 0; i<numIndices / 3; i++) {
-			Vec3 p[3] = {
+			bsm::Vec3 p[3] = {
 				convexMesh->m_vertices[indices[i * 3]],
 				convexMesh->m_vertices[indices[i * 3 + 1]],
 				convexMesh->m_vertices[indices[i * 3 + 2]]
 			};
 
-			Vec3 normal = cross(p[1] - p[0], p[2] - p[0]);
-			float areaSqr = lengthSqr(normal);
+			bsm::Vec3 normal = bsm::cross(p[1] - p[0], p[2] - p[0]);
+			float areaSqr = bsm::lengthSqr(normal);
 			if (areaSqr > PS_EPSILON * PS_EPSILON) {
 				convexMesh->m_facets[nf].vertId[0] = (uint8_t)indices[i * 3];
 				convexMesh->m_facets[nf].vertId[1] = (uint8_t)indices[i * 3 + 1];
@@ -158,8 +158,8 @@ namespace basecross {
 
 					assert(edge.facetId[0] == edge.facetId[1]);
 
-					Vec3 s = convexMesh->m_vertices[facet.vertId[(e + 2) % 3]];
-					Vec3 q = convexMesh->m_vertices[facetB.vertId[0]];
+					bsm::Vec3 s = convexMesh->m_vertices[facet.vertId[(e + 2) % 3]];
+					bsm::Vec3 q = convexMesh->m_vertices[facetB.vertId[0]];
 					float d = dot(s - q, facetB.normal);
 
 					if (d < -PS_EPSILON) {
@@ -184,18 +184,18 @@ namespace basecross {
 	void PsApplyExternalForce(
 		PsState &state,
 		const PsRigidBody &body,
-		const Vec3 &externalForce,
-		const Vec3 &externalTorque,
+		const bsm::Vec3 &externalForce,
+		const bsm::Vec3 &externalTorque,
 		float timeStep)
 	{
 		if (state.m_motionType == PsMotionType::MotionTypeStatic) {
 			return;
 		}
 
-		Mat3x3 orientation(state.m_orientation);
-		Mat3x3 worldInertia = transpose(orientation) * (body.m_inertia * orientation);
-		Mat3x3 worldInertiaInv = transpose(orientation) * (inverse(body.m_inertia) * orientation);
-		Vec3 angularMomentum = worldInertia * state.m_angularVelocity;
+		bsm::Mat3x3 orientation(state.m_orientation);
+		bsm::Mat3x3 worldInertia = transpose(orientation) * (body.m_inertia * orientation);
+		bsm::Mat3x3 worldInertiaInv = transpose(orientation) * (inverse(body.m_inertia) * orientation);
+		bsm::Vec3 angularMomentum = worldInertia * state.m_angularVelocity;
 
 		state.m_linearVelocity += externalForce / body.m_mass * timeStep;
 		angularMomentum += externalTorque * timeStep;
@@ -213,7 +213,7 @@ namespace basecross {
 	}
 
 	inline
-	bool epxIntersectAABB(const Vec3 &centerA, const Vec3 &halfA, const Vec3 &centerB, const Vec3 &halfB)
+	bool epxIntersectAABB(const bsm::Vec3 &centerA, const bsm::Vec3 &halfA, const bsm::Vec3 &centerB, const bsm::Vec3 &halfB)
 	{
 		if (fabs(centerA[0] - centerB[0]) > halfA[0] + halfB[0]) return false;
 		if (fabs(centerA[1] - centerB[1]) > halfA[1] + halfB[1]) return false;
@@ -253,13 +253,13 @@ namespace basecross {
 					continue;
 				}
 
-				Mat3x3 orientationA(stateA.m_orientation);
-				Vec3 centerA = stateA.m_position + orientationA * collidableA.m_center;
-				Vec3 halfA = absPerElem(orientationA) * (collidableA.m_half + Vec3(PS_AABB_EXPAND));// AABBサイズを若干拡張
+				bsm::Mat3x3 orientationA(stateA.m_orientation);
+				bsm::Vec3 centerA = stateA.m_position + orientationA * collidableA.m_center;
+				bsm::Vec3 halfA = absPerElem(orientationA) * (collidableA.m_half + bsm::Vec3(PS_AABB_EXPAND));// AABBサイズを若干拡張
 
-				Mat3x3 orientationB(stateB.m_orientation);
-				Vec3 centerB = stateB.m_position + orientationB * collidableB.m_center;
-				Vec3 halfB = absPerElem(orientationB) * (collidableB.m_half + Vec3(PS_AABB_EXPAND));// AABBサイズを若干拡張
+				bsm::Mat3x3 orientationB(stateB.m_orientation);
+				bsm::Vec3 centerB = stateB.m_position + orientationB * collidableB.m_center;
+				bsm::Vec3 halfB = absPerElem(orientationB) * (collidableB.m_half + bsm::Vec3(PS_AABB_EXPAND));// AABBサイズを若干拡張
 
 				if (epxIntersectAABB(centerA, halfA, centerB, halfB) && numNewPairs < maxPairs) {
 					PsPair &newPair = newPairs[numNewPairs++];
@@ -386,13 +386,13 @@ namespace basecross {
 }
 
 
-	inline const Mat4x4 orthoInverse(const Mat4x4 & tfrm)
+	inline const bsm::Mat4x4 orthoInverse(const bsm::Mat4x4 & tfrm)
 	{
-		Flt3 inv0, inv1, inv2;
-		inv0 = Flt3(tfrm.getMajor0().x, tfrm.getMajor1().x, tfrm.getMajor2().x);
-		inv1 = Flt3(tfrm.getMajor0().y, tfrm.getMajor1().y, tfrm.getMajor2().y);
-		inv2 = Flt3(tfrm.getMajor0().z, tfrm.getMajor1().z, tfrm.getMajor2().z);
-		return Mat4x4(
+		bsm::Flt3 inv0, inv1, inv2;
+		inv0 = bsm::Flt3(tfrm.getMajor0().x, tfrm.getMajor1().x, tfrm.getMajor2().x);
+		inv1 = bsm::Flt3(tfrm.getMajor0().y, tfrm.getMajor1().y, tfrm.getMajor2().y);
+		inv2 = bsm::Flt3(tfrm.getMajor0().z, tfrm.getMajor1().z, tfrm.getMajor2().z);
+		return bsm::Mat4x4(
 			inv0,
 			inv1,
 			inv2,
@@ -403,7 +403,7 @@ namespace basecross {
 	void PsGetProjection(
 		float &pmin, float &pmax,
 		const PsConvexMesh *convexMesh,
-		const Vec3 &axis)
+		const bsm::Vec3 &axis)
 	{
 		assert(convexMesh);
 
@@ -421,13 +421,13 @@ namespace basecross {
 	}
 
 	void PsGetClosestTwoSegments(
-		const Vec3 &segmentPointA0, const Vec3 &segmentPointA1,
-		const Vec3 &segmentPointB0, const Vec3 &segmentPointB1,
-		Vec3 &closestPointA, Vec3 &closestPointB)
+		const bsm::Vec3 &segmentPointA0, const bsm::Vec3 &segmentPointA1,
+		const bsm::Vec3 &segmentPointB0, const bsm::Vec3 &segmentPointB1,
+		bsm::Vec3 &closestPointA, bsm::Vec3 &closestPointB)
 	{
-		Vec3 v1 = segmentPointA1 - segmentPointA0;
-		Vec3 v2 = segmentPointB1 - segmentPointB0;
-		Vec3 r = segmentPointA0 - segmentPointB0;
+		bsm::Vec3 v1 = segmentPointA1 - segmentPointA0;
+		bsm::Vec3 v2 = segmentPointB1 - segmentPointB0;
+		bsm::Vec3 r = segmentPointA0 - segmentPointB0;
 
 		float a = dot(v1, v1);
 		float b = dot(v1, v2);
@@ -456,10 +456,10 @@ namespace basecross {
 
 	inline
 	void PsGetClosestPointLine(
-			const Vec3 &point,
-			const Vec3 &linePoint,
-			const Vec3 &lineDirection,
-			Vec3 &closestPoint)
+			const bsm::Vec3 &point,
+			const bsm::Vec3 &linePoint,
+			const bsm::Vec3 &lineDirection,
+			bsm::Vec3 &closestPoint)
 	{
 		float s = dot(point - linePoint, lineDirection) / dot(lineDirection, lineDirection);
 		closestPoint = linePoint + s * lineDirection;
@@ -467,17 +467,17 @@ namespace basecross {
 
 
 	void PsGetClosestPointTriangle(
-		const Vec3 &point,
-		const Vec3 &trianglePoint0,
-		const Vec3 &trianglePoint1,
-		const Vec3 &trianglePoint2,
-		const Vec3 &triangleNormal,
-		Vec3 &closestPoint)
+		const bsm::Vec3 &point,
+		const bsm::Vec3 &trianglePoint0,
+		const bsm::Vec3 &trianglePoint1,
+		const bsm::Vec3 &trianglePoint2,
+		const bsm::Vec3 &triangleNormal,
+		bsm::Vec3 &closestPoint)
 	{
-		Vec3 proj = point - dot(triangleNormal, point - trianglePoint0) * triangleNormal;
+		bsm::Vec3 proj = point - dot(triangleNormal, point - trianglePoint0) * triangleNormal;
 
-		Vec3 edgeP01 = trianglePoint1 - trianglePoint0;
-		Vec3 edgeP01_normal = cross(edgeP01, triangleNormal);
+		bsm::Vec3 edgeP01 = trianglePoint1 - trianglePoint0;
+		bsm::Vec3 edgeP01_normal = cross(edgeP01, triangleNormal);
 
 		float voronoiEdgeP01_check1 = dot(proj - trianglePoint0, edgeP01_normal);
 		float voronoiEdgeP01_check2 = dot(proj - trianglePoint0, edgeP01);
@@ -488,8 +488,8 @@ namespace basecross {
 			return;
 		}
 
-		Vec3 edgeP12 = trianglePoint2 - trianglePoint1;
-		Vec3 edgeP12_normal = cross(edgeP12, triangleNormal);
+		bsm::Vec3 edgeP12 = trianglePoint2 - trianglePoint1;
+		bsm::Vec3 edgeP12_normal = cross(edgeP12, triangleNormal);
 
 		float voronoiEdgeP12_check1 = dot(proj - trianglePoint1, edgeP12_normal);
 		float voronoiEdgeP12_check2 = dot(proj - trianglePoint1, edgeP12);
@@ -500,8 +500,8 @@ namespace basecross {
 			return;
 		}
 
-		Vec3 edgeP20 = trianglePoint0 - trianglePoint2;
-		Vec3 edgeP20_normal = cross(edgeP20, triangleNormal);
+		bsm::Vec3 edgeP20 = trianglePoint0 - trianglePoint2;
+		bsm::Vec3 edgeP20_normal = cross(edgeP20, triangleNormal);
 
 		float voronoiEdgeP20_check1 = dot(proj - trianglePoint2, edgeP20_normal);
 		float voronoiEdgeP20_check2 = dot(proj - trianglePoint2, edgeP20);
@@ -535,16 +535,16 @@ namespace basecross {
 
 
 	bool PsConvexConvexContact_local(
-		const PsConvexMesh &convexA, const Mat4x4 &transformA,
-		const PsConvexMesh &convexB, const Mat4x4 &transformB,
-		Vec3 &normal,
+		const PsConvexMesh &convexA, const bsm::Mat4x4 &transformA,
+		const PsConvexMesh &convexB, const bsm::Mat4x4 &transformB,
+		bsm::Vec3 &normal,
 		float &penetrationDepth,
-		Vec3 &contactPointA,
-		Vec3 &contactPointB)
+		bsm::Vec3 &contactPointA,
+		bsm::Vec3 &contactPointB)
 	{
-		Mat4x4 transformAB, transformBA;
-		Mat3x3 matrixAB, matrixBA;
-		Vec3 offsetAB, offsetBA;
+		bsm::Mat4x4 transformAB, transformBA;
+		bsm::Mat3x3 matrixAB, matrixBA;
+		bsm::Vec3 offsetAB, offsetBA;
 
 		transformAB = transformB * orthoInverse(transformA);
 		matrixAB = transformAB.getUpper3x3();
@@ -555,7 +555,7 @@ namespace basecross {
 		offsetBA = transformBA.getTranslation();
 
 		float distanceMin = -PS_FLT_MAX;
-		Vec3 axisMin(0.0f);
+		bsm::Vec3 axisMin(0.0f);
 		PsSatType satType = PsSatType::SatTypeEdgeEdge;
 		bool axisFlip;
 
@@ -563,7 +563,7 @@ namespace basecross {
 
 		for (uint32_t f = 0; f<convexA.m_numFacets; f++) {
 			const PsFacet &facet = convexA.m_facets[f];
-			const Vec3 separatingAxis = facet.normal;
+			const bsm::Vec3 separatingAxis = facet.normal;
 
 			float minA, maxA;
 			PsGetProjection(minA, maxA, &convexA, separatingAxis);
@@ -579,7 +579,7 @@ namespace basecross {
 
 		for (uint32_t f = 0; f<convexB.m_numFacets; f++) {
 			const PsFacet &facet = convexB.m_facets[f];
-			const Vec3 separatingAxis = matrixAB * facet.normal;
+			const bsm::Vec3 separatingAxis = matrixAB * facet.normal;
 
 			float minA, maxA;
 			PsGetProjection(minA, maxA, &convexA, separatingAxis);
@@ -597,15 +597,15 @@ namespace basecross {
 			const PsEdge &edgeA = convexA.m_edges[eA];
 			if (edgeA.type != PsEdgeType::EdgeTypeConvex) continue;
 
-			const Vec3 edgeVecA = convexA.m_vertices[edgeA.vertId[1]] - convexA.m_vertices[edgeA.vertId[0]];
+			const bsm::Vec3 edgeVecA = convexA.m_vertices[edgeA.vertId[1]] - convexA.m_vertices[edgeA.vertId[0]];
 
 			for (uint32_t eB = 0; eB<convexB.m_numEdges; eB++) {
 				const PsEdge &edgeB = convexB.m_edges[eB];
 				if (edgeB.type != PsEdgeType::EdgeTypeConvex) continue;
 
-				const Vec3 edgeVecB = matrixAB * (convexB.m_vertices[edgeB.vertId[1]] - convexB.m_vertices[edgeB.vertId[0]]);
+				const bsm::Vec3 edgeVecB = matrixAB * (convexB.m_vertices[edgeB.vertId[1]] - convexB.m_vertices[edgeB.vertId[0]]);
 
-				Vec3 separatingAxis = cross(edgeVecA, edgeVecB);
+				bsm::Vec3 separatingAxis = cross(edgeVecA, edgeVecB);
 				if (lengthSqr(separatingAxis) < PS_EPSILON*PS_EPSILON) continue;
 
 				separatingAxis = normalize(separatingAxis);
@@ -625,8 +625,8 @@ namespace basecross {
 		int collCount = 0;
 
 		float closestMinSqr = PS_FLT_MAX;
-		Vec3 closestPointA, closestPointB;
-		Vec3 separation = 1.1f * fabs(distanceMin) * axisMin;
+		bsm::Vec3 closestPointA, closestPointB;
+		bsm::Vec3 separation = 1.1f * fabs(distanceMin) * axisMin;
 
 		for (uint32_t fA = 0; fA<convexA.m_numFacets; fA++) {
 			const PsFacet &facetA = convexA.m_facets[fA];
@@ -655,13 +655,13 @@ namespace basecross {
 				collCount++;
 
 				// 面Ａと面Ｂの最近接点を求める
-				Vec3 triangleA[3] = {
+				bsm::Vec3 triangleA[3] = {
 					separation + convexA.m_vertices[facetA.vertId[0]],
 					separation + convexA.m_vertices[facetA.vertId[1]],
 					separation + convexA.m_vertices[facetA.vertId[2]],
 				};
 
-				Vec3 triangleB[3] = {
+				bsm::Vec3 triangleB[3] = {
 					offsetAB + matrixAB * convexB.m_vertices[facetB.vertId[0]],
 					offsetAB + matrixAB * convexB.m_vertices[facetB.vertId[1]],
 					offsetAB + matrixAB * convexB.m_vertices[facetB.vertId[2]],
@@ -673,7 +673,7 @@ namespace basecross {
 					for (int j = 0; j<3; j++) {
 						if (convexB.m_edges[facetB.edgeId[j]].type != PsEdgeType::EdgeTypeConvex) continue;
 
-						Vec3 sA, sB;
+						bsm::Vec3 sA, sB;
 						PsGetClosestTwoSegments(
 							triangleA[i], triangleA[(i + 1) % 3],
 							triangleB[j], triangleB[(j + 1) % 3],
@@ -689,7 +689,7 @@ namespace basecross {
 				}
 
 				for (int i = 0; i<3; i++) {
-					Vec3 s;
+					bsm::Vec3 s;
 					PsGetClosestPointTriangle(triangleA[i], triangleB[0], triangleB[1], triangleB[2], matrixAB * facetB.normal, s);
 					float dSqr = lengthSqr(triangleA[i] - s);
 					if (dSqr < closestMinSqr) {
@@ -700,7 +700,7 @@ namespace basecross {
 				}
 
 				for (int i = 0; i<3; i++) {
-					Vec3 s;
+					bsm::Vec3 s;
 					PsGetClosestPointTriangle(triangleB[i], triangleA[0], triangleA[1], triangleA[2], facetA.normal, s);
 					float dSqr = lengthSqr(triangleB[i] - s);
 					if (dSqr < closestMinSqr) {
@@ -723,12 +723,12 @@ namespace basecross {
 
 
 	bool PsConvexConvexContact(
-		const PsConvexMesh &convexA, const Mat4x4 &transformA,
-		const PsConvexMesh &convexB, const Mat4x4 &transformB,
-		Vec3 &normal,
+		const PsConvexMesh &convexA, const bsm::Mat4x4 &transformA,
+		const PsConvexMesh &convexB, const bsm::Mat4x4 &transformB,
+		bsm::Vec3 &normal,
 		float &penetrationDepth,
-		Vec3 &contactPointA,
-		Vec3 &contactPointB)
+		bsm::Vec3 &contactPointA,
+		bsm::Vec3 &contactPointB)
 	{
 
 		bool ret;
@@ -773,22 +773,22 @@ namespace basecross {
 			const PsCollidable &collA = collidables[pair.rigidBodyA];
 			const PsCollidable &collB = collidables[pair.rigidBodyB];
 
-			Mat4x4 transformA(stateA.m_orientation, stateA.m_position);
-			Mat4x4 transformB(stateB.m_orientation, stateB.m_position);
+			bsm::Mat4x4 transformA(stateA.m_orientation, stateA.m_position);
+			bsm::Mat4x4 transformB(stateB.m_orientation, stateB.m_position);
 
 			for (uint32_t j = 0; j<collA.m_numShapes; j++) {
 				const PsShape &shapeA = collA.m_shapes[j];
-				Mat4x4 offsetTransformA(shapeA.m_offsetOrientation, shapeA.m_offsetPosition);
-				Mat4x4 worldTransformA = offsetTransformA * transformA;
+				bsm::Mat4x4 offsetTransformA(shapeA.m_offsetOrientation, shapeA.m_offsetPosition);
+				bsm::Mat4x4 worldTransformA = offsetTransformA * transformA;
 
 				for (uint32_t k = 0; k<collB.m_numShapes; k++) {
 					const PsShape &shapeB = collB.m_shapes[k];
-					Mat4x4 offsetTransformB(shapeB.m_offsetOrientation, shapeB.m_offsetPosition);
-					Mat4x4 worldTransformB = offsetTransformB * transformB;
+					bsm::Mat4x4 offsetTransformB(shapeB.m_offsetOrientation, shapeB.m_offsetPosition);
+					bsm::Mat4x4 worldTransformB = offsetTransformB * transformB;
 
-					Vec3 contactPointA;
-					Vec3 contactPointB;
-					Vec3 normal;
+					bsm::Vec3 contactPointA;
+					bsm::Vec3 contactPointB;
+					bsm::Vec3 normal;
 					float penetrationDepth;
 
 					if (PsConvexConvexContact(
@@ -808,20 +808,20 @@ namespace basecross {
 	}
 
 	struct PsSolverBody {
-		Vec3 deltaLinearVelocity;
-		Vec3 deltaAngularVelocity;
-		Quat    orientation;
-		Mat3x3 inertiaInv;
+		bsm::Vec3 deltaLinearVelocity;
+		bsm::Vec3 deltaAngularVelocity;
+		bsm::Quat    orientation;
+		bsm::Mat3x3 inertiaInv;
 		float   massInv;
 	};
 
-	inline void PsCalcTangentVector(const Vec3 &normal, Vec3 &tangent1, Vec3 &tangent2)
+	inline void PsCalcTangentVector(const bsm::Vec3 &normal, bsm::Vec3 &tangent1, bsm::Vec3 &tangent2)
 	{
-		Vec3 vec(1.0f, 0.0f, 0.0f);
-		Vec3 n(normal);
+		bsm::Vec3 vec(1.0f, 0.0f, 0.0f);
+		bsm::Vec3 n(normal);
 		n[0] = 0.0f;
 		if (lengthSqr(n) < PS_EPSILON) {
-			vec = Vec3(0.0f, 1.0f, 0.0f);
+			vec = bsm::Vec3(0.0f, 1.0f, 0.0f);
 		}
 		tangent1 = normalize(cross(normal, vec));
 		tangent2 = normalize(cross(tangent1, normal));
@@ -855,16 +855,16 @@ namespace basecross {
 			PsSolverBody &solverBody = solverBodies[i];
 
 			solverBody.orientation = state.m_orientation;
-			solverBody.deltaLinearVelocity = Vec3(0.0f);
-			solverBody.deltaAngularVelocity = Vec3(0.0f);
+			solverBody.deltaLinearVelocity = bsm::Vec3(0.0f);
+			solverBody.deltaAngularVelocity = bsm::Vec3(0.0f);
 
 			if (state.m_motionType == PsMotionType::MotionTypeStatic) {
 				solverBody.massInv = 0.0f;
-				solverBody.inertiaInv = Mat3x3(0.0f);
+				solverBody.inertiaInv = bsm::Mat3x3(0.0f);
 			}
 			else {
 				solverBody.massInv = 1.0f / body.m_mass;
-				Mat3x3 m(solverBody.orientation);
+				bsm::Mat3x3 m(solverBody.orientation);
 				solverBody.inertiaInv = transpose(m) * (inverse(body.m_inertia) * m);
 			}
 		}
@@ -880,12 +880,12 @@ namespace basecross {
 			const PsRigidBody &bodyB = bodies[joint.rigidBodyB];
 			PsSolverBody &solverBodyB = solverBodies[joint.rigidBodyB];
 
-			Vec3 rA = rotate(solverBodyA.orientation, joint.anchorA);
-			Vec3 rB = rotate(solverBodyB.orientation, joint.anchorB);
+			bsm::Vec3 rA = rotate(solverBodyA.orientation, joint.anchorA);
+			bsm::Vec3 rB = rotate(solverBodyB.orientation, joint.anchorB);
 
-			Vec3 positionA = stateA.m_position + rA;
-			Vec3 positionB = stateB.m_position + rB;
-			Vec3 direction = positionA - positionB;
+			bsm::Vec3 positionA = stateA.m_position + rA;
+			bsm::Vec3 positionB = stateB.m_position + rB;
+			bsm::Vec3 direction = positionA - positionB;
 			float distanceSqr = lengthSqr(direction);
 
 			if (distanceSqr < PS_EPSILON * PS_EPSILON) {
@@ -893,19 +893,19 @@ namespace basecross {
 				joint.constraint.rhs = 0.0f;
 				joint.constraint.lowerLimit = -PS_FLT_MAX;
 				joint.constraint.upperLimit = PS_FLT_MAX;
-				joint.constraint.axis = Vec3(1.0f, 0.0f, 0.0f);
+				joint.constraint.axis = bsm::Vec3(1.0f, 0.0f, 0.0f);
 				continue;
 			}
 
 			float distance = sqrtf(distanceSqr);
 			direction /= distance;
 
-			Vec3 velocityA = stateA.m_linearVelocity + cross(stateA.m_angularVelocity, rA);
-			Vec3 velocityB = stateB.m_linearVelocity + cross(stateB.m_angularVelocity, rB);
-			Vec3 relativeVelocity = velocityA - velocityB;
+			bsm::Vec3 velocityA = stateA.m_linearVelocity + cross(stateA.m_angularVelocity, rA);
+			bsm::Vec3 velocityB = stateB.m_linearVelocity + cross(stateB.m_angularVelocity, rB);
+			bsm::Vec3 relativeVelocity = velocityA - velocityB;
 
-			Mat3x3 K;
-			K.scale(Vec3(solverBodyA.massInv + solverBodyB.massInv));
+			bsm::Mat3x3 K;
+			K.scale(bsm::Vec3(solverBodyA.massInv + solverBodyB.massInv));
 			K -= crossMatrix(rA) * solverBodyA.inertiaInv * crossMatrix(rA);
 			K -= crossMatrix(rB) * solverBodyB.inertiaInv * crossMatrix(rB);
 
@@ -940,26 +940,26 @@ namespace basecross {
 			for (uint32_t j = 0; j<pair.contact->m_numContacts; j++) {
 				PsContactPoint &cp = pair.contact->m_contactPoints[j];
 
-				Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
-				Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
+				bsm::Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
+				bsm::Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
 
-				Mat3x3 K;
-				K.scale(Vec3(solverBodyA.massInv + solverBodyB.massInv));
+				bsm::Mat3x3 K;
+				K.scale(bsm::Vec3(solverBodyA.massInv + solverBodyB.massInv));
 				K -= crossMatrix(rA) * solverBodyA.inertiaInv * crossMatrix(rA);
 				K -= crossMatrix(rB) * solverBodyB.inertiaInv * crossMatrix(rB);
 
-				Vec3 velocityA = stateA.m_linearVelocity + cross(stateA.m_angularVelocity, rA);
-				Vec3 velocityB = stateB.m_linearVelocity + cross(stateB.m_angularVelocity, rB);
-				Vec3 relativeVelocity = velocityA - velocityB;
+				bsm::Vec3 velocityA = stateA.m_linearVelocity + cross(stateA.m_angularVelocity, rA);
+				bsm::Vec3 velocityB = stateB.m_linearVelocity + cross(stateB.m_angularVelocity, rB);
+				bsm::Vec3 relativeVelocity = velocityA - velocityB;
 
-				Vec3 tangent1, tangent2;
+				bsm::Vec3 tangent1, tangent2;
 
 				PsCalcTangentVector(cp.normal, tangent1, tangent2);
 
 				float restitution = pair.type == PsPairType::PairTypeNew ? 0.5f*(bodyA.m_restitution + bodyB.m_restitution) : 0.0f;
 
 				{
-					Vec3 axis = cp.normal;
+					bsm::Vec3 axis = cp.normal;
 					float denom = dot(K * axis, axis);
 					cp.constraints[0].jacDiagInv = 1.0f / denom;
 					cp.constraints[0].rhs = -(1.0f + restitution) * dot(relativeVelocity, axis); // velocity error
@@ -971,7 +971,7 @@ namespace basecross {
 				}
 
 				{
-					Vec3 axis = tangent1;
+					bsm::Vec3 axis = tangent1;
 					float denom = dot(K * axis, axis);
 					cp.constraints[1].jacDiagInv = 1.0f / denom;
 					cp.constraints[1].rhs = -dot(relativeVelocity, axis);
@@ -982,7 +982,7 @@ namespace basecross {
 				}
 
 				{
-					Vec3 axis = tangent2;
+					bsm::Vec3 axis = tangent2;
 					float denom = dot(K * axis, axis);
 					cp.constraints[2].jacDiagInv = 1.0f / denom;
 					cp.constraints[2].rhs = -dot(relativeVelocity, axis);
@@ -1002,8 +1002,8 @@ namespace basecross {
 
 			for (uint32_t j = 0; j<pair.contact->m_numContacts; j++) {
 				PsContactPoint &cp = pair.contact->m_contactPoints[j];
-				Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
-				Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
+				bsm::Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
+				bsm::Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
 
 				for (uint32_t k = 0; k<3; k++) {
 					float deltaImpulse = cp.constraints[k].accumImpulse;
@@ -1022,13 +1022,13 @@ namespace basecross {
 				PsSolverBody &solverBodyA = solverBodies[joint.rigidBodyA];
 				PsSolverBody &solverBodyB = solverBodies[joint.rigidBodyB];
 
-				Vec3 rA = rotate(solverBodyA.orientation, joint.anchorA);
-				Vec3 rB = rotate(solverBodyB.orientation, joint.anchorB);
+				bsm::Vec3 rA = rotate(solverBodyA.orientation, joint.anchorA);
+				bsm::Vec3 rB = rotate(solverBodyB.orientation, joint.anchorB);
 
 				PsConstraint &constraint = joint.constraint;
 				float deltaImpulse = constraint.rhs;
-				Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
-				Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
+				bsm::Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
+				bsm::Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
 				deltaImpulse -= constraint.jacDiagInv * dot(constraint.axis, deltaVelocityA - deltaVelocityB);
 				float oldImpulse = constraint.accumImpulse;
 				constraint.accumImpulse = PS_CLAMP(oldImpulse + deltaImpulse, constraint.lowerLimit, constraint.upperLimit);
@@ -1047,14 +1047,14 @@ namespace basecross {
 
 				for (uint32_t j = 0; j<pair.contact->m_numContacts; j++) {
 					PsContactPoint &cp = pair.contact->m_contactPoints[j];
-					Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
-					Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
+					bsm::Vec3 rA = rotate(solverBodyA.orientation, cp.pointA);
+					bsm::Vec3 rB = rotate(solverBodyB.orientation, cp.pointB);
 
 					{
 						PsConstraint &constraint = cp.constraints[0];
 						float deltaImpulse = constraint.rhs;
-						Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
-						Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
+						bsm::Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
+						bsm::Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
 						deltaImpulse -= constraint.jacDiagInv * dot(constraint.axis, deltaVelocityA - deltaVelocityB);
 						float oldImpulse = constraint.accumImpulse;
 						constraint.accumImpulse = PS_CLAMP(oldImpulse + deltaImpulse, constraint.lowerLimit, constraint.upperLimit);
@@ -1074,8 +1074,8 @@ namespace basecross {
 					{
 						PsConstraint &constraint = cp.constraints[1];
 						float deltaImpulse = constraint.rhs;
-						Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
-						Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
+						bsm::Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
+						bsm::Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
 						deltaImpulse -= constraint.jacDiagInv * dot(constraint.axis, deltaVelocityA - deltaVelocityB);
 						float oldImpulse = constraint.accumImpulse;
 						constraint.accumImpulse = PS_CLAMP(oldImpulse + deltaImpulse, constraint.lowerLimit, constraint.upperLimit);
@@ -1088,8 +1088,8 @@ namespace basecross {
 					{
 						PsConstraint &constraint = cp.constraints[2];
 						float deltaImpulse = constraint.rhs;
-						Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
-						Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
+						bsm::Vec3 deltaVelocityA = solverBodyA.deltaLinearVelocity + cross(solverBodyA.deltaAngularVelocity, rA);
+						bsm::Vec3 deltaVelocityB = solverBodyB.deltaLinearVelocity + cross(solverBodyB.deltaAngularVelocity, rB);
 						deltaImpulse -= constraint.jacDiagInv * dot(constraint.axis, deltaVelocityA - deltaVelocityB);
 						float oldImpulse = constraint.accumImpulse;
 						constraint.accumImpulse = PS_CLAMP(oldImpulse + deltaImpulse, constraint.lowerLimit, constraint.upperLimit);
@@ -1115,19 +1115,19 @@ namespace basecross {
 	{
 		for (uint32_t i = 0; i<numRigidBodies; i++) {
 			PsState &state = states[i];
-			Quat Dest;
+			bsm::Quat Dest;
 			Dest.x = state.m_angularVelocity.x;
 			Dest.y = state.m_angularVelocity.y;
 			Dest.z = state.m_angularVelocity.z;
 			Dest.w = 0;
-			Quat dAng = state.m_orientation * Dest * 0.5f;
+			bsm::Quat dAng = state.m_orientation * Dest * 0.5f;
 			state.m_position += state.m_linearVelocity * timeStep;
 			state.m_orientation = normalize(state.m_orientation + dAng * timeStep);
 		}
 	}
 
 	inline
-	float calcArea4Points(const Vec3 &p0, const Vec3 &p1, const Vec3 &p2, const Vec3 &p3)
+	float calcArea4Points(const bsm::Vec3 &p0, const bsm::Vec3 &p1, const bsm::Vec3 &p2, const bsm::Vec3 &p3)
 	{
 		float areaSqrA = lengthSqr(cross(p0 - p1, p2 - p3));
 		float areaSqrB = lengthSqr(cross(p0 - p2, p1 - p3));
@@ -1135,7 +1135,7 @@ namespace basecross {
 		return PS_MAX(PS_MAX(areaSqrA, areaSqrB), areaSqrC);
 	}
 
-	int PsContact::findNearestContactPoint(const Vec3 &newPointA, const Vec3 &newPointB, const Vec3 &newNormal)
+	int PsContact::findNearestContactPoint(const bsm::Vec3 &newPointA, const bsm::Vec3 &newPointB, const bsm::Vec3 &newNormal)
 	{
 		int nearestIdx = -1;
 
@@ -1152,7 +1152,7 @@ namespace basecross {
 		return nearestIdx;
 	}
 
-	int PsContact::sort4ContactPoints(const Vec3 &newPoint, float newDistance)
+	int PsContact::sort4ContactPoints(const bsm::Vec3 &newPoint, float newDistance)
 	{
 		int maxPenetrationIndex = -1;
 		float maxPenetration = newDistance;
@@ -1166,8 +1166,8 @@ namespace basecross {
 
 		float res[4] = { 0.0f };
 
-		Vec3 newp(newPoint);
-		Vec3 p[4] = {
+		bsm::Vec3 newp(newPoint);
+		bsm::Vec3 p[4] = {
 			m_contactPoints[0].pointA,
 			m_contactPoints[1].pointA,
 			m_contactPoints[2].pointA,
@@ -1225,12 +1225,12 @@ namespace basecross {
 		m_numContacts--;
 	}
 
-	void PsContact::refresh(const Vec3 &pA, const Quat &qA, const Vec3 &pB, const Quat &qB)
+	void PsContact::refresh(const bsm::Vec3 &pA, const bsm::Quat &qA, const bsm::Vec3 &pB, const bsm::Quat &qB)
 	{
 		for (int i = 0; i<(int)m_numContacts; i++) {
-			Vec3 normal = m_contactPoints[i].normal;
-			Vec3 cpA = pA + rotate(qA, m_contactPoints[i].pointA);
-			Vec3 cpB = pB + rotate(qB, m_contactPoints[i].pointB);
+			bsm::Vec3 normal = m_contactPoints[i].normal;
+			bsm::Vec3 cpA = pA + rotate(qA, m_contactPoints[i].pointA);
+			bsm::Vec3 cpB = pB + rotate(qB, m_contactPoints[i].pointB);
 
 			float distance = dot(normal, cpA - cpB);
 			if (distance > PS_CONTACT_THRESHOLD_NORMAL) {
@@ -1280,9 +1280,9 @@ namespace basecross {
 
 	void PsContact::addContact(
 		float penetrationDepth,
-		const Vec3 &normal,
-		const Vec3 &contactPointA,
-		const Vec3 &contactPointB)
+		const bsm::Vec3 &normal,
+		const bsm::Vec3 &contactPointA,
+		const bsm::Vec3 &contactPointB)
 	{
 		int id = findNearestContactPoint(contactPointA, contactPointB, normal);
 
@@ -1313,10 +1313,10 @@ namespace basecross {
 	{}
 	PhysicsManager::~PhysicsManager() {}
 
-	uint32_t PhysicsManager::AddSingleShape(PsShapeType ShapeType, PsMotionType MotionType, const Vec3& Scale, const Quat& Qt, const Vec3& Pos) {
+	uint32_t PhysicsManager::AddSingleShape(PsShapeType ShapeType, PsMotionType MotionType, const bsm::Vec3& Scale, const bsm::Quat& Qt, const bsm::Vec3& Pos) {
 		uint32_t id = numRigidBodies++;
 
-		Vec3 PsScale = Scale * 0.5f;
+		bsm::Vec3 PsScale = Scale * 0.5f;
 
 		states[id].reset();
 		states[id].m_position = Pos;
@@ -1373,7 +1373,7 @@ namespace basecross {
 		return retindex;
 	}
 
-	void PhysicsManager::GetShapeQuatPos(uint32_t TransIndex, Quat& RetQt, Vec3& RetPos) {
+	void PhysicsManager::GetShapeQuatPos(uint32_t TransIndex, bsm::Quat& RetQt, bsm::Vec3& RetPos) {
 		if (TransIndex >= m_PsTranformIndex) {
 			throw BaseException(
 				L"指定されたインデックスが範囲外です",
@@ -1382,25 +1382,25 @@ namespace basecross {
 			);
 
 		}
-		Mat4x4 World, Local;
+		bsm::Mat4x4 World, Local;
 		auto& Trans = m_PsTranformMap[TransIndex];
 		auto& state = physicsGetState(Trans.stateIndex);
-		const Vec3 Pos(state.m_position);
-		const Quat Qt(state.m_orientation);
+		const bsm::Vec3 Pos(state.m_position);
+		const bsm::Quat Qt(state.m_orientation);
 		//ワールド行列の決定
 		World.affineTransformation(
-			Vec3(1.0, 1.0, 1.0),			//スケーリング
-			Vec3(0, 0, 0),		//回転の中心（重心）
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			Qt,				//回転角度
 			Pos				//位置
 		);
 
 		auto& shape = collidables[Trans.stateIndex].m_shapes[Trans.shapeIndex];
-		const Vec3 LocalPos(shape.m_offsetPosition);
-		const Quat LocalQt(shape.m_offsetOrientation);
+		const bsm::Vec3 LocalPos(shape.m_offsetPosition);
+		const bsm::Quat LocalQt(shape.m_offsetOrientation);
 		Local.affineTransformation(
 			shape.m_Scale,			//スケーリング
-			Vec3(0, 0, 0),		//回転の中心（重心）
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
 		);
@@ -1420,8 +1420,8 @@ namespace basecross {
 		pairSwap = 1 - pairSwap;
 
 		for (uint32_t i = 0; i<numRigidBodies; i++) {
-			Vec3 externalForce = gravity * bodies[i].m_mass;
-			Vec3 externalTorque(0.0f);
+			bsm::Vec3 externalForce = gravity * bodies[i].m_mass;
+			bsm::Vec3 externalTorque(0.0f);
 			PsApplyExternalForce(states[i], bodies[i], externalForce, externalTorque, timeStep);
 		}
 
@@ -1446,11 +1446,11 @@ namespace basecross {
 
 	}
 
-	void PhysicsManager::DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const Mat4x4& world) {
+	void PhysicsManager::DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& world) {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
 		auto RenderState = Dev->GetRenderState();
-		Mat4x4 World, ViewMat, ProjMat;
+		bsm::Mat4x4 World, ViewMat, ProjMat;
 		World = world;
 		//転置する
 		World.transpose();
@@ -1515,14 +1515,14 @@ namespace basecross {
 	void PhysicsManager::OnDraw() {
 		for (int i = 0; i < physicsGetNumRigidbodies(); i++) {
 			//行列の定義
-			Mat4x4 World, Local;
+			bsm::Mat4x4 World, Local;
 			auto& state = physicsGetState(i);
-			const Vec3 Pos(state.m_position.x, state.m_position.y, state.m_position.z);
-			const Quat Qt(state.m_orientation.x, state.m_orientation.y, state.m_orientation.z, state.m_orientation.w);
+			const bsm::Vec3 Pos(state.m_position.x, state.m_position.y, state.m_position.z);
+			const bsm::Quat Qt(state.m_orientation.x, state.m_orientation.y, state.m_orientation.z, state.m_orientation.w);
 			//ワールド行列の決定
 			World.affineTransformation(
-				Vec3(1.0, 1.0, 1.0),			//スケーリング
-				Vec3(0, 0, 0),		//回転の中心（重心）
+				bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+				bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 				Qt,				//回転角度
 				Pos				//位置
 			);
@@ -1530,16 +1530,16 @@ namespace basecross {
 			for (auto j = 0; j < collidables[i].m_numShapes; j++) {
 				auto& shape = collidables[i].m_shapes[j];
 
-				const Vec3 LocalPos(shape.m_offsetPosition);
-				const Quat LocalQt(shape.m_offsetOrientation);
+				const bsm::Vec3 LocalPos(shape.m_offsetPosition);
+				const bsm::Quat LocalQt(shape.m_offsetOrientation);
 				Local.affineTransformation(
 					shape.m_Scale,			//スケーリング
-					Vec3(0, 0, 0),		//回転の中心（重心）
+					bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 					LocalQt,				//回転角度
 					LocalPos				//位置
 				);
 
-				Mat4x4 DrawWorld = Local * World;
+				bsm::Mat4x4 DrawWorld = Local * World;
 				switch (shape.m_PsShapeType) {
 				case PsShapeType::ShapeTypeBox:
 					DrawShapeWireFrame(m_BoxMeshRes, DrawWorld);

@@ -27,15 +27,6 @@ namespace basecross {
 	}
 
 
-	//物理計算マネージャ作成
-	void GameStage::CreatePhysicsManager() {
-		auto Ptr = AddGameObject<PhysicsManager>();
-		SetSharedGameObject(L"PhysicsManager", Ptr);
-
-	}
-
-
-
 	//プレートの作成
 	void GameStage::CreatePlate() {
 		//ステージへのゲームオブジェクトの追加
@@ -98,10 +89,9 @@ namespace basecross {
 
 	void GameStage::OnCreate() {
 		try {
+			SetPhysicsManager(true);
 			//ビューとライトの作成
 			CreateViewLight();
-			//物理計算マネージャ作成
-			CreatePhysicsManager();
 			//プレートの作成
 			CreatePlate();
 			//物理計算ボックスの作成
