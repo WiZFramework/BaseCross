@@ -105,5 +105,22 @@ namespace basecross {
 	};
 
 
+	//--------------------------------------------------------------------------------------
+	//	キャラ1
+	//--------------------------------------------------------------------------------------
+	class Chara1 : public SS5ssae {
+		Mat4x4 m_ToAnimeMatrixLeft;
+	public:
+		//構築と破棄
+		Chara1(const shared_ptr<Stage>& StagePtr, const wstring& BaseDir);
+		virtual ~Chara1() {}
+		//初期化
+		virtual void OnCreate() override;
+		//更新
+		virtual void OnUpdate() override;
+	};
+
+
+
 }
 //end basecross

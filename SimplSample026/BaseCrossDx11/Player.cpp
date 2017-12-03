@@ -255,6 +255,50 @@ namespace basecross {
 		shptr->AddDrawObject(m_PtrObj);
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	キャラ1
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	Chara1::Chara1(const shared_ptr<Stage>& StagePtr, const wstring& BaseDir) :
+		SS5ssae(StagePtr, BaseDir, L"character_template_3head.ssae", L"wait")
+	{
+		m_ToAnimeMatrixLeft.affineTransformation(
+			Vec3(0.1f, 0.1f, 1.0f),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0),
+			Vec3(0, 0, 0.0f)
+		);
+
+	}
+
+	//初期化
+	void Chara1::OnCreate() {
+
+		//元となるオブジェクトからアニメーションオブジェクトへの行列の設定
+		SetToAnimeMatrix(m_ToAnimeMatrixLeft);
+
+		auto PtrT = GetTransform();
+		PtrT->SetScale(0.5f, 0.5f, 1.0f);
+		PtrT->SetPosition(Vec3(0, 0.0f, 1.0f));
+		//親クラスのクリエイトを呼ぶ
+		SS5ssae::OnCreate();
+		//値は秒あたりのフレーム数
+		SetFps(30.0f);
+
+		ChangeAnimation(L"run");
+		SetLooped(true);
+
+	}
+
+	//更新
+	void Chara1::OnUpdate() {
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//アニメーションを更新する
+		UpdateAnimeTime(ElapsedTime);
+
+	}
+
+
 
 
 

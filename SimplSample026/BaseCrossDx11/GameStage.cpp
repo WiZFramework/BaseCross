@@ -73,6 +73,12 @@ namespace basecross {
 			Vec3(0.0f, 0.125f, 0.0f)
 			);
 
+		wstring DataDir;
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//Chaera1の作成
+		AddGameObject<Chara1>(DataDir + L"character_template_sample1\\");
+
 		//スパークエフェクト
 		AddGameObject<MultiSpark>();
 		//ファイアエフェクト
