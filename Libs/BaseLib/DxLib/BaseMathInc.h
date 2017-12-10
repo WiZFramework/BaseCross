@@ -134,6 +134,12 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt2::getX()const {
+		return x;
+	}
+	inline float Flt2::getY()const {
+		return y;
+	}
 
 	inline Flt2 & Flt2::setElem(int idx, float value)
 	{
@@ -389,6 +395,15 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt3::getX()const {
+		return x;
+	}
+	inline float Flt3::getY()const {
+		return y;
+	}
+	inline float Flt3::getZ()const {
+		return z;
+	}
 
 	inline Flt3 & Flt3::setElem(int idx, float value)
 	{
@@ -703,6 +718,19 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Flt4::getX()const {
+		return x;
+	}
+	inline float Flt4::getY()const {
+		return y;
+	}
+	inline float Flt4::getZ()const {
+		return z;
+	}
+	inline float Flt4::getW()const {
+		return w;
+	}
+
 	inline Flt4 & Flt4::setElem(int idx, float value)
 	{
 		*(&x + idx) = value;
@@ -886,6 +914,15 @@ namespace bsm {
 		XMStoreFloat4((XMFLOAT4*)this, temp);
 	}
 
+	inline Quat::Quat(const Mat3x3& m) {
+		Mat4x4 m4(m);
+		*this = m4.quatInMatrix();
+	}
+
+	inline Quat::Quat(const Mat4x4& m) {
+		*this = m.quatInMatrix();
+	}
+
 	inline Quat::operator XMVECTOR() const {
 		XMFLOAT4 temp = *this;
 		XMVECTOR Vec = XMLoadFloat4(&temp);
@@ -961,6 +998,19 @@ namespace bsm {
 		return *this;
 	}
 
+	inline float Quat::getX()const {
+		return x;
+	}
+	inline float Quat::getY()const {
+		return y;
+	}
+	inline float Quat::getZ()const {
+		return z;
+	}
+	inline float Quat::getW()const {
+		return w;
+	}
+
 	inline Quat & Quat::setElem(int idx, float value)
 	{
 		*(&x + idx) = value;
@@ -1011,6 +1061,15 @@ namespace bsm {
 
 	inline Quat& Quat::normalize() {
 		*this = (Quat)XMQuaternionNormalize(*this);
+		return *this;
+	}
+
+	inline float Quat::dot(const Quat& quat)const {
+		return ((Quat)XMQuaternionDot(*this, quat)).x;
+	}
+
+	inline Quat& Quat::conj(const Quat& quat) {
+		*this = (Quat)XMQuaternionConjugate(quat);
 		return *this;
 	}
 
@@ -2082,6 +2141,22 @@ namespace bsm {
 		return (vec - Contact);
 	}
 
+	inline float maxElem(const Flt3 & vec)
+	{
+		float result;
+		result = (vec.x > vec.y) ? vec.x : vec.y;
+		result = (vec.z > result) ? vec.z : result;
+		return result;
+	}
+
+	inline float minElem(const Flt3 & vec)
+	{
+		float result;
+		result = (vec.x < vec.y) ? vec.x : vec.y;
+		result = (vec.z < result) ? vec.z : result;
+		return result;
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -2157,9 +2232,27 @@ namespace bsm {
 		return (Flt3)XMVector3Rotate(vec, quat);
 	}
 
+	inline const Quat rotation(const Flt3 & unitVec0, const Flt3 & unitVec1)
+	{
+		float cosHalfAngleX2, recipCosHalfAngleX2;
+		cosHalfAngleX2 = sqrtf((2.0f * (1.0f + dot(unitVec0, unitVec1))));
+		recipCosHalfAngleX2 = (1.0f / cosHalfAngleX2);
+		return Quat((cross(unitVec0, unitVec1) * recipCosHalfAngleX2), (cosHalfAngleX2 * 0.5f));
+	}
+
+
+	inline const Quat conj(const Quat & quat) {
+		return (Quat)XMQuaternionConjugate(quat);
+	}
+
 	inline const Quat inverse(const Quat & quat) {
 		return (Quat)XMQuaternionInverse(quat);
 	}
+
+	inline float dot(const Quat& quat0, const Quat& quat1) {
+		return ((Quat)XMQuaternionDot(quat0, quat1)).x;
+	}
+
 
 	inline const Quat facing(const Flt3& norm) {
 		Quat ret;
@@ -2241,6 +2334,21 @@ namespace bsm {
 		XMVECTOR Vec;
 		return (Mat4x4)XMMatrixInverse(&Vec, mat);
 	}
+
+	inline const Mat4x4 orthoInverse(const bsm::Mat4x4 & tfrm)
+	{
+		Flt3 inv0, inv1, inv2;
+		inv0 = Flt3(tfrm.getMajor0().x, tfrm.getMajor1().x, tfrm.getMajor2().x);
+		inv1 = Flt3(tfrm.getMajor0().y, tfrm.getMajor1().y, tfrm.getMajor2().y);
+		inv2 = Flt3(tfrm.getMajor0().z, tfrm.getMajor1().z, tfrm.getMajor2().z);
+		return Mat4x4(
+			inv0,
+			inv1,
+			inv2,
+			Flt3((-((inv0 * tfrm.getMajor3().x) + ((inv1 * tfrm.getMajor3().y) + (inv2 * tfrm.getMajor3().z)))))
+		);
+	}
+
 	using Vec2 = Flt2;
 	using Vec3 = Flt3;
 	using Vec4 = Flt4;

@@ -8,6 +8,9 @@
 
 namespace basecross {
 
+	using namespace sce::PhysicsEffects;
+
+
 	//--------------------------------------------------------------------------------------
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
@@ -16,10 +19,16 @@ namespace basecross {
 	void GameStage::CreateViewLight() {
 		auto PtrView = CreateView<SingleView>();
 		//ビューのカメラの設定
-		auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>(10.0f);
-		PtrView->SetCamera(PtrLookAtCamera);
-		PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -20.0f));
-		PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
+		if (!bkCamera) {
+			auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>(10.0f);
+			PtrView->SetCamera(PtrLookAtCamera);
+			PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -20.0f));
+			PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+		}
+		else {
+			PtrView->SetCamera(bkCamera);
+		}
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -63,33 +72,45 @@ namespace basecross {
 
 	//物理計算ボックスの作成
 	void GameStage::CreatePhysicsBox() {
-		//下の台
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeStatic, Vec3(6.0f, 0.5f, 6.0f), Quat(), Vec3(0.0f, 0.25f, 5.0f));
-		//影響を受けるボックス
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive,Vec3(2.0f, 0.25f, 1.0f), Quat(), Vec3(0.0f, 0.625f, 5.0f));
-		Quat Qt1,Qt2, Qt3, Qt4;
+		Quat Qt1, Qt2, Qt3, Qt4;
 		Qt1.rotationZ(2.0f);
-		Qt2.rotationY(0.7f);
+		Qt2.rotationX(0.7f);
 		Qt3.rotationZ(-2.0f);
-		Qt4.rotationY(-0.7f);
-		//上から降ってくるボックス
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(2.0f, 0.25f, 1.0f), Qt2 * Qt1, Vec3(0.0f, 3.5f, 5.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt1 * Qt2, Vec3(0.0f, 6.0f, 5.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt1, Vec3(1.0f, 4.0f, 6.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt2, Vec3(-2.0f, 4.0f, 4.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt3, Vec3(2.0f, 4.0f, 3.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt4, Vec3(1.0f, 6.0f, 3.0f));
+		Qt4.rotationX(-0.7f);
 
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt1, Vec3(2.5f, 8.0f, 6.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt2, Vec3(-3.0f, 8.0f, 4.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt3, Vec3(-3.0f, 8.0f, 3.0f));
-		AddGameObject<PhysicsBox>(PsMotionType::MotionTypeActive, Vec3(1.0f, 0.25f, 1.0f), Qt4, Vec3(2.5f, 8.0f, 7.0f));
+		//下の台
+		AddGameObject<FixedPsBox>(Vec3(15.0f, 0.5f, 15.0f), Quat(), Vec3(0.0f, 0.25f, 10.0f));
+		//影響を受けるボックス
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Quat(), Vec3(0.0f, 0.625f, 10.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt2, Vec3(0.0f, 2.0f, 8.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt3, Vec3(0.0f, 2.0f, 12.0f));
+		//上から降ってくるボックス
+		AddGameObject<ActivePsBox>( Vec3(2.0f, 0.25f, 1.0f), Qt2 * Qt1, Vec3(0.0f, 3.5f, 10.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt1 * Qt2, Vec3(0.0f, 6.0f, 10.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt1, Vec3(1.0f, 8.0f, 12.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt2, Vec3(-2.0f, 7.0f, 8.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 7.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt4, Vec3(1.0f, 6.0f, 13.0f));
+
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt1, Vec3(2.5f, 4.0f, 14.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt2, Vec3(-3.0f, 6.0f, 7.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt3, Vec3(-3.0f, 12.0f, 6.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt4, Vec3(2.5f, 14.0f, 15.0f));
+
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 9.0f, 10.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-2.0f, 12.0f, 12.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-2.0f, 14.0f, 11.5f));
 
 	}
 
 	void GameStage::OnCreate() {
 		try {
-			SetPhysicsManager(true);
+			//物理計算有効
+			SetPhysicsActive(true);
+			//アップデートを無効にするには以下コメント外す
+			//GetPhysicsManager()->SetUpdateActive(false);
+			//ワイアフレーム描画を無効にするには以下コメント外す
+			//GetPhysicsManager()->SetDrawActive(false);
 			//ビューとライトの作成
 			CreateViewLight();
 			//プレートの作成

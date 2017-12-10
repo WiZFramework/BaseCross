@@ -25,7 +25,16 @@ namespace basecross{
 		auto Ptr = AddComponent<Transform>();
 		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+
+		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
+		if (!bkCamera) {
+			Ptr->SetPosition(0, 0.125f, 0);
+		}
+		else {
+			Ptr->SetPosition(App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos());
+		}
+
+
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
@@ -101,6 +110,9 @@ namespace basecross{
 	void  Player::OnPushB() {
 		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
 			//通常ステートならゲームステージ再読み込み
+			//
+			App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera()));
+			App::GetApp()->GetScene<Scene>()->SetBackupPlayerPos(GetComponent<Transform>()->GetPosition());
 			PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
 		}
 	}

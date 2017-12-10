@@ -960,8 +960,6 @@ namespace basecross {
 		shared_ptr<ParticleManager> m_AlphaParticleManager;
 		//パーティクルマネージャ(加算処理)
 		shared_ptr<ParticleManager> m_AddParticleManager;
-		//物理マネージャ
-		shared_ptr<PhysicsManager> m_PhysicsManager;
 		//コリジョン管理者
 		shared_ptr<CollisionManager> m_CollisionManager;
 		//オブジェクトの配列
@@ -976,6 +974,8 @@ namespace basecross {
 		//3Dの透明と非透明を分離する配列
 		vector< shared_ptr<GameObject> > m_Object3DNormalVec;
 		vector< shared_ptr<GameObject> > m_Object3DAlphaVec;
+
+		shared_ptr<PhysicsManager> m_PhysicsManager;
 
 
 		//現在Drawされているビューのインデックス
@@ -992,13 +992,13 @@ namespace basecross {
 		weak_ptr<Stage> m_ParentStage;		//親ステージ
 		//シャドウマップを使うかどうか
 		bool m_IsShadowmapDraw;
-		//物理マネージャを使うかどうか
-		bool m_IsPhysicsManager;
+		//物理計算を使うかどうか
+		bool m_IsPhysicsActive;
 		Impl() :
 			m_UpdateActive(true),
 			m_DrawViewIndex(0),
 			m_IsShadowmapDraw(true),
-			m_IsPhysicsManager(false)
+			m_IsPhysicsActive(false)
 		{}
 		~Impl() {}
 		void RemoveTargetGameObject(const shared_ptr<GameObject>& targetobj);
@@ -1084,6 +1084,27 @@ namespace basecross {
 			return pImpl->m_AlphaParticleManager;
 		}
 	}
+
+	shared_ptr<PhysicsManager> Stage::GetPhysicsManager() const {
+		if (!IsPhysicsActive()) {
+			throw BaseException(
+				L"物理演算が無効になっています。有効にしてから取得してください。",
+				L"if (!IsPhysicsActive())",
+				L"Stage::GetPhysicsManager()"
+			);
+		}
+		return pImpl->m_PhysicsManager;
+	}
+
+	bool Stage::IsPhysicsActive() const {
+		return pImpl->m_IsPhysicsActive;
+		
+	}
+	void Stage::SetPhysicsActive(bool b) {
+		pImpl->m_IsPhysicsActive = b;
+	}
+
+
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
 
@@ -1262,8 +1283,9 @@ namespace basecross {
 		pImpl->m_AddParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>(),true);
 		//コリジョン管理者の作成
 		pImpl->m_CollisionManager = ObjectFactory::Create<CollisionManager>(GetThis<Stage>());
-		//物理マネージャ
+
 		pImpl->m_PhysicsManager = ObjectFactory::Create<PhysicsManager>(GetThis<Stage>());
+		pImpl->m_PhysicsManager->Reset();
 	}
 
 
@@ -1283,9 +1305,6 @@ namespace basecross {
 				}
 			}
 		}
-		if (IsPhysicsManager()) {
-			pImpl->m_PhysicsManager->OnUpdate();
-		}
 		//配置オブジェクトの更新処理
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1296,7 +1315,9 @@ namespace basecross {
 		if (IsUpdateActive()) {
 			OnUpdate();
 		}
-
+		if (IsPhysicsActive()) {
+			pImpl->m_PhysicsManager->OnUpdate();
+		}
 		//配置オブジェクトのコンポーネント更新
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1358,20 +1379,6 @@ namespace basecross {
 	}
 	void Stage::SetShadowmapDraw(bool b) {
 		pImpl->m_IsShadowmapDraw = b;
-	}
-
-	shared_ptr<PhysicsManager> Stage::GetPhysicsManager() const {
-		return pImpl->m_PhysicsManager;
-	}
-
-
-	//物理マネージャを使うかどうか
-	bool Stage::IsPhysicsManager() const {
-		return pImpl->m_IsPhysicsManager;
-
-	}
-	void Stage::SetPhysicsManager(bool b) {
-		pImpl->m_IsPhysicsManager = b;
 	}
 
 	//ステージ内のシャドウマップ描画（ステージからよばれる）
@@ -1442,6 +1449,9 @@ namespace basecross {
 		for (auto ptr : pImpl->m_Object3DAlphaVec) {
 			ptr->OnPreDraw();
 		}
+		if (IsPhysicsActive()) {
+			pImpl->m_PhysicsManager->OnDraw();
+		}
 		//パーティクルの描画準備（透明）
 		GetParticleManager(false)->OnPreDraw();
 		//パーティクルの描画準備（加算）
@@ -1495,9 +1505,6 @@ namespace basecross {
 					ptr->OnDraw();
 				}
 			}
-		}
-		if (IsPhysicsManager()) {
-			pImpl->m_PhysicsManager->OnDraw();
 		}
 		//ステージのDraw();
 		OnDraw();
