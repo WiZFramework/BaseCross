@@ -17,6 +17,8 @@ namespace basecross{
 		InputHandler<Player> m_InputHandler;
 		//ステートマシーン
 		unique_ptr<StateMachine<Player>>  m_StateMachine;
+		//
+
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -54,6 +56,8 @@ namespace basecross{
 		void OnPushA();
 		//Bボタンハンドラ
 		void OnPushB();
+		//Xボタンハンドラ
+		void OnPushX();
 	};
 
 

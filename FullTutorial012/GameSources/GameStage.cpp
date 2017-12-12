@@ -33,6 +33,9 @@ namespace basecross {
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
 		PtrMultiLight->SetDefaultLighting();
+
+		//シャドウマップのライトの高さを調整(ステージが広いため)
+		Shadowmap::SetLightHeight(50.0f);
 	}
 
 
@@ -70,36 +73,30 @@ namespace basecross {
 		SetSharedGameObject(L"Player", PlayerPtr);
 	}
 
-	//物理計算ボックスの作成
-	void GameStage::CreatePhysicsBox() {
+	//物理計算オブジェクトの作成
+	void GameStage::CreatePhysicsObjects() {
 		Quat Qt1, Qt2, Qt3, Qt4;
 		Qt1.rotationZ(2.0f);
 		Qt2.rotationX(0.7f);
 		Qt3.rotationZ(-2.0f);
 		Qt4.rotationX(-0.7f);
-
 		//下の台
-		AddGameObject<FixedPsBox>(Vec3(15.0f, 0.5f, 15.0f), Quat(), Vec3(0.0f, 0.25f, 10.0f));
-		//影響を受けるボックス
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Quat(), Vec3(0.0f, 0.625f, 10.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt2, Vec3(0.0f, 2.0f, 8.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt3, Vec3(0.0f, 2.0f, 12.0f));
+		AddGameObject<FixedPsBox>(Vec3(15.0f, 0.25f, 15.0f), Quat(), Vec3(0.0f, 0.125f, 10.0f));
+
 		//上から降ってくるボックス
-		AddGameObject<ActivePsBox>( Vec3(2.0f, 0.25f, 1.0f), Qt2 * Qt1, Vec3(0.0f, 3.5f, 10.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt1 * Qt2, Vec3(0.0f, 6.0f, 10.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt1, Vec3(1.0f, 8.0f, 12.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt2, Vec3(-2.0f, 7.0f, 8.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 7.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt4, Vec3(1.0f, 6.0f, 13.0f));
-
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 2.0f), Qt1, Vec3(2.5f, 4.0f, 14.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt2, Vec3(-3.0f, 6.0f, 7.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 0.25f, 1.0f), Qt3, Vec3(-3.0f, 12.0f, 6.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 0.25f, 1.0f), Qt4, Vec3(2.5f, 14.0f, 15.0f));
-
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 9.0f, 10.0f));
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-2.0f, 12.0f, 12.0f));
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-2.0f, 14.0f, 11.5f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Quat(), Vec3(2.0f, 1.0f, 9.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt2, Vec3(1.0f, 3.0f, 8.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt3, Vec3(-2.0f, 4.0f, 8.5f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 7.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt4, Vec3(1.0f, 11.0f, 13.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt1, Vec3(2.5f, 12.0f, 14.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt2, Vec3(-3.0f, 13.0f, 7.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt3, Vec3(-3.0f, 14.0f, 6.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt4, Vec3(2.5f, 15.0f, 15.0f));
+		//上から降ってくる球体
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 6.0f, 10.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-0.5f, 7.0f, 11.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 8.0f, 10.5f));
 
 	}
 
@@ -115,8 +112,8 @@ namespace basecross {
 			CreateViewLight();
 			//プレートの作成
 			CreatePlate();
-			//物理計算ボックスの作成
-			CreatePhysicsBox();
+			//物理計算オブジェクトの作成
+			CreatePhysicsObjects();
 			//プレーヤーの作成
 			CreatePlayer();
 		}

@@ -74,6 +74,21 @@ inline Vector3::Vector3( float scalar )
     mZ = scalar;
 }
 
+inline Vector3::Vector3(XMVECTOR vec) {
+	XMFLOAT3 tmp;
+	XMStoreFloat3(&tmp, vec);
+	mX = tmp.x;
+	mY = tmp.y;
+	mZ = tmp.z;
+}
+
+inline Vector3::Vector3(const basecross::bsm::Vec3& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+}
+
+
 inline const Vector3 Vector3::xAxis( )
 {
     return Vector3( 1.0f, 0.0f, 0.0f );
@@ -206,6 +221,33 @@ inline Vector3 & Vector3::operator =( const Vector3 & vec )
     return *this;
 }
 
+inline Vector3 & Vector3::operator =(XMVECTOR vec) {
+	XMFLOAT3 tmp;
+	XMStoreFloat3(&tmp, vec);
+	mX = tmp.x;
+	mY = tmp.y;
+	mZ = tmp.z;
+	return *this;
+}
+//
+inline Vector3 & Vector3::operator =(const basecross::bsm::Vec3& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+	return *this;
+}
+
+inline Vector3::operator XMVECTOR() const {
+	XMFLOAT3 temp;
+	temp.x = mX;
+	temp.y = mY;
+	temp.z = mZ;
+	XMVECTOR Vec = XMLoadFloat3(&temp);
+	return Vec;
+}
+
+
+
 inline Vector3 & Vector3::setX( float _x )
 {
     mX = _x;
@@ -262,20 +304,26 @@ inline float Vector3::operator []( int idx ) const
 
 inline const Vector3 Vector3::operator +( const Vector3 & vec ) const
 {
+	return (Vector3)XMVectorAdd(*this, vec);
+/*
     return Vector3(
         ( mX + vec.mX ),
         ( mY + vec.mY ),
         ( mZ + vec.mZ )
     );
+*/
 }
 
 inline const Vector3 Vector3::operator -( const Vector3 & vec ) const
 {
+	return (Vector3)XMVectorSubtract(*this, vec);
+/*
     return Vector3(
         ( mX - vec.mX ),
         ( mY - vec.mY ),
         ( mZ - vec.mZ )
     );
+*/
 }
 
 inline const Point3 Vector3::operator +( const Point3 & pnt ) const
@@ -289,11 +337,16 @@ inline const Point3 Vector3::operator +( const Point3 & pnt ) const
 
 inline const Vector3 Vector3::operator *( float scalar ) const
 {
+	Vector3 temp(scalar, scalar, scalar);
+	return (Vector3)XMVectorMultiply(*this, temp);
+
+/*
     return Vector3(
         ( mX * scalar ),
         ( mY * scalar ),
         ( mZ * scalar )
     );
+*/
 }
 
 inline Vector3 & Vector3::operator +=( const Vector3 & vec )
@@ -569,6 +622,30 @@ inline Vector4::Vector4( float scalar )
     mW = scalar;
 }
 
+inline Vector4::Vector4(XMVECTOR vec) {
+	XMFLOAT4 tmp;
+	XMStoreFloat4(&tmp, vec);
+	mX = tmp.x;
+	mY = tmp.y;
+	mZ = tmp.z;
+	mW = tmp.w;
+}
+
+inline Vector4::Vector4(const basecross::bsm::Vec3& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+	mW = 0.0f;
+}
+
+inline Vector4::Vector4(const basecross::bsm::Vec4& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+	mW = vec.w;
+}
+
+
 inline const Vector4 Vector4::xAxis( )
 {
     return Vector4( 1.0f, 0.0f, 0.0f, 0.0f );
@@ -707,6 +784,35 @@ inline Vector4 & Vector4::operator =( const Vector4 & vec )
     mW = vec.mW;
     return *this;
 }
+
+inline Vector4 & Vector4::operator =(XMVECTOR vec) {
+	XMFLOAT4 tmp;
+	XMStoreFloat4(&tmp, vec);
+	mX = tmp.x;
+	mY = tmp.y;
+	mZ = tmp.z;
+	mW = tmp.w;
+	return *this;
+}
+
+inline Vector4 & Vector4::operator =(const basecross::bsm::Vec4& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+	mW = vec.w;
+	return *this;
+}
+
+inline Vector4::operator XMVECTOR() const {
+	XMFLOAT4 temp;
+	temp.x = mX;
+	temp.y = mY;
+	temp.z = mZ;
+	temp.w = mW;
+	XMVECTOR Vec = XMLoadFloat4(&temp);
+	return Vec;
+}
+
 
 inline Vector4 & Vector4::setXYZ( const Vector3 & vec )
 {

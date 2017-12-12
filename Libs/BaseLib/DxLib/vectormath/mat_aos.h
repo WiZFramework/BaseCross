@@ -55,6 +55,16 @@ inline Matrix3::Matrix3( float scalar )
     mCol2 = Vector3( scalar );
 }
 
+inline Matrix3::Matrix3(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT3X3 temp;
+	XMStoreFloat3x3(&temp, other2);
+	mCol0 = Vector3(temp._11,temp._12, temp._13);
+	mCol1 = Vector3(temp._21, temp._22, temp._23);
+	mCol2 = Vector3(temp._31, temp._32, temp._33);
+}
+
+
 inline Matrix3::Matrix3( const Quat & unitQuat )
 {
     float qx, qy, qz, qw, qx2, qy2, qz2, qxqx2, qyqy2, qzqz2, qxqy2, qyqz2, qzqw2, qxqz2, qyqw2, qxqw2;
@@ -175,6 +185,35 @@ inline Matrix3 & Matrix3::operator =( const Matrix3 & mat )
     return *this;
 }
 
+inline Matrix3 & Matrix3::operator =(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT3X3 temp;
+	XMStoreFloat3x3(&temp, other2);
+	mCol0 = Vector3(temp._11, temp._12, temp._13);
+	mCol1 = Vector3(temp._21, temp._22, temp._23);
+	mCol2 = Vector3(temp._31, temp._32, temp._33);
+	return *this;
+}
+
+inline Matrix3::operator XMMATRIX() const {
+	XMFLOAT3X3 temp;
+	temp._11 = mCol0.getX();
+	temp._12 = mCol0.getY();
+	temp._13 = mCol0.getZ();
+
+	temp._21 = mCol1.getX();
+	temp._22 = mCol1.getY();
+	temp._23 = mCol1.getZ();
+
+	temp._31 = mCol2.getX();
+	temp._32 = mCol2.getY();
+	temp._33 = mCol2.getZ();
+
+	XMMATRIX m = XMLoadFloat3x3(&temp);
+	return m;
+}
+
+
 inline const Matrix3 transpose( const Matrix3 & mat )
 {
     return Matrix3(
@@ -283,11 +322,14 @@ inline const Vector3 Matrix3::operator *( const Vector3 & vec ) const
 
 inline const Matrix3 Matrix3::operator *( const Matrix3 & mat ) const
 {
+	return  (Matrix3)XMMatrixMultiply(mat, *this);
+/*
     return Matrix3(
         ( *this * mat.mCol0 ),
         ( *this * mat.mCol1 ),
         ( *this * mat.mCol2 )
     );
+*/
 }
 
 inline Matrix3 & Matrix3::operator *=( const Matrix3 & mat )
@@ -494,6 +536,56 @@ inline Matrix4::Matrix4( const Quat & unitQuat, const Vector3 & translateVec )
     mCol2 = Vector4( mat.getCol2(), 0.0f );
     mCol3 = Vector4( translateVec, 1.0f );
 }
+
+inline Matrix4::Matrix4(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT4X4 temp;
+	XMStoreFloat4x4(&temp, other2);
+	mCol0 = Vector4(temp._11, temp._12, temp._13, temp._14);
+	mCol1 = Vector4(temp._21, temp._22, temp._23, temp._24);
+	mCol2 = Vector4(temp._31, temp._32, temp._33, temp._34);
+	mCol3 = Vector4(temp._41, temp._42, temp._43, temp._44);
+
+}
+
+inline Matrix4 & Matrix4::operator =(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT4X4 temp;
+	XMStoreFloat4x4(&temp, other2);
+	mCol0 = Vector4(temp._11, temp._12, temp._13, temp._14);
+	mCol1 = Vector4(temp._21, temp._22, temp._23, temp._24);
+	mCol2 = Vector4(temp._31, temp._32, temp._33, temp._34);
+	mCol3 = Vector4(temp._41, temp._42, temp._43, temp._44);
+	return *this;
+}
+
+inline Matrix4::operator XMMATRIX() const {
+	XMFLOAT4X4 temp;
+	temp._11 = mCol0.getX();
+	temp._12 = mCol0.getY();
+	temp._13 = mCol0.getZ();
+	temp._14 = mCol0.getW();
+
+	temp._21 = mCol1.getX();
+	temp._22 = mCol1.getY();
+	temp._23 = mCol1.getZ();
+	temp._24 = mCol1.getW();
+
+	temp._31 = mCol2.getX();
+	temp._32 = mCol2.getY();
+	temp._33 = mCol2.getZ();
+	temp._34 = mCol2.getW();
+
+	temp._41 = mCol3.getX();
+	temp._42 = mCol3.getY();
+	temp._43 = mCol3.getZ();
+	temp._44 = mCol3.getW();
+
+	XMMATRIX m = XMLoadFloat4x4(&temp);
+	return m;
+}
+
+
 
 inline Matrix4 & Matrix4::setCol0( const Vector4 & _col0 )
 {
@@ -833,12 +925,15 @@ inline const Vector4 Matrix4::operator *( const Point3 & pnt ) const
 
 inline const Matrix4 Matrix4::operator *( const Matrix4 & mat ) const
 {
+	return  (Matrix4)XMMatrixMultiply(mat, *this);
+/*
     return Matrix4(
         ( *this * mat.mCol0 ),
         ( *this * mat.mCol1 ),
         ( *this * mat.mCol2 ),
         ( *this * mat.mCol3 )
     );
+*/
 }
 
 inline Matrix4 & Matrix4::operator *=( const Matrix4 & mat )
@@ -1160,6 +1255,55 @@ inline Transform3::Transform3( const Quat & unitQuat, const Vector3 & translateV
     this->setTranslation( translateVec );
 }
 
+
+inline Transform3::Transform3(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT4X3 temp;
+	XMStoreFloat4x3(&temp, other2);
+	mCol0 = Vector3(temp._11, temp._12, temp._13);
+	mCol1 = Vector3(temp._21, temp._22, temp._23);
+	mCol2 = Vector3(temp._31, temp._32, temp._33);
+	mCol3 = Vector3(temp._41, temp._42, temp._43);
+
+}
+
+inline Transform3 & Transform3::operator =(const XMMATRIX& other) {
+	XMMATRIX other2 = other;
+	XMFLOAT4X3 temp;
+	XMStoreFloat4x3(&temp, other2);
+	mCol0 = Vector3(temp._11, temp._12, temp._13);
+	mCol1 = Vector3(temp._21, temp._22, temp._23);
+	mCol2 = Vector3(temp._31, temp._32, temp._33);
+	mCol3 = Vector3(temp._41, temp._42, temp._43);
+	return *this;
+}
+
+inline Transform3::operator XMMATRIX() const {
+	XMFLOAT4X3 temp;
+	temp._11 = mCol0.getX();
+	temp._12 = mCol0.getY();
+	temp._13 = mCol0.getZ();
+
+	temp._21 = mCol1.getX();
+	temp._22 = mCol1.getY();
+	temp._23 = mCol1.getZ();
+
+	temp._31 = mCol2.getX();
+	temp._32 = mCol2.getY();
+	temp._33 = mCol2.getZ();
+
+	temp._41 = mCol3.getX();
+	temp._42 = mCol3.getY();
+	temp._43 = mCol3.getZ();
+
+
+	XMMATRIX m = XMLoadFloat4x3(&temp);
+	return m;
+
+}
+
+
+
 inline Transform3 & Transform3::setCol0( const Vector3 & _col0 )
 {
     mCol0 = _col0;
@@ -1325,12 +1469,15 @@ inline const Point3 Transform3::operator *( const Point3 & pnt ) const
 
 inline const Transform3 Transform3::operator *( const Transform3 & tfrm ) const
 {
+	return  (Transform3)XMMatrixMultiply(tfrm, *this);
+/*
     return Transform3(
         ( *this * tfrm.mCol0 ),
         ( *this * tfrm.mCol1 ),
         ( *this * tfrm.mCol2 ),
         Vector3( ( *this * Point3( tfrm.mCol3 ) ) )
     );
+*/
 }
 
 inline Transform3 & Transform3::operator *=( const Transform3 & tfrm )

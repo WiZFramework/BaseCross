@@ -79,6 +79,32 @@ inline Quat::Quat( float scalar )
     mW = scalar;
 }
 
+inline Quat::Quat(XMVECTOR vec) {
+	XMFLOAT4 temp;
+	XMStoreFloat4(&temp, vec);
+	mX = temp.x;
+	mY = temp.y;
+	mZ = temp.z;
+	mW = temp.w;
+}
+
+inline Quat::Quat(const basecross::bsm::Quat& qt) {
+	mX = qt.x;
+	mY = qt.y;
+	mZ = qt.z;
+	mW = qt.w;
+}
+
+inline Quat::Quat(const basecross::bsm::Vec4& vec) {
+	mX = vec.x;
+	mY = vec.y;
+	mZ = vec.z;
+	mW = vec.w;
+}
+
+
+
+
 inline const Quat Quat::identity( )
 {
     return Quat( 0.0f, 0.0f, 0.0f, 1.0f );
@@ -141,6 +167,35 @@ inline Quat & Quat::operator =( const Quat & quat )
     mW = quat.mW;
     return *this;
 }
+
+inline Quat & Quat::operator =(XMVECTOR vec) {
+	XMFLOAT4 temp;
+	XMStoreFloat4(&temp, vec);
+	mX = temp.x;
+	mY = temp.y;
+	mZ = temp.z;
+	mW = temp.w;
+	return *this;
+}
+
+inline Quat & Quat::operator =(const basecross::bsm::Quat& qt) {
+	mX = qt.x;
+	mY = qt.y;
+	mZ = qt.z;
+	mW = qt.w;
+	return *this;
+}
+
+inline Quat::operator XMVECTOR() const {
+	XMFLOAT4 temp;
+	temp.x = mX;
+	temp.y = mY;
+	temp.z = mZ;
+	temp.w = mW;
+	XMVECTOR Vec = XMLoadFloat4(&temp);
+	return Vec;
+}
+
 
 inline Quat & Quat::setXYZ( const Vector3 & vec )
 {
@@ -383,12 +438,15 @@ inline const Quat Quat::rotationZ( float radians )
 
 inline const Quat Quat::operator *( const Quat & quat ) const
 {
+	return (Quat)XMQuaternionMultiply(quat, *this);
+/*
     return Quat(
         ( ( ( ( mW * quat.mX ) + ( mX * quat.mW ) ) + ( mY * quat.mZ ) ) - ( mZ * quat.mY ) ),
         ( ( ( ( mW * quat.mY ) + ( mY * quat.mW ) ) + ( mZ * quat.mX ) ) - ( mX * quat.mZ ) ),
         ( ( ( ( mW * quat.mZ ) + ( mZ * quat.mW ) ) + ( mX * quat.mY ) ) - ( mY * quat.mX ) ),
         ( ( ( ( mW * quat.mW ) - ( mX * quat.mX ) ) - ( mY * quat.mY ) ) - ( mZ * quat.mZ ) )
     );
+*/
 }
 
 inline Quat & Quat::operator *=( const Quat & quat )

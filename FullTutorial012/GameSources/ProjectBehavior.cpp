@@ -82,7 +82,7 @@ namespace basecross {
 		//‰ñ“]‚ÌŒvŽZ
 		if (Angle.length() > 0.0f) {
 			auto UtilPtr = GetGameObject()->GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(Angle, 1.0f);
+			UtilPtr->RotToHead(Angle, 0.1f);
 		}
 	}
 

@@ -70,9 +70,6 @@ namespace basecross {
 		//E Stack allocator for temporary buffers
 		PfxHeapManager pool(poolBuff, POOL_BYTES);
 
-
-//		int frame = 0;
-
 		void broadphase()
 		{
 			pairSwap = 1 - pairSwap;
@@ -244,12 +241,10 @@ namespace basecross {
 
 		void constraintSolver()
 		{
-//			PfxPerfCounter pc;
 
 			unsigned int numCurrentPairs = numPairs[pairSwap];
 			PfxBroadphasePair *currentPairs = pairsBuff[pairSwap];
 
-//			pc.countBegin("setup solver bodies");
 			{
 				PfxSetupSolverBodiesParam param;
 				param.states = states;
@@ -260,9 +255,7 @@ namespace basecross {
 				int ret = pfxSetupSolverBodies(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupSolverBodies failed %d\n", ret);
 			}
-//			pc.countEnd();
 
-//			pc.countBegin("setup contact constraints");
 			{
 				PfxSetupContactConstraintsParam param;
 				param.contactPairs = currentPairs;
@@ -278,9 +271,7 @@ namespace basecross {
 				int ret = pfxSetupContactConstraints(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupContactConstraints failed %d\n", ret);
 			}
-//			pc.countEnd();
 
-//			pc.countBegin("setup joint constraints");
 			{
 				PfxSetupJointConstraintsParam param;
 				param.jointPairs = jointPairs;
@@ -299,9 +290,7 @@ namespace basecross {
 				int ret = pfxSetupJointConstraints(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupJointConstraints failed %d\n", ret);
 			}
-//			pc.countEnd();
 
-//			pc.countBegin("solve constraints");
 			{
 				PfxSolveConstraintsParam param;
 				param.workBytes = pfxGetWorkBytesOfSolveConstraints(numRigidBodies, numCurrentPairs, numJoints);
@@ -322,9 +311,7 @@ namespace basecross {
 
 				pool.deallocate(param.workBuff);
 			}
-//			pc.countEnd();
 
-			//pc.printCount();
 		}
 
 		void integrate()
@@ -348,20 +335,19 @@ namespace basecross {
 		PfxVector3 m_Size;
 		PfxQuat m_Quat;
 		PfxVector3 m_Pos;
+		PfxVector3 m_Force;
+		PfxVector3 m_Torque;
+		PfxVector3 m_Velocity;
 		float m_Mass;
 		PxBoxParam() {}
 		PxBoxParam(const PsBoxParam& param) {
 			m_MotionType = param.m_MotionType;
-			m_Size.setX(param.m_HalfSize.x);
-			m_Size.setY(param.m_HalfSize.y);
-			m_Size.setZ(param.m_HalfSize.z);
-			m_Quat.setX(param.m_Quat.x);
-			m_Quat.setY(param.m_Quat.y);
-			m_Quat.setZ(param.m_Quat.z);
-			m_Quat.setW(param.m_Quat.w);
-			m_Pos.setX(param.m_Pos.x);
-			m_Pos.setY(param.m_Pos.y);
-			m_Pos.setZ(param.m_Pos.z);
+			m_Size = param.m_HalfSize;
+			m_Quat = param.m_Quat;
+			m_Pos = param.m_Pos;
+			m_Force = param.m_Force;
+			m_Torque = param.m_Torque;
+			m_Velocity = param.m_Velocity;
 			m_Mass = param.m_Mass;
 		}
 	};
@@ -371,18 +357,19 @@ namespace basecross {
 		float m_Radius;
 		PfxQuat m_Quat;
 		PfxVector3 m_Pos;
+		PfxVector3 m_Force;
+		PfxVector3 m_Torque;
+		PfxVector3 m_Velocity;
 		float m_Mass;
 		PxSphereParam() {}
 		PxSphereParam(const PsSphereParam& param) {
 			m_MotionType = param.m_MotionType;
 			m_Radius = param.m_Radius;
-			m_Quat.setX(param.m_Quat.x);
-			m_Quat.setY(param.m_Quat.y);
-			m_Quat.setZ(param.m_Quat.z);
-			m_Quat.setW(param.m_Quat.w);
-			m_Pos.setX(param.m_Pos.x);
-			m_Pos.setY(param.m_Pos.y);
-			m_Pos.setZ(param.m_Pos.z);
+			m_Quat = param.m_Quat;
+			m_Pos = param.m_Pos;
+			m_Force = param.m_Force;
+			m_Torque = param.m_Torque;
+			m_Velocity = param.m_Velocity;
 			m_Mass = param.m_Mass;
 		}
 	};
@@ -409,16 +396,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ボックス物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsBox::PhysicsBox(const PsBoxParam& param):
+	PhysicsBox::PhysicsBox(const PsBoxParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
-
+		m_Index = index;
 	}
 
 	PhysicsBox::~PhysicsBox() {}
 
 	void PhysicsBox::OnCreate() {
-		m_Index = numRigidBodies++;
 		PfxBox box(pImpl->m_PxBoxParam.m_Size);
 		PfxShape shape;
 		shape.reset();
@@ -434,6 +420,13 @@ namespace basecross {
 		states[m_Index].setOrientation(pImpl->m_PxBoxParam.m_Quat);
 		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PxBoxParam.m_MotionType);
 		states[m_Index].setRigidBodyId(m_Index);
+		//フォースを加える
+		pfxApplyExternalForce(
+			states[m_Index], bodies[m_Index],
+			bodies[m_Index].getMass() * pImpl->m_PxBoxParam.m_Force,
+			pImpl->m_PxBoxParam.m_Torque,
+			timeStep
+		);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -451,16 +444,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	球体物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsSphere::PhysicsSphere(const PsSphereParam& param) :
+	PhysicsSphere::PhysicsSphere(const PsSphereParam& param, uint16_t index) :
 		pImpl(new Impl(param))
 	{
-
+		m_Index = index;
 	}
 
 	PhysicsSphere::~PhysicsSphere() {}
 
 	void PhysicsSphere::OnCreate() {
-		m_Index = numRigidBodies++;
 		PfxSphere sphere(pImpl->m_PxSphereParam.m_Radius);
 		PfxShape shape;
 		shape.reset();
@@ -475,7 +467,15 @@ namespace basecross {
 		states[m_Index].setPosition(pImpl->m_PxSphereParam.m_Pos);
 		states[m_Index].setOrientation(pImpl->m_PxSphereParam.m_Quat);
 		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PxSphereParam.m_MotionType);
+		states[m_Index].setLinearVelocity(pImpl->m_PxSphereParam.m_Velocity);
 		states[m_Index].setRigidBodyId(m_Index);
+		//フォースを加える
+		pfxApplyExternalForce(
+			states[m_Index], bodies[m_Index],
+			bodies[m_Index].getMass() * pImpl->m_PxSphereParam.m_Force,
+			pImpl->m_PxSphereParam.m_Torque,
+			timeStep
+		);
 	}
 
 
@@ -487,29 +487,58 @@ namespace basecross {
 	}
 	BasePhysics::~BasePhysics() {}
 
-	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param) {
-		return ObjectFactory::Create<PhysicsBox>(param);
+	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, const wstring& indexKey) {
+		uint16_t index;
+		if (indexKey != L"") {
+			index = GetMappedIndex(indexKey);
+		}
+		else {
+			index = numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsBox>(param, index);
 	}
 
-	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param) {
-		return ObjectFactory::Create<PhysicsSphere>(param);
+	uint16_t BasePhysics::GetMappedIndex(const wstring& key) {
+		uint16_t ret;
+		auto it = m_ConstIndexMap.find(key);
+		if (it != m_ConstIndexMap.end()) {
+			//見つかった
+			ret = it->second;
+		}
+		else {
+			ret = numRigidBodies++;
+			m_ConstIndexMap[key] = ret;
+		}
+		return ret;
+	}
+
+	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param,const wstring& indexKey) {
+		uint16_t index;
+		if (indexKey != L"") {
+			index = GetMappedIndex(indexKey);
+		}
+		else {
+			index = numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsSphere>(param,index);
 	}
 
 	uint16_t BasePhysics::GetNumBodies() const {
 		return numRigidBodies;
 	}
 
-	void BasePhysics::GetBodyWorldQuatPos(uint16_t index, bsm::Quat& qt, bsm::Vec3& pos) {
-		auto& srcQt = states[index].getOrientation();
-		qt.x = srcQt.getX();
-		qt.y = srcQt.getY();
-		qt.z = srcQt.getZ();
-		qt.w = srcQt.getW();
-		auto& srcPos = states[index].getPosition();
-		pos.x = srcPos.getX();
-		pos.y = srcPos.getY();
-		pos.z = srcPos.getZ();
+	void BasePhysics::GetBodyStatus(uint16_t index, PsBodyStatus& st) {
+		st.m_Position = states[index].getPosition();
+		st.m_Orientation = states[index].getOrientation();
+		st.m_LinearVelocity = states[index].getLinearVelocity();
+		st.m_AngularVelocity = states[index].getAngularVelocity();
 	}
+
+
+	//void BasePhysics::GetBodyWorldQuatPos(uint16_t index, bsm::Quat& qt, bsm::Vec3& pos) {
+	//	qt = states[index].getOrientation();
+	//	pos = states[index].getPosition();
+	//}
 
 	uint16_t BasePhysics::GetNumShapes(uint16_t body_index) {
 		return (uint16_t)collidables[body_index].getNumShapes();
@@ -517,10 +546,8 @@ namespace basecross {
 
 	void BasePhysics::GetShapeOffsetQuatPos(uint16_t body_index, uint16_t shape_index, bsm::Quat& qt, bsm::Vec3& pos) {
 		auto& shape = collidables[body_index].getShape(shape_index);
-		auto offpos = shape.getOffsetPosition();
-		pos = bsm::Vec3(offpos.getX(), offpos.getY(), offpos.getZ());
-		auto offor = shape.getOffsetOrientation();
-		qt = bsm::Quat(offor.getX(), offor.getY(), offor.getZ(), offor.getW());
+		pos = shape.getOffsetPosition();
+		qt = shape.getOffsetOrientation();
 	}
 
 	ePfxShapeType BasePhysics::GetShapeType(uint16_t body_index, uint16_t shape_index)const {
@@ -531,9 +558,7 @@ namespace basecross {
 	bsm::Vec3 BasePhysics::GetShapeBoxScale(uint16_t body_index, uint16_t shape_index) const {
 		auto& shape = collidables[body_index].getShape(shape_index);
 		bsm::Vec3 scale;
-		scale.x = shape.getBox().m_half.getX();
-		scale.y = shape.getBox().m_half.getY();
-		scale.z = shape.getBox().m_half.getZ();
+		scale = shape.getBox().m_half;
 		return scale;
 	}
 
@@ -541,9 +566,6 @@ namespace basecross {
 		auto& shape = collidables[body_index].getShape(shape_index);
 		return (float)shape.getSphere().m_radius;
 	}
-
-
-
 
 	void BasePhysics::Reset() {
 		numRigidBodies = 0;
@@ -567,15 +589,7 @@ namespace basecross {
 		::ZeroMemory(poolBuff, sizeof(poolBuff));
 	}
 
-
-
-
-
-
 	void BasePhysics::Update() {
-
-//		PfxPerfCounter pc;
-
 		for (int i = 1; i<numRigidBodies; i++) {
 			pfxApplyExternalForce(
 				states[i], bodies[i], 
@@ -584,49 +598,11 @@ namespace basecross {
 				timeStep
 			);
 		}
-
-//		perfPushMarker("broadphase");
-//		pc.countBegin("broadphase");
 		broadphase();
-//		pc.countEnd();
-//		perfPopMarker();
-
-//		perfPushMarker("collision");
-//		pc.countBegin("collision");
 		collision();
-//		pc.countEnd();
-//		perfPopMarker();
-
-//		perfPushMarker("solver");
-//		pc.countBegin("solver");
 		constraintSolver();
-//		pc.countEnd();
-//		perfPopMarker();
-
-//		perfPushMarker("integrate");
-//		pc.countBegin("integrate");
 		integrate();
-//		pc.countEnd();
-//		perfPopMarker();
-
-//		frame++;
-
-		//if (frame % 100 == 0) {
-		//	float broadphaseTime = pc.getCountTime(0);
-		//	float collisionTime = pc.getCountTime(2);
-		//	float solverTime = pc.getCountTime(4);
-		//	float integrateTime = pc.getCountTime(6);
-		//	SCE_PFX_PRINTF("frame %3d broadphase %.2f collision %.2f solver %.2f integrate %.2f | total %.2f\n", frame,
-		//		broadphaseTime, collisionTime, solverTime, integrateTime,
-		//		broadphaseTime + collisionTime + solverTime + integrateTime);
-		//}
-
-
 	}
-
-
-
-
 
 }
 //end basecross

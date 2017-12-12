@@ -102,15 +102,13 @@ namespace basecross{
 	}
 
 	void ActivePsBox::OnUpdate() {
-		Quat Qt;
-		Vec3 Pos;
-		GetStage()->GetPhysicsManager()->GetBodyWorldQuatPos(m_PhysicsBox->GetIndex(),Qt,Pos);
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsBox->GetIndex(), Status);
 
 		auto PtrTransform = GetComponent<Transform>();
-
 		PtrTransform->SetScale(m_Scale);
-		PtrTransform->SetQuaternion(Qt);
-		PtrTransform->SetPosition(Pos);
+		PtrTransform->SetQuaternion(Status.m_Orientation);
+		PtrTransform->SetPosition(Status.m_Position);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -148,6 +146,7 @@ namespace basecross{
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
 
+
 		//物理計算球体
 		PsSphereParam param;
 		//basecrossのスケーリングは直径基準なので、半径基準にする
@@ -161,15 +160,83 @@ namespace basecross{
 	}
 
 	void ActivePsSphere::OnUpdate() {
-		Quat Qt;
-		Vec3 Pos;
-		GetStage()->GetPhysicsManager()->GetBodyWorldQuatPos(m_PhysicsSphere->GetIndex(), Qt, Pos);
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsSphere->GetIndex(), Status);
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(Vec3(m_Scale));
+		PtrTransform->SetQuaternion(Status.m_Orientation);
+		PtrTransform->SetPosition(Status.m_Position);
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	物理計算する発射する球体
+	//--------------------------------------------------------------------------------------
+	FirePsSphere::FirePsSphere(const shared_ptr<Stage>& StagePtr,
+		const Vec3& Emitter, const Vec3& Velocity):
+		GameObject(StagePtr),
+		m_Emitter(Emitter),
+		m_Velocity(Velocity)
+	{}
+	FirePsSphere::~FirePsSphere() {}
+	//初期化
+	void FirePsSphere::OnCreate() {
+		m_IndexKey = L"FirePsSphere";
+		//共有オブジェクトにセット
+		GetStage()->SetSharedGameObject(L"FirePsSphere",GetThis<FirePsSphere>());
 
 		auto PtrTransform = GetComponent<Transform>();
 
-		PtrTransform->SetScale(Vec3(m_Scale));
-		PtrTransform->SetQuaternion(Qt);
-		PtrTransform->SetPosition(Pos);
+		PtrTransform->SetScale(Vec3(0.25f));
+		PtrTransform->SetQuaternion(Quat());
+		PtrTransform->SetPosition(m_Emitter);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		PtrDraw->SetTextureResource(L"SKY_TX");
+
+		PsSphereParam param;
+		//basecrossのスケーリングは直径基準なので、半径基準にする
+		param.m_Radius = 0.25f * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat.identity();
+		param.m_Pos = m_Emitter;
+		param.m_Velocity = m_Velocity;
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param, m_IndexKey);
+
+
+	}
+	//更新
+	void FirePsSphere::OnUpdate() {
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsSphere->GetIndex(), Status);
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(Vec3(0.25f));
+		PtrTransform->SetQuaternion(Status.m_Orientation);
+		PtrTransform->SetPosition(Status.m_Position);
+
+	}
+
+	void FirePsSphere::Reset(const Vec3& Emitter, const Vec3& Velocity) {
+		//現在のインデックスを得る
+		auto Index = m_PhysicsSphere->GetIndex();
+		PsSphereParam param;
+		//basecrossのスケーリングは直径基準なので、半径基準にする
+		param.m_Radius = 0.25f * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat.identity();
+		param.m_Pos = Emitter;
+		param.m_Velocity = Velocity;
+		//同じインデックスで再構築
+		m_PhysicsSphere = ObjectFactory::Create<PhysicsSphere>(param, Index);
 	}
 
 

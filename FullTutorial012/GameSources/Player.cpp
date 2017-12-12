@@ -117,16 +117,40 @@ namespace basecross{
 		}
 	}
 
+	//Xボタンハンドラ
+	void Player::OnPushX() {
+		auto Ptr = GetComponent<Transform>();
+		Vec3 Pos = Ptr->GetPosition();
+		Pos.y += 0.125f;
+		Quat Qt = Ptr->GetQuaternion();
+		Vec3 Rot = Qt.toRotVec();
+		float RotY = Rot.y;
+		Vec3 velo(sin(RotY), 0.15f, cos(RotY));
+		velo.normalize();
+		velo *= 30.0f;
+
+		auto ShPtr = GetStage()->GetSharedGameObject<FirePsSphere>(L"FirePsSphere", false);
+		if (ShPtr) {
+			ShPtr->Reset(Pos, velo);
+		}
+		else {
+			GetStage()->AddGameObject<FirePsSphere>(Pos, velo);
+		}
+	}
+
+
 
 
 	//文字列の表示
 	void Player::DrawStrings() {
 
 		//文字列表示
-		//行動
-		wstring Mess(L"Bボタンで再読み込み\n");
-
-
+		wstring Mess(L"Bボタンで再読み込み\nXボタンで発射\n");
+		//オブジェクト数
+		auto ObjCount = GetStage()->GetGameObjectVec().size();
+		wstring OBJ_COUNT(L"OBJ_COUNT: ");
+		OBJ_COUNT += Util::UintToWStr(ObjCount);
+		OBJ_COUNT += L"\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
@@ -147,7 +171,7 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring str = Mess + FPS + PositionStr + RididStr ;
+		wstring str = Mess + OBJ_COUNT + FPS + PositionStr + RididStr ;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);

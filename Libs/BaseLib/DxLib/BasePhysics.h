@@ -28,7 +28,19 @@ namespace basecross {
 		bsm::Vec3 m_HalfSize;
 		bsm::Quat m_Quat;
 		bsm::Vec3 m_Pos;
+		bsm::Vec3 m_Force;
+		bsm::Vec3 m_Torque;
+		bsm::Vec3 m_Velocity;
 		float m_Mass;
+		PsBoxParam():
+			m_HalfSize(1.0f),
+			m_Quat(),
+			m_Pos(0),
+			m_Force(0),
+			m_Torque(0),
+			m_Velocity(0),
+			m_Mass(1.0f)
+		{}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -39,9 +51,30 @@ namespace basecross {
 		float m_Radius;
 		bsm::Quat m_Quat;
 		bsm::Vec3 m_Pos;
+		bsm::Vec3 m_Force;
+		bsm::Vec3 m_Torque;
+		bsm::Vec3 m_Velocity;
 		float m_Mass;
+		PsSphereParam():
+			m_Radius(1.0f),
+			m_Quat(),
+			m_Pos(0),
+			m_Force(0),
+			m_Torque(0),
+			m_Velocity(0),
+			m_Mass(1.0f)
+		{}
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	剛体のステータス
+	//--------------------------------------------------------------------------------------
+	struct PsBodyStatus {
+		bsm::Vec3	m_Position;
+		bsm::Quat	m_Orientation;
+		bsm::Vec3	m_LinearVelocity;
+		bsm::Vec3	m_AngularVelocity;
+	};
 
 
 	//--------------------------------------------------------------------------------------
@@ -82,9 +115,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsBox(const PsBoxParam& param);
+		explicit PhysicsBox(const PsBoxParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -107,13 +142,16 @@ namespace basecross {
 	///	球体物理オブジェクト
 	//--------------------------------------------------------------------------------------
 	class PhysicsSphere : public PhysicsObject {
+		wstring m_MappedKey;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsSphere(const PsSphereParam& param);
+		explicit PhysicsSphere(const PsSphereParam& param,uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
@@ -137,6 +175,8 @@ namespace basecross {
 	///	物理計算用のインターフェイス
 	//--------------------------------------------------------------------------------------
 	class BasePhysics{
+		map< wstring , uint16_t > m_ConstIndexMap;
+		uint16_t GetMappedIndex(const wstring& key);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -168,18 +208,20 @@ namespace basecross {
 		/*!
 		@brief	単体のボックスの追加
 		@param[in]	param	作成のパラメータ
+		@param[in]	indexKey	インデックスのキー（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param);
+		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, const wstring& indexKey = L"");
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
 		@param[in]	param	作成のパラメータ
+		@param[in]	indexKey	インデックスのキー（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param);
+		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,const wstring& indexKey = L"");
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のボディ数を得る
@@ -189,14 +231,13 @@ namespace basecross {
 		uint16_t GetNumBodies() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	単体オブジェクトの回転位置情報を得る
+		@brief	剛体のステータスを得る
 		@param[in]	index	ボディID
-		@param[out]	qt	回転を得る参照
-		@param[out]	pos	位置を得る参照
+		@param[out]	st	ステータスを得る参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetBodyWorldQuatPos(uint16_t index,bsm::Quat& qt, bsm::Vec3& pos);
+		void GetBodyStatus(uint16_t index, PsBodyStatus& st);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状の数を得る

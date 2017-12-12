@@ -18,7 +18,7 @@ namespace basecross {
 	}
 	PhysicsManager::~PhysicsManager() {}
 
-	shared_ptr<PhysicsBox> PhysicsManager::AddSingleBox(const PsBoxParam& param) {
+	shared_ptr<PhysicsBox> PhysicsManager::AddSingleBox(const PsBoxParam& param, const wstring& indexKey) {
 		if (!m_BoxMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;
@@ -33,11 +33,11 @@ namespace basecross {
 			}
 			m_BoxMeshRes = MeshResource::CreateMeshResource(col_vertices, indices, false);
 		}
-		return BasePhysics::AddSingleBox(param);
+		return BasePhysics::AddSingleBox(param, indexKey);
 
 	}
 
-	shared_ptr<PhysicsSphere> PhysicsManager::AddSingleSphere(const PsSphereParam& param) {
+	shared_ptr<PhysicsSphere> PhysicsManager::AddSingleSphere(const PsSphereParam& param, const wstring& indexKey) {
 		if (!m_SphereMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;
@@ -52,7 +52,7 @@ namespace basecross {
 			}
 			m_SphereMeshRes = MeshResource::CreateMeshResource(col_vertices, indices, false);
 		}
-		return BasePhysics::AddSingleSphere(param);
+		return BasePhysics::AddSingleSphere(param, indexKey);
 	}
 
 
@@ -137,17 +137,17 @@ namespace basecross {
 		for (auto i = 0; i < GetNumBodies(); i++) {
 			//行列の定義
 			bsm::Mat4x4 World, Local;
-			bsm::Vec3 Pos;
-			bsm::Quat Qt;
-			GetBodyWorldQuatPos(i,Qt,Pos);
+			//bsm::Vec3 Pos;
+			//bsm::Quat Qt;
+			PsBodyStatus Status;
+			GetBodyStatus(i, Status);
 			//ワールド行列の決定
 			World.affineTransformation(
 				bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
 				bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-				Qt,				//回転角度
-				Pos				//位置
+				Status.m_Orientation,				//回転角度
+				Status.m_Position			//位置
 			);
-
 			for (auto j = 0; j <  GetNumShapes(i); j++) {
 				bsm::Vec3 LocalPos;
 				bsm::Quat LocalQt;

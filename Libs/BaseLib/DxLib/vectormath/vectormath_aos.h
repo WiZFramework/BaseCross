@@ -84,9 +84,26 @@ public:
     // 
     explicit inline Vector3( float scalar );
 
-    // Assign one 3-D vector to another
+	//XMVECTOR
+	//
+	explicit inline Vector3(XMVECTOR vec);
+
+	//basecross::bsm::Vec3
+	//
+	explicit inline Vector3(const basecross::bsm::Vec3& vec);
+
+	// Assign one 3-D vector to another
     // 
     inline Vector3 & operator =( const Vector3 & vec );
+
+	//
+	inline Vector3 & operator =(XMVECTOR vec);
+	//
+	inline Vector3 & operator =(const basecross::bsm::Vec3& vec);
+
+	//
+	inline operator XMVECTOR() const;
+
 
     // Set the x element of a 3-D vector
     // 
@@ -383,9 +400,31 @@ public:
     // 
     explicit inline Vector4( float scalar );
 
+	//XMVECTOR
+	//
+	explicit inline Vector4(XMVECTOR vec);
+
+	//basecross::bsm::Vec3
+	//
+	explicit inline Vector4(const basecross::bsm::Vec3& vec);
+
+	//const basecross::bsm::Vec4
+	//
+	explicit inline Vector4(const basecross::bsm::Vec4& vec);
+
+
     // Assign one 4-D vector to another
     // 
     inline Vector4 & operator =( const Vector4 & vec );
+
+	//
+	inline Vector4 & operator =(XMVECTOR vec);
+	//
+	inline Vector4 & operator =(const basecross::bsm::Vec4& vec);
+
+	//
+	inline operator XMVECTOR() const;
+
 
     // Set the x, y, and z elements of a 4-D vector
     // NOTE: 
@@ -912,9 +951,32 @@ public:
     // 
     explicit inline Quat( float scalar );
 
+	//XMVECTOR
+	//
+	explicit inline Quat(XMVECTOR vec);
+
+	//basecross::bsm::Quat
+	//
+	explicit inline Quat(const basecross::bsm::Quat& qt);
+	//basecross::bsm::Vec4
+	//
+	explicit inline Quat(const basecross::bsm::Vec4& vec);
+
     // Assign one quaternion to another
     // 
     inline Quat & operator =( const Quat & quat );
+
+	//XMVECTOR
+	//
+	inline Quat & operator =(XMVECTOR vec);
+
+	//basecross::bsm::Qua
+	//
+	inline Quat & operator =(const basecross::bsm::Quat& qt);
+
+	//XMVECTOR
+	//
+	inline operator XMVECTOR() const;
 
     // Set the x, y, and z elements of a quaternion
     // NOTE: 
@@ -1156,9 +1218,23 @@ public:
     // 
     explicit inline Matrix3( float scalar );
 
+	//XMMATRIX
+	//
+	explicit inline Matrix3(const XMMATRIX& other);
+
+
     // Assign one 3x3 matrix to another
     // 
     inline Matrix3 & operator =( const Matrix3 & mat );
+
+	//
+	//
+	inline Matrix3 & operator =(const XMMATRIX& other);
+
+	//
+	//
+	inline operator XMMATRIX() const;
+
 
     // Set column 0 of a 3x3 matrix
     // 
@@ -1384,6 +1460,20 @@ public:
     // Set all elements of a 4x4 matrix to the same scalar value
     // 
     explicit inline Matrix4( float scalar );
+
+
+	//XMMATRIX
+	//
+	explicit inline Matrix4(const XMMATRIX& other);
+
+	//XMMATRIX
+	//
+	inline Matrix4 & operator =(const XMMATRIX& other);
+
+	//XMMATRIX
+	//
+	inline operator XMMATRIX() const;
+
 
     // Assign one 4x4 matrix to another
     // 
@@ -1685,6 +1775,20 @@ public:
     // Set all elements of a 3x4 transformation matrix to the same scalar value
     // 
     explicit inline Transform3( float scalar );
+
+	//XMMATRIX
+	//
+	explicit inline Transform3(const XMMATRIX& other);
+
+	//XMMATRIX
+	//
+	inline Transform3 & operator =(const XMMATRIX& other);
+
+	//XMMATRIX
+	//
+	inline operator XMMATRIX() const;
+
+
 
     // Assign one 3x4 transformation matrix to another
     // 

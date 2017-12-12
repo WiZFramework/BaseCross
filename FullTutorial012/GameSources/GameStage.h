@@ -16,9 +16,8 @@ namespace basecross {
 		void CreateViewLight();
 		//プレートの作成
 		void CreatePlate();
-		//物理計算ボックスの作成
-		void CreatePhysicsBox();
-
+		//物理計算オブジェクトの作成
+		void CreatePhysicsObjects();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

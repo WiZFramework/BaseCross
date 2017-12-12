@@ -153,12 +153,6 @@ namespace basecross {
 		pImpl->m_BehaviorMap[TypeIndex] = Ptr;
 	}
 
-
-
-
-
-
-
 	GameObject::GameObject(const shared_ptr<Stage>& StagePtr) :
 		ObjectInterface(),
 		ShapeInterface(),
@@ -1305,6 +1299,10 @@ namespace basecross {
 				}
 			}
 		}
+		//物理オブジェクトの更新
+		if (IsPhysicsActive()) {
+			pImpl->m_PhysicsManager->OnUpdate();
+		}
 		//配置オブジェクトの更新処理
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1314,9 +1312,6 @@ namespace basecross {
 		//自身の更新処理
 		if (IsUpdateActive()) {
 			OnUpdate();
-		}
-		if (IsPhysicsActive()) {
-			pImpl->m_PhysicsManager->OnUpdate();
 		}
 		//配置オブジェクトのコンポーネント更新
 		for (auto ptr : GetGameObjectVec()) {

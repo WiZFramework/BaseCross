@@ -76,6 +76,28 @@ namespace basecross{
 		virtual void OnUpdate() override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	物理計算する発射する球体
+	//--------------------------------------------------------------------------------------
+	class FirePsSphere : public GameObject {
+		//物理計算用のオブジェクト
+		shared_ptr<PhysicsSphere> m_PhysicsSphere;
+		Vec3 m_Emitter;
+		Vec3 m_Velocity;
+		wstring m_IndexKey;
+	public:
+		//構築と破棄
+		FirePsSphere(const shared_ptr<Stage>& StagePtr,
+			const Vec3& Emitter, const Vec3& Velocity
+		);
+		virtual ~FirePsSphere();
+		//初期化
+		virtual void OnCreate() override;
+		//更新
+		virtual void OnUpdate() override;
+		//物体をリセットする
+		void Reset(const Vec3& Emitter, const Vec3& Velocity);
+	};
 
 
 
