@@ -512,6 +512,16 @@ namespace basecross {
 		return ret;
 	}
 
+	bool BasePhysics::CheckBodyIndex(const wstring& indexKey) const {
+		auto it = m_ConstIndexMap.find(indexKey);
+		if (it == m_ConstIndexMap.end()) {
+			return false;
+		}
+		//Œ©‚Â‚©‚Á‚½
+		return true;
+	}
+
+
 	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param,const wstring& indexKey) {
 		uint16_t index;
 		if (indexKey != L"") {

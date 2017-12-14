@@ -224,6 +224,13 @@ namespace basecross {
 		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,const wstring& indexKey = L"");
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	指定のキーのボディインデックスをチェックする
+		@return	キーのインデックスがあればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool CheckBodyIndex(const wstring& indexKey) const;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	現在のボディ数を得る
 		@return	現在のボディ数
 		*/
