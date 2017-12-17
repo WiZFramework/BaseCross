@@ -30,12 +30,195 @@
 　そのライブラリを<b>BaseCrossと相性がいいように</b>若干カスタマイズしたものを使用しています。<br/>
 <br />
 <h4>サンプルについて</h4>
-　サンプルを起動すると、上記の画面が出てきます。上から物体が落ちてきます。物体同士はお互いに影響を受けながら、転がったりはじかれたりします。しかしプレイヤーとは影響を受けあいません。<br />
+　サンプルを起動すると、上記の画面が出てきます。上から物体が落ちてきます。物体同士はお互いに影響を受けながら、転がったりはじかれたりします。<br />
 　<b>Xボタン</b>を押すと、プレイヤーが球を発射します。この球は物体と衝突すると、相手を飛ばしたり、あるいは自分が跳ね返ったりします。<br />
 　<b>Bボタン</b>で<b>ステージの再読み込み</b>が行われ、上から降ってくるところから再現することができます。再読み込みでも、プレイヤーの位置は保存されますので、近くから<b>降ってくる物体</b>を見ることができます。<br />
 　これらの物体の処理は<b>Character.h/cpp</b>で行ってます。配置はこれまでのように<b>GameStage::OnCreate()</b>で行ってます。<br />
 　球の発射は<b>Player::OnPushX()</b>で行ってます。<br />
-　まずは、どんなものか体験してもらえればと思います。詳しい解説は、別途、章立てで紹介したいと思います。
+<br />
+<h4>物理コンポーネント</h4>
+　<b>物理計算</b>を実装するオブジェクトは<b>物理コンポーネント</b>を実装します。<b>物理コンポーネント</b>にはいろいろ種類がありますが、ここでは<b>ボックス</b>用の<b>PsSingleBoxBody</b>と、<b>球体</b>用の<b>PsSingleSphereBody</b>を使用します。<br />
+　以下は、落ちてくるボックスである、<b>ActivePsBox</b>クラスの<b>OnCreate()</b>関数です。
+<div class="box1">
+<pre>
+void ActivePsBox::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetQuaternion(m_Qt);
+    PtrTransform->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetTextureResource(L"SKY_TX");
+
+    <span class="red">//物理計算ボックス
+    PsBoxParam param;
+    //DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
+    param.m_HalfSize = m_Scale * 0.5f;
+    param.m_Mass = 1.0f;
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = m_Qt;
+    param.m_Pos = m_Position;
+    auto PsPtr = AddComponent&lt;PsSingleBoxBody>(param);
+    PsPtr->SetDrawActive(true);</span>
+}
+</pre>
+</div>
+　赤くなっているところが<b>物理計算ボックス</b>のかかわる部分です。<br />
+　PsBoxParam構造体に各値を設定し、<b>PsSingleBoxBodyコンポーネント</b>の構築用のパラメータに渡します。
+<div class="box1">
+<pre>
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+</pre>
+</div>
+　というのは、<b>アクティブ</b>ということで、ほかの影響を受けます。それに対して、<b>FixedPsBoxクラス</b>では
+<div class="box1">
+<pre>
+    param.m_MotionType = PsMotionType::MotionTypeFixed;
+</pre>
+</div>
+　としています。こうしておくと影響は受けません。<br />
+<br />
+　<b>ActivePsBox</b>では
+<div class="box1">
+<pre>
+    PsPtr->SetDrawActive(true);
+</pre>
+</div>
+　となっています。これは<b>ワイアフレーム描画</b>を行う設定です。つけなければワイフレームが描画されません。<br />
+<br />
+　以上で<b>ActivePsBox</b>の記述は終了です。<b>FixedPsBox</b>や<b>ActivePsSphere</b>も同様の記述（コンストラクタ、デストラクタとOnCreate()関数のみ）です。<br />
+<br />
+<h4>プレイヤー</h4>
+　プレイヤーはもう少し複雑になります。以下は<b>Player::OnCreate()関数（抜粋）</b>です。
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = GetComponent&lt;Transform>();
+    Ptr->SetScale(Vec3(m_Scale));   //直径25センチの球体
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    <span class="red">auto bkCamera = App::GetApp()->GetScene&lt;Scene>()->GetBackupCamera();
+    Vec3 FirstPos;
+    if (!bkCamera) {
+        FirstPos = Vec3(0, m_Scale * 0.5f, 0);
+    }
+    else {
+        FirstPos = App::GetApp()->GetScene&lt;Scene>()->GetBackupPlayerPos();
+    }
+    Ptr->SetPosition(FirstPos);</span>
+
+    PsSphereParam param;
+    //basecrossのスケーリングは直径基準なので、半径基準にする
+    param.m_Radius = m_Scale * 0.5f;
+    param.m_Mass = 1.0f;
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat.identity();
+    param.m_Pos = FirstPos;
+    param.m_Velocity = Vec3(0);
+    auto PsPtr = AddComponent&lt;PsSingleSphereBody>(param);
+    <span class="red">PsPtr->SetAutoTransform(false);</span>
+    PsPtr->SetDrawActive(true);
+
+//中略
+
+}
+</pre>
+</div>
+　まず初期位置ですが、上の赤くなっているところのように、バックアップがあればそれを初期位置に設定します。<br />
+　<b>BaseCross</b>では<b>シーン</b>が<b>ステージ</b>を管理します。<b>シーン</b>はアプリケーション中、唯一のオブジェクトなので一種のグローバル変数はその中に記述することができます。<br />
+　サンプルの<b>Sceneクラス</b>には、<b>m_BackupCameraとm_BackupPlayerPos</b>という2つの変数があり、<b>Bボタンが押された</b>ときにこの値を設定して、<b>ステージの再読み込み</b>をします。このほかにも<b>ゲーム中保存しておきたい変数</b>などは<b>Sceneクラス</b>に保存しておくとよいと思います。<br />
+　<b>物理コンポーネント</b>の設定は<b>ActivePsSphere</b>と同様ですが、
+<div class="box1">
+<pre>
+    <span class="red">PsPtr->SetAutoTransform(false);</span>
+</pre>
+</div>
+　と、<b>自動でTransformコンポーネントを書き換える処理</b>を<b>false</b>にします。<b>物理計算</b>では<b>移動に応じて回転</b>します。ここでは<b>false</b>に設定します。<br />
+　実行画面をよく見るとわかりますが、プレイヤーを動かすと<b>ワイアフレームは回転</b>しているのがわかると思います。<br />
+　つまり<b>物理計算上</b>は球体の移動は回転を伴うということです。しかしながら、このサンプルでは、<b>ボールの発射</b>も行う必要があり、その計算にプレイヤーの回転値を使用するので<b>勝手に回転されては困る</b>わけです。<br />
+<br />
+　プレイヤーの<b>OnUpdate()</b>では、<b>移動処理</b>のみ行います。ここで、コントローラに合わせて<b>PsSingleSphereBodyコンポーネント</b>の<b>LinearVelocity（移動速度）</b>を変更します。Y方向はジャンプしている可能性があるので、いじらないでおきます。<br />
+　さて、<b>物理コンポーネント</b>には<b>位置の設定</b>である<b>SetPosition</b>のような関数はありません。移動は<b>速度</b>を変更するか<b>フォース</b>を追加します。スタート位置に戻る、などの処理が必要な場合は、後ほど説明する<b>Reset()</b>という関数がありますのでそれを利用します。<br />
+<br/>
+　プレイヤーの処理では上記のように<b>PsSingleSphereBodyコンポーネントの値</b>を変更してますが、これを<b>Transform</b>に反映させなければ、正確な描画は行われません（SetAutoTransform(false);としているため）。ですので、<b>OnUpdate2()</b>で、<b>PsSingleSphereBodyコンポーネントの内容</b>を<b>Transformコンポーネント</b>に伝える処理をします。これは<b>OnUodate()</b>では行いません。というのは物理計算は<b>OnUpdate()とOnUpdate2()の間</b>に行われるからです。<b>OnUpdate2()</b>の時点での<b>PsSingleSphereBodyコンポーネント</b>の各値が、描画されるべき値となっているので、ここで<b>Transformコンポーネント</b>への設定を行います。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    auto PtrPs = GetComponent&lt;PsSingleSphereBody>();
+    auto Ptr = GetComponent&lt;Transform>();
+    Ptr->SetPosition(PtrPs->GetPosition());
+    //回転の計算
+    Vec3 Angle = GetMoveVector();
+    if (Angle.length() > 0.0f) {
+        auto UtilPtr = GetBehavior&lt;UtilBehavior>();
+        //補間処理を行わない回転。補間処理するには以下1.0を0.1などにする
+        UtilPtr->RotToHead(Angle, 1.0f);
+    }
+//中略
+}
+</pre>
+</div>
+　回転の設定は<b>UtilBehavior</b>クラスの<b>RotToHead()関数</b>を行います。この関数は目標の<b>Angle</b>に補間処理しながら、Transformの回転を設定します。補間処理が必要なければ<b>1.0</b>を渡します。<br />
+<br/>
+<h4>ボールの発射</h4>
+　ボールの発射は<b>Xボタン</b>で行います。<b>Xボタンのプッシュ</b>はあらかじめ<b>InputHandler構造体</b>によって<b>ハンドラ化</b>されているので（詳しくは<b>ProjectBehavior.h</b>を見てください）、<b>Player::OnPushX()</b>に記述します。
+<div class="box1">
+<pre>
+void Player::OnPushX() {
+    auto Ptr = GetComponent&lt;Transform>();
+    Vec3 Pos = Ptr->GetPosition();
+    Pos.y += 0.25f;
+    Quat Qt = Ptr->GetQuaternion();
+    Vec3 Rot = Qt.toRotVec();
+    float RotY = Rot.y;
+    Vec3 velo(sin(RotY), 0.05f, cos(RotY));
+    velo.normalize();
+    velo *= 20.0f;
+
+    auto ShPtr = GetStage()->GetSharedGameObject&lt;FirePsSphere>(L"FirePsSphere", false);
+    if (ShPtr) {
+        ShPtr->Reset(Pos, velo);
+    }
+    else {
+        GetStage()->AddGameObject&lt;FirePsSphere>(Pos, velo);
+    }
+}
+</pre>
+</div>
+　ここでは、自分の位置と向きから、<b>発射位置（エミッター）と発射速度</b>を計算して、<b>FirePsSphereクラス</b>に設定します。もし<b>FirePsSphereクラスのインスタンス</b>がなければ、ゲームオブジェクトを追加して、すでにあれば、そのインスタンスを使いまわします。ですので、ゲーム上に存在する<b>FirePsSphereクラスのインスタンス</b>は常に一つ、ということになります。<br />
+　さて、<b>FirePsSphereクラスの追加</b>はわかりますが、<b>使いまわしをする関数、Reset()</b>は以下のような内容になります。<b>FirePsSphere::Reset()関数</b>です。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+void FirePsSphere::Reset(const Vec3& Emitter, const Vec3& Velocity) {
+    auto PsPtr = GetComponent&lt;PsSingleSphereBody>();
+    PsSphereParam param;
+    CreateDefParam(param);
+    param.m_Pos = Emitter;
+    param.m_Velocity = Velocity;
+    PsPtr->Reset(param, PsPtr->GetIndex());
+}
+</pre>
+</div>
+　ここでは、構築時にも使った<b>PsSphereParam構造体</b>を初期化して、コンポーネントの<b>Reset()関数</b>を呼び出します。<b>CreateDefParam()関数</b>は、構築時と同じパラメータの部分をセットする関数です。<br />
+　<b>Reset()関数</b>呼び出しの際、第2引数に<b>剛体のインデックス</b>を渡します。これはコンポーネントの<b>GetIndex()関数</b>で取得できます。<br />
+　このようにして、同じオブジェクトを使いまわしにする場合は<b>Reset()関数</b>を使用できるのがわかります。<br />
+　またこの関数は、<b>スタート位置に戻る</b>などの場合にも使用できます。<b>物理コンポーネント</b>は、前述したように<b>SetPosition()</b>のような関数はありません。そのかわり<b>Reset()関数</b>で位置を初期化することができます。<br />
+<br />
+<h4>物理計算について</h4>
+　このようにチュートリアル012について説明してきましたが、そのコードを見ると、ほかのサンプルより、ずいぶん単純なのがわかると思います。<br />
+　<b>物理計算</b>は、３Ｄ上の物体が、あたかも実在してるかのような動きを見せます。それも<b>物理ライブラリ</b>を使うことで、かなり少ない記述で実装することが可能になります。<br />
+　それはそれでよいことなのですが、１つ落とし穴があります。<b>物理計算はゲームのルールではない</b>ということです。ゲームのルールを考える場合、物理計算を前提としてしまうと、そこから抜け出すことができなくなってしまいます。（できちゃったような気になってしまうのです）。<br />
+<br />
+　とはいえ、<b>物理計算</b>という表演手段はとても魅力的なものです。ぜひ使いこなしてもらえればと思います。（物理計算については章立てでサンプルも記述する予定です）
 </div>
 <!-- /コンテンツ　-->
 <hr>

@@ -9,32 +9,27 @@
 namespace basecross {
 
 	//--------------------------------------------------------------------------------------
-	///	球体のプレイヤー実体
+	//	プレイヤー
 	//--------------------------------------------------------------------------------------
+	//構築
 	Player::Player(const shared_ptr<Stage>& StagePtr,
-		const wstring& TextureResName, bool Trace, const Vec3& Pos) :
+		const wstring& TextureResName) :
 		GameObject(StagePtr),
-		m_TextureResName(TextureResName),
-		m_Trace(Trace),
-		m_BaseY(0.25f / 2.0f),
-		m_Posision(Pos),
-		m_JumpLock(false)
+		m_TextureResName(TextureResName)
 	{}
-	Player::~Player() {}
 
-	Vec3 Player::GetMoveVector() {
+	Vec3 Player::GetMoveVector()const {
 		Vec3 Angle(0, 0, 0);
 		auto PtrGameStage = GetStage<GameStage>();
 		Vec3 CameraEye, CameraAt;
 		PtrGameStage->GetCamera().GetCameraEyeAt(CameraEye, CameraAt);
-
 		//コントローラの取得
 		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (CntlVec[0].bConnected) {
+		if(CntlVec[0].bConnected){
 			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
 				float MoveLength = 0;	//動いた時のスピード
-										//進行方向の向きを計算
-				Vec3 Front = m_Rigidbody->m_Pos - CameraEye;
+				//進行方向の向きを計算
+				Vec3 Front =m_Pos - CameraEye;
 				Front.y = 0;
 				Front.normalize();
 				//進行方向向きからの角度を算出
@@ -61,46 +56,33 @@ namespace basecross {
 		return Angle;
 	}
 
-	Vec3 Player::GetPosition() {
-		return m_Rigidbody->m_Pos;
-	}
-
+	//初期化
 	void Player::OnCreate() {
+		//タグの追加
+		AddTag(L"Player");
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
 		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
 		//メッシュの作成（変更できない）
 		m_SphereMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-		//タグの追加
-		AddTag(L"Player");
-		//Rigidbodyの初期化
-		auto PtrGameStage = GetStage<GameStage>();
-		Rigidbody body;
-		body.m_Owner = GetThis<GameObject>();
-		body.m_Mass = 1.0f;
-		body.m_Scale = Vec3(0.25f);
-		body.m_Quat = Quat();
+		//初期位置などの設定
+		m_Scale = Vec3(0.25f, 0.25f, 0.25f);	//直径25センチの球体
+		m_Qt.identity();
 		if (App::GetApp()->GetScene<Scene>()->IsFirstGame()) {
-			body.m_Pos = m_Posision;
+			m_Pos = Vec3(0, 0.125f, 0);
 		}
 		else {
-			body.m_Pos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
+			m_Pos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
 		}
-		body.m_CollType = CollType::typeSPHERE;
-//		body.m_IsDrawActive = true;
-		body.SetToBefore();
-
-		m_Rigidbody = PtrGameStage->AddRigidbody(body);
-
 		//行列の定義
 		Mat4x4 World;
 		World.affineTransformation(
-			body.m_Scale,
+			m_Scale,
 			Vec3(0, 0, 0),
-			body.m_Quat,
-			body.m_Pos
+			m_Qt,
+			m_Pos
 		);
-
+		
 		m_PtrObj = make_shared<BcDrawObject>();
 		auto TexPtr = App::GetApp()->GetResource<TextureResource>(m_TextureResName);
 		m_PtrObj->m_MeshRes = m_SphereMesh;
@@ -111,131 +93,78 @@ namespace basecross {
 		m_PtrObj->m_ShadowmapUse = true;
 		m_PtrObj->m_BlendState = BlendState::AlphaBlend;
 		m_PtrObj->m_RasterizerState = RasterizerState::DoubleDraw;
-
+		
 		//シャドウマップ描画データの構築
 		m_PtrShadowmapObj = make_shared<ShadowmapObject>();
 		m_PtrShadowmapObj->m_MeshRes = m_SphereMesh;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
 
+		//物理演算
+		PsSphereParam param;
+		//basecrossのスケーリングは直径基準なので、半径基準にする
+		param.m_Radius = 0.25f * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat.identity();
+		param.m_Pos = m_Pos;
+		param.m_Velocity = Vec3(0);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
 
 	}
+
+	//更新
 	void Player::OnUpdate() {
-		//前回のターンからの経過時間を求める
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		//コントローラの取得
-		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (CntlVec[0].bConnected) {
-			if (!m_JumpLock) {
-				//Aボタン
-				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
-					m_Rigidbody->m_BeforePos.y += 0.01f;
-					m_Rigidbody->m_Pos.y += 0.01f;
-					m_Rigidbody->m_Velocity += Vec3(0, 4.0f, 0);
-					m_JumpLock = true;
-					//fireの送出
-					auto FirePtr = GetStage<GameStage>()->FindTagGameObject<MultiFire>(L"MultiFire");
-					Vec3 Emitter = m_Rigidbody->m_Pos;
-					Emitter.y -= 0.125f;
-					FirePtr->InsertFire(Emitter);
-				}
-			}
-			Vec3 Direction = GetMoveVector();
-			if (length(Direction) < 0.1f) {
-				m_Rigidbody->m_Velocity.x *= 0.9f;
-				m_Rigidbody->m_Velocity.z *= 0.9f;
+		//コントローラチェックして入力があればコマンド呼び出し
+		m_InputHandler.PushHandle(GetThis<Player>());
+
+		auto Vec = GetMoveVector();
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsSphere->GetIndex(), Status);
+
+		PsBodyUpdateStatus SetStatus(Status);
+		Vec3 Velo = GetMoveVector();
+		SetStatus.m_LinearVelocity.x = Velo.x * 5.0f;
+		SetStatus.m_LinearVelocity.z = Velo.z * 5.0f;
+		GetStage()->GetPhysicsManager()->SetBodyStatus(m_PhysicsSphere->GetIndex(), SetStatus);
+	}
+
+	void Player::RotToHead(const bsm::Vec3& Velocity, float LerpFact) {
+		if (LerpFact <= 0.0f) {
+			//補間係数が0以下なら何もしない
+			return;
+		}
+		//回転の更新
+		if (Velocity.length() > 0.0f) {
+			bsm::Vec3 Temp = Velocity;
+			Temp.normalize();
+			float ToAngle = atan2(Temp.x, Temp.z);
+			bsm::Quat Qt;
+			Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
+			Qt.normalize();
+			//現在の回転を取得
+			bsm::Quat NowQt = m_Qt;
+			//現在と目標を補間
+			if (LerpFact >= 1.0f) {
+				NowQt = Qt;
 			}
 			else {
-				//フォースで変更する場合は以下のように記述
-				//body.m_Force += Direction * 10.0f;
-				//速度で変更する場合は以下のように記述
-				m_Rigidbody->m_Velocity += Direction * 0.5f;
-				Vec2 TempVelo(m_Rigidbody->m_Velocity.x, m_Rigidbody->m_Velocity.z);
-				TempVelo = XMVector2ClampLength(TempVelo, 0, 5.0f);
-				m_Rigidbody->m_Velocity.x = TempVelo.x;
-				m_Rigidbody->m_Velocity.z = TempVelo.y;
+				NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
 			}
-
-			//Xボタン
-			if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_X && length(Direction) >= 0.01f) {
-				Vec3 Pos = m_Rigidbody->m_Pos;
-				Pos.y += 0.25f;
-				Vec3 velo = Direction;
-				velo.y = 0.0f;
-				velo.normalize();
-				velo.y = 0.01f;
-				velo *= 30.0f;
-				auto ShPtr = GetStage<GameStage>()->GetFirePsSphere();
-				if (ShPtr) {
-					ShPtr->Reset(Pos, velo);
-				}
-				else {
-					auto ptr = GetStage()->AddGameObject<FirePsSphere>(Pos, velo);
-					GetStage<GameStage>()->SetFirePsSphere(ptr);
-				}
-
-			}
-
-
+			m_Qt = NowQt;
 		}
-		m_Rigidbody->m_Force += m_Rigidbody->m_Gravity * m_Rigidbody->m_Mass;
+
 	}
 
+	//後更新
 	void Player::OnUpdate2() {
-		if (m_Rigidbody->m_Pos.y <= m_BaseY) {
-			m_Rigidbody->m_Pos.y = m_BaseY;
-			m_Rigidbody->m_Velocity.y = 0;
-			if (m_JumpLock) {
-				Vec3 Emitter = m_Rigidbody->m_Pos;
-				Emitter.y -= 0.125f;
-				//Spaerkの送出
-				auto SpaerkPtr = GetStage<GameStage>()->FindTagGameObject<MultiSpark>(L"MultiSpark");
-				SpaerkPtr->InsertSpark(Emitter);
-			}
-			m_JumpLock = false;
-		}
-		auto& StateVec = GetStage<GameStage>()->GetCollisionStateVec();
-		for (auto& v : StateVec) {
-			if (v.m_Src == m_Rigidbody.get()) {
-				Vec3 Normal = v.m_SrcHitNormal;
-				Normal.normalize();
-				Vec4 v = (Vec4)XMVector3AngleBetweenNormals(Vec3(0, 1, 0), Normal);
-				if (v.x < 0.1f) {
-					if (m_JumpLock) {
-						Vec3 Emitter = m_Rigidbody->m_Pos;
-						Emitter.y -= 0.125f;
-						//Spaerkの送出
-						auto SpaerkPtr = GetStage<GameStage>()->FindTagGameObject<MultiSpark>(L"MultiSpark");
-						SpaerkPtr->InsertSpark(Emitter);
-					}
-					m_JumpLock = false;
-					break;
-				}
-			}
-			else if (v.m_Dest == m_Rigidbody.get()) {
-				Vec3 Normal = v.m_SrcHitNormal;
-				Normal.normalize();
-				Vec4 v = (Vec4)XMVector3AngleBetweenNormals(Vec3(0, 1, 0), Normal);
-				if (v.x < 0.1f) {
-					if (m_JumpLock) {
-						Vec3 Emitter = m_Rigidbody->m_Pos;
-						Emitter.y -= 0.125f;
-						//Spaerkの送出
-						auto SpaerkPtr = GetStage<GameStage>()->FindTagGameObject<MultiSpark>(L"MultiSpark");
-						SpaerkPtr->InsertSpark(Emitter);
-					}
-					m_JumpLock = false;
-					break;
-				}
-			}
-		}
-		auto LenVec = m_Rigidbody->m_Pos - m_Rigidbody->m_BeforePos;
-		LenVec.y = 0;
-		auto Len = LenVec.length();
-		if (Len > 0) {
-			Vec3 Cross = cross(Vec3(0, 1, 0), LenVec);
-			Quat Span(Cross, Len / 0.5f);
-			m_Rigidbody->m_Quat *= Span;
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsSphere->GetIndex(), Status);
+		m_Pos = Status.m_Position;
+		//回転の計算
+		Vec3 Angle = GetMoveVector();
+		if (Angle.length() > 0.0f) {
+			RotToHead(Angle, 0.1f);
 		}
 	}
 
@@ -243,15 +172,15 @@ namespace basecross {
 		//行列の定義
 		Mat4x4 World;
 		World.affineTransformation(
-			m_Rigidbody->m_Scale,
+			m_Scale,
 			Vec3(0, 0, 0),
-			m_Rigidbody->m_Quat,
-			m_Rigidbody->m_Pos
+			m_Qt,
+			m_Pos
 		);
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
 		m_PtrShadowmapObj->m_Camera = GetStage<Stage>()->GetCamera();
-
+	
 		auto shptr = m_ShadowmapRenderer.lock();
 		if (!shptr) {
 			shptr = GetStage<Stage>()->FindTagGameObject<ShadowmapRenderer>(L"ShadowmapRenderer");
@@ -259,16 +188,15 @@ namespace basecross {
 		}
 		shptr->AddDrawObject(m_PtrShadowmapObj);
 	}
-
-
+	
 	void Player::OnDraw() {
 		//行列の定義
 		Mat4x4 World;
 		World.affineTransformation(
-			m_Rigidbody->m_Scale,
+			m_Scale,
 			Vec3(0, 0, 0),
-			m_Rigidbody->m_Quat,
-			m_Rigidbody->m_Pos
+			m_Qt,
+			m_Pos
 		);
 		m_PtrObj->m_WorldMatrix = World;
 		m_PtrObj->m_Camera = GetStage<Stage>()->GetCamera();
@@ -282,7 +210,42 @@ namespace basecross {
 	}
 
 
+	//Aボタンハンドラ
+	void  Player::OnPushA() {
+		PsBodyStatus Status;
+		GetStage()->GetPhysicsManager()->GetBodyStatus(m_PhysicsSphere->GetIndex(), Status);
+		if (Status.m_Position.y > 0.125f) {
+			//地面にいるときだけジャンプできる
+			return;
+		}
+		PsBodyUpdateStatus SetStatus(Status);
+		SetStatus.m_LinearVelocity += Vec3(0, 4.0f, 0.0);
+		GetStage()->GetPhysicsManager()->SetBodyStatus(m_PhysicsSphere->GetIndex(), SetStatus);
+	}
 
+
+	//Xボタンハンドラ
+	void Player::OnPushX() {
+		Vec3 Pos = m_Pos;
+		Pos.y += 0.25f;
+		Quat Qt = m_Qt;
+		Vec3 Rot = Qt.toRotVec();
+		float RotY = Rot.y;
+		Vec3 velo(sin(RotY), 0.05f, cos(RotY));
+		velo.normalize();
+		velo *= 20.0f;
+
+		auto StagePtr = GetStage<GameStage>();
+
+		auto ShPtr = StagePtr->GetFirePsSphere();
+		if (ShPtr) {
+			ShPtr->Reset(Pos, velo);
+		}
+		else {
+			ShPtr = StagePtr->AddGameObject<FirePsSphere>(Pos, velo);
+			StagePtr->SetFirePsSphere(ShPtr);
+		}
+	}
 
 }
 //end basecross

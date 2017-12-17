@@ -487,10 +487,10 @@ namespace basecross {
 	}
 	BasePhysics::~BasePhysics() {}
 
-	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, const wstring& indexKey) {
-		uint16_t index;
-		if (indexKey != L"") {
-			index = GetMappedIndex(indexKey);
+	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, uint16_t index) {
+		uint16_t set_index;
+		if (index < numRigidBodies) {
+			set_index = index;
 		}
 		else {
 			index = numRigidBodies++;
@@ -498,57 +498,67 @@ namespace basecross {
 		return ObjectFactory::Create<PhysicsBox>(param, index);
 	}
 
-	uint16_t BasePhysics::GetMappedIndex(const wstring& key) {
-		uint16_t ret;
-		auto it = m_ConstIndexMap.find(key);
-		if (it != m_ConstIndexMap.end()) {
-			//見つかった
-			ret = it->second;
-		}
-		else {
-			ret = numRigidBodies++;
-			m_ConstIndexMap[key] = ret;
-		}
-		return ret;
-	}
 
-	bool BasePhysics::CheckBodyIndex(const wstring& indexKey) const {
-		auto it = m_ConstIndexMap.find(indexKey);
-		if (it == m_ConstIndexMap.end()) {
-			return false;
-		}
-		//見つかった
-		return true;
-	}
-
-
-	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param,const wstring& indexKey) {
-		uint16_t index;
-		if (indexKey != L"") {
-			index = GetMappedIndex(indexKey);
+	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param, uint16_t index) {
+		uint16_t set_index;
+		if (index < numRigidBodies) {
+			set_index = index;
 		}
 		else {
 			index = numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsSphere>(param,index);
+		return ObjectFactory::Create<PhysicsSphere>(param, index);
 	}
+
+
 
 	uint16_t BasePhysics::GetNumBodies() const {
 		return numRigidBodies;
 	}
 
-	void BasePhysics::GetBodyStatus(uint16_t index, PsBodyStatus& st) {
+	void BasePhysics::GetBodyStatus(uint16_t index, PsBodyStatus& st)const {
 		st.m_Position = states[index].getPosition();
 		st.m_Orientation = states[index].getOrientation();
 		st.m_LinearVelocity = states[index].getLinearVelocity();
 		st.m_AngularVelocity = states[index].getAngularVelocity();
 	}
 
+	void BasePhysics::SetBodyStatus(uint16_t index, const PsBodyUpdateStatus& st) {
+		states[index].setAngularVelocity((PfxVector3)st.m_AngularVelocity);
+		states[index].setLinearVelocity((PfxVector3)st.m_LinearVelocity);
+		//フォースを加える
+		pfxApplyExternalForce(
+			states[index], bodies[index],
+			bodies[index].getMass() * (PfxVector3)st.m_Force,
+			bodies[index].getMass() * (PfxVector3)st.m_Torque,
+			timeStep
+		);
+	}
 
-	//void BasePhysics::GetBodyWorldQuatPos(uint16_t index, bsm::Quat& qt, bsm::Vec3& pos) {
-	//	qt = states[index].getOrientation();
-	//	pos = states[index].getPosition();
-	//}
+	void BasePhysics::SetBodyLinearVelocity(uint16_t index, const bsm::Vec3& v) {
+		states[index].setLinearVelocity((PfxVector3)v);
+	}
+	void BasePhysics::SetBodyAngularVelocity(uint16_t index, const bsm::Vec3& v) {
+		states[index].setAngularVelocity((PfxVector3)v);
+	}
+
+	void BasePhysics::ApplyBodyForce(uint16_t index, const bsm::Vec3& v) {
+		pfxApplyExternalForce(
+			states[index], bodies[index],
+			bodies[index].getMass() * (PfxVector3)v,
+			PfxVector3(0.0f),
+			timeStep
+		);
+
+	}
+	void BasePhysics::ApplyBodyTorque(uint16_t index, const bsm::Vec3& v) {
+		pfxApplyExternalForce(
+			states[index], bodies[index],
+			PfxVector3(0.0f),
+			bodies[index].getMass() * (PfxVector3)v,
+			timeStep
+		);
+	}
 
 	uint16_t BasePhysics::GetNumShapes(uint16_t body_index) {
 		return (uint16_t)collidables[body_index].getNumShapes();

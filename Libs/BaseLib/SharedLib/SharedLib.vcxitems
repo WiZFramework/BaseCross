@@ -20,7 +20,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Components.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)GameObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BehaviorSteering.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)PhysicsManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)PhysicsComponents.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Rigidbody.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SharedResources.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SpriteStudio5.h" />
@@ -32,7 +32,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Collision.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Components.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)GameObject.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)PhysicsManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)PhysicsComponents.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Rigidbody.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SharedResources.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SpriteStudio5.cpp" />

@@ -28,7 +28,7 @@ namespace basecross {
 	}
 
 
-	shared_ptr<PhysicsBox> PhysicsManager::AddSingleBox(const PsBoxParam& param, const wstring& indexKey) {
+	shared_ptr<PhysicsBox> PhysicsManager::AddSingleBox(const PsBoxParam& param, uint16_t index) {
 		if (!m_BoxMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;
@@ -43,24 +43,19 @@ namespace basecross {
 			}
 			m_BoxMeshRes = MeshResource::CreateMeshResource(col_vertices, indices, false);
 		}
-		if (indexKey == L"") {
+		if (index >= GetNumBodies()) {
 			CreateDrawObject();
 		}
-		else {
-			if (!CheckBodyIndex(indexKey)) {
-				CreateDrawObject();
-			}
-		}
-		return BasePhysics::AddSingleBox(param, indexKey);
+		return BasePhysics::AddSingleBox(param, index);
 
 	}
 
-	shared_ptr<PhysicsSphere> PhysicsManager::AddSingleSphere(const PsSphereParam& param, const wstring& indexKey) {
+	shared_ptr<PhysicsSphere> PhysicsManager::AddSingleSphere(const PsSphereParam& param, uint16_t index) {
 		if (!m_SphereMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;
 			vector<uint16_t> indices;
-			MeshUtill::CreateSphere(2.0f,9, vertices, indices);
+			MeshUtill::CreateSphere(2.0f, 6, vertices, indices);
 			vector<VertexPositionColor> col_vertices;
 			for (auto& v : vertices) {
 				VertexPositionColor vertex;
@@ -70,16 +65,12 @@ namespace basecross {
 			}
 			m_SphereMeshRes = MeshResource::CreateMeshResource(col_vertices, indices, false);
 		}
-		if (indexKey == L"") {
+		if (index >= GetNumBodies()) {
 			CreateDrawObject();
 		}
-		else {
-			if (!CheckBodyIndex(indexKey)) {
-				CreateDrawObject();
-			}
-		}
-		return BasePhysics::AddSingleSphere(param, indexKey);
+		return BasePhysics::AddSingleSphere(param, index);
 	}
+
 
 	void PhysicsManager::OnCreate() {
 	}

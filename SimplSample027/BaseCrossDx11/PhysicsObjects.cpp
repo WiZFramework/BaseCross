@@ -353,7 +353,6 @@ namespace basecross {
 	FirePsSphere::~FirePsSphere() {}
 	//初期化
 	void FirePsSphere::OnCreate() {
-		m_IndexKey = L"FirePsSphere";
 
 		vector<VertexPositionNormalTexture> vertices;
 		vector<uint16_t> indices;
@@ -400,9 +399,7 @@ namespace basecross {
 		param.m_Quat.identity();
 		param.m_Pos = m_Emitter;
 		param.m_Velocity = m_Velocity;
-		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param, m_IndexKey);
-
-
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
 	}
 	//更新
 	void FirePsSphere::OnUpdate() {
@@ -423,7 +420,7 @@ namespace basecross {
 		param.m_Pos = Emitter;
 		param.m_Velocity = Velocity;
 		//同じインデックスで再構築
-		m_PhysicsSphere = ObjectFactory::Create<PhysicsSphere>(param, Index);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param, Index);
 	}
 
 

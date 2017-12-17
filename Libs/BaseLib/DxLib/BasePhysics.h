@@ -67,7 +67,7 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	///	剛体のステータス
+	///	剛体のステータス(取得用)
 	//--------------------------------------------------------------------------------------
 	struct PsBodyStatus {
 		bsm::Vec3	m_Position;
@@ -75,6 +75,29 @@ namespace basecross {
 		bsm::Vec3	m_LinearVelocity;
 		bsm::Vec3	m_AngularVelocity;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	剛体のステータス(設定用)
+	//--------------------------------------------------------------------------------------
+	struct PsBodyUpdateStatus {
+		bsm::Vec3	m_Force;
+		bsm::Vec3	m_Torque;
+		bsm::Vec3	m_LinearVelocity;
+		bsm::Vec3	m_AngularVelocity;
+		PsBodyUpdateStatus():
+			m_Force(0.0f),
+			m_Torque(0.0f),
+			m_LinearVelocity(0.0f),
+			m_AngularVelocity(0.0f)
+		{}
+		PsBodyUpdateStatus(const PsBodyStatus& src) :
+			m_Force(0.0f),
+			m_Torque(0.0f),
+			m_LinearVelocity(src.m_LinearVelocity),
+			m_AngularVelocity(src.m_AngularVelocity)
+		{}
+	};
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -142,7 +165,6 @@ namespace basecross {
 	///	球体物理オブジェクト
 	//--------------------------------------------------------------------------------------
 	class PhysicsSphere : public PhysicsObject {
-		wstring m_MappedKey;
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -175,8 +197,6 @@ namespace basecross {
 	///	物理計算用のインターフェイス
 	//--------------------------------------------------------------------------------------
 	class BasePhysics{
-		map< wstring , uint16_t > m_ConstIndexMap;
-		uint16_t GetMappedIndex(const wstring& key);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -208,27 +228,20 @@ namespace basecross {
 		/*!
 		@brief	単体のボックスの追加
 		@param[in]	param	作成のパラメータ
-		@param[in]	indexKey	インデックスのキー（オブジェクトを再利用する場合）
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, const wstring& indexKey = L"");
+		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
 		@param[in]	param	作成のパラメータ
-		@param[in]	indexKey	インデックスのキー（オブジェクトを再利用する場合）
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,const wstring& indexKey = L"");
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	指定のキーのボディインデックスをチェックする
-		@return	キーのインデックスがあればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		bool CheckBodyIndex(const wstring& indexKey) const;
+		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のボディ数を得る
@@ -244,7 +257,52 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetBodyStatus(uint16_t index, PsBodyStatus& st);
+		void GetBodyStatus(uint16_t index, PsBodyStatus& st) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のステータスを設定する
+		@param[in]	index	ボディID
+		@param[out]	st	ステータスを得る参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBodyStatus(uint16_t index,const PsBodyUpdateStatus& st);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体の速度を設定する
+		@param[in]	index	ボディID
+		@param[out]	v	速度
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBodyLinearVelocity(uint16_t index, const bsm::Vec3& v);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体の回転速度を設定する
+		@param[in]	index	ボディID
+		@param[out]	v	速度
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBodyAngularVelocity(uint16_t index, const bsm::Vec3& v);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のフォースを追加する
+		@param[in]	index	ボディID
+		@param[out]	v	フォース
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ApplyBodyForce(uint16_t index, const bsm::Vec3& v);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のトルクを追加する
+		@param[in]	index	ボディID
+		@param[out]	v	トルク
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void ApplyBodyTorque(uint16_t index, const bsm::Vec3& v);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状の数を得る

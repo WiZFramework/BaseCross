@@ -968,10 +968,8 @@ namespace basecross {
 		//3Dの透明と非透明を分離する配列
 		vector< shared_ptr<GameObject> > m_Object3DNormalVec;
 		vector< shared_ptr<GameObject> > m_Object3DAlphaVec;
-
-		shared_ptr<PhysicsManager> m_PhysicsManager;
-
-
+		//物理計算
+		BasePhysics m_BasePhysics;
 		//現在Drawされているビューのインデックス
 		size_t m_DrawViewIndex;
 		//ビューのポインタ
@@ -1079,16 +1077,17 @@ namespace basecross {
 		}
 	}
 
-	shared_ptr<PhysicsManager> Stage::GetPhysicsManager() const {
+	BasePhysics& Stage::GetBasePhysics() const {
 		if (!IsPhysicsActive()) {
 			throw BaseException(
 				L"物理演算が無効になっています。有効にしてから取得してください。",
 				L"if (!IsPhysicsActive())",
-				L"Stage::GetPhysicsManager()"
+				L"Stage::GetBasePhysics()()"
 			);
 		}
-		return pImpl->m_PhysicsManager;
+		return pImpl->m_BasePhysics;
 	}
+
 
 	bool Stage::IsPhysicsActive() const {
 		return pImpl->m_IsPhysicsActive;
@@ -1277,9 +1276,8 @@ namespace basecross {
 		pImpl->m_AddParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>(),true);
 		//コリジョン管理者の作成
 		pImpl->m_CollisionManager = ObjectFactory::Create<CollisionManager>(GetThis<Stage>());
-
-		pImpl->m_PhysicsManager = ObjectFactory::Create<PhysicsManager>(GetThis<Stage>());
-		pImpl->m_PhysicsManager->Reset();
+		//物理計算リセット
+		pImpl->m_BasePhysics.Reset();
 	}
 
 
@@ -1299,10 +1297,6 @@ namespace basecross {
 				}
 			}
 		}
-		//物理オブジェクトの更新
-		if (IsPhysicsActive()) {
-			pImpl->m_PhysicsManager->OnUpdate();
-		}
 		//配置オブジェクトの更新処理
 		for (auto ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
@@ -1312,6 +1306,10 @@ namespace basecross {
 		//自身の更新処理
 		if (IsUpdateActive()) {
 			OnUpdate();
+		}
+		//物理オブジェクトの更新
+		if (IsPhysicsActive()) {
+			pImpl->m_BasePhysics.Update();
 		}
 		//配置オブジェクトのコンポーネント更新
 		for (auto ptr : GetGameObjectVec()) {
@@ -1443,9 +1441,6 @@ namespace basecross {
 		//3D透明オブジェクトの描画準備
 		for (auto ptr : pImpl->m_Object3DAlphaVec) {
 			ptr->OnPreDraw();
-		}
-		if (IsPhysicsActive()) {
-			pImpl->m_PhysicsManager->OnDraw();
 		}
 		//パーティクルの描画準備（透明）
 		GetParticleManager(false)->OnPreDraw();
@@ -1736,6 +1731,33 @@ namespace basecross {
 			App::GetApp()->RegisterResource(L"DEFAULT_PNTnT_ICOSAHEDRON", MeshResource::CreateMeshResource(new_pntnt_vertices, indices, false));
 			vertices.clear();
 			indices.clear();
+			//物理ワイフレーム用
+			MeshUtill::CreateSphere(2.0f, 6, vertices, indices);
+			vector<VertexPositionColor> col_vertices;
+			for (auto& v : vertices) {
+				VertexPositionColor vertex;
+				vertex.position = v.position;
+				vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+				col_vertices.push_back(vertex);
+			}
+			App::GetApp()->RegisterResource(L"PSWIRE_PC_SPHERE", MeshResource::CreateMeshResource(col_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+			col_vertices.clear();
+
+			MeshUtill::CreateCube(2.0f, vertices, indices);
+			for (auto& v : vertices) {
+				VertexPositionColor vertex;
+				vertex.position = v.position;
+				vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+				col_vertices.push_back(vertex);
+			}
+			App::GetApp()->RegisterResource(L"PSWIRE_PC_CUBE", MeshResource::CreateMeshResource(col_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+			col_vertices.clear();
+
+
 
 
 

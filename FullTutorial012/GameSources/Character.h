@@ -12,8 +12,6 @@ namespace basecross{
 	///	物理計算する固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedPsBox : public GameObject {
-		//物理計算用のオブジェクト
-		shared_ptr<PhysicsBox> m_PhysicsBox;
 		Vec3 m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -33,8 +31,6 @@ namespace basecross{
 	///	物理計算するアクティブなボックス
 	//--------------------------------------------------------------------------------------
 	class ActivePsBox : public GameObject {
-		//物理計算用のオブジェクト
-		shared_ptr<PhysicsBox> m_PhysicsBox;
 		Vec3 m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -48,8 +44,6 @@ namespace basecross{
 		virtual ~ActivePsBox();
 		//初期化
 		virtual void OnCreate() override;
-		//更新
-		virtual void OnUpdate() override;
 	};
 
 
@@ -57,8 +51,6 @@ namespace basecross{
 	///	物理計算するアクティブな球体
 	//--------------------------------------------------------------------------------------
 	class ActivePsSphere : public GameObject {
-		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
 		float m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -72,19 +64,16 @@ namespace basecross{
 		virtual ~ActivePsSphere();
 		//初期化
 		virtual void OnCreate() override;
-		//更新
-		virtual void OnUpdate() override;
 	};
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算する発射する球体
 	//--------------------------------------------------------------------------------------
 	class FirePsSphere : public GameObject {
-		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
 		Vec3 m_Emitter;
 		Vec3 m_Velocity;
-		wstring m_IndexKey;
+		float m_Scale;
+		void CreateDefParam(PsSphereParam& param);
 	public:
 		//構築と破棄
 		FirePsSphere(const shared_ptr<Stage>& StagePtr,
@@ -93,8 +82,6 @@ namespace basecross{
 		virtual ~FirePsSphere();
 		//初期化
 		virtual void OnCreate() override;
-		//更新
-		virtual void OnUpdate() override;
 		//物体をリセットする
 		void Reset(const Vec3& Emitter, const Vec3& Velocity);
 	};

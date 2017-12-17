@@ -142,8 +142,6 @@ namespace basecross {
 		shared_ptr<PhysicsSphere> m_PhysicsSphere;
 		Vec3 m_Emitter;
 		Vec3 m_Velocity;
-		wstring m_IndexKey;
-
 		//描画データ
 		shared_ptr<BcDrawObject> m_PtrObj;
 		//描画オブジェクト(weak_ptr)

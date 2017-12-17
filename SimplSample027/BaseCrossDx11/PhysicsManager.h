@@ -47,18 +47,20 @@ namespace basecross {
 		/*!
 		@brief	単体のボックスの追加
 		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, const wstring& indexKey = L"")override;
+		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, uint16_t index = UINT16_MAX)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
 		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,const wstring& indexKey = L"")override;
+		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param, uint16_t index = UINT16_MAX)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	更新

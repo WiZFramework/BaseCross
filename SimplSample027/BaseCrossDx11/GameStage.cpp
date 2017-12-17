@@ -40,47 +40,33 @@ namespace basecross {
 		//複数使用する法線付きボックスの登録（リソース登録する）
 		RegisterNormalBox();
 
-		//平面の作成
-		Quat Qt;
-		Qt.rotationX(XM_PIDIV2);
-		AddGameObject<SquareObject>(
-			L"WALL_TX",
-			L"WALL_NORMAL_TX",
-			Vec3(50.0f, 50.0f, 1.0f),
-			Qt,
-			Vec3(0.0f, 0.0f, 0.0f)
-			);
-
-
 		Quat Qt1, Qt2, Qt3, Qt4;
 		Qt1.rotationZ(2.0f);
 		Qt2.rotationX(0.7f);
 		Qt3.rotationZ(-2.0f);
 		Qt4.rotationX(-0.7f);
 		//下の台
-		AddGameObject<FixedPsBox>(Vec3(15.0f, 0.25f, 15.0f), Quat(), Vec3(0.0f, 0.125f, 10.0f));
+		AddGameObject<FixedPsBox>(Vec3(30.0f, 0.25f, 30.0f), Quat(), Vec3(0.0f, -0.125f, 0.0f));
 
 		//上から降ってくるボックス
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Quat(), Vec3(2.0f, 1.0f, 9.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt2, Vec3(1.0f, 3.0f, 8.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt3, Vec3(-2.0f, 4.0f, 8.5f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 7.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt4, Vec3(1.0f, 11.0f, 13.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt1, Vec3(2.5f, 12.0f, 14.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt2, Vec3(-3.0f, 13.0f, 7.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt3, Vec3(-3.0f, 14.0f, 6.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt4, Vec3(2.5f, 15.0f, 15.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Quat(), Vec3(2.0f, 1.0f, 4.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt2, Vec3(1.0f, 3.0f, 3.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt3, Vec3(-2.0f, 4.0f, 3.5f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 2.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt4, Vec3(1.0f, 11.0f, 8.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt1, Vec3(2.5f, 12.0f, 9.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt2, Vec3(-3.0f, 13.0f, 2.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt3, Vec3(-3.0f, 14.0f, 1.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt4, Vec3(2.5f, 15.0f, 10.0f));
 		//上から降ってくる球体
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 6.0f, 10.0f));
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-0.5f, 7.0f, 11.0f));
-		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 8.0f, 10.5f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 6.0f, 5.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-0.5f, 7.0f, 7.0f));
+		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 8.0f, 4.5f));
 
 
 		//プレイヤーの作成
 		auto PtrPlayer = AddGameObject<Player>(
-			L"TRACE_TX", 
-			true, 
-			Vec3(0.0f, 0.125f, 0.0f)
+			L"TRACE_TX" 
 			);
 		SetPlayer(PtrPlayer);
 
@@ -171,12 +157,12 @@ namespace basecross {
 	void GameStage::OnUpdateStage() {
 		//ターン毎の初期化
 		GetRigidbodyManager()->InitRigidbody();
-		//物理マネージャの更新
-		GetPhysicsManager()->OnUpdate();
 		for (auto& v : GetGameObjectVec()) {
 			//各オブジェクトの更新
 			v->OnUpdate();
 		}
+		//物理マネージャの更新
+		GetPhysicsManager()->OnUpdate();
 		//Rigidbodyマネージャの更新（衝突判定など）
 		GetRigidbodyManager()->OnUpdate();
 		for (auto& v : GetGameObjectVec()) {

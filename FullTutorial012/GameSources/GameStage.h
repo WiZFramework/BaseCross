@@ -14,8 +14,6 @@ namespace basecross {
 	class GameStage : public Stage {
 		//ビューの作成
 		void CreateViewLight();
-		//プレートの作成
-		void CreatePlate();
 		//物理計算オブジェクトの作成
 		void CreatePhysicsObjects();
 		//プレイヤーの作成

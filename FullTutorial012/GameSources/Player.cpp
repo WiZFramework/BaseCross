@@ -13,34 +13,77 @@ namespace basecross{
 	//	class Player : public GameObject;
 	//	用途: プレイヤー
 	//--------------------------------------------------------------------------------------
-	//構築と破棄
+	//構築
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
-		GameObject(StagePtr)
+		GameObject(StagePtr),
+		m_Scale(0.25f)
 	{}
+
+	Vec3 Player::GetMoveVector() const {
+		Vec3 Angle(0, 0, 0);
+		//コントローラの取得
+		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		if (CntlVec[0].bConnected) {
+			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
+				float MoveLength = 0;	//動いた時のスピード
+				auto PtrTransform = GetComponent<Transform>();
+				auto PtrCamera = OnGetDrawCamera();
+				//進行方向の向きを計算
+				Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+				Front.y = 0;
+				Front.normalize();
+				//進行方向向きからの角度を算出
+				float FrontAngle = atan2(Front.z, Front.x);
+				//コントローラの向き計算
+				float MoveX = CntlVec[0].fThumbLX;
+				float MoveZ = CntlVec[0].fThumbLY;
+				Vec2 MoveVec(MoveX, MoveZ);
+				float MoveSize = MoveVec.length();
+				//コントローラの向きから角度を計算
+				float CntlAngle = atan2(-MoveX, MoveZ);
+				//トータルの角度を算出
+				float TotalAngle = FrontAngle + CntlAngle;
+				//角度からベクトルを作成
+				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+				//正規化する
+				Angle.normalize();
+				//移動サイズを設定。
+				Angle *= MoveSize;
+				//Y軸は変化させない
+				Angle.y = 0;
+			}
+		}
+		return Angle;
+	}
+
 
 	//初期化
 	void Player::OnCreate() {
-
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
+		auto Ptr = GetComponent<Transform>();
+		Ptr->SetScale(Vec3(m_Scale));	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-
 		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
+		Vec3 FirstPos;
 		if (!bkCamera) {
-			Ptr->SetPosition(0, 0.125f, 0);
+			FirstPos = Vec3(0, m_Scale * 0.5f, 0);
 		}
 		else {
-			Ptr->SetPosition(App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos());
+			FirstPos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
 		}
+		Ptr->SetPosition(FirstPos);
 
-
-
-		//Rigidbodyをつける
-		auto PtrRedid = AddComponent<Rigidbody>();
-		//衝突判定をつける
-		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Auto);
+		PsSphereParam param;
+		//basecrossのスケーリングは直径基準なので、半径基準にする
+		param.m_Radius = m_Scale * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat.identity();
+		param.m_Pos = FirstPos;
+		param.m_Velocity = Vec3(0);
+		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
+		PsPtr->SetAutoTransform(false);
+		PsPtr->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -68,66 +111,68 @@ namespace basecross{
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
-		//ステートマシンの構築
-		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
-		//最初のステートをPlayerDefaultに設定
-		m_StateMachine->ChangeState(PlayerDefaultState::Instance());
 	}
 
 	//更新
 	void Player::OnUpdate() {
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
-		//ステートマシン更新
-		m_StateMachine->Update();
+
+		auto Vec = GetMoveVector();
+		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto Velo = PtrPs->GetLinearVelocity();
+		Velo.x = Vec.x * 5.0f;
+		Velo.z = Vec.z * 5.0f;
+		PtrPs->SetLinearVelocity(Velo);
 	}
 
 	//後更新
 	void Player::OnUpdate2() {
+		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto Ptr = GetComponent<Transform>();
+		Ptr->SetPosition(PtrPs->GetPosition());
+		//回転の計算
+		Vec3 Angle = GetMoveVector();
+		if (Angle.length() > 0.0f) {
+			auto UtilPtr = GetBehavior<UtilBehavior>();
+			//補間処理を行わない回転。補間処理するには以下1.0を0.1などにする
+			UtilPtr->RotToHead(Angle, 1.0f);
+		}
 		//文字列の表示
 		DrawStrings();
-
-
-	}
-
-	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {
-		//プレイヤーが何かに当たった
-		if (GetStateMachine()->GetCurrentState() == PlayerJumpState::Instance()) {
-			//現在がジャンプステートならPlayerDefaultに設定
-			GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
-		}
 	}
 
 	//Aボタンハンドラ
 	void  Player::OnPushA() {
-		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
-			//通常ステートならジャンプステートに移行
-			GetStateMachine()->ChangeState(PlayerJumpState::Instance());
+		auto Ptr = GetComponent<Transform>();
+		if (Ptr->GetPosition().y > 0.125f) {
+			return;
 		}
+		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto Velo = PtrPs->GetLinearVelocity();
+		Velo += Vec3(0, 4.0f, 0.0);
+		PtrPs->SetLinearVelocity(Velo);
 	}
 
 	//Bボタンハンドラ
 	void  Player::OnPushB() {
-		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
-			//通常ステートならゲームステージ再読み込み
-			//
-			App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera()));
-			App::GetApp()->GetScene<Scene>()->SetBackupPlayerPos(GetComponent<Transform>()->GetPosition());
-			PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
-		}
+		//ゲームステージ再読み込み
+		App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera()));
+		App::GetApp()->GetScene<Scene>()->SetBackupPlayerPos(GetComponent<Transform>()->GetPosition());
+		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
 	}
 
 	//Xボタンハンドラ
 	void Player::OnPushX() {
 		auto Ptr = GetComponent<Transform>();
 		Vec3 Pos = Ptr->GetPosition();
-		Pos.y += 0.125f;
+		Pos.y += 0.25f;
 		Quat Qt = Ptr->GetQuaternion();
 		Vec3 Rot = Qt.toRotVec();
 		float RotY = Rot.y;
-		Vec3 velo(sin(RotY), 0.15f, cos(RotY));
+		Vec3 velo(sin(RotY), 0.05f, cos(RotY));
 		velo.normalize();
-		velo *= 30.0f;
+		velo *= 20.0f;
 
 		auto ShPtr = GetStage()->GetSharedGameObject<FirePsSphere>(L"FirePsSphere", false);
 		if (ShPtr) {
@@ -137,9 +182,6 @@ namespace basecross{
 			GetStage()->AddGameObject<FirePsSphere>(Pos, velo);
 		}
 	}
-
-
-
 
 	//文字列の表示
 	void Player::DrawStrings() {
@@ -165,62 +207,11 @@ namespace basecross{
 		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring RididStr(L"Velocity:\t");
-		auto Velocity = GetComponent<Rigidbody>()->GetVelocity();
-		RididStr += L"X=" + Util::FloatToWStr(Velocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-		wstring str = Mess + OBJ_COUNT + FPS + PositionStr + RididStr ;
+		wstring str = Mess + OBJ_COUNT + FPS + PositionStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 	}
-
-
-	//--------------------------------------------------------------------------------------
-	///	通常ステート
-	//--------------------------------------------------------------------------------------
-
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerDefaultState)
-
-	void PlayerDefaultState::Enter(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
-		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
-		PtrBehavior->MovePlayer();
-		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->Execute();
-	}
-
-	void PlayerDefaultState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	//--------------------------------------------------------------------------------------
-	///	ジャンプステート
-	//--------------------------------------------------------------------------------------
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerJumpState)
-
-	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
-		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
-	}
-
-	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {
-		//ジャンプ中も方向変更可能
-		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
-		PtrBehavior->MovePlayer();
-		auto PtrGrav = Obj->GetBehavior<Gravity>();
-		PtrGrav->Execute();
-	}
-
-	void PlayerJumpState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
 
 }
 //end basecross

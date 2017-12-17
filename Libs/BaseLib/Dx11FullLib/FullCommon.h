@@ -31,4 +31,4 @@
 //スプライトスタジオ５
 #include "../SharedLib/SpriteStudio5.h"
 //物理計算マネージャなど
-#include "../SharedLib/PhysicsManager.h"
+#include "../SharedLib/PhysicsComponents.h"

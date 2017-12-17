@@ -22,13 +22,13 @@ namespace basecross {
 		float m_CameraYRad;				//カメラのYラジアン
 		float m_CameraArmLen;		//カメラの腕の長さ
 		Camera():
-			m_CamerEye(0, 5.0, -5.0f),
+			m_CamerEye(0, 8.0, -8.0f),
 			m_CamerAt(0, 0, 0),
 			m_CamerUp(0, 1.0f, 0),
 			m_FovY(XM_PIDIV4),
 			m_CameraXZRad(0.0f),
 			m_CameraYRad(XM_PIDIV4 + 0.5f),
-			m_CameraArmLen(5.0f)
+			m_CameraArmLen(8.0f)
 		{}
 		//--------------------------------------------------------------------------------------
 		/*!
