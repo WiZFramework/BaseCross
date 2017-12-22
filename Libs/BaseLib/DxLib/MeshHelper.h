@@ -131,18 +131,19 @@ namespace basecross {
 		/*!
 		@brief	VertexPosNormalTexフォーマットのカプセルを作成する(static関数)
 		@param[in]	diameter 直径
-		@param[in]	PointA 中間部線分の開始点
-		@param[in]	PointB 中間部線分の終了点
+		@param[in]	PointA 中間部線分の開始点（下）
+		@param[in]	PointB 中間部線分の終了点（上）
 		@param[in]	tessellation 分割数
 		@param[out]	vertices	頂点を作成するための配列
 		@param[out]	indices	インデックスを作成するための配列
+		@param[in]	landscape 横にするかどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateCapsule(float diameter,
 			const bsm::Vec3& PointA, const bsm::Vec3& PointB,
 			size_t tessellation,
-			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices);
+			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,bool landscape = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	VertexPosNormalTexフォーマットのシリンダーを作成する(static関数)
@@ -151,11 +152,13 @@ namespace basecross {
 		@param[in]	tessellation 分割数
 		@param[out]	vertices	頂点を作成するための配列
 		@param[out]	indices	インデックスを作成するための配列
+		@param[in]	landscape 横にするかどうか
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		static void CreateCylinder(float height, float diameter, size_t tessellation,
-			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices);
+			vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
+			 bool landscape = false);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	VertexPosNormalTexフォーマットのコーンを作成する(static関数)

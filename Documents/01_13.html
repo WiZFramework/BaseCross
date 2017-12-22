@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１１３．Effekseerの使用</h3>
+　このサンプルは<b>FullTutorial013</b>というディレクトリに含まれます。<br />
+<br />
+<h4>Effekseerについて</h4>
+　<b>Effekseer</b>はエフェクト作成のためのツールです。高機能なうえに軽いツールで、フリーで配布されているので、学習のためや、小規模なソフトハウスでも気軽に使うことができます。<br />
+<br />
+　<b>BaseCross</b>でも<b>パーティクル描画</b>という方法で<b>エフェクトの描画</b>は可能ですが、細かな演出には向いていません。というのは、エフェクトの動的な部分を<b>計算で指定して</b>あげなければいけないからです。<br />
+　簡単なエフェクトや、連番アニメーションであればこれでもいいのですが、手の込んだエフェクトはやはりツールが必要です。そこで、<b>Effekseer</b>で作成したデータを<b>BaseCross</b>で再生するサンプルを作成しました。それが<b>FullTutorial013</b>です。<br />
+<br />
+<h4>ライブラリの準備</h4>
+　<b>Effekseer</b>再生のためのライブラリは、<b>GitHub情報サイト</b><br />
+<br />
+<a href="https://effekseer.github.io/jp/" target="_brank">https://effekseer.github.io/jp/</a><br />
+<br />
+　からダウンロードできます。ここから<b>ダウンロード</b>リンクをクリックし<b>Effekseer for Runtime</b>をダウンロードしてください。<br />
+　ダウンロードするのは、zipファイルです。そのままではセキュリティによりビルドに含めるとエラーが出ますので、zipの状態で、右ボタンをクリックして、<b>プロパティ</b>で、セキュリティ警告を解除してください。<br />
+　解凍しますと<b>Compiled</b>というディレクトリが出てきます。この中の<b>include</b>および<b>lib</b>の内容を以下のように、<b>BaseCrossのLibsディレクトリ内</b>にコピーしてください。<br />
+<div class="box1">
+<pre>
+【includeファイル】
+Compiled/include/Effekseer.h
+Compiled/include/EffekseerRendererDX11.h
+Compiled/include/EffekseerSoundXAudio2.h
+を、BaseCrossの
+Libs/include/Effekseer.h
+Libs/include/EffekseerRendererDX11.h
+Libs/include/EffekseerSoundXAudio2.h
+としてコピー。
+
+【libファイル（デバッグ用）】
+Compiled/lib/VS2015/Debug/Effekseer.lib
+Compiled/lib/VS2015/Debug/EffekseerRendererDX11.lib
+Compiled/lib/VS2015/Debug/EffekseerSoundXAudio2.lib
+を
+Libs/lib/Dx11/Debug/Effekseer.lib
+Libs/lib/Dx11/Debug/EffekseerRendererDX11.lib
+Libs/lib/Dx11/Debug/EffekseerSoundXAudio2.lib
+としてコピー。
+
+【libファイル（リリース用）】
+Compiled/lib/VS2015/Release/Effekseer.lib
+Compiled/lib/VS2015/Release/EffekseerRendererDX11.lib
+Compiled/lib/VS2015/Release/EffekseerSoundXAudio2.lib
+を
+Libs/lib/Dx11/Release/Effekseer.lib
+Libs/lib/Dx11/Release/EffekseerRendererDX11.lib
+Libs/lib/Dx11/Release/EffekseerSoundXAudio2.lib
+としてコピー。
+</pre>
+</div>
+　以上で準備は終わりです。もし、BaseCross内に<b>Libs/lib/Dx11/</b>などのディレクトリがない（存在しない）場合は、手作業で作成してもいいですが、ほかのサンプルを<b>デバッグモードとリリースモード</b>両方でリビルドしてみてください。<b>DitectXTX</b>のライブラリがビルドされたときにディレクトリも作成されます。<br/>
+<br/>
+<h4>サンプルの起動</h4>
+　<b>FullTutorial013</b>の<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0113a.png" width="80%"/>
+<p>図0113a</p>
+<p>&nbsp;</p>
+<br/>
+　ここで<b>Aボタン</b>を押すと、派手なエフェクトがでます。このエフェクトは<b>Effekseer</b>のランタイムのダウンロードに含まれるテスト用のサンプルです。このようなエフェクトを<b>BaseCross</b>でも再生できるようになります。<br />
+<br />
+<h4>制限事項</h4>
+　実は、このサンプルには<b>サウンド</b>の情報も入ってます。エフェクト発射と同時に再生されるはずですが、<b>BaseCross</b>で使用する場合は<b>サウンド機能</b>はこのサンプルでは使用できません。<br />
+　理由は、<b>Effekseer</b>は<b>X3DAudio</b>という機能を使用してますが、これが入ってない環境もあるため、その場合、別にセットアップをする必要があります。できるだけ、<b>Windows10デフォルト</b>で動作するようにしたいので、<b>Effekseerサウンド機能</b>は実装してません。ただ、<b>EffekseerSoundXAudio2</b>のインクルード及びlibファイルの設置はしていても問題はありません。<br />
+<br />
+<h4>コード解説</h4>
+　<b>Effekseer</b>のランタイムは<b>BaseCrossのライブラリ</b>には含まれません。ですので、<b>ゲームコンテンツ側</b>の実装となります。関係するのは<b>GameSources</b>の中の<b>EfkInterface.h/cpp</b>です。これは、フルバージョンだけではなく、シンプルバージョンでもこの2つのファイルをプロジェクトに実装すれば<b>Effekseer</b>のデータを再生できるようになります。<br />
+　また、<b>Effekseer</b>のランタイムの使用は、このサンプルのように<b>EfkInterface.h/cpp</b>内のクラスを使う必要があるわけではありません。<b>Effekseer</b>のランタイムは、非常に使いやすくインターフェイスが整っているので、べたに記述しても簡単に利用可能でしょう。<br />
+<br/>
+　このファイルの中には<b>EfkEffectクラス、EfkPlayクラス、EfkInterfaceクラス</b>の3つのクラスがあります。それぞれ役割があります。<br />
+<h4>EfkEffectクラス</h4>
+　このクラスは<b>エフェクトファイル（.efk拡張子）</b>のオブジェクトを管理します。エフェクトを使う<b>GameObject</b>などで実装します。<br />
+<br />
+<h4>EfkPlayクラス</h4>
+　このクラスは<b>実際に再生中のオブジェクト</b>を管理します。<b>EfkEffectランタイム</b>では<b>ハンドル</b>という概念で各エフェクトがオブジェクト化されます。<b>EfkPlayクラス</b>はこの<b>各ハンドル</b>をカプセル化したものです。<br />
+<br />
+<h4>EfkInterfaceクラス</h4>
+　このクラスは<b>Effekseer</b>の<b>マネージャとレンダラー</b>をカプセル化しています。<br />
+<br />
+　これらのクラスは<b>BaseCross</b>との相性が良いようにラッピングされたものですが、<b>Effekseer</b>は生ポインタを使用していて、自分でオブジェクトの解放をしなければなりません。<b>スマートポインタ</b>を使うことで、これらの処理をクラス内に収めることができますのでこのような設計になってます。ですから、上記の3つのクラスを使用する分には、<b>メモリの解放</b>は意識しなくても大丈夫です。<br />
+<br />
+<h4>コードの記述</h4>
+　まず<b>Effekseer</b>を使うゲームでは<b>EfkInterface.h/cpp</b>をプロジェクトに加え、<b>Project.h</b>に以下を追加します。
+<div class="box1">
+<pre>
+#pragma once
+
+<span class="red">#include "EfkInterface.h"</span>
+#include "ProjectShader.h"
+#include "ProjectBehavior.h"
+//以下略
+</pre>
+</div>
+　このようにして、<b>GameStageクラスの宣言</b>などに、以下のように記述します
+<div class="box1">
+<pre>
+class GameStage : public Stage {
+    //エフェクトのインターフェイス
+    shared_ptr&lt;EfkInterface> m_EfkInterface;
+//中略
+public:
+//中略
+    //初期化
+    virtual void OnCreate()override;
+    //エフェクトのインターフェイスの取得
+    shared_ptr&lt;EfkInterface> GetEfkInterface() const {
+        return m_EfkInterface;
+    }
+    //更新
+    virtual void OnUpdate() override;
+    //描画
+    virtual void OnDraw() override;
+};
+</pre>
+</div>
+　このようにして<b>GameStage::OnCreate()</b>に以下のように記述します
+<div class="box1">
+<pre>
+    void GameStage::OnCreate() {
+        try {
+//中略
+            //エフェクト作成
+            m_EfkInterface = ObjectFactory::Create&lt;EfkInterface>();
+
+//中略
+            //プレーヤーの作成
+            CreatePlayer();
+        }
+        catch (...) {
+            throw;
+        }
+    }
+</pre>
+</div>
+　エフェクトは今回はプレイヤーで使うので、プレイヤーが構築される前に実装しておきます。<br />
+　続いて<b>OnUpdate()とOnDraw()</b>です。多重定義して実装します。
+<div class="box1">
+<pre>
+//更新
+void GameStage::OnUpdate() {
+    m_EfkInterface->OnUpdate();
+}
+//描画
+void GameStage::OnDraw() {
+    auto& camera = GetView()->GetTargetCamera();
+    m_EfkInterface->SetViewProj(camera->GetViewMatrix(), camera->GetProjMatrix());
+    m_EfkInterface->OnDraw();
+}
+</pre>
+</div>
+　続いて、プレイヤーです。以下はヘッダです。
+<div class="box1">
+<pre>
+class Player : public GameObject {
+    //エフェクト
+    shared_ptr&lt;EfkEffect> m_EfkEffect;
+    //エフェクト実行オブジェクト
+    shared_ptr&lt;EfkPlay> m_EfkPlay;
+//中略
+public:
+//中略
+};
+</pre>
+</div>
+　以下は<b>Player::OnCreate()</b>です。エフェクトファイルを読み込みます。
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+//中略
+
+    //エフェクトの初期化
+    wstring DataDir;
+    App::GetApp()->GetDataDirectory(DataDir);
+    wstring TestEffectStr = DataDir + L"Effects\\test.efk";
+    auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
+    m_EfkEffect = ObjectFactory::Create&lt;EfkEffect>(ShEfkInterface, TestEffectStr);
+
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;Player>(GetThis&lt;Player>()));
+    //最初のステートをPlayerDefaultに設定
+    m_StateMachine->ChangeState(PlayerDefaultState::Instance());
+}
+</pre>
+</div>
+　このようにステートマシンの前に実装するとよいでしょう。<br/>
+　最後に、実際にエフェクトの発射です。Aボタンのハンドラである<b>Player::OnPushA()</b>に記述します。
+<div class="box1">
+<pre>
+void  Player::OnPushA() {
+    if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
+        auto Ptr = GetComponent&lt;Transform>();
+        <span class="red">//エフェクトのプレイ
+        auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
+        m_EfkPlay = ObjectFactory::Create&lt;EfkPlay>(m_EfkEffect, Ptr->GetPosition());</span>
+        //通常ステートならジャンプステートに移行
+        GetStateMachine()->ChangeState(PlayerJumpState::Instance());
+    }
+}
+</pre>
+</div>
+　このように、ボタンが押されるたびに<b>m_EfkPlay</b>が上書きされるようになっています。<br />
+　<b>m_EfkPlay</b>は<b>shared_ptr</b>ですので、上書きされるたびに、まえのshared_ptrのデストラクタが動きます。そのデストラクタでは、実行中のエフェクトを<b>ストップ</b>してから破棄されるよう記述があるので、<b>ハンドル</b>が中途半端に残ることはありません。<br />
+　もし、複数の、同じエフェクトを同時に表示させる場合は<b>m_EfkPlay</b>を1つではなく配列で管理します。そうすると<b>ハンドルの再利用</b>ができるようになります。<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_12.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

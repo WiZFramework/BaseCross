@@ -168,8 +168,6 @@ namespace basecross {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
-		//bsm::Vec3 Pos;
-		//bsm::Quat Qt;
 		PsBodyStatus Status;
 		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
 		auto MeshRes = App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_SPHERE");
@@ -184,9 +182,9 @@ namespace basecross {
 		bsm::Vec3 LocalPos;
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		auto rad = BasePs.GetShapeSphereRadius(index, 0);
+		auto& shape = BasePs.GetShape(index, 0);
 		Local.affineTransformation(
-			bsm::Vec3(rad),			//スケーリング
+			bsm::Vec3(shape.getSphere().m_radius),			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -194,8 +192,6 @@ namespace basecross {
 		bsm::Mat4x4 DrawWorld = Local * World;
 		DrawShapeWireFrame(MeshRes, DrawWorld);
 	}
-
-
 
 	//--------------------------------------------------------------------------------------
 	///	単体のボックスコンポーネント
@@ -221,8 +217,6 @@ namespace basecross {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
-		//bsm::Vec3 Pos;
-		//bsm::Quat Qt;
 		PsBodyStatus Status;
 		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
 		auto MeshRes = App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_CUBE");
@@ -237,10 +231,9 @@ namespace basecross {
 		bsm::Vec3 LocalPos;
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-
-		bsm::Vec3 scale = BasePs.GetShapeBoxScale(index, 0);
+		auto& shape = BasePs.GetShape(index, 0);
 		Local.affineTransformation(
-			scale,			//スケーリング
+			(bsm::Vec3)shape.getBox().m_half,			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -248,6 +241,140 @@ namespace basecross {
 		bsm::Mat4x4 DrawWorld = Local * World;
 		DrawShapeWireFrame(MeshRes, DrawWorld);
 	}
+
+	//--------------------------------------------------------------------------------------
+	///	単体のカプセルコンポーネント
+	//--------------------------------------------------------------------------------------
+	PsSingleCapsuleBody::PsSingleCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param):
+		PsBodyComponent(GameObjectPtr)
+	{
+		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCapsule(param);
+		CreateMesh(param);
+	}
+
+	void PsSingleCapsuleBody::CreateMesh(const PsCapsuleParam& param) {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionColor> new_pc_vertices;
+		vector<uint16_t> indices;
+		bsm::Vec3 PointA(0, 0, 0);
+		bsm::Vec3 PointB(0, 0, 0);
+		PointA -= bsm::Vec3(0, param.m_HalfLen, 0);
+		PointB += bsm::Vec3(0, param.m_HalfLen, 0);
+		MeshUtill::CreateCapsule(param.m_Radius * 2.0f,
+			PointA, PointB, 6, vertices, indices, true);
+		for (auto& v : vertices) {
+			VertexPositionColor vertex;
+			vertex.position = v.position;
+			vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_pc_vertices.push_back(vertex);
+		}
+		m_CapsuleMesh = MeshResource::CreateMeshResource(new_pc_vertices, indices, false);
+	}
+
+
+	uint16_t PsSingleCapsuleBody::GetIndex() const {
+		return m_PhysicsCapsule->GetIndex();
+	}
+
+	void PsSingleCapsuleBody::Reset(const PsCapsuleParam& param, uint16_t index) {
+		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCapsule(param, index);
+		CreateMesh(param);
+	}
+
+
+	void PsSingleCapsuleBody::OnDraw() {
+		auto index = GetIndex();
+		//行列の定義
+		bsm::Mat4x4 World, Local;
+		PsBodyStatus Status;
+		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		auto MeshRes = m_CapsuleMesh;
+		BasePs.GetBodyStatus(index, Status);
+		//ワールド行列の決定
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Status.m_Orientation,				//回転角度
+			Status.m_Position			//位置
+		);
+		bsm::Vec3 LocalPos;
+		bsm::Quat LocalQt;
+		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
+
+		Local.affineTransformation(
+			bsm::Vec3(1.0f),			//スケーリングは1.0f
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			LocalQt,				//回転角度
+			LocalPos				//位置
+		);
+		bsm::Mat4x4 DrawWorld = Local * World;
+		DrawShapeWireFrame(MeshRes, DrawWorld);
+
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	単体のシリンダーコンポーネント
+	//--------------------------------------------------------------------------------------
+	PsSingleCylinderBody::PsSingleCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param):
+		PsBodyComponent(GameObjectPtr)
+	{
+		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCylinder(param);
+		CreateMesh(param);
+	}
+
+	void PsSingleCylinderBody::CreateMesh(const PsCylinderParam& param) {
+		vector<VertexPositionNormalTexture> vertices;
+		vector<VertexPositionColor> new_pc_vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCylinder(param.m_HalfLen * 2.0f,param.m_Radius * 2.0f,6, vertices, indices, true);
+		for (auto& v : vertices) {
+			VertexPositionColor vertex;
+			vertex.position = v.position;
+			vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_pc_vertices.push_back(vertex);
+		}
+		m_CylinderMesh = MeshResource::CreateMeshResource(new_pc_vertices, indices, false);
+	}
+
+
+	uint16_t PsSingleCylinderBody::GetIndex() const {
+		return m_PhysicsCylinder->GetIndex();
+	}
+
+	void PsSingleCylinderBody::Reset(const PsCylinderParam& param, uint16_t index) {
+		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCylinder(param, index);
+		CreateMesh(param);
+	}
+
+	void PsSingleCylinderBody::OnDraw() {
+		auto index = GetIndex();
+		//行列の定義
+		bsm::Mat4x4 World, Local;
+		PsBodyStatus Status;
+		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		auto MeshRes = m_CylinderMesh;
+		BasePs.GetBodyStatus(index, Status);
+		//ワールド行列の決定
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Status.m_Orientation,				//回転角度
+			Status.m_Position			//位置
+		);
+		bsm::Vec3 LocalPos;
+		bsm::Quat LocalQt;
+		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
+		Local.affineTransformation(
+			bsm::Vec3(1.0f),			//スケーリングは1.0f
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			LocalQt,				//回転角度
+			LocalPos				//位置
+		);
+		bsm::Mat4x4 DrawWorld = Local * World;
+		DrawShapeWireFrame(MeshRes, DrawWorld);
+	}
+
+
 
 
 }

@@ -1758,6 +1758,17 @@ namespace basecross {
 			col_vertices.clear();
 
 
+			MeshUtill::CreateCylinder(2.0f, 2.0f, 12,vertices,indices);
+			for (auto& v : vertices) {
+				VertexPositionColor vertex;
+				vertex.position = v.position;
+				vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+				col_vertices.push_back(vertex);
+			}
+			App::GetApp()->RegisterResource(L"PSWIRE_PC_CYLINDER", MeshResource::CreateMeshResource(col_vertices, indices, false));
+			vertices.clear();
+			indices.clear();
+			col_vertices.clear();
 
 
 

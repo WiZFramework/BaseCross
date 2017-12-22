@@ -67,6 +67,59 @@ namespace basecross{
 	};
 
 	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブなカプセル
+	//--------------------------------------------------------------------------------------
+	class ActivePsCapsule : public GameObject {
+		//長さ
+		float m_Len;
+		//直径
+		float m_Diameter;
+		Quat m_Qt;
+		Vec3 m_Position;
+		//メッシュ（カプセルは各オブジェクトが保持）
+		shared_ptr<MeshResource> m_CapsuleMesh;
+	public:
+		//構築と破棄
+		ActivePsCapsule(const shared_ptr<Stage>& StagePtr,
+			float Len,
+			float Diameter,
+			const Quat& Qt,
+			const Vec3& Position
+		);
+		virtual ~ActivePsCapsule();
+		//初期化
+		virtual void OnCreate() override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブなシリンダー
+	//--------------------------------------------------------------------------------------
+	class ActivePsCylinder : public GameObject {
+		//長さ
+		float m_Len;
+		//直径
+		float m_Diameter;
+		Quat m_Qt;
+		Vec3 m_Position;
+		//メッシュ（シリンダーは各オブジェクトが保持）
+		shared_ptr<MeshResource> m_CylinderMesh;
+	public:
+		//構築と破棄
+		ActivePsCylinder(const shared_ptr<Stage>& StagePtr,
+			float Len,
+			float Diameter,
+			const Quat& Qt,
+			const Vec3& Position
+		);
+		virtual ~ActivePsCylinder();
+		//初期化
+		virtual void OnCreate() override;
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	物理計算する発射する球体
 	//--------------------------------------------------------------------------------------
 	class FirePsSphere : public GameObject {

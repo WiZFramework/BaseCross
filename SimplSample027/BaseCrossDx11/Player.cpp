@@ -108,7 +108,7 @@ namespace basecross {
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = m_Pos;
-		param.m_Velocity = Vec3(0);
+		param.m_LinearVelocity = Vec3(0);
 		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
 
 	}

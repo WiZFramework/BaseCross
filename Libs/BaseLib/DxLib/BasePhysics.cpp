@@ -330,50 +330,6 @@ namespace basecross {
 
 	using namespace basecross::ps;
 
-	struct PxBoxParam {
-		PsMotionType m_MotionType;
-		PfxVector3 m_Size;
-		PfxQuat m_Quat;
-		PfxVector3 m_Pos;
-		PfxVector3 m_Force;
-		PfxVector3 m_Torque;
-		PfxVector3 m_Velocity;
-		float m_Mass;
-		PxBoxParam() {}
-		PxBoxParam(const PsBoxParam& param) {
-			m_MotionType = param.m_MotionType;
-			m_Size = param.m_HalfSize;
-			m_Quat = param.m_Quat;
-			m_Pos = param.m_Pos;
-			m_Force = param.m_Force;
-			m_Torque = param.m_Torque;
-			m_Velocity = param.m_Velocity;
-			m_Mass = param.m_Mass;
-		}
-	};
-
-	struct PxSphereParam {
-		PsMotionType m_MotionType;
-		float m_Radius;
-		PfxQuat m_Quat;
-		PfxVector3 m_Pos;
-		PfxVector3 m_Force;
-		PfxVector3 m_Torque;
-		PfxVector3 m_Velocity;
-		float m_Mass;
-		PxSphereParam() {}
-		PxSphereParam(const PsSphereParam& param) {
-			m_MotionType = param.m_MotionType;
-			m_Radius = param.m_Radius;
-			m_Quat = param.m_Quat;
-			m_Pos = param.m_Pos;
-			m_Force = param.m_Force;
-			m_Torque = param.m_Torque;
-			m_Velocity = param.m_Velocity;
-			m_Mass = param.m_Mass;
-		}
-	};
-
 
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
@@ -382,13 +338,13 @@ namespace basecross {
 	PhysicsObject::~PhysicsObject() {}
 
 	//--------------------------------------------------------------------------------------
-	//	Implイディオム
+	//	ボックスImplイディオム
 	//--------------------------------------------------------------------------------------
 	struct PhysicsBox::Impl {
 		//初期化パラメータ
-		PxBoxParam m_PxBoxParam;
+		PsBoxParam m_PsBoxParam;
 		Impl(const PsBoxParam& param):
-			m_PxBoxParam(param)
+			m_PsBoxParam(param)
 		{}
 		~Impl() {}
 	};
@@ -405,7 +361,7 @@ namespace basecross {
 	PhysicsBox::~PhysicsBox() {}
 
 	void PhysicsBox::OnCreate() {
-		PfxBox box(pImpl->m_PxBoxParam.m_Size);
+		PfxBox box((PfxVector3)pImpl->m_PsBoxParam.m_HalfSize);
 		PfxShape shape;
 		shape.reset();
 		shape.setBox(box);
@@ -413,30 +369,39 @@ namespace basecross {
 		collidables[m_Index].addShape(shape);
 		collidables[m_Index].finish();
 		bodies[m_Index].reset();
-		bodies[m_Index].setMass(pImpl->m_PxBoxParam.m_Mass);
-		bodies[m_Index].setInertia(pfxCalcInertiaBox(pImpl->m_PxBoxParam.m_Size, pImpl->m_PxBoxParam.m_Mass));
-		states[m_Index].reset();
-		states[m_Index].setPosition(pImpl->m_PxBoxParam.m_Pos);
-		states[m_Index].setOrientation(pImpl->m_PxBoxParam.m_Quat);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PxBoxParam.m_MotionType);
-		states[m_Index].setRigidBodyId(m_Index);
-		//フォースを加える
-		pfxApplyExternalForce(
-			states[m_Index], bodies[m_Index],
-			bodies[m_Index].getMass() * pImpl->m_PxBoxParam.m_Force,
-			pImpl->m_PxBoxParam.m_Torque,
-			timeStep
+		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsBoxParam.m_Mass);
+		bodies[m_Index].setInertia(pfxCalcInertiaBox(
+			(PfxVector3)pImpl->m_PsBoxParam.m_HalfSize, 
+			(PfxFloat)pImpl->m_PsBoxParam.m_Mass)
 		);
+		states[m_Index].reset();
+		states[m_Index].setPosition((PfxVector3)pImpl->m_PsBoxParam.m_Pos);
+		states[m_Index].setOrientation(
+			(PfxQuat)pImpl->m_PsBoxParam.m_Quat
+		);
+		states[m_Index].setLinearVelocity(
+			(PfxVector3)pImpl->m_PsBoxParam.m_LinearVelocity
+		);
+		states[m_Index].setAngularVelocity(
+			(PfxVector3)pImpl->m_PsBoxParam.m_AngularVelocity
+		);
+		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsBoxParam.m_MotionType);
+		states[m_Index].setRigidBodyId(m_Index);
 	}
 
+	const PsBoxParam& PhysicsBox::GetParam() const {
+		return pImpl->m_PsBoxParam;
+	}
+
+
 	//--------------------------------------------------------------------------------------
-	//	Implイディオム
+	//	球体Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct PhysicsSphere::Impl {
 		//初期化パラメータ
-		PxSphereParam m_PxSphereParam;
+		PsSphereParam m_PsSphereParam;
 		Impl(const PsSphereParam& param) :
-			m_PxSphereParam(param)
+			m_PsSphereParam(param)
 		{}
 		~Impl() {}
 	};
@@ -453,7 +418,7 @@ namespace basecross {
 	PhysicsSphere::~PhysicsSphere() {}
 
 	void PhysicsSphere::OnCreate() {
-		PfxSphere sphere(pImpl->m_PxSphereParam.m_Radius);
+		PfxSphere sphere((PfxFloat)pImpl->m_PsSphereParam.m_Radius);
 		PfxShape shape;
 		shape.reset();
 		shape.setSphere(sphere);
@@ -461,23 +426,164 @@ namespace basecross {
 		collidables[m_Index].addShape(shape);
 		collidables[m_Index].finish();
 		bodies[m_Index].reset();
-		bodies[m_Index].setMass(pImpl->m_PxSphereParam.m_Mass);
-		bodies[m_Index].setInertia(pfxCalcInertiaSphere(pImpl->m_PxSphereParam.m_Radius, pImpl->m_PxSphereParam.m_Mass));
-		states[m_Index].reset();
-		states[m_Index].setPosition(pImpl->m_PxSphereParam.m_Pos);
-		states[m_Index].setOrientation(pImpl->m_PxSphereParam.m_Quat);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PxSphereParam.m_MotionType);
-		states[m_Index].setLinearVelocity(pImpl->m_PxSphereParam.m_Velocity);
-		states[m_Index].setRigidBodyId(m_Index);
-		//フォースを加える
-		pfxApplyExternalForce(
-			states[m_Index], bodies[m_Index],
-			bodies[m_Index].getMass() * pImpl->m_PxSphereParam.m_Force,
-			pImpl->m_PxSphereParam.m_Torque,
-			timeStep
+		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsSphereParam.m_Mass);
+		bodies[m_Index].setInertia(pfxCalcInertiaSphere(
+			(PfxFloat)pImpl->m_PsSphereParam.m_Radius,
+			(PfxFloat)pImpl->m_PsSphereParam.m_Mass)
 		);
+		states[m_Index].reset();
+		states[m_Index].setPosition((PfxVector3)pImpl->m_PsSphereParam.m_Pos);
+		states[m_Index].setOrientation(
+			(PfxQuat)pImpl->m_PsSphereParam.m_Quat
+		);
+		states[m_Index].setLinearVelocity(
+			(PfxVector3)pImpl->m_PsSphereParam.m_LinearVelocity
+		);
+		states[m_Index].setAngularVelocity(
+			(PfxVector3)pImpl->m_PsSphereParam.m_AngularVelocity
+		);
+		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsSphereParam.m_MotionType);
+		states[m_Index].setRigidBodyId(m_Index);
 	}
 
+	const PsSphereParam& PhysicsSphere::GetParam() const {
+		return pImpl->m_PsSphereParam;
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	カプセルImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PhysicsCapsule::Impl {
+		//初期化パラメータ
+		PsCapsuleParam m_PsCapsuleParam;
+		Impl(const PsCapsuleParam& param) :
+			m_PsCapsuleParam(param)
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	カプセル物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	PhysicsCapsule::PhysicsCapsule(const PsCapsuleParam& param, uint16_t index):
+		pImpl(new Impl(param))
+	{
+		m_Index = index;
+	}
+	PhysicsCapsule::~PhysicsCapsule() {}
+
+	void PhysicsCapsule::OnCreate() {
+		PfxCapsule capsule(
+			(PfxFloat)pImpl->m_PsCapsuleParam.m_HalfLen,
+			(PfxFloat)pImpl->m_PsCapsuleParam.m_Radius
+		);
+		PfxShape shape;
+		shape.reset();
+		shape.setCapsule(capsule);
+		collidables[m_Index].reset();
+		collidables[m_Index].addShape(shape);
+		collidables[m_Index].finish();
+		bodies[m_Index].reset();
+		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCapsuleParam.m_Mass);
+		bodies[m_Index].setInertia(
+			pfxCalcInertiaCylinderX(
+				(PfxFloat)pImpl->m_PsCapsuleParam.m_HalfLen + (PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
+				(PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
+				(PfxFloat)pImpl->m_PsCapsuleParam.m_Mass
+			)
+		);
+		states[m_Index].reset();
+		states[m_Index].setPosition(
+			(PfxVector3)pImpl->m_PsCapsuleParam.m_Pos
+		);
+		states[m_Index].setOrientation(
+			(PfxQuat)pImpl->m_PsCapsuleParam.m_Quat
+		);
+		states[m_Index].setLinearVelocity(
+			(PfxVector3)pImpl->m_PsCapsuleParam.m_LinearVelocity
+		);
+
+		states[m_Index].setAngularVelocity(
+			(PfxVector3)pImpl->m_PsCapsuleParam.m_AngularVelocity
+		);
+		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsCapsuleParam.m_MotionType);
+		states[m_Index].setRigidBodyId(m_Index);
+	}
+
+	const PsCapsuleParam& PhysicsCapsule::GetParam() const {
+		return pImpl->m_PsCapsuleParam;
+	}
+
+	//--------------------------------------------------------------------------------------
+	//	シリンダーImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PhysicsCylinder::Impl {
+		//初期化パラメータ
+		PsCylinderParam m_PsCylinderParam;
+		Impl(const PsCylinderParam& param) :
+			m_PsCylinderParam(param)
+		{}
+		~Impl() {}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	シリンダー物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	PhysicsCylinder::PhysicsCylinder(const PsCylinderParam& param, uint16_t index):
+		pImpl(new Impl(param))
+	{
+		m_Index = index;
+	}
+	PhysicsCylinder::~PhysicsCylinder() {}
+
+	void PhysicsCylinder::OnCreate() {
+		PfxCylinder cylinder(
+			(PfxFloat)pImpl->m_PsCylinderParam.m_HalfLen,
+			(PfxFloat)pImpl->m_PsCylinderParam.m_Radius
+		);
+		PfxShape shape;
+		shape.reset();
+		shape.setCylinder(cylinder);
+		collidables[m_Index].reset();
+		collidables[m_Index].addShape(shape);
+		collidables[m_Index].finish();
+		bodies[m_Index].reset();
+		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCylinderParam.m_Mass);
+
+		bodies[m_Index].setInertia(
+			pfxCalcInertiaCylinderX(
+			(PfxFloat)pImpl->m_PsCylinderParam.m_HalfLen,
+				(PfxFloat)pImpl->m_PsCylinderParam.m_Radius,
+				(PfxFloat)pImpl->m_PsCylinderParam.m_Mass
+			)
+		);
+
+
+		states[m_Index].reset();
+		states[m_Index].setPosition(
+			(PfxVector3)pImpl->m_PsCylinderParam.m_Pos
+		);
+		states[m_Index].setOrientation(
+			(PfxQuat)pImpl->m_PsCylinderParam.m_Quat
+		);
+
+		states[m_Index].setLinearVelocity(
+			(PfxVector3)pImpl->m_PsCylinderParam.m_LinearVelocity
+		);
+
+		states[m_Index].setAngularVelocity(
+			(PfxVector3)pImpl->m_PsCylinderParam.m_AngularVelocity
+		);
+		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsCylinderParam.m_MotionType);
+		states[m_Index].setRigidBodyId(m_Index);
+	}
+
+	const PsCylinderParam& PhysicsCylinder::GetParam() const {
+		return pImpl->m_PsCylinderParam;
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算用のインターフェイス
@@ -510,57 +616,81 @@ namespace basecross {
 		return ObjectFactory::Create<PhysicsSphere>(param, index);
 	}
 
+	shared_ptr<PhysicsCapsule> BasePhysics::AddSingleCapsule(const PsCapsuleParam& param, uint16_t index) {
+		uint16_t set_index;
+		if (index < numRigidBodies) {
+			set_index = index;
+		}
+		else {
+			index = numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsCapsule>(param, index);
+	}
+
+	shared_ptr<PhysicsCylinder> BasePhysics::AddSingleCylinder(const PsCylinderParam& param, uint16_t index) {
+		uint16_t set_index;
+		if (index < numRigidBodies) {
+			set_index = index;
+		}
+		else {
+			index = numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsCylinder>(param, index);
+	}
+
+
+
 
 
 	uint16_t BasePhysics::GetNumBodies() const {
 		return numRigidBodies;
 	}
 
-	void BasePhysics::GetBodyStatus(uint16_t index, PsBodyStatus& st)const {
-		st.m_Position = states[index].getPosition();
-		st.m_Orientation = states[index].getOrientation();
-		st.m_LinearVelocity = states[index].getLinearVelocity();
-		st.m_AngularVelocity = states[index].getAngularVelocity();
+	void BasePhysics::GetBodyStatus(uint16_t body_index, PsBodyStatus& st)const {
+		st.m_Position = states[body_index].getPosition();
+		st.m_Orientation = states[body_index].getOrientation();
+		st.m_LinearVelocity = states[body_index].getLinearVelocity();
+		st.m_AngularVelocity = states[body_index].getAngularVelocity();
 	}
 
-	void BasePhysics::SetBodyStatus(uint16_t index, const PsBodyUpdateStatus& st) {
-		states[index].setAngularVelocity((PfxVector3)st.m_AngularVelocity);
-		states[index].setLinearVelocity((PfxVector3)st.m_LinearVelocity);
+	void BasePhysics::SetBodyStatus(uint16_t body_index, const PsBodyUpdateStatus& st) {
+		states[body_index].setAngularVelocity((PfxVector3)st.m_AngularVelocity);
+		states[body_index].setLinearVelocity((PfxVector3)st.m_LinearVelocity);
 		//フォースを加える
 		pfxApplyExternalForce(
-			states[index], bodies[index],
-			bodies[index].getMass() * (PfxVector3)st.m_Force,
-			bodies[index].getMass() * (PfxVector3)st.m_Torque,
+			states[body_index], bodies[body_index],
+			bodies[body_index].getMass() * (PfxVector3)st.m_Force,
+			bodies[body_index].getMass() * (PfxVector3)st.m_Torque,
 			timeStep
 		);
 	}
 
-	void BasePhysics::SetBodyLinearVelocity(uint16_t index, const bsm::Vec3& v) {
-		states[index].setLinearVelocity((PfxVector3)v);
+	void BasePhysics::SetBodyLinearVelocity(uint16_t body_index, const bsm::Vec3& v) {
+		states[body_index].setLinearVelocity((PfxVector3)v);
 	}
-	void BasePhysics::SetBodyAngularVelocity(uint16_t index, const bsm::Vec3& v) {
-		states[index].setAngularVelocity((PfxVector3)v);
+	void BasePhysics::SetBodyAngularVelocity(uint16_t body_index, const bsm::Vec3& v) {
+		states[body_index].setAngularVelocity((PfxVector3)v);
 	}
 
-	void BasePhysics::ApplyBodyForce(uint16_t index, const bsm::Vec3& v) {
+	void BasePhysics::ApplyBodyForce(uint16_t body_index, const bsm::Vec3& v) {
 		pfxApplyExternalForce(
-			states[index], bodies[index],
-			bodies[index].getMass() * (PfxVector3)v,
+			states[body_index], bodies[body_index],
+			bodies[body_index].getMass() * (PfxVector3)v,
 			PfxVector3(0.0f),
 			timeStep
 		);
 
 	}
-	void BasePhysics::ApplyBodyTorque(uint16_t index, const bsm::Vec3& v) {
+	void BasePhysics::ApplyBodyTorque(uint16_t body_index, const bsm::Vec3& v) {
 		pfxApplyExternalForce(
-			states[index], bodies[index],
+			states[body_index], bodies[body_index],
 			PfxVector3(0.0f),
-			bodies[index].getMass() * (PfxVector3)v,
+			bodies[body_index].getMass() * (PfxVector3)v,
 			timeStep
 		);
 	}
 
-	uint16_t BasePhysics::GetNumShapes(uint16_t body_index) {
+	uint16_t BasePhysics::GetNumShapes(uint16_t body_index)const {
 		return (uint16_t)collidables[body_index].getNumShapes();
 	}
 
@@ -575,17 +705,54 @@ namespace basecross {
 		return (ePfxShapeType)shape.getType();
 	}
 
-	bsm::Vec3 BasePhysics::GetShapeBoxScale(uint16_t body_index, uint16_t shape_index) const {
-		auto& shape = collidables[body_index].getShape(shape_index);
-		bsm::Vec3 scale;
-		scale = shape.getBox().m_half;
-		return scale;
+	uint16_t BasePhysics::GetNumJoints()const {
+		return (uint16_t)numJoints;
 	}
 
-	float BasePhysics::GetShapeSphereRadius(uint16_t body_index, uint16_t shape_index) const {
-		auto& shape = collidables[body_index].getShape(shape_index);
-		return (float)shape.getSphere().m_radius;
+	uint16_t BasePhysics::GetNumContacts()const {
+		return (uint16_t)numContacts;
 	}
+
+	const PfxShape& BasePhysics::GetShape(uint16_t body_index, uint16_t shape_index) const {
+		return collidables[body_index].getShape(shape_index);
+	}
+
+	const PfxRigidState& BasePhysics::GetRigidState(uint16_t body_index) const {
+		return states[body_index];
+	}
+	const PfxRigidBody& BasePhysics::GetRigidBody(uint16_t body_index) const {
+		return bodies[body_index];
+
+	}
+	const PfxCollidable& BasePhysics::GetCollidable(uint16_t body_index) const {
+		return collidables[body_index];
+
+	}
+	const PfxSolverBody& BasePhysics::GetSolverBody(uint16_t body_index) const {
+		return solverBodies[body_index];
+	}
+	const PfxBroadphaseProxy& BasePhysics::GetBroadphaseProxy(uint16_t body_index) const {
+		return proxies[body_index];
+	}
+	const PfxConstraintPair& BasePhysics::GetJointPair(uint16_t joint_index) const {
+		return jointPairs[joint_index];
+
+	}
+	const PfxJoint& BasePhysics::GetJoint(uint16_t joint_index) const {
+		return joints[joint_index];
+
+	}
+	const PfxBroadphasePair& BasePhysics::GetNowPair(uint16_t contact_index) const {
+		return pairsBuff[pairSwap][contact_index];
+	}
+	const PfxBroadphasePair& BasePhysics::GetPrevPair(uint16_t contact_index) const {
+		return pairsBuff[1 -pairSwap][contact_index];
+	}
+	const PfxContactManifold& BasePhysics::GetContactManifold(uint16_t contact_index) const {
+		return contacts[contact_index];
+	}
+
+
 
 	void BasePhysics::Reset() {
 		numRigidBodies = 0;

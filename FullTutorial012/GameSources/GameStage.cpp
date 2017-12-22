@@ -47,18 +47,20 @@ namespace basecross {
 		Qt3.rotationZ(-2.0f);
 		Qt4.rotationX(-0.7f);
 		//下の台
-		AddGameObject<FixedPsBox>(Vec3(30.0f, 0.25f, 30.0f), Quat(), Vec3(0.0f, -0.125f, 0.0f));
+		AddGameObject<FixedPsBox>(Vec3(30.0f, 1.0f, 30.0f), Quat(), Vec3(0.0f, -0.5f, 0.0f));
 
 		//上から降ってくるボックス
 		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Quat(), Vec3(2.0f, 1.0f, 4.0f));
 		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt2, Vec3(1.0f, 3.0f, 3.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt3, Vec3(-2.0f, 4.0f, 3.5f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt3, Vec3(2.0f, 10.0f, 2.0f));
 		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt4, Vec3(1.0f, 11.0f, 8.0f));
 		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 2.0f), Qt1, Vec3(2.5f, 12.0f, 9.0f));
 		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt2, Vec3(-3.0f, 13.0f, 2.0f));
 		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt3, Vec3(-3.0f, 14.0f, 1.0f));
 		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt4, Vec3(2.5f, 15.0f, 10.0f));
+		//カプセル
+		AddGameObject<ActivePsCapsule>(1.0f,1.0f, Qt3, Vec3(-2.0f, 4.0f, 3.5f));
+		AddGameObject<ActivePsCapsule>(1.0f,1.0f, Qt3, Vec3(2.0f, 10.0f, 2.0f));
+
 		//上から降ってくる球体
 		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 6.0f, 5.0f));
 		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(-0.5f, 7.0f, 7.0f));
@@ -79,10 +81,6 @@ namespace basecross {
 		try {
 			//物理計算有効
 			SetPhysicsActive(true);
-			//アップデートを無効にするには以下コメント外す
-			//GetPhysicsManager()->SetUpdateActive(false);
-			//ワイアフレーム描画を無効にするには以下コメント外す
-			//GetPhysicsManager()->SetDrawActive(false);
 			//ビューとライトの作成
 			CreateViewLight();
 			//物理計算オブジェクトの作成

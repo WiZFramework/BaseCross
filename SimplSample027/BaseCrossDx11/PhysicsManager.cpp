@@ -116,9 +116,9 @@ namespace basecross {
 				switch (GetShapeType(i,j)) {
 				case sce::PhysicsEffects::ePfxShapeType::kPfxShapeBox:
 				{
-					bsm::Vec3 scale = GetShapeBoxScale(i, j);
+					auto& shape = GetShape(i, j);
 					Local.affineTransformation(
-						scale,			//スケーリング
+						(bsm::Vec3)shape.getBox().m_half,			//スケーリング
 						bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 						LocalQt,				//回転角度
 						LocalPos				//位置
@@ -129,9 +129,9 @@ namespace basecross {
 				break;
 				case sce::PhysicsEffects::ePfxShapeType::kPfxShapeSphere:
 				{
-					auto rad = GetShapeSphereRadius(i, j);
+					auto& shape = GetShape(i, j);
 					Local.affineTransformation(
-						bsm::Vec3(rad),			//スケーリング
+						bsm::Vec3(shape.getSphere().m_radius),			//スケーリング
 						bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 						LocalQt,				//回転角度
 						LocalPos				//位置

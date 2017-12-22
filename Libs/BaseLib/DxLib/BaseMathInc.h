@@ -1879,11 +1879,43 @@ namespace bsm {
 			rTranslation = Translation;
 		}
 		else {
-			throw BaseException(
-				L"行列のデコンポーズに失敗しました",
-				L"if(!XMMatrixDecompose(&Scale, &Qt, &Translation, *this))",
-				L"Mat4X4::decompose()"
-			);
+			//スケーリングマイナスの場合の処理
+			auto XLen = length(Flt3(_11, _12, _13));
+			auto YLen = length(Flt3(_21, _22, _23));
+			auto ZLen = length(Flt3(_31, _32, _33));
+
+			rScaling = Flt3(XLen, YLen, ZLen);
+
+			if (XLen == 0.0f || YLen == 0.0f || ZLen == 0.0f) {
+				throw BaseException(
+					L"行列のデコンポーズ計算に失敗しました",
+					L"if (XLen == 0.0f || YLen == 0.0f || ZLen == 0.0f)",
+					L"Mat4X4::decompose()"
+				);
+			}
+
+			rTranslation = Flt3(_41, _42, _43);
+
+			Flt3 vX = Flt3(_11, _12, _13) / XLen;
+			Flt3 vY = Flt3(_21, _22, _23) / XLen;
+			Flt3 vZ = Flt3(_31, _32, _33) / XLen;
+
+			Mat4x4 retM;
+			retM.identity();
+			retM._11 = vX.x;
+			retM._12 = vX.y;
+			retM._13 = vX.z;
+
+			retM._21 = vY.x;
+			retM._22 = vY.y;
+			retM._23 = vY.z;
+
+			retM._31 = vZ.x;
+			retM._32 = vZ.y;
+			retM._33 = vZ.z;
+
+			rQt = (Quat)XMQuaternionRotationMatrix(retM);
+
 		}
 	}
 

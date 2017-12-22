@@ -398,7 +398,7 @@ namespace basecross {
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = m_Emitter;
-		param.m_Velocity = m_Velocity;
+		param.m_LinearVelocity = m_Velocity;
 		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
 	}
 	//更新
@@ -418,7 +418,7 @@ namespace basecross {
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = Emitter;
-		param.m_Velocity = Velocity;
+		param.m_LinearVelocity = Velocity;
 		//同じインデックスで再構築
 		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param, Index);
 	}

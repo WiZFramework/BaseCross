@@ -80,7 +80,7 @@ namespace basecross{
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = FirstPos;
-		param.m_Velocity = Vec3(0);
+		param.m_LinearVelocity = Vec3(0);
 		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
 		PsPtr->SetAutoTransform(false);
 		PsPtr->SetDrawActive(true);

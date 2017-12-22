@@ -20,51 +20,66 @@ namespace basecross {
 		MotionTypeCount
 	};
 
+	struct PsParamBase {
+		PsMotionType m_MotionType;
+		bsm::Quat m_Quat;
+		bsm::Vec3 m_Pos;
+		bsm::Vec3 m_LinearVelocity;
+		bsm::Vec3 m_AngularVelocity;
+		float m_Mass;
+		PsParamBase() :
+			m_Quat(),
+			m_Pos(0),
+			m_LinearVelocity(0),
+			m_AngularVelocity(0),
+			m_Mass(1.0f)
+		{}
+	};
+
 	//--------------------------------------------------------------------------------------
 	///	ボックス作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsBoxParam {
-		PsMotionType m_MotionType;
+	struct PsBoxParam : public PsParamBase {
 		bsm::Vec3 m_HalfSize;
-		bsm::Quat m_Quat;
-		bsm::Vec3 m_Pos;
-		bsm::Vec3 m_Force;
-		bsm::Vec3 m_Torque;
-		bsm::Vec3 m_Velocity;
-		float m_Mass;
 		PsBoxParam():
-			m_HalfSize(1.0f),
-			m_Quat(),
-			m_Pos(0),
-			m_Force(0),
-			m_Torque(0),
-			m_Velocity(0),
-			m_Mass(1.0f)
+			m_HalfSize(1.0f)
 		{}
 	};
 
 	//--------------------------------------------------------------------------------------
 	///	球体作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsSphereParam {
-		PsMotionType m_MotionType;
+	struct PsSphereParam : public PsParamBase {
 		float m_Radius;
-		bsm::Quat m_Quat;
-		bsm::Vec3 m_Pos;
-		bsm::Vec3 m_Force;
-		bsm::Vec3 m_Torque;
-		bsm::Vec3 m_Velocity;
-		float m_Mass;
 		PsSphereParam():
-			m_Radius(1.0f),
-			m_Quat(),
-			m_Pos(0),
-			m_Force(0),
-			m_Torque(0),
-			m_Velocity(0),
-			m_Mass(1.0f)
+			m_Radius(1.0f)
 		{}
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	カプセル作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsCapsuleParam : public PsParamBase {
+		float m_HalfLen;
+		float m_Radius;
+		PsCapsuleParam() :
+			m_HalfLen(0.5f),
+			m_Radius(0.5f)
+		{}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	シリンダー作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsCylinderParam : public PsParamBase {
+		float m_HalfLen;
+		float m_Radius;
+		PsCylinderParam() :
+			m_HalfLen(0.5f),
+			m_Radius(0.5f)
+		{}
+	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	剛体のステータス(取得用)
@@ -155,6 +170,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化時のパラメータを得る
+		@return	初期化時のパラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const PsBoxParam& GetParam() const;
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -186,11 +208,96 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化時のパラメータを得る
+		@return	初期化時のパラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const PsSphereParam& GetParam() const;
 	private:
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	カプセル物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	class PhysicsCapsule : public PhysicsObject {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PhysicsCapsule(const PsCapsuleParam& param, uint16_t index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PhysicsCapsule();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化時のパラメータを得る
+		@return	初期化時のパラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const PsCapsuleParam& GetParam() const;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	シリンダー物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	class PhysicsCylinder : public PhysicsObject {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PhysicsCylinder(const PsCylinderParam& param, uint16_t index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PhysicsCylinder();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化時のパラメータを得る
+		@return	初期化時のパラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const PsCylinderParam& GetParam() const;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -244,6 +351,25 @@ namespace basecross {
 		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	単体のカプセルの追加
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
+		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual shared_ptr<PhysicsCapsule> AddSingleCapsule(const PsCapsuleParam& param, uint16_t index = UINT16_MAX);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	単体のシリンダーの追加<br />
+		シリンダーは、ボックスの縁からの落下時に不具合があるので、利用は慎重に！
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
+		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual shared_ptr<PhysicsCylinder> AddSingleCylinder(const PsCylinderParam& param, uint16_t index = UINT16_MAX);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	現在のボディ数を得る
 		@return	現在のボディ数
 		*/
@@ -252,69 +378,69 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のステータスを得る
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	st	ステータスを得る参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetBodyStatus(uint16_t index, PsBodyStatus& st) const;
+		void GetBodyStatus(uint16_t body_index, PsBodyStatus& st) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のステータスを設定する
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	st	ステータスを得る参照
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetBodyStatus(uint16_t index,const PsBodyUpdateStatus& st);
+		void SetBodyStatus(uint16_t body_index,const PsBodyUpdateStatus& st);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体の速度を設定する
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	v	速度
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetBodyLinearVelocity(uint16_t index, const bsm::Vec3& v);
+		void SetBodyLinearVelocity(uint16_t body_index, const bsm::Vec3& v);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体の回転速度を設定する
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	v	速度
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetBodyAngularVelocity(uint16_t index, const bsm::Vec3& v);
+		void SetBodyAngularVelocity(uint16_t body_index, const bsm::Vec3& v);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のフォースを追加する
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	v	フォース
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void ApplyBodyForce(uint16_t index, const bsm::Vec3& v);
+		void ApplyBodyForce(uint16_t body_index, const bsm::Vec3& v);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のトルクを追加する
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[out]	v	トルク
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void ApplyBodyTorque(uint16_t index, const bsm::Vec3& v);
+		void ApplyBodyTorque(uint16_t body_index, const bsm::Vec3& v);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状の数を得る
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@return	形状数
 		*/
 		//--------------------------------------------------------------------------------------
-		uint16_t GetNumShapes(uint16_t body_index);
+		uint16_t GetNumShapes(uint16_t body_index)const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状のオフセット回転とオフセット位置を得る
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[in]	shape_index	形状ID
 		@param[out]	qt	回転を受ける参照
 		@param[out]	pos	位置を受ける参照
@@ -325,7 +451,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状のタイプを得る
-		@param[in]	index	ボディID
+		@param[in]	body_index	ボディID
 		@param[in]	shape_index	形状ID
 		@return　形状のタイプ
 		*/
@@ -333,22 +459,109 @@ namespace basecross {
 		sce::PhysicsEffects::ePfxShapeType GetShapeType(uint16_t body_index, uint16_t shape_index) const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	ボックス形状のスケール（ハーフサイズ）を得る
-		@param[in]	index	ボディID
-		@param[in]	shape_index	形状ID
-		@return　ボックス形状のスケール
+		@brief	ジョイントの数を得る
+		@return	ジョイント数
 		*/
 		//--------------------------------------------------------------------------------------
-		bsm::Vec3 GetShapeBoxScale(uint16_t body_index, uint16_t shape_index) const;
+		uint16_t GetNumJoints()const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	球体形状の半径を得る
-		@param[in]	index	ボディID
-		@param[in]	shape_index	形状ID
-		@return　球体形状の半径
+		@brief	コンタクトの数を得る
+		@return	ジョイント数
 		*/
 		//--------------------------------------------------------------------------------------
-		float GetShapeSphereRadius(uint16_t body_index, uint16_t shape_index) const;
+		uint16_t GetNumContacts()const;
+		//以下、直接アクセス
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	形状を得る
+		@param[in]	body_index	ボディID
+		@param[in]	shape_index	形状ID
+		@return　形状の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxShape& GetShape(uint16_t body_index, uint16_t shape_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のステートを得る
+		@param[in]	body_index	ボディID
+		@return　剛体のステートの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxRigidState& GetRigidState(uint16_t body_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体を得る
+		@param[in]	body_index	ボディID
+		@return　剛体の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxRigidBody& GetRigidBody(uint16_t body_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	衝突する剛体を得る
+		@param[in]	body_index	ボディID
+		@return　衝突する剛体の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxCollidable& GetCollidable(uint16_t body_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のソルバーを得る
+		@param[in]	body_index	ボディID
+		@return　剛体のソルバーの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxSolverBody& GetSolverBody(uint16_t body_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のブロードフェイズプロキシを得る
+		@param[in]	body_index	ボディID
+		@return　剛体のブロードフェイズプロキシの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxBroadphaseProxy& GetBroadphaseProxy(uint16_t body_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジョイントのペアを得る
+		@param[in]	joint_index	ジョイントID
+		@return　ジョイントのペアの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxConstraintPair& GetJointPair(uint16_t joint_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ジョイントを得る
+		@param[in]	joint_index	ジョイントID
+		@return　ジョイントの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxJoint& GetJoint(uint16_t joint_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	今のブロードフェイズペアを得る
+		@param[in]	contact_index	コンタクトID
+		@return　今のブロードフェイズペアの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxBroadphasePair& GetNowPair(uint16_t contact_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	1つ前のブロードフェイズペアを得る
+		@param[in]	contact_index	コンタクトID
+		@return　1つ前のブロードフェイズペアの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxBroadphasePair& GetPrevPair(uint16_t contact_index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンタクトのマニホールドを得る
+		@param[in]	contact_index	コンタクトID
+		@return　コンタクトのマニホールドの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxContactManifold& GetContactManifold(uint16_t contact_index) const;
+
 	};
 
 

@@ -150,6 +150,121 @@ namespace basecross{
 		PsPtr->SetDrawActive(true);
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブなカプセル
+	//--------------------------------------------------------------------------------------
+	ActivePsCapsule::ActivePsCapsule(const shared_ptr<Stage>& StagePtr,
+		float Len,
+		float Diameter,
+		const Quat& Qt,
+		const Vec3& Position
+	):
+		GameObject(StagePtr),
+		m_Len(Len),
+		m_Diameter(Diameter),
+		m_Qt(Qt),
+		m_Position(Position)
+	{}
+	ActivePsCapsule::~ActivePsCapsule(){}
+
+	//初期化
+	void ActivePsCapsule::OnCreate() {
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		bsm::Vec3 PointA(0, 0, 0);
+		bsm::Vec3 PointB(0, 0, 0);
+		PointA -= bsm::Vec3(0,m_Len * 0.5f, 0);
+		PointB += bsm::Vec3(0, m_Len * 0.5f, 0);
+		MeshUtill::CreateCapsule(m_Diameter,
+			PointA, PointB, 18, vertices, indices,true);
+		m_CapsuleMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+
+		auto PtrTransform = GetComponent<Transform>();
+		//スケーリングは1.0f
+		PtrTransform->SetScale(Vec3(1.0f));
+		PtrTransform->SetQuaternion(m_Qt);
+		PtrTransform->SetPosition(m_Position);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(m_CapsuleMesh);
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetMeshResource(m_CapsuleMesh);
+		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetTextureResource(L"SKY_TX");
+
+		//物理計算カプセル
+		PsCapsuleParam param;
+		//半径にする
+		param.m_HalfLen = m_Len * 0.5f;
+		param.m_Radius = m_Diameter * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat = m_Qt;
+		param.m_Pos = m_Position;
+		auto PsPtr = AddComponent<PsSingleCapsuleBody>(param);
+		PsPtr->SetDrawActive(true);
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブなシリンダー
+	//--------------------------------------------------------------------------------------
+	ActivePsCylinder::ActivePsCylinder(const shared_ptr<Stage>& StagePtr,
+		float Len,
+		float Diameter,
+		const Quat& Qt,
+		const Vec3& Position
+	):
+		GameObject(StagePtr),
+		m_Len(Len),
+		m_Diameter(Diameter),
+		m_Qt(Qt),
+		m_Position(Position)
+	{}
+
+	ActivePsCylinder::~ActivePsCylinder() {}
+
+	//初期化
+	void ActivePsCylinder::OnCreate() {
+
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCylinder(m_Len, m_Diameter, 18, vertices, indices, true);
+		m_CylinderMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+
+
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(Vec3(1.0f));
+		PtrTransform->SetQuaternion(m_Qt);
+		PtrTransform->SetPosition(m_Position);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(m_CylinderMesh);
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetMeshResource(m_CylinderMesh);
+		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetTextureResource(L"SKY_TX");
+
+		//物理計算シリンダー
+		PsCylinderParam param;
+		//半径にする
+		param.m_HalfLen = m_Len * 0.5f;
+		param.m_Radius = m_Diameter * 0.5f;
+		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat = m_Qt;
+		param.m_Pos = m_Position;
+		auto PsPtr = AddComponent<PsSingleCylinderBody>(param);
+		PsPtr->SetDrawActive(true);
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算する発射する球体
@@ -194,7 +309,7 @@ namespace basecross{
 		PsSphereParam param;
 		CreateDefParam(param);
 		param.m_Pos = m_Emitter;
-		param.m_Velocity = m_Velocity;
+		param.m_LinearVelocity = m_Velocity;
 		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
@@ -205,7 +320,7 @@ namespace basecross{
 		PsSphereParam param;
 		CreateDefParam(param);
 		param.m_Pos = Emitter;
-		param.m_Velocity = Velocity;
+		param.m_LinearVelocity = Velocity;
 		PsPtr->Reset(param, PsPtr->GetIndex());
 	}
 
