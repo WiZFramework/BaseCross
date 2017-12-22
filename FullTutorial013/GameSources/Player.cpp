@@ -66,7 +66,8 @@ namespace basecross{
 		wstring TestEffectStr = DataDir + L"Effects\\test.efk";
 		auto ShEfkInterface = GetTypeStage<GameStage>()->GetEfkInterface();
 		m_EfkEffect = ObjectFactory::Create<EfkEffect>(ShEfkInterface, TestEffectStr);
-
+		//サウンドコンポーネントの初期化
+		AddComponent<SoundEffect>(L"cursor");
 
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
@@ -105,6 +106,9 @@ namespace basecross{
 			//エフェクトのプレイ
 			auto ShEfkInterface = GetTypeStage<GameStage>()->GetEfkInterface();
 			m_EfkPlay = ObjectFactory::Create<EfkPlay>(m_EfkEffect, Ptr->GetPosition());
+			//サウンドのプレイ
+			auto SoundPtr = GetComponent<SoundEffect>();
+			SoundPtr->Start(0, 0.5f);
 			//通常ステートならジャンプステートに移行
 			GetStateMachine()->ChangeState(PlayerJumpState::Instance());
 		}

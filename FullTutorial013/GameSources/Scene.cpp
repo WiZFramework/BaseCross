@@ -28,6 +28,11 @@ namespace basecross{
 		strTexture = DataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
 
+		//ƒTƒEƒ“ƒh
+		wstring cursorWav = DataDir + L"cursor.wav";
+		App::GetApp()->RegisterWav(L"cursor", cursorWav);
+
+
 	}
 
 	void Scene::OnCreate() {

@@ -191,6 +191,8 @@ void Player::OnCreate() {
     wstring TestEffectStr = DataDir + L"Effects\\test.efk";
     auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
     m_EfkEffect = ObjectFactory::Create&lt;EfkEffect>(ShEfkInterface, TestEffectStr);
+    //サウンドコンポーネントの初期化
+    AddComponent&lt;SoundEffect>(L"cursor");
 
     //ステートマシンの構築
     m_StateMachine.reset(new StateMachine&lt;Player>(GetThis&lt;Player>()));
@@ -200,6 +202,7 @@ void Player::OnCreate() {
 </pre>
 </div>
 　このようにステートマシンの前に実装するとよいでしょう。<br/>
+　ここでサウンドコンポーネントの初期化とありますが、前述したように<b>Effekseer</b>のサウンド機能は利用できないので、BaseCrossに含まれるサウンドコンポーネントを実装しています。またこのWAVはシーン構築時にリソース化されたものです。<br />
 　最後に、実際にエフェクトの発射です。Aボタンのハンドラである<b>Player::OnPushA()</b>に記述します。
 <div class="box1">
 <pre>
@@ -209,6 +212,9 @@ void  Player::OnPushA() {
         <span class="red">//エフェクトのプレイ
         auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
         m_EfkPlay = ObjectFactory::Create&lt;EfkPlay>(m_EfkEffect, Ptr->GetPosition());</span>
+        //サウンドのプレイ
+        auto SoundPtr = GetComponent&lt;SoundEffect>();
+        SoundPtr->Start(0, 0.5f);
         //通常ステートならジャンプステートに移行
         GetStateMachine()->ChangeState(PlayerJumpState::Instance());
     }
