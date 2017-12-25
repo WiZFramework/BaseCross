@@ -105,6 +105,7 @@ namespace basecross {
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = 0.25f * 0.5f;
 		param.m_Mass = 1.0f;
+		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = m_Pos;

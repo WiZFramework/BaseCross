@@ -1100,6 +1100,8 @@ namespace basecross {
 
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }
+	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() const{ return pImpl->m_GameObjectVec; }
+
 
 	//追加や削除待ちになってるオブジェクトを追加・削除する
 	void Stage::SetWaitToObjectVec(){
@@ -1215,6 +1217,10 @@ namespace basecross {
 	vector< shared_ptr<Stage> >& Stage::GetChileStageVec() {
 		return pImpl->m_ChildStageVec;
 	}
+	vector< shared_ptr<Stage> >& Stage::GetChileStageVec() const {
+		return pImpl->m_ChildStageVec;
+	}
+
 	void Stage::AddChileStageBase(const shared_ptr<Stage>& ChildStage) {
 		pImpl->m_ChildStageVec.push_back(ChildStage);
 		ChildStage->SetParentStage(GetThis<Stage>());

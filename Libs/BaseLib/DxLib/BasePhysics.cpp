@@ -10,7 +10,6 @@ namespace basecross {
 
 	using namespace sce::PhysicsEffects;
 
-
 	namespace ps {
 
 #define NUM_RIGIDBODIES 500
@@ -19,10 +18,7 @@ namespace basecross {
 
 		const float timeStep = 0.016f;
 		const float separateBias = 0.1f;
-		int iteration = 5;
-
-		//重力
-		PfxVector3 PsGravity(0.0f, -9.8f, 0.0f);
+		int iteration = 8;
 
 		//J ワールドサイズ
 		//E World size
@@ -36,10 +32,11 @@ namespace basecross {
 		PfxCollidable collidables[NUM_RIGIDBODIES];
 		PfxSolverBody solverBodies[NUM_RIGIDBODIES];
 		int numRigidBodies = 0;
+		int numProxiesInWorld = 0;
 
 		//J プロキシ
 		//E Proxies
-		PfxBroadphaseProxy proxies[NUM_RIGIDBODIES];
+		PfxBroadphaseProxy proxies[6][NUM_RIGIDBODIES]; // shared by simulation and raycast
 
 		//J ジョイント
 		//E Joint
@@ -61,6 +58,28 @@ namespace basecross {
 		PfxUInt32 contactIdPool[NUM_CONTACTS];
 		int numContactIdPool;
 
+		//J シミュレーションアイランド
+		//E Island generation
+		PfxIsland *island = NULL;
+		PfxUInt8 SCE_PFX_ALIGNED(16) islandBuff[32 * NUM_RIGIDBODIES]; // Island buffer should be 32 * the number of rigid bodies.
+
+		//J スリープ制御
+		//E Sleep control
+		/*
+		A sleeping object wakes up, when
+		* a new pair related to this rigid body is created
+		* a pair releated to this rigid body is removed
+		* a rigid body's velocity or position are updated
+		*/
+
+		//J スリープに入るカウント
+		//E Count to enter sleeping
+		const PfxUInt32 sleepCount = 180;
+
+		//J 速度が閾値以下ならばスリープカウントが増加
+		//E If velocity is under the following value, sleep count is increased.
+		const PfxFloat sleepVelocity = 0.3f;
+
 		//J 一時バッファ
 		//E Temporary buffers
 #define POOL_BYTES (5*1024*1024)
@@ -69,6 +88,11 @@ namespace basecross {
 		//J 一時バッファ用スタックアロケータ
 		//E Stack allocator for temporary buffers
 		PfxHeapManager pool(poolBuff, POOL_BYTES);
+
+		///////////////////////////////////////////////////////////////////////////////
+		// Simulation Function
+
+		int frame = 0;
 
 		void broadphase()
 		{
@@ -95,18 +119,38 @@ namespace basecross {
 			}
 
 			//J ブロードフェーズプロキシの更新
+
+			numProxiesInWorld = 0;
+
 			//E Create broadpahse proxies
 			{
-				for (int i = 0; i<numRigidBodies; i++) {
-					pfxUpdateBroadphaseProxy(proxies[i], states[i], collidables[i], worldCenter, worldExtent, axis);
-				}
+				//J レイキャストと共用するため、全ての軸に対するプロキシ配列を作成する
+				//E To share with ray casting, create proxy arrays for all axis
 
-				int workBytes = sizeof(PfxBroadphaseProxy) * numRigidBodies;
-				void *workBuff = pool.allocate(workBytes);
+				PfxUpdateBroadphaseProxiesParam param;
+				param.workBytes = pfxGetWorkBytesOfUpdateBroadphaseProxies(numRigidBodies);
+				param.workBuff = pool.allocate(param.workBytes, 128);
+				param.numRigidBodies = numRigidBodies;
+				param.offsetRigidStates = states;
+				param.offsetCollidables = collidables;
+				param.proxiesX = proxies[0];
+				param.proxiesY = proxies[1];
+				param.proxiesZ = proxies[2];
+				param.proxiesXb = proxies[3];
+				param.proxiesYb = proxies[4];
+				param.proxiesZb = proxies[5];
+				param.worldCenter = worldCenter;
+				param.worldExtent = worldExtent;
+				param.outOfWorldBehavior = SCE_PFX_OUT_OF_WORLD_BEHAVIOR_FIX_MOTION | SCE_PFX_OUT_OF_WORLD_BEHAVIOR_REMOVE_PROXY;
 
-				pfxSort(proxies, (PfxSortData32*)workBuff, numRigidBodies);
+				PfxUpdateBroadphaseProxiesResult result;
 
-				pool.deallocate(workBuff);
+				int ret = pfxUpdateBroadphaseProxies(param, result);
+				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxUpdateBroadphaseProxies failed %d\n", ret);
+
+				pool.deallocate(param.workBuff);
+
+				numProxiesInWorld = numRigidBodies - result.numOutOfWorldProxies;
 			}
 
 			//J 交差ペア探索
@@ -117,8 +161,8 @@ namespace basecross {
 				findPairsParam.pairBuff = pool.allocate(findPairsParam.pairBytes);
 				findPairsParam.workBytes = pfxGetWorkBytesOfFindPairs(NUM_CONTACTS);
 				findPairsParam.workBuff = pool.allocate(findPairsParam.workBytes);
-				findPairsParam.proxies = proxies;
-				findPairsParam.numProxies = numRigidBodies;
+				findPairsParam.proxies = proxies[axis];
+				findPairsParam.numProxies = numProxiesInWorld;
 				findPairsParam.maxPairs = NUM_CONTACTS;
 				findPairsParam.axis = axis;
 
@@ -159,6 +203,19 @@ namespace basecross {
 				//E Put removed contacts into the contact pool
 				for (PfxUInt32 i = 0; i<numOutRemovePairs; i++) {
 					contactIdPool[numContactIdPool++] = pfxGetContactId(outRemovePairs[i]);
+
+					//J 寝てる剛体を起こす
+					//E Wake up sleeping rigid bodies
+					PfxRigidState &stateA = states[pfxGetObjectIdA(outRemovePairs[i])];
+					PfxRigidState &stateB = states[pfxGetObjectIdB(outRemovePairs[i])];
+					if (stateA.isAsleep()) {
+						stateA.wakeup();
+					//	SCE_PFX_PRINTF("wakeup %u\n", stateA.getRigidBodyId());
+					}
+					if (stateB.isAsleep()) {
+						stateB.wakeup();
+					//	SCE_PFX_PRINTF("wakeup %u\n", stateB.getRigidBodyId());
+					}
 				}
 
 				//J 新規ペアのコンタクトのリンクと初期化
@@ -178,6 +235,19 @@ namespace basecross {
 					pfxSetContactId(outNewPairs[i], cId);
 					PfxContactManifold &contact = contacts[cId];
 					contact.reset(pfxGetObjectIdA(outNewPairs[i]), pfxGetObjectIdB(outNewPairs[i]));
+
+					//J 寝てる剛体を起こす
+					//E Wake up sleeping rigid bodies
+					PfxRigidState &stateA = states[pfxGetObjectIdA(outNewPairs[i])];
+					PfxRigidState &stateB = states[pfxGetObjectIdB(outNewPairs[i])];
+					if (stateA.isAsleep()) {
+						stateA.wakeup();
+						SCE_PFX_PRINTF("wakeup %u\n", stateA.getRigidBodyId());
+					}
+					if (stateB.isAsleep()) {
+						stateB.wakeup();
+						SCE_PFX_PRINTF("wakeup %u\n", stateB.getRigidBodyId());
+					}
 				}
 
 				//J 新規ペアと維持ペアを合成
@@ -237,14 +307,38 @@ namespace basecross {
 				int ret = pfxDetectCollision(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxDetectCollision failed %d\n", ret);
 			}
+
+			//J アイランド生成
+			//E Create simulation islands
+			{
+				PfxGenerateIslandParam param;
+				param.islandBuff = islandBuff;
+				param.islandBytes = 32 * NUM_RIGIDBODIES;
+				param.pairs = currentPairs;
+				param.numPairs = numCurrentPairs;
+				param.numObjects = numRigidBodies;
+
+				PfxGenerateIslandResult result;
+
+				int ret = pfxGenerateIsland(param, result);
+				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxGenerateIsland failed %d\n", ret);
+				island = result.island;
+
+				//J ジョイント分のペアを追加
+				//E Add joint pairs to islands
+				ret = pfxAppendPairs(island, jointPairs, numJoints);
+				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxAppendPairs failed %d\n", ret);
+			}
 		}
 
 		void constraintSolver()
 		{
+			PfxPerfCounter pc;
 
 			unsigned int numCurrentPairs = numPairs[pairSwap];
 			PfxBroadphasePair *currentPairs = pairsBuff[pairSwap];
 
+			pc.countBegin("setup solver bodies");
 			{
 				PfxSetupSolverBodiesParam param;
 				param.states = states;
@@ -255,7 +349,9 @@ namespace basecross {
 				int ret = pfxSetupSolverBodies(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupSolverBodies failed %d\n", ret);
 			}
+			pc.countEnd();
 
+			pc.countBegin("setup contact constraints");
 			{
 				PfxSetupContactConstraintsParam param;
 				param.contactPairs = currentPairs;
@@ -271,7 +367,9 @@ namespace basecross {
 				int ret = pfxSetupContactConstraints(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupContactConstraints failed %d\n", ret);
 			}
+			pc.countEnd();
 
+			pc.countBegin("setup joint constraints");
 			{
 				PfxSetupJointConstraintsParam param;
 				param.jointPairs = jointPairs;
@@ -290,7 +388,9 @@ namespace basecross {
 				int ret = pfxSetupJointConstraints(param);
 				if (ret != SCE_PFX_OK) SCE_PFX_PRINTF("pfxSetupJointConstraints failed %d\n", ret);
 			}
+			pc.countEnd();
 
+			pc.countBegin("solve constraints");
 			{
 				PfxSolveConstraintsParam param;
 				param.workBytes = pfxGetWorkBytesOfSolveConstraints(numRigidBodies, numCurrentPairs, numJoints);
@@ -311,7 +411,74 @@ namespace basecross {
 
 				pool.deallocate(param.workBuff);
 			}
+			pc.countEnd();
 
+			//pc.printCount();
+		}
+
+		void sleepOrWakeup()
+		{
+			PfxFloat sleepVelSqr = sleepVelocity * sleepVelocity;
+
+			for (PfxUInt32 i = 0; i<(PfxUInt32)numRigidBodies; i++) {
+				PfxRigidState &state = states[i];
+				if (SCE_PFX_MOTION_MASK_CAN_SLEEP(state.getMotionType())) {
+					PfxFloat linVelSqr = lengthSqr(state.getLinearVelocity());
+					PfxFloat angVelSqr = lengthSqr(state.getAngularVelocity());
+
+					if (state.isAwake()) {
+						if (linVelSqr < sleepVelSqr && angVelSqr < sleepVelSqr) {
+							state.incrementSleepCount();
+						}
+						else {
+							state.resetSleepCount();
+						}
+					}
+				}
+			}
+
+			if (island) {
+				for (PfxUInt32 i = 0; i<pfxGetNumIslands(island); i++) {
+					int numActive = 0;
+					int numSleep = 0;
+					int numCanSleep = 0;
+
+					{
+						PfxIslandUnit *islandUnit = pfxGetFirstUnitInIsland(island, (PfxUInt32)i);
+						for (; islandUnit != NULL; islandUnit = pfxGetNextUnitInIsland(islandUnit)) {
+							if (!(SCE_PFX_MOTION_MASK_CAN_SLEEP(states[pfxGetUnitId(islandUnit)].getMotionType()))) continue;
+							PfxRigidState &state = states[pfxGetUnitId(islandUnit)];
+							if (state.isAsleep()) {
+								numSleep++;
+							}
+							else {
+								numActive++;
+								if (state.getSleepCount() > sleepCount) {
+									numCanSleep++;
+								}
+							}
+						}
+					}
+
+					// Deactivate Island
+					if (numCanSleep > 0 && numCanSleep == numActive + numSleep) {
+						PfxIslandUnit *islandUnit = pfxGetFirstUnitInIsland(island, (PfxUInt32)i);
+						for (; islandUnit != NULL; islandUnit = pfxGetNextUnitInIsland(islandUnit)) {
+							if (!(SCE_PFX_MOTION_MASK_CAN_SLEEP(states[pfxGetUnitId(islandUnit)].getMotionType()))) continue;
+							states[pfxGetUnitId(islandUnit)].sleep();
+						}
+					}
+
+					// Activate Island
+					else if (numSleep > 0 && numActive > 0) {
+						PfxIslandUnit *islandUnit = pfxGetFirstUnitInIsland(island, (PfxUInt32)i);
+						for (; islandUnit != NULL; islandUnit = pfxGetNextUnitInIsland(islandUnit)) {
+							if (!(SCE_PFX_MOTION_MASK_CAN_SLEEP(states[pfxGetUnitId(islandUnit)].getMotionType()))) continue;
+							states[pfxGetUnitId(islandUnit)].wakeup();
+						}
+					}
+				}
+			}
 		}
 
 		void integrate()
@@ -328,14 +495,36 @@ namespace basecross {
 
 	}
 
-	using namespace basecross::ps;
-
-
+//	using namespace basecross::ps;
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
 	//--------------------------------------------------------------------------------------
 	PhysicsObject::PhysicsObject() {}
 	PhysicsObject::~PhysicsObject() {}
+
+	void PhysicsObject::SetParamStatus(const PsParamBase& param) {
+		ps::states[m_Index].reset();
+		ps::states[m_Index].setPosition((PfxVector3)param.m_Pos);
+		ps::states[m_Index].setOrientation(
+			(PfxQuat)param.m_Quat
+		);
+		ps::states[m_Index].setLinearVelocity(
+			(PfxVector3)param.m_LinearVelocity
+		);
+		ps::states[m_Index].setAngularVelocity(
+			(PfxVector3)param.m_AngularVelocity
+		);
+		if (param.m_UseSleep) {
+			ps::states[m_Index].setUseSleep(1);
+		}
+		else {
+			ps::states[m_Index].setUseSleep(0);
+		}
+		ps::states[m_Index].setMotionType((ePfxMotionType)param.m_MotionType);
+		ps::states[m_Index].setRigidBodyId(m_Index);
+
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	ボックスImplイディオム
@@ -365,28 +554,16 @@ namespace basecross {
 		PfxShape shape;
 		shape.reset();
 		shape.setBox(box);
-		collidables[m_Index].reset();
-		collidables[m_Index].addShape(shape);
-		collidables[m_Index].finish();
-		bodies[m_Index].reset();
-		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsBoxParam.m_Mass);
-		bodies[m_Index].setInertia(pfxCalcInertiaBox(
+		ps::collidables[m_Index].reset();
+		ps::collidables[m_Index].addShape(shape);
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsBoxParam.m_Mass);
+		ps::bodies[m_Index].setInertia(pfxCalcInertiaBox(
 			(PfxVector3)pImpl->m_PsBoxParam.m_HalfSize, 
 			(PfxFloat)pImpl->m_PsBoxParam.m_Mass)
 		);
-		states[m_Index].reset();
-		states[m_Index].setPosition((PfxVector3)pImpl->m_PsBoxParam.m_Pos);
-		states[m_Index].setOrientation(
-			(PfxQuat)pImpl->m_PsBoxParam.m_Quat
-		);
-		states[m_Index].setLinearVelocity(
-			(PfxVector3)pImpl->m_PsBoxParam.m_LinearVelocity
-		);
-		states[m_Index].setAngularVelocity(
-			(PfxVector3)pImpl->m_PsBoxParam.m_AngularVelocity
-		);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsBoxParam.m_MotionType);
-		states[m_Index].setRigidBodyId(m_Index);
+		SetParamStatus(pImpl->m_PsBoxParam);
 	}
 
 	const PsBoxParam& PhysicsBox::GetParam() const {
@@ -422,28 +599,16 @@ namespace basecross {
 		PfxShape shape;
 		shape.reset();
 		shape.setSphere(sphere);
-		collidables[m_Index].reset();
-		collidables[m_Index].addShape(shape);
-		collidables[m_Index].finish();
-		bodies[m_Index].reset();
-		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsSphereParam.m_Mass);
-		bodies[m_Index].setInertia(pfxCalcInertiaSphere(
+		ps::collidables[m_Index].reset();
+		ps::collidables[m_Index].addShape(shape);
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsSphereParam.m_Mass);
+		ps::bodies[m_Index].setInertia(pfxCalcInertiaSphere(
 			(PfxFloat)pImpl->m_PsSphereParam.m_Radius,
 			(PfxFloat)pImpl->m_PsSphereParam.m_Mass)
 		);
-		states[m_Index].reset();
-		states[m_Index].setPosition((PfxVector3)pImpl->m_PsSphereParam.m_Pos);
-		states[m_Index].setOrientation(
-			(PfxQuat)pImpl->m_PsSphereParam.m_Quat
-		);
-		states[m_Index].setLinearVelocity(
-			(PfxVector3)pImpl->m_PsSphereParam.m_LinearVelocity
-		);
-		states[m_Index].setAngularVelocity(
-			(PfxVector3)pImpl->m_PsSphereParam.m_AngularVelocity
-		);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsSphereParam.m_MotionType);
-		states[m_Index].setRigidBodyId(m_Index);
+		SetParamStatus(pImpl->m_PsSphereParam);
 	}
 
 	const PsSphereParam& PhysicsSphere::GetParam() const {
@@ -482,34 +647,19 @@ namespace basecross {
 		PfxShape shape;
 		shape.reset();
 		shape.setCapsule(capsule);
-		collidables[m_Index].reset();
-		collidables[m_Index].addShape(shape);
-		collidables[m_Index].finish();
-		bodies[m_Index].reset();
-		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCapsuleParam.m_Mass);
-		bodies[m_Index].setInertia(
+		ps::collidables[m_Index].reset();
+		ps::collidables[m_Index].addShape(shape);
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCapsuleParam.m_Mass);
+		ps::bodies[m_Index].setInertia(
 			pfxCalcInertiaCylinderX(
 				(PfxFloat)pImpl->m_PsCapsuleParam.m_HalfLen + (PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
 				(PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
 				(PfxFloat)pImpl->m_PsCapsuleParam.m_Mass
 			)
 		);
-		states[m_Index].reset();
-		states[m_Index].setPosition(
-			(PfxVector3)pImpl->m_PsCapsuleParam.m_Pos
-		);
-		states[m_Index].setOrientation(
-			(PfxQuat)pImpl->m_PsCapsuleParam.m_Quat
-		);
-		states[m_Index].setLinearVelocity(
-			(PfxVector3)pImpl->m_PsCapsuleParam.m_LinearVelocity
-		);
-
-		states[m_Index].setAngularVelocity(
-			(PfxVector3)pImpl->m_PsCapsuleParam.m_AngularVelocity
-		);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsCapsuleParam.m_MotionType);
-		states[m_Index].setRigidBodyId(m_Index);
+		SetParamStatus(pImpl->m_PsCapsuleParam);
 	}
 
 	const PsCapsuleParam& PhysicsCapsule::GetParam() const {
@@ -547,38 +697,20 @@ namespace basecross {
 		PfxShape shape;
 		shape.reset();
 		shape.setCylinder(cylinder);
-		collidables[m_Index].reset();
-		collidables[m_Index].addShape(shape);
-		collidables[m_Index].finish();
-		bodies[m_Index].reset();
-		bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCylinderParam.m_Mass);
+		ps::collidables[m_Index].reset();
+		ps::collidables[m_Index].addShape(shape);
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCylinderParam.m_Mass);
 
-		bodies[m_Index].setInertia(
+		ps::bodies[m_Index].setInertia(
 			pfxCalcInertiaCylinderX(
 			(PfxFloat)pImpl->m_PsCylinderParam.m_HalfLen,
 				(PfxFloat)pImpl->m_PsCylinderParam.m_Radius,
 				(PfxFloat)pImpl->m_PsCylinderParam.m_Mass
 			)
 		);
-
-
-		states[m_Index].reset();
-		states[m_Index].setPosition(
-			(PfxVector3)pImpl->m_PsCylinderParam.m_Pos
-		);
-		states[m_Index].setOrientation(
-			(PfxQuat)pImpl->m_PsCylinderParam.m_Quat
-		);
-
-		states[m_Index].setLinearVelocity(
-			(PfxVector3)pImpl->m_PsCylinderParam.m_LinearVelocity
-		);
-
-		states[m_Index].setAngularVelocity(
-			(PfxVector3)pImpl->m_PsCylinderParam.m_AngularVelocity
-		);
-		states[m_Index].setMotionType((ePfxMotionType)pImpl->m_PsCylinderParam.m_MotionType);
-		states[m_Index].setRigidBodyId(m_Index);
+		SetParamStatus(pImpl->m_PsCylinderParam);
 	}
 
 	const PsCylinderParam& PhysicsCylinder::GetParam() const {
@@ -595,11 +727,11 @@ namespace basecross {
 
 	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, uint16_t index) {
 		uint16_t set_index;
-		if (index < numRigidBodies) {
+		if (index < ps::numRigidBodies) {
 			set_index = index;
 		}
 		else {
-			index = numRigidBodies++;
+			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsBox>(param, index);
 	}
@@ -607,188 +739,262 @@ namespace basecross {
 
 	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param, uint16_t index) {
 		uint16_t set_index;
-		if (index < numRigidBodies) {
+		if (index < ps::numRigidBodies) {
 			set_index = index;
 		}
 		else {
-			index = numRigidBodies++;
+			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsSphere>(param, index);
 	}
 
 	shared_ptr<PhysicsCapsule> BasePhysics::AddSingleCapsule(const PsCapsuleParam& param, uint16_t index) {
 		uint16_t set_index;
-		if (index < numRigidBodies) {
+		if (index < ps::numRigidBodies) {
 			set_index = index;
 		}
 		else {
-			index = numRigidBodies++;
+			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsCapsule>(param, index);
 	}
 
 	shared_ptr<PhysicsCylinder> BasePhysics::AddSingleCylinder(const PsCylinderParam& param, uint16_t index) {
 		uint16_t set_index;
-		if (index < numRigidBodies) {
+		if (index < ps::numRigidBodies) {
 			set_index = index;
 		}
 		else {
-			index = numRigidBodies++;
+			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsCylinder>(param, index);
 	}
 
-
-
-
-
 	uint16_t BasePhysics::GetNumBodies() const {
-		return numRigidBodies;
+		return ps::numRigidBodies;
 	}
 
 	void BasePhysics::GetBodyStatus(uint16_t body_index, PsBodyStatus& st)const {
-		st.m_Position = states[body_index].getPosition();
-		st.m_Orientation = states[body_index].getOrientation();
-		st.m_LinearVelocity = states[body_index].getLinearVelocity();
-		st.m_AngularVelocity = states[body_index].getAngularVelocity();
+		st.m_Position = ps::states[body_index].getPosition();
+		st.m_Orientation = ps::states[body_index].getOrientation();
+		st.m_LinearVelocity = ps::states[body_index].getLinearVelocity();
+		st.m_AngularVelocity = ps::states[body_index].getAngularVelocity();
 	}
 
 	void BasePhysics::SetBodyStatus(uint16_t body_index, const PsBodyUpdateStatus& st) {
-		states[body_index].setAngularVelocity((PfxVector3)st.m_AngularVelocity);
-		states[body_index].setLinearVelocity((PfxVector3)st.m_LinearVelocity);
+		ps::states[body_index].setAngularVelocity((PfxVector3)st.m_AngularVelocity);
+		ps::states[body_index].setLinearVelocity((PfxVector3)st.m_LinearVelocity);
 		//フォースを加える
 		pfxApplyExternalForce(
-			states[body_index], bodies[body_index],
-			bodies[body_index].getMass() * (PfxVector3)st.m_Force,
-			bodies[body_index].getMass() * (PfxVector3)st.m_Torque,
-			timeStep
+			ps::states[body_index], ps::bodies[body_index],
+			ps::bodies[body_index].getMass() * (PfxVector3)st.m_Force,
+			ps::bodies[body_index].getMass() * (PfxVector3)st.m_Torque,
+			ps::timeStep
 		);
 	}
 
+	void BasePhysics::WakeUpBody(uint16_t body_index) {
+		ps::states[body_index].wakeup();
+	}
+
+	void BasePhysics::SetBodyPosition(uint16_t body_index, const bsm::Vec3& pos) {
+		if (ps::states[body_index].getMotionType() != ePfxMotionType::kPfxMotionTypeTrigger) {
+			throw BaseException(
+				L"モーションタイプがMotionTypeTrigger以外では設定できません",
+				L"if (states[body_index].getMotionType != ePfxMotionType::kPfxMotionTypeTrigger)",
+				L"BasePhysics::SetBodyPosition()"
+			);
+		}
+		ps::states[body_index].setPosition((PfxVector3)pos);
+	}
+
+
 	void BasePhysics::SetBodyLinearVelocity(uint16_t body_index, const bsm::Vec3& v) {
-		states[body_index].setLinearVelocity((PfxVector3)v);
+		ps::states[body_index].setLinearVelocity((PfxVector3)v);
 	}
 	void BasePhysics::SetBodyAngularVelocity(uint16_t body_index, const bsm::Vec3& v) {
-		states[body_index].setAngularVelocity((PfxVector3)v);
+		ps::states[body_index].setAngularVelocity((PfxVector3)v);
 	}
 
 	void BasePhysics::ApplyBodyForce(uint16_t body_index, const bsm::Vec3& v) {
 		pfxApplyExternalForce(
-			states[body_index], bodies[body_index],
-			bodies[body_index].getMass() * (PfxVector3)v,
+			ps::states[body_index], ps::bodies[body_index],
+			ps::bodies[body_index].getMass() * (PfxVector3)v,
 			PfxVector3(0.0f),
-			timeStep
+			ps::timeStep
 		);
 
 	}
 	void BasePhysics::ApplyBodyTorque(uint16_t body_index, const bsm::Vec3& v) {
 		pfxApplyExternalForce(
-			states[body_index], bodies[body_index],
+			ps::states[body_index], ps::bodies[body_index],
 			PfxVector3(0.0f),
-			bodies[body_index].getMass() * (PfxVector3)v,
-			timeStep
+			ps::bodies[body_index].getMass() * (PfxVector3)v,
+			ps::timeStep
 		);
 	}
 
 	uint16_t BasePhysics::GetNumShapes(uint16_t body_index)const {
-		return (uint16_t)collidables[body_index].getNumShapes();
+		return (uint16_t)ps::collidables[body_index].getNumShapes();
 	}
 
 	void BasePhysics::GetShapeOffsetQuatPos(uint16_t body_index, uint16_t shape_index, bsm::Quat& qt, bsm::Vec3& pos) {
-		auto& shape = collidables[body_index].getShape(shape_index);
+		auto& shape = ps::collidables[body_index].getShape(shape_index);
 		pos = shape.getOffsetPosition();
 		qt = shape.getOffsetOrientation();
 	}
 
 	ePfxShapeType BasePhysics::GetShapeType(uint16_t body_index, uint16_t shape_index)const {
-		auto& shape = collidables[body_index].getShape(shape_index);
+		auto& shape = ps::collidables[body_index].getShape(shape_index);
 		return (ePfxShapeType)shape.getType();
 	}
 
 	uint16_t BasePhysics::GetNumJoints()const {
-		return (uint16_t)numJoints;
+		return (uint16_t)ps::numJoints;
 	}
 
 	uint16_t BasePhysics::GetNumContacts()const {
-		return (uint16_t)numContacts;
+		return (uint16_t)ps::numContacts;
 	}
 
-	const PfxShape& BasePhysics::GetShape(uint16_t body_index, uint16_t shape_index) const {
-		return collidables[body_index].getShape(shape_index);
+	bool BasePhysics::GetContactsVec(uint16_t body_index, vector<uint16_t>& contacts)const {
+		bool ret = false;
+		for (uint16_t i = 0; i < GetNumContacts(); i++) {
+			auto& TgtPair = getPfxContactManifold(i);
+			if (TgtPair.getRigidBodyIdA() == body_index) {
+				contacts.push_back(TgtPair.getRigidBodyIdB());
+				ret = true;
+			}
+			if (TgtPair.getRigidBodyIdB() == body_index) {
+				contacts.push_back(TgtPair.getRigidBodyIdA());
+				ret = true;
+			}
+		}
+		return ret;
 	}
 
-	const PfxRigidState& BasePhysics::GetRigidState(uint16_t body_index) const {
-		return states[body_index];
-	}
-	const PfxRigidBody& BasePhysics::GetRigidBody(uint16_t body_index) const {
-		return bodies[body_index];
-
-	}
-	const PfxCollidable& BasePhysics::GetCollidable(uint16_t body_index) const {
-		return collidables[body_index];
-
-	}
-	const PfxSolverBody& BasePhysics::GetSolverBody(uint16_t body_index) const {
-		return solverBodies[body_index];
-	}
-	const PfxBroadphaseProxy& BasePhysics::GetBroadphaseProxy(uint16_t body_index) const {
-		return proxies[body_index];
-	}
-	const PfxConstraintPair& BasePhysics::GetJointPair(uint16_t joint_index) const {
-		return jointPairs[joint_index];
-
-	}
-	const PfxJoint& BasePhysics::GetJoint(uint16_t joint_index) const {
-		return joints[joint_index];
-
-	}
-	const PfxBroadphasePair& BasePhysics::GetNowPair(uint16_t contact_index) const {
-		return pairsBuff[pairSwap][contact_index];
-	}
-	const PfxBroadphasePair& BasePhysics::GetPrevPair(uint16_t contact_index) const {
-		return pairsBuff[1 -pairSwap][contact_index];
-	}
-	const PfxContactManifold& BasePhysics::GetContactManifold(uint16_t contact_index) const {
-		return contacts[contact_index];
+	bool BasePhysics::GetContactsSet(uint16_t body_index, set<uint16_t>& contacts)const {
+		bool ret = false;
+		for (uint16_t i = 0; i < GetNumContacts(); i++) {
+			auto& TgtPair = getPfxContactManifold(i);
+			if (TgtPair.getRigidBodyIdA() == body_index) {
+				contacts.insert(TgtPair.getRigidBodyIdB());
+				ret = true;
+			}
+			if (TgtPair.getRigidBodyIdB() == body_index) {
+				contacts.insert(TgtPair.getRigidBodyIdA());
+				ret = true;
+			}
+		}
+		return ret;
 	}
 
 
+	const PfxShape& BasePhysics::getPfxShape(uint16_t body_index, uint16_t shape_index) const {
+		return ps::collidables[body_index].getShape(shape_index);
+	}
+	PfxShape& BasePhysics::getPfxShape(uint16_t body_index, uint16_t shape_index){
+		return ps::collidables[body_index].getShape(shape_index);
+	}
+
+	const PfxRigidState& BasePhysics::getPfxRigidState(uint16_t body_index) const {
+		return ps::states[body_index];
+	}
+	PfxRigidState& BasePhysics::getPfxRigidState(uint16_t body_index){
+		return ps::states[body_index];
+	}
+	const PfxRigidBody& BasePhysics::getPfxRigidBody(uint16_t body_index) const {
+		return ps::bodies[body_index];
+	}
+	PfxRigidBody& BasePhysics::getPfxRigidBody(uint16_t body_index){
+		return ps::bodies[body_index];
+	}
+
+	const PfxCollidable& BasePhysics::getPfxCollidable(uint16_t body_index) const {
+		return ps::collidables[body_index];
+	}
+	PfxCollidable& BasePhysics::getPfxCollidable(uint16_t body_index){
+		return ps::collidables[body_index];
+	}
+
+	const PfxSolverBody& BasePhysics::getPfxSolverBody(uint16_t body_index) const {
+		return ps::solverBodies[body_index];
+	}
+	PfxSolverBody& BasePhysics::getPfxSolverBody(uint16_t body_index){
+		return ps::solverBodies[body_index];
+	}
+
+	const PfxConstraintPair& BasePhysics::getPfxConstraintPair(uint16_t joint_index) const {
+		return ps::jointPairs[joint_index];
+	}
+	PfxConstraintPair& BasePhysics::getPfxConstraintPair(uint16_t joint_index){
+		return ps::jointPairs[joint_index];
+	}
+
+	const PfxJoint& BasePhysics::getPfxJoint(uint16_t joint_index) const {
+		return ps::joints[joint_index];
+	}
+	PfxJoint& BasePhysics::getPfxJoint(uint16_t joint_index){
+		return ps::joints[joint_index];
+	}
+
+	const PfxBroadphasePair& BasePhysics::getNowPfxBroadphasePair(uint16_t contact_index) const {
+		return ps::pairsBuff[ps::pairSwap][contact_index];
+	}
+	PfxBroadphasePair& BasePhysics::getNowPfxBroadphasePair(uint16_t contact_index){
+		return ps::pairsBuff[ps::pairSwap][contact_index];
+	}
+
+	const PfxBroadphasePair& BasePhysics::getPrevPfxBroadphasePair(uint16_t contact_index) const {
+		return ps::pairsBuff[1 - ps::pairSwap][contact_index];
+	}
+	PfxBroadphasePair& BasePhysics::getPrevPfxBroadphasePair(uint16_t contact_index) {
+		return ps::pairsBuff[1 - ps::pairSwap][contact_index];
+	}
+
+
+	const PfxContactManifold& BasePhysics::getPfxContactManifold(uint16_t contact_index) const {
+		return ps::contacts[contact_index];
+	}
+	PfxContactManifold& BasePhysics::getPfxContactManifold(uint16_t contact_index){
+		return ps::contacts[contact_index];
+	}
 
 	void BasePhysics::Reset() {
-		numRigidBodies = 0;
-		numJoints = 0;
-		numContacts = 0;
-		pairSwap = 0;
-		numPairs[0] = 0;
-		numPairs[1] = 0;
-		numContactIdPool = 0;
-		::ZeroMemory(states, sizeof(PfxRigidState) * NUM_RIGIDBODIES);
-		::ZeroMemory(bodies, sizeof(PfxRigidBody) * NUM_RIGIDBODIES);
-		::ZeroMemory(collidables, sizeof(PfxCollidable) * NUM_RIGIDBODIES);
-		::ZeroMemory(solverBodies, sizeof(PfxSolverBody) * NUM_RIGIDBODIES);
-		::ZeroMemory(proxies, sizeof(PfxBroadphaseProxy) * NUM_RIGIDBODIES);
-		::ZeroMemory(jointPairs, sizeof(PfxConstraintPair) * NUM_JOINTS);
-		::ZeroMemory(joints, sizeof(PfxJoint) * NUM_JOINTS);
-		::ZeroMemory(pairsBuff, sizeof(PfxBroadphasePair) * NUM_CONTACTS * 2);
-
-		::ZeroMemory(contacts, sizeof(PfxContactManifold) * NUM_CONTACTS);
-		::ZeroMemory(contactIdPool, sizeof(PfxUInt32) * NUM_CONTACTS);
-		::ZeroMemory(poolBuff, sizeof(poolBuff));
+		ps::numRigidBodies = 0;
+		ps::numJoints = 0;
+		ps::numContacts = 0;
+		ps::pairSwap = 0;
+		ps::numPairs[0] = 0;
+		ps::numPairs[1] = 0;
+		ps::numContactIdPool = 0;
+		::ZeroMemory(ps::states, sizeof(PfxRigidState) * NUM_RIGIDBODIES);
+		::ZeroMemory(ps::bodies, sizeof(PfxRigidBody) * NUM_RIGIDBODIES);
+		::ZeroMemory(ps::collidables, sizeof(PfxCollidable) * NUM_RIGIDBODIES);
+		::ZeroMemory(ps::solverBodies, sizeof(PfxSolverBody) * NUM_RIGIDBODIES);
+		::ZeroMemory(ps::proxies, sizeof(PfxBroadphaseProxy) * 6 * NUM_RIGIDBODIES);
+		::ZeroMemory(ps::jointPairs, sizeof(PfxConstraintPair) * NUM_JOINTS);
+		::ZeroMemory(ps::joints, sizeof(PfxJoint) * NUM_JOINTS);
+		::ZeroMemory(ps::pairsBuff, sizeof(PfxBroadphasePair) * NUM_CONTACTS * 2);
+		::ZeroMemory(ps::contacts, sizeof(PfxContactManifold) * NUM_CONTACTS);
+		::ZeroMemory(ps::contactIdPool, sizeof(PfxUInt32) * NUM_CONTACTS);
+		::ZeroMemory(ps::poolBuff, sizeof(ps::poolBuff));
 	}
 
+
+
 	void BasePhysics::Update() {
-		for (int i = 1; i<numRigidBodies; i++) {
-			pfxApplyExternalForce(
-				states[i], bodies[i], 
-				bodies[i].getMass() * PsGravity,
-				PfxVector3(0.0f),
-				timeStep
-			);
+		for (int i = 1; i<ps::numRigidBodies; i++) {
+			pfxApplyExternalForce(ps::states[i], ps::bodies[i], ps::bodies[i].getMass()*PfxVector3(0.0f, -9.8f, 0.0f), PfxVector3(0.0f), ps::timeStep);
 		}
-		broadphase();
-		collision();
-		constraintSolver();
-		integrate();
+		ps::broadphase();
+		ps::collision();
+		ps::constraintSolver();
+		ps::sleepOrWakeup();
+		ps::integrate();
+		ps::frame++;
+//		if (keyframeId >= 0) updateKeyframe();
+//		if (triggerId >= 0) updateTrigger();
 	}
 
 }

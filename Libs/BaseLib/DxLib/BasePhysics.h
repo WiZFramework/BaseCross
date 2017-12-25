@@ -26,12 +26,14 @@ namespace basecross {
 		bsm::Vec3 m_Pos;
 		bsm::Vec3 m_LinearVelocity;
 		bsm::Vec3 m_AngularVelocity;
+		bool m_UseSleep;
 		float m_Mass;
 		PsParamBase() :
 			m_Quat(),
 			m_Pos(0),
 			m_LinearVelocity(0),
 			m_AngularVelocity(0),
+			m_UseSleep(true),
 			m_Mass(1.0f)
 		{}
 	};
@@ -134,6 +136,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual ~PhysicsObject();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化時のStatusの設定
+		@param[in]	param	インデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetParamStatus(const PsParamBase& param);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -395,6 +404,23 @@ namespace basecross {
 		void SetBodyStatus(uint16_t body_index,const PsBodyUpdateStatus& st);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	剛体を起こす（sleepが有効の場合）
+		@param[in]	body_index	ボディID
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void WakeUpBody(uint16_t body_index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体の位置を設定する（PsMotionTypeがMotionTypeTriggerのときのみ有効）
+		@param[in]	body_index	ボディID
+		@param[out]	pos	位置
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBodyPosition(uint16_t body_index, const bsm::Vec3& pos);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	剛体の速度を設定する
 		@param[in]	body_index	ボディID
 		@param[out]	v	速度
@@ -466,12 +492,30 @@ namespace basecross {
 		uint16_t GetNumJoints()const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	コンタクトの数を得る
+		@brief	コンタクト(衝突)の数を得る
 		@return	ジョイント数
 		*/
 		//--------------------------------------------------------------------------------------
 		uint16_t GetNumContacts()const;
-		//以下、直接アクセス
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定のボディがコンタクトしている相手の配列を得る
+		@param[in]	body_index	ボディID
+		@param[out]	contacts	相手のIDの配列
+		@return	衝突があればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetContactsVec(uint16_t body_index, vector<uint16_t>& contacts)const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	指定のボディがコンタクトしている相手のset集合を得る
+		@param[in]	body_index	ボディID
+		@param[out]	contacts	相手のIDの集合
+		@return	衝突があればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool GetContactsSet(uint16_t body_index, set<uint16_t>& contacts)const;
+		//以下、直接アクセス(使用する場合は慎重に)
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	形状を得る
@@ -480,7 +524,8 @@ namespace basecross {
 		@return　形状の参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxShape& GetShape(uint16_t body_index, uint16_t shape_index) const;
+		const sce::PhysicsEffects::PfxShape& getPfxShape(uint16_t body_index, uint16_t shape_index) const;
+		sce::PhysicsEffects::PfxShape& getPfxShape(uint16_t body_index, uint16_t shape_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のステートを得る
@@ -488,7 +533,8 @@ namespace basecross {
 		@return　剛体のステートの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxRigidState& GetRigidState(uint16_t body_index) const;
+		const sce::PhysicsEffects::PfxRigidState& getPfxRigidState(uint16_t body_index) const;
+		sce::PhysicsEffects::PfxRigidState& getPfxRigidState(uint16_t body_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体を得る
@@ -496,7 +542,8 @@ namespace basecross {
 		@return　剛体の参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxRigidBody& GetRigidBody(uint16_t body_index) const;
+		const sce::PhysicsEffects::PfxRigidBody& getPfxRigidBody(uint16_t body_index) const;
+		sce::PhysicsEffects::PfxRigidBody& getPfxRigidBody(uint16_t body_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突する剛体を得る
@@ -504,7 +551,8 @@ namespace basecross {
 		@return　衝突する剛体の参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxCollidable& GetCollidable(uint16_t body_index) const;
+		const sce::PhysicsEffects::PfxCollidable& getPfxCollidable(uint16_t body_index) const;
+		sce::PhysicsEffects::PfxCollidable& getPfxCollidable(uint16_t body_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体のソルバーを得る
@@ -512,15 +560,8 @@ namespace basecross {
 		@return　剛体のソルバーの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxSolverBody& GetSolverBody(uint16_t body_index) const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	剛体のブロードフェイズプロキシを得る
-		@param[in]	body_index	ボディID
-		@return　剛体のブロードフェイズプロキシの参照
-		*/
-		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxBroadphaseProxy& GetBroadphaseProxy(uint16_t body_index) const;
+		const sce::PhysicsEffects::PfxSolverBody& getPfxSolverBody(uint16_t body_index) const;
+		sce::PhysicsEffects::PfxSolverBody& getPfxSolverBody(uint16_t body_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ジョイントのペアを得る
@@ -528,7 +569,8 @@ namespace basecross {
 		@return　ジョイントのペアの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxConstraintPair& GetJointPair(uint16_t joint_index) const;
+		const sce::PhysicsEffects::PfxConstraintPair& getPfxConstraintPair(uint16_t joint_index) const;
+		sce::PhysicsEffects::PfxConstraintPair& getPfxConstraintPair(uint16_t joint_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ジョイントを得る
@@ -536,7 +578,8 @@ namespace basecross {
 		@return　ジョイントの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxJoint& GetJoint(uint16_t joint_index) const;
+		const sce::PhysicsEffects::PfxJoint& getPfxJoint(uint16_t joint_index) const;
+		sce::PhysicsEffects::PfxJoint& getPfxJoint(uint16_t joint_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	今のブロードフェイズペアを得る
@@ -544,7 +587,8 @@ namespace basecross {
 		@return　今のブロードフェイズペアの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxBroadphasePair& GetNowPair(uint16_t contact_index) const;
+		const sce::PhysicsEffects::PfxBroadphasePair& getNowPfxBroadphasePair(uint16_t contact_index) const;
+		sce::PhysicsEffects::PfxBroadphasePair& getNowPfxBroadphasePair(uint16_t contact_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	1つ前のブロードフェイズペアを得る
@@ -552,7 +596,8 @@ namespace basecross {
 		@return　1つ前のブロードフェイズペアの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxBroadphasePair& GetPrevPair(uint16_t contact_index) const;
+		const sce::PhysicsEffects::PfxBroadphasePair& getPrevPfxBroadphasePair(uint16_t contact_index) const;
+		sce::PhysicsEffects::PfxBroadphasePair& getPrevPfxBroadphasePair(uint16_t contact_index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンタクトのマニホールドを得る
@@ -560,7 +605,8 @@ namespace basecross {
 		@return　コンタクトのマニホールドの参照
 		*/
 		//--------------------------------------------------------------------------------------
-		const sce::PhysicsEffects::PfxContactManifold& GetContactManifold(uint16_t contact_index) const;
+		const sce::PhysicsEffects::PfxContactManifold& getPfxContactManifold(uint16_t contact_index) const;
+		sce::PhysicsEffects::PfxContactManifold& getPfxContactManifold(uint16_t contact_index);
 
 	};
 

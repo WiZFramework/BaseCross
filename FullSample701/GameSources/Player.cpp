@@ -7,11 +7,8 @@
 #include "Project.h"
 
 namespace basecross{
-
-
 	//--------------------------------------------------------------------------------------
-	//	class Player : public GameObject;
-	//	用途: プレイヤー
+	///	プレイヤー
 	//--------------------------------------------------------------------------------------
 	//構築
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
@@ -77,9 +74,9 @@ namespace basecross{
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		param.m_MotionType = PsMotionType::MotionTypeActive;
 		//プレイヤーなのでスリープしない
 		param.m_UseSleep = false;
-		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = FirstPos;
 		param.m_LinearVelocity = Vec3(0);
@@ -118,7 +115,7 @@ namespace basecross{
 	//更新
 	void Player::OnUpdate() {
 		//コントローラチェックして入力があればコマンド呼び出し
-		m_InputHandler.PushHandle(GetThis<Player>());
+		m_InputHandler.ButtonHandle(GetThis<Player>());
 
 		auto Vec = GetMoveVector();
 		auto PtrPs = GetComponent<PsSingleSphereBody>();
@@ -168,7 +165,7 @@ namespace basecross{
 	void Player::OnPushX() {
 		auto Ptr = GetComponent<Transform>();
 		Vec3 Pos = Ptr->GetPosition();
-		Pos.y += 0.25f;
+		Pos.y += 0.5f;
 		Quat Qt = Ptr->GetQuaternion();
 		Vec3 Rot = Qt.toRotVec();
 		float RotY = Rot.y;
@@ -176,18 +173,72 @@ namespace basecross{
 		velo.normalize();
 		velo *= 20.0f;
 
-		auto ShPtr = GetStage()->GetSharedGameObject<FirePsSphere>(L"FirePsSphere", false);
+		auto ShPtr = GetStage()->GetSharedGameObject<FireSphere>(L"FireSphere",false);
 		if (ShPtr) {
 			ShPtr->Reset(Pos, velo);
 		}
 		else {
-			GetStage()->AddGameObject<FirePsSphere>(Pos, velo);
+			GetStage()->AddGameObject<FireSphere>(Pos, velo);
+		}
+	}
+
+	//Yボタンハンドラ(押した瞬間)
+	void Player::OnPushY() {
+		//ホールドしたオブジェクトがなければ何もしない
+		auto HoldPtr = m_HoldObject.lock();
+		if (!HoldPtr) {
+			return;
+		}
+		auto ActionLinePtr = m_ActionLine.lock();
+		if (ActionLinePtr) {
+			auto Check = ActionLinePtr->GetEndObj();
+			auto CheckHold = dynamic_pointer_cast<GameObject>(HoldPtr);
+			if (Check != CheckHold) {
+				ActionLinePtr->SetEndObj(HoldPtr);
+			}
+			ActionLinePtr->SetDrawActive(true);
+		}
+		else {
+			//ラインの作成
+			auto LinePtr = GetStage()->AddGameObject<ActionLine>(GetThis<GameObject>(), HoldPtr);
+			LinePtr->SetDrawActive(true);
+			m_ActionLine = LinePtr;
+		}
+	}
+
+
+	//Yボタンハンドラ(押し続け)
+	void Player::OnPressY() {
+		auto Ptr = GetComponent<Transform>();
+		auto PlayerPos = Ptr->GetPosition();
+		auto HoldPtr = m_HoldObject.lock();
+		if (HoldPtr) {
+			auto PsPtr = HoldPtr->GetDynamicComponent<PsBodyComponent>(false);
+			if (PsPtr) {
+				auto PsPos = PsPtr->GetPosition();
+				float ToY = 2.0f;
+				if (PsPos.y > 5.0f) {
+					ToY = 0.0f;
+				}
+				PsPos.y = 0;
+				PlayerPos.y = 0;
+				Vec3 ToPlayerVec = PlayerPos - PsPos;
+				PsPtr->WakeUp();
+				PsPtr->SetLinearVelocity(Vec3(ToPlayerVec.x , ToY, ToPlayerVec.z ));
+			}
+		}
+	}
+
+	//Yボタンハンドラ(離した瞬間)
+	void Player::OnReleaseY() {
+		auto ActionLinePtr = m_ActionLine.lock();
+		if (ActionLinePtr) {
+			ActionLinePtr->SetDrawActive(false);
 		}
 	}
 
 	//文字列の表示
 	void Player::DrawStrings() {
-
 		//文字列表示
 		wstring Mess(L"Bボタンで再読み込み\nXボタンで発射\n");
 		//オブジェクト数

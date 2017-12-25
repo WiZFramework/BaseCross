@@ -74,7 +74,6 @@ namespace basecross {
 		pImpl->m_DrawActive = b;
 	}
 
-
 	//--------------------------------------------------------------------------------------
 	//	struct Transform::Impl;
 	//	用途: コンポーネントImplクラス

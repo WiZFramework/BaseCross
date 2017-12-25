@@ -13,7 +13,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	PsBodyComponent::PsBodyComponent(const shared_ptr<GameObject>& GameObjectPtr) :
 		Component(GameObjectPtr),
-		m_AutoFransform(true)
+		m_AutoTransform(true)
 	{
 		SetDrawActive(false);
 	}
@@ -51,6 +51,15 @@ namespace basecross {
 	void PsBodyComponent::SetStatus(const PsBodyUpdateStatus& st) {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyStatus(GetIndex(), st);
 	}
+
+	void PsBodyComponent::WakeUp() {
+		GetGameObject()->GetStage()->GetBasePhysics().WakeUpBody(GetIndex());
+	}
+
+	void PsBodyComponent::SetPosition(const bsm::Vec3& pos) {
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyPosition(GetIndex(), pos);
+	}
+
 	void PsBodyComponent::SetLinearVelocity(const bsm::Vec3& v) {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyLinearVelocity(GetIndex(), v);
 
@@ -67,8 +76,41 @@ namespace basecross {
 		GetGameObject()->GetStage()->GetBasePhysics().ApplyBodyTorque(GetIndex(), v);
 	}
 
+	bool PsBodyComponent::GetContactsVec(vector<uint16_t>& contacts)const {
+		return GetGameObject()->GetStage()->GetBasePhysics().GetContactsVec(GetIndex(), contacts);
+	}
+	bool PsBodyComponent::GetContactsSet(set<uint16_t>& contacts)const {
+		return GetGameObject()->GetStage()->GetBasePhysics().GetContactsSet(GetIndex(), contacts);
+
+	}
+
+
+	bool PsBodyComponent::GetContactGameObjects(vector<shared_ptr<GameObject>>& objects)const {
+		set<uint16_t> indeces;
+		if (GetContactsSet(indeces)) {
+			auto& ObjVec = GetGameObject()->GetStage()->GetGameObjectVec();
+			for (auto& v : ObjVec) {
+				auto Comp = v->GetDynamicComponent<PsBodyComponent>(false);
+				if (Comp) {
+					auto index = Comp->GetIndex();
+					if (indeces.find(index) != indeces.end()) {
+						objects.push_back(v);
+					}
+				}
+			}
+		}
+		if (objects.size() > 0) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+
+
 	void PsBodyComponent::OnUpdate() {
-		if (IsAutoFransform()) {
+		if (IsAutoTransform()) {
 			PsBodyStatus Status;
 			GetGameObject()->GetStage()->GetBasePhysics().GetBodyStatus(GetIndex(), Status);
 			auto Ptr = GetGameObject()->GetComponent<Transform>();
@@ -164,6 +206,14 @@ namespace basecross {
 		m_PhysicsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSingleSphere(param, index);
 	}
 
+	bool PsSingleSphereBody::CollisionTestBase(const SPHERE& src) {
+		SPHERE dest;
+		auto& param = m_PhysicsSphere->GetParam();
+		dest.m_Radius = param.m_Radius;
+		dest.m_Center = GetPosition();
+		return HitTest::SPHERE_SPHERE(src, dest);
+	}
+
 	void PsSingleSphereBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
@@ -182,9 +232,8 @@ namespace basecross {
 		bsm::Vec3 LocalPos;
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		auto& shape = BasePs.GetShape(index, 0);
 		Local.affineTransformation(
-			bsm::Vec3(shape.getSphere().m_radius),			//スケーリング
+			bsm::Vec3(m_PhysicsSphere->GetParam().m_Radius),			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -213,6 +262,13 @@ namespace basecross {
 	}
 
 
+	bool PsSingleBoxBody::CollisionTestBase(const SPHERE& src) {
+		OBB dest(m_PhysicsBox->GetParam().m_HalfSize * 2,
+			GetOrientation(), GetPosition());
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_OBB(src, dest, ret);
+	}
+
 	void PsSingleBoxBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
@@ -231,9 +287,8 @@ namespace basecross {
 		bsm::Vec3 LocalPos;
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		auto& shape = BasePs.GetShape(index, 0);
 		Local.affineTransformation(
-			(bsm::Vec3)shape.getBox().m_half,			//スケーリング
+			m_PhysicsBox->GetParam().m_HalfSize,			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -280,6 +335,24 @@ namespace basecross {
 		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCapsule(param, index);
 		CreateMesh(param);
 	}
+
+	bool PsSingleCapsuleBody::CollisionTestBase(const SPHERE& src) {
+		//ワールド行列の決定
+		Mat4x4 World;
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			GetOrientation(),				//回転角度
+			GetPosition()			//位置
+		);
+		CAPSULE dest(m_PhysicsCapsule->GetParam().m_Radius,
+			Vec3(0, -m_PhysicsCapsule->GetParam().m_HalfLen, 0),
+			Vec3(0, m_PhysicsCapsule->GetParam().m_HalfLen, 0),
+			World);
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_CAPSULE(src, dest, ret);
+	}
+
 
 
 	void PsSingleCapsuleBody::OnDraw() {

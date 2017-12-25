@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>７．物理世界</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>７０１．物理世界への介入</h3>
+<br />
+　この章は<b>FullTutorial012</b>に紹介した<b>物理計算</b>をゲームにどのように反映していくか、のサンプルです。<br />
+　これまでのサンプルとは違い、<b>物理計算</b>とのかかわりを考えながら記述する必要があります。とはいえそんなに難しいことはありません。<b>このゲームオブジェクトは物理計算するかしないか</b>を常に考えながら実装すれば、大きな問題にはならないでしょう。<br />
+<br />
+　このサンプルは<b>FullSample701</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0701a.png" width="80%"/>
+<p>図0701a</p>
+<p>&nbsp;</p>
+<br/>
+　ここで、<b>Xボタン</b>を押すと球が発射されます。その球をステージ上のオブジェクトに当てると、そのオブジェクトが黄緑色に変化します。<br />
+<p>&nbsp;</p>
+<img src="img/0701b.png" width="80%"/>
+<p>図0701b</p>
+<p>&nbsp;</p>
+　その状態で、<b>Yボタン</b>を押し続けると、選択されたオブジェクトが、プレイヤーの上部に引き寄せられます。<b>Yボタン</b>を離すと、そのオブジェクトは落ちてきます。場合によってはプレイヤーの頭から落ちてくる場合もあるので注意しましょう。（だからといってプレイヤーに何か損害が出るわけではないですが・・・）<br />
+<p>&nbsp;</p>
+<img src="img/0701c.png" width="80%"/>
+<p>図0701c</p>
+<p>&nbsp;</p>
+<br />
+<h4>物理世界とのインターフェイス</h4>
+　ここで、注目したいのは<b>物理世界</b>と<b>それ以外の世界（これまでのBaseCrossの世界）</b>とのインターフェイス（橋渡し）をどうすればいいのか、という部分です。<br />
+　<b>FullTutorial012</b>に紹介したサンプルは<b>すべてが物理世界</b>に入っているので、その部分を意識することはありませんでした。しかし、ゲーム全体を<b>物理世界</b>に入れてしまうと、それこそ、<b>単なるシミュレーション</b>で終わってしまいます。<br />
+　<b>物理計算</b>をゲームに入れる場合、言い方によっては<b>どのようにして物理世界に介入し変えていくか</b>がポイントになります。<br />
+<br />
+　さて、サンプルの画面を見て、<b>どのオブジェクトを物理世界から外すか</b>を考えてみましょう。<b>プレイヤー</b>や<b>配置される物理オブジェクト</b>はお互いに<b>落ちてきたり、衝突したり、反発したり</b>が必要です。<b>台座</b>も必要でしょう。<br />
+　しかし、<b>発射される球体</b>はどうでしょうか？このオブジェクトを<b>物理世界</b>に入れると、何かに当たった瞬間に、相手が動いてしまいます。このサンプルでは<b>発射される球体</b>は<b>的当て</b>のような役割ではなく<b>オブジェクトの選択</b>です。ですから、物理世界からは外します。<br />
+　以下、<b>発射される球体（FireSphere）</b>の<b>OnCreate()関数</b>です<b>Charactrr.cpp</b>に記述があります。
+<div class="box1">
+<pre>
+    void FireSphere::OnCreate() {
+        auto PtrTransform = GetComponent&lt;Transform>();
+
+        PtrTransform->SetScale(Vec3(m_Scale));
+        PtrTransform->SetQuaternion(Quat());
+        PtrTransform->SetPosition(m_Emitter);
+        <span class="red">//コリジョンを付ける（ボリューム取得のため）
+        auto PtrColl = AddComponent&lt;CollisionSphere>();
+        PtrColl->SetIsHitAction(IsHitAction::None);</span>
+
+        //影をつける
+        auto ShadowPtr = AddComponent&lt;Shadowmap>();
+        ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+        auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+        PtrDraw->SetFogEnabled(true);
+        PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+        PtrDraw->SetTextureResource(L"SKY_TX");
+
+        GetStage()->SetSharedGameObject(L"FireSphere", GetThis&lt;GameObject>());
+    }
+
+</pre>
+</div>
+　このように、このオブジェクトには<b>物理計算</b>のコンポーネントは実装されていません。また赤くなっているところのように<b>CollisionSphere</b>が実装されています。このコンポーネントは自身の<b>SPHERE</b>を取得するために実装されているので<b>衝突判定</b>を実装しているわけではあrません。ですので<b>IsHitAction::None</b>のヒットアクション設定になっています。<br />
+　このようなオブジェクトが、ステージ内に配置されるのは<b>最初にXボタンが押されたとき</b>です。それは<b>プレイヤー</b>に記述します。以下はプレイヤーの<b>Xボタンハンドラ</b>です。
+<div class="box1">
+<pre>
+//Xボタンハンドラ
+void Player::OnPushX() {
+    auto Ptr = GetComponent&lt;Transform>();
+    Vec3 Pos = Ptr->GetPosition();
+    Pos.y += 0.5f;
+    Quat Qt = Ptr->GetQuaternion();
+    Vec3 Rot = Qt.toRotVec();
+    float RotY = Rot.y;
+    Vec3 velo(sin(RotY), 0.05f, cos(RotY));
+    velo.normalize();
+    velo *= 20.0f;
+
+    <span class="red">auto ShPtr = GetStage()->GetSharedGameObject&lt;FireSphere>(L"FireSphere",false);
+    if (ShPtr) {
+        ShPtr->Reset(Pos, velo);
+    }
+    else {
+        GetStage()->AddGameObject&lt;FireSphere>(Pos, velo);
+    }</span>
+}
+</pre>
+</div>
+　赤くなっているところのように、もし<b>L"FireSphere"</b>が<b>SharedGameObject</b>として登録されていたら、そのオブジェクトを発射させ、そうでなければ<b>AddGameObject</b>しています。既に登録されているときは、<b>Reset()</b>というメンバ関数を使います。<br />
+<br />
+　さて、このようにして<b>発射</b>された<b>球</b>は、<b>物理世界</b>との衝突判定をしなければいけません。それを実装しているのは<b>物理コンポーネント側</b>にあります。以下は<b>物理コンポーネント</b>である<b>PsBodyComponentクラス</b>の<b>CollisionTestテンプレート関数</b>を呼び出します。以下がその関数です
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/*!
+@brief コリジョンとの衝突判定（呼び出しテンプレート）
+@tparam T   コリジョン型
+@param[in]  src コリジョンOBB
+@return なし
+*/
+//--------------------------------------------------------------------------------------
+template&lt;typename T>
+bool CollisionTest(const T& src) {
+    return CollisionTestBase(src);
+}
+</pre>
+</div>
+　これを見ればわかるように<b>CollisionTestBase()</b>という関数を呼び出します。この引数は、<b>SPHEREやOBB</b>が想定され、型によってテンプレートが呼び出す関数を分けてくれます。<br />
+　さらに、<b>CollisionTestBase()関数</b>は仮想関数なので、派生クラスで独自に判定を行うことができます。親クラスでの実装は<b>false</b>を返します（つまり衝突してない）。<br />
+　実際の実装は、例えば<b>PsSingleSphereBodyコンポーネント（一つの球体ボディ）</b>であれば、<b>SPHEREとの衝突判定</b>に対して
+<div class="box1">
+<pre>
+bool PsSingleSphereBody::CollisionTestBase(const SPHERE& src) {
+    SPHERE dest;
+    auto& param = m_PhysicsSphere->GetParam();
+    dest.m_Radius = param.m_Radius;
+    dest.m_Center = GetPosition();
+    return HitTest::SPHERE_SPHERE(src, dest);
+}
+</pre>
+</div>
+　といった実装になっています。突き抜けを考えない簡易的な判定です。もしこの判定で不服であれば<b>PsSingleSphereBodyの派生クラス</b>のコンポーネントを記述しそこで<b>CollisionTestBase(const SPHERE& src)</b>を多重定義すればよいでしょう。<br/>
+　一般論ですが<b>物理計算</b>を実装する場合、<b>衝突判定や衝突応答</b>はできるだけ物理計算に任せ、ゲーム側（こういう表現が当たっているかどうかわからないけど、ようは<b>物理計算をしない世界</b>です）からの介入の部分では簡易的なもので充分と考えます。<br />
+　今回のサンプルでいえば、この判定は<b>ホールド（つまり、捕まえるオブジェクト）の判定</b>に使用するだけですし、各オブジェクトは<b>球体が1ターンで突き抜けてしまうほど小さく</b>はありません。<br />
+<br/>
+　以上はライブラリ側の説明ですが、それを使用するコンテンツ側は<b>FireSphere::OnUpdate()</b>に記述します（Character.cppにあります）。
+<div class="box1">
+<pre>
+void FireSphere::OnUpdate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    if (PtrTransform->GetPosition().y > -20.0f) {
+        float ElapsedTime = App::GetApp()->GetElapsedTime();
+        Vec3 Ac = Vec3(0, -9.8f, 0) * 1.0f;
+        m_Velocity += Ac * ElapsedTime;
+        auto Pos = PtrTransform->GetPosition();
+        Pos += m_Velocity* ElapsedTime;
+        PtrTransform->SetPosition(Pos);
+    }
+    else {
+        //じっとしている
+        PtrTransform->SetPosition(Vec3(0,-20.0f,0));
+    }
+    auto Coll = GetComponent&lt;CollisionSphere>();
+    <span class="red">//物理オブジェクトを持つ配列の取得
+    vector&lt;shared_ptr&lt;PsBodyComponent>> PsComptVec;
+    GetStage()->GetUsedDynamicCompoentVec&lt;PsBodyComponent>(PsComptVec);</span>
+    for (auto& v : PsComptVec) {
+        auto g_ptr = dynamic_pointer_cast&lt;ActivePsObject>(v->GetGameObject());
+        if (g_ptr) {
+            if (v->CollisionTest(Coll->GetSphere())) {
+                auto h_ptr = m_HoldObject.lock();
+                if (h_ptr) {
+                    h_ptr->SetHold(false);
+                }
+                m_HoldObject = g_ptr;
+                g_ptr->SetHold(true);
+                PtrTransform->SetPosition(Vec3(0, -20, 0));
+                break;
+            }
+        }
+    }
+}
+</pre>
+</div>
+　まず、この<b>FireSphere</b>は、1回目の発射でステージに配置された以降は<b>どこかに</b>存在します。プレイヤーが<b>Xボタン</b>で発射するときに<b>呼び戻す</b>ような形です。もちろん<b>UpdateActiveやDrawActive</b>を操作して、更新しなくて見えないようにする、方法もありますが、<b>FireSphere</b>はステートマシンも持たない単純なクラスなので<b>どこかにしまっておく</b>方法をとってます。<br />
+　序盤、
+<div class="box1">
+<pre>
+    if (PtrTransform->GetPosition().y > -20.0f) {
+        float ElapsedTime = App::GetApp()->GetElapsedTime();
+        Vec3 Ac = Vec3(0, -9.8f, 0) * 1.0f;
+        m_Velocity += Ac * ElapsedTime;
+        auto Pos = PtrTransform->GetPosition();
+        Pos += m_Velocity* ElapsedTime;
+        PtrTransform->SetPosition(Pos);
+    }
+    else {
+        //じっとしている
+        PtrTransform->SetPosition(Vec3(0,-20.0f,0));
+    }
+</pre>
+</div>
+　の処理は、<b>もし位置のY座標が-20より大きければ、移動や重力を反映させる</b>という処理です。逆に言えば<b>もし位置のY座標が-20以下</b>ならステージの下のほうでじっとしています。<br />
+　続いて物理オブジェクトとの判定ですが、まず、自分自身の<b>CollisionSphere</b>を取得しておいて
+<div class="box1">
+<pre>
+    <span class="red">//物理オブジェクトを持つ配列の取得
+    vector&lt;shared_ptr&lt;PsBodyComponent>> PsComptVec;
+    GetStage()->GetUsedDynamicCompoentVec&lt;PsBodyComponent>(PsComptVec);</span>
+</pre>
+</div>
+　と<b>PsBodyComponentの派生クラスのコンポーネントの配列</b>を取得します。<b>Stageクラス</b>にあるこのメンバ関数は<b>2017年12月</b>に追加されたメンバ関数で、<b>GameObject</b>を飛び越して、<b>各GameObjectが指定のコンポーネント（かその派生クラス）を持っていた場合、配列に収めてくれる</b>関数です。<br />
+　<b>PsComptVec</b>は<b>コンポーネントの配列</b>なので<b>所持するGameObject</b>を取得する場合は<b>v->GetGameObject()</b>のように取得します。そうやって衝突判定を行っているのが、そのあとの処理です。
+<div class="box1">
+<pre>
+    for (auto& v : PsComptVec) {
+        auto g_ptr = dynamic_pointer_cast&lt;ActivePsObject>(v->GetGameObject());
+        if (g_ptr) {
+            if (<span class="red">v->CollisionTest(Coll->GetSphere())</span>) {
+                auto h_ptr = m_HoldObject.lock();
+                if (h_ptr) {
+                    h_ptr->SetHold(false);
+                }
+                m_HoldObject = g_ptr;
+                g_ptr->SetHold(true);
+                PtrTransform->SetPosition(Vec3(0, -20, 0));
+                break;
+            }
+        }
+    }
+</pre>
+</div>
+　赤くなっているところが、前述した<b>CollisionTestテンプレート関数</b>を呼び出しているところです。テンプレート引数がテンプレートと同じ型なので<b>型引数</b>は省略できます。省略しないで書く場合は
+<div class="box1">
+<pre>
+    if (<span class="red">v->CollisionTest&lt;SPHERE>(Coll->GetSphere())</span>) {
+</pre>
+</div>
+　と書きます。<br />
+
+　処理を読めばわかるように、どこかにヒットしたら、そのヒットしたオブジェクトを<b>m_HoldObject</b>というメンバ変数にセットしリターン（break）します。1つだけヒットすればいいのでそのような処理です。すでに<b>m_HoldObject</b>が有効だった場合は
+<div class="box1">
+<pre>
+    h_ptr->SetHold(false);
+</pre>
+</div>
+　と<b>ホールドが終わった</b>ことをそのオブジェクトに知らせます。それを受け取ったオブジェクトは<b>ホールドされているときに使用している色</b>を元に戻します。<br />
+　その後あたらしくホールドされたオブジェクトに
+<div class="box1">
+<pre>
+    g_ptr->SetHold(true);
+</pre>
+</div>
+　とし、ここで発射オブジェクトは役割を終えるので
+<div class="box1">
+<pre>
+    PtrTransform->SetPosition(Vec3(0, -20, 0));
+</pre>
+</div>
+　と待機場所に移動します。<br />
+<br />
+　さて以上が<b>オブジェクトのホールド</b>の処理でした。続いて、<b>オブジェクトを持ち上げる</b>処理です。これは<b>プレイヤー</b>に記述します。<br />
+　しかし<b>プレイヤー</b>の説明の前に、前述した<b>ホールドされたオブジェクトのSetHold()関数</b>の中身を見てみます。以下の内容です。
+<div class="box1">
+<pre>
+void ActivePsObject::SetHold(bool b) {
+    if (b) {
+        if (m_StateMachine->GetCurrentState() == ActivePsDefaultState::Instance()) {
+            m_StateMachine->ChangeState(ActivePsHoldState::Instance());
+            <span class="red">//プレイヤーに自分がホールドされていることを伝える
+            auto PlayerPtr = GetStage()->GetSharedGameObject&lt;Player>(L"Player", false);
+            if (PlayerPtr) {
+                PlayerPtr->SetHoldObject(GetThis&lt;ActivePsObject>());
+            }</span>
+        }
+    }
+    else {
+        if (m_StateMachine->GetCurrentState() == ActivePsHoldState::Instance()) {
+            m_StateMachine->ChangeState(ActivePsDefaultState::Instance());
+        }
+    }
+}
+</pre>
+</div>
+　ホールドされた場合、プレイヤーの<b>SetHoldObject()関数</b>を呼び出し、自分自身がホールドされたことを伝えてます。<br />
+　ここで注意したいのは、<b>ホールドが解けた時</b>は何もプレイヤーに知らせてないことです。<br />
+　これはこのサンプル特有で、<b>最初にホールドされたオブジェクト</b>が設定された以降は<b>何かしらのオブジェクトがホールドされている</b>状態になるということです。これは通常のゲームであれば<b>ホールドを解除する（何もホールドしてない状態にする）</b>という操作が必要でしょうが、ここでは実装していません。<br />
+<br />
+ さて、そんなわけで<b>プレイヤー</b>に<b>ホールドされているオブジェクト</b>を伝えることができました。<br />
+　そのオブジェクトを<b>引き寄せる</b>処理ですが、<b>プレイヤー</b>の<b>OnPushY()、OnPressY()、OnReleaseY()</b>で行います。<br />
+　<b>引き寄せる</b>だけなら<b>OnPressY()</b>だけでいいのですが、ここで<b>引き寄せているオブジェクト</b>がわかるように、<b>ライン</b>を引きます。すなわち<b>プレイヤーとオブジェクトをつなぐ線</b>です。そのオブジェクトに対する捜査に<b>OnPushY()、OnReleaseY()</b>を使ってます。<b>ActionLine</b>というオブジェクトですが、最初に必要とされたときに、プレイヤーによって作成されます。<b>OnPushY()内</b>です。
+<div class="box1">
+<pre>
+//Yボタンハンドラ(押した瞬間)
+void Player::OnPushY() {
+    //ホールドしたオブジェクトがなければ何もしない
+    auto HoldPtr = m_HoldObject.lock();
+    if (!HoldPtr) {
+        return;
+    }
+    auto ActionLinePtr = m_ActionLine.lock();
+    if (ActionLinePtr) {
+        auto Check = ActionLinePtr->GetEndObj();
+        auto CheckHold = dynamic_pointer_cast&lt;GameObject>(HoldPtr);
+        if (Check != CheckHold) {
+            ActionLinePtr->SetEndObj(HoldPtr);
+        }
+        ActionLinePtr->SetDrawActive(true);
+    }
+    else {
+        //ラインの作成
+        auto LinePtr = GetStage()->AddGameObject&lt;ActionLine>(GetThis&lt;GameObject>(), HoldPtr);
+        LinePtr->SetDrawActive(true);
+        m_ActionLine = LinePtr;
+    }
+}
+</pre>
+</div>
+　ここで<b>m_ActionLine</b>は<b>ActionLineのweak_ptr</b>です。lockが成功すればすでに実装されているのがわかるので、それを使います。実装されてなければ
+<div class="box1">
+<pre>
+    //ラインの作成
+    auto LinePtr = GetStage()->AddGameObject&lt;ActionLine>(GetThis&lt;GameObject>(), HoldPtr);
+</pre>
+</div>
+　と作成します。<br />
+　<b>ActionLineクラス</b>は<b>起点のオブジェクトと終点のオブジェクト</b>を持ちます。それぞれのオブジェクトの位置の変化により、動的にその線の状態を変えることができます。<b>プレイヤーのホールドオブジェクトの引き寄せ</b>が始まったときに、表示させ、終わったときに表示しなくします。終わったときの処理は<b>OnReleaseY()</b>に記述され以下のような形です。
+<div class="box1">
+<pre>
+//Yボタンハンドラ(離した瞬間)
+void Player::OnReleaseY() {
+    auto ActionLinePtr = m_ActionLine.lock();
+    if (ActionLinePtr) {
+        ActionLinePtr->SetDrawActive(false);
+    }
+}
+</pre>
+</div>
+　この<b>ラインオブジェクト</b>はこのサンプルでは<b>一直線</b>ですが、<b>ベジェ曲線</b>のように表現できれば、<b>引っ張る感じ</b>をもっと表現できると思います。<br />
+<br />
+　さて、最後に<b>引き寄せる</b>処理です。プレイヤーの<b>OnPressY()</b>です。
+<div class="box1">
+<pre>
+//Yボタンハンドラ(押し続け)
+void Player::OnPressY() {
+    auto Ptr = GetComponent&lt;Transform>();
+    auto PlayerPos = Ptr->GetPosition();
+    auto HoldPtr = m_HoldObject.lock();
+    if (HoldPtr) {
+        auto PsPtr = HoldPtr->GetDynamicComponent&lt;PsBodyComponent>(false);
+        if (PsPtr) {
+            auto PsPos = PsPtr->GetPosition();
+            float ToY = 2.0f;
+            if (PsPos.y > 5.0f) {
+                ToY = 0.0f;
+            }
+            PsPos.y = 0;
+            PlayerPos.y = 0;
+            Vec3 ToPlayerVec = PlayerPos - PsPos;
+            <span class="red">PsPtr->WakeUp();
+            PsPtr->SetLinearVelocity(Vec3(ToPlayerVec.x , ToY, ToPlayerVec.z ));</span>
+        }
+    }
+}
+</pre>
+</div>
+　赤くなっているところが<b>物理オブジェクトへの介入</b>の部分です。<b>物理オブジェクトの速度</b>を変化させています。その計算はそれまでにしておきます。例えば<b>高さは5.0より高くはならない</b>ような処理も計算します。引き寄せるスピードは遠くにあるうちは速く、近くなると遅くなります。<br />
+　<b>PsPtr->SetLinearVelocity()</b>のまえに
+<div class="box1">
+<pre>
+    <span class="red">PsPtr->WakeUp();</span>
+</pre>
+</div>
+　としているのがわかると思います。<b>物理オブジェクト</b>は<b>ある程度動きが小さくなるか、あるいは何かに寄りかかってそれ以上動けなくなる</b>と<b>スリープ</b>という状態に入ります。この状態は、ほかのオブジェクトがぶつかってくるとかまで続きます。<br />
+　これは<b>余計な物理計算</b>をしなくても済むように、<b>物理ライブラリ</b>側で実装されている仕組みです。<br />
+　また、この仕組みは<b>PsPtr->SetLinearVelocity()</b>を呼び出しても<b>起きない</b>ので、上記のように<b>起きろ！</b>と命令してから、速度を変更します。<br />
+<br />
+　以上のように、この項では、<b>物理世界への介入</b>のサンプルを説明しました。<br />
+　ちょっとした実装ではありますが、このように<b>遠くから引っ張り上げる</b>などの処理を加えると、あたかも<b>超能力や魔法</b>を使ったような動きになるのがわかります。<br />
+　このように<b>物理世界</b>を実装する場合は、<b>どのようにして物理常識を変えていくか</b>がポイントになるのではないでしょうか。<br />
+　単なる<b>シミュレーション</b>ではなく、<b>いろんなアイディアや世界観にあった不思議の世界</b>を加えることで、逆に<b>物理世界</b>が生きてくるでしょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
