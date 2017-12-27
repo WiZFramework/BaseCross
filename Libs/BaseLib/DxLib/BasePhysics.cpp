@@ -10,11 +10,11 @@ namespace basecross {
 
 	using namespace sce::PhysicsEffects;
 
-	namespace ps {
-
 #define NUM_RIGIDBODIES 500
 #define NUM_JOINTS    500
 #define NUM_CONTACTS  4000
+
+	namespace ps {
 
 		const float timeStep = 0.016f;
 		const float separateBias = 0.1f;
@@ -495,6 +495,31 @@ namespace basecross {
 
 	}
 
+	namespace ps {
+		PfxConvexMesh convexMeshes[NUM_RIGIDBODIES];
+		set<uint32_t> reservedConvexMeshes;
+		uint32_t getNextConvexMesheIndex() {
+			for (uint32_t i = 0; i < NUM_RIGIDBODIES; i++) {
+				if (reservedConvexMeshes.find(i) == reservedConvexMeshes.end()) {
+					//現在iは空いている
+					reservedConvexMeshes.insert(i);
+					return i;
+				}
+			}
+			//全部埋まっている
+			throw BaseException(
+				L"これ以上凸型メッシュは増やせません",
+				L"size >= NUM_RIGIDBODIES",
+				L"ps::getNextConvexMesheIndex()"
+			);
+		}
+		void rereaseConvexMesheIndex(uint32_t index) {
+			pfxReleaseConvexMesh(convexMeshes[index]);
+			::ZeroMemory(&convexMeshes[index], sizeof(PfxConvexMesh));
+			reservedConvexMeshes.erase(index);
+		}
+	}
+
 //	using namespace basecross::ps;
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
@@ -717,6 +742,144 @@ namespace basecross {
 		return pImpl->m_PsCylinderParam;
 	}
 
+
+	//--------------------------------------------------------------------------------------
+	//	PsConvexMeshResource　Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsConvexMeshResource::Impl {
+		uint32_t m_Index;
+		float m_Radius;
+		//バックアップ用の頂点(VertexPositionNormalTexture)とインデックス
+		vector<VertexPositionNormalTexture> m_Vertices;
+		vector<uint16_t> m_Indices;
+		Impl(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices, float radius):
+			m_Index(0),
+			m_Radius(radius)
+		{
+			try {
+				m_Vertices = vertices;
+				m_Indices = indices;
+
+				PfxCreateConvexMeshParam param;
+				vector<float> vertFloat;
+				for (auto& v : vertices) {
+					vertFloat.push_back(v.position.x);
+					vertFloat.push_back(v.position.y);
+					vertFloat.push_back(v.position.z);
+					vertFloat.push_back(v.normal.x);
+					vertFloat.push_back(v.normal.y);
+					vertFloat.push_back(v.normal.z);
+				}
+
+				param.verts = &vertFloat.front();
+				param.numVerts = vertices.size();
+				param.vertexStrideBytes = sizeof(float) * 6;
+
+				param.triangles = &indices.front();
+				param.numTriangles = indices.size() / 3;
+				param.triangleStrideBytes = sizeof(uint16_t) * 3;
+				//numConvexMeshes
+				//convexMeshes
+				m_Index = ps::getNextConvexMesheIndex();
+				PfxInt32 ret = pfxCreateConvexMesh(ps::convexMeshes[m_Index], param);
+				if (ret != SCE_PFX_OK) {
+					throw BaseException(
+						L"ConvexMeshResourceの作成に失敗しました。",
+						L"if (ret != SCE_PFX_OK)",
+						L"PsConvexMeshResource::Impl::Impl()"
+					);
+				}
+			}
+			catch (...) {
+				throw;
+			}
+		}
+		~Impl() {
+			ps::rereaseConvexMesheIndex(m_Index);
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	ConvexMeshリソース
+	//--------------------------------------------------------------------------------------
+	PsConvexMeshResource::PsConvexMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
+		float radius):
+		BaseResource(),
+		pImpl(new Impl(vertices, indices, radius))
+	{}
+	PsConvexMeshResource::~PsConvexMeshResource() {}
+	uint32_t PsConvexMeshResource::GetMeshIndex() const {
+		return pImpl->m_Index;
+	}
+	float PsConvexMeshResource::GetRadius() const {
+		return pImpl->m_Radius;
+	}
+
+	const vector<VertexPositionNormalTexture>& PsConvexMeshResource::GetVertices() const {
+		return pImpl->m_Vertices;
+	}
+
+	const vector<uint16_t>& PsConvexMeshResource::GetIndices() const {
+		return pImpl->m_Indices;
+	}
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	PhysicsConvex　Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct PhysicsConvex::Impl {
+		//初期化パラメータ
+		PsConvexParam m_PsConvexParam;
+		Impl(const PsConvexParam& param) :
+			m_PsConvexParam(param)
+		{}
+		~Impl() {
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	ConvexMesh物理オブジェクト(頂点指定のオブジェクト)
+	//--------------------------------------------------------------------------------------
+	PhysicsConvex::PhysicsConvex(const PsConvexParam& param, uint16_t index):
+		pImpl(new Impl(param))
+	{
+		m_Index = index;
+	}
+	PhysicsConvex::~PhysicsConvex() {}
+
+	void PhysicsConvex::OnCreate() {
+		if (!pImpl->m_PsConvexParam.m_ConvexMeshResource) {
+			throw BaseException(
+				L"ConvexMeshResourceが見つかりません",
+				L"if (!pImpl->m_PsConvexParam.m_ConvexMeshResource)",
+				L"PhysicsConvexMesh::OnCreate()"
+			);
+		}
+		PfxShape shape;
+		shape.reset();
+		shape.setConvexMesh(&ps::convexMeshes[pImpl->m_PsConvexParam.m_ConvexMeshResource->GetMeshIndex()]);
+		ps::collidables[m_Index].reset();
+		ps::collidables[m_Index].addShape(shape);
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsConvexParam.m_Mass);
+		//慣性モーメントは球体にならう
+		ps::bodies[m_Index].setInertia(pfxCalcInertiaSphere(
+			(PfxFloat)pImpl->m_PsConvexParam.m_ConvexMeshResource->GetRadius(),
+			(PfxFloat)pImpl->m_PsConvexParam.m_Mass)
+		);
+		SetParamStatus(pImpl->m_PsConvexParam);
+	}
+
+	const PsConvexParam& PhysicsConvex::GetParam() const {
+		return pImpl->m_PsConvexParam;
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	///	物理計算用のインターフェイス
 	//--------------------------------------------------------------------------------------
@@ -726,11 +889,14 @@ namespace basecross {
 	BasePhysics::~BasePhysics() {}
 
 	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, uint16_t index) {
-		uint16_t set_index;
-		if (index < ps::numRigidBodies) {
-			set_index = index;
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddSingleBox()"
+			);
 		}
-		else {
+		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsBox>(param, index);
@@ -738,36 +904,59 @@ namespace basecross {
 
 
 	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param, uint16_t index) {
-		uint16_t set_index;
-		if (index < ps::numRigidBodies) {
-			set_index = index;
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddSingleSphere()"
+			);
 		}
-		else {
+		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsSphere>(param, index);
 	}
 
 	shared_ptr<PhysicsCapsule> BasePhysics::AddSingleCapsule(const PsCapsuleParam& param, uint16_t index) {
-		uint16_t set_index;
-		if (index < ps::numRigidBodies) {
-			set_index = index;
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddSingleCapsule()"
+			);
 		}
-		else {
+		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsCapsule>(param, index);
 	}
 
 	shared_ptr<PhysicsCylinder> BasePhysics::AddSingleCylinder(const PsCylinderParam& param, uint16_t index) {
-		uint16_t set_index;
-		if (index < ps::numRigidBodies) {
-			set_index = index;
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddSingleCylinder()"
+			);
 		}
-		else {
+		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
 		return ObjectFactory::Create<PhysicsCylinder>(param, index);
+	}
+
+	shared_ptr<PhysicsConvex> BasePhysics::AddConvex(const PsConvexParam& param, uint16_t index) {
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddConvex()"
+			);
+		}
+		if (index >= ps::numRigidBodies) {
+			index = ps::numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsConvex>(param, index);
 	}
 
 	uint16_t BasePhysics::GetNumBodies() const {

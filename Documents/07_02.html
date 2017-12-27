@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>７．物理世界</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>７０２．凸型オブジェクトと物理世界のＡＩ</h3>
+<br />
+　このサンプルは<b>FullSample702</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0702a.png" width="80%"/>
+<p>図0702a</p>
+<p>&nbsp;</p>
+　プレイヤーを動かすと、大きめの球体と凸型オブジェクトがごろごろ追いかけてきます。<b>Ｂボタンで球を発射</b>できます。当たれがひるみますが、逃げればまた追いかけてきます。<br />
+<br/>
+　このサンプルのテーマは２つあります。1つ目は<b>凸型オブジェクト</b>です。<br />
+　<b>凸型オブジェクト</b>は<b>へっこんだ部分がない</b>オブジェクトです。物理ライブラリはこのようなオブジェクトも<b>物理世界</b>に加えることが可能です。<br />
+　もともと、<b>BaseCross</b>では<b>多面体</b>の形状を作成することができます。今回はこの中で<b>正12面体</b>を作成し、<b>物理世界</b>への加え方を紹介します。同様の方法で<b>正4面体、正8面体、正20面体</b>も作成できますので、興味があったら実装してみてください。<br />
+<br />
+　もう一つのテーマは<b>ＡＩ処理</b>です。といっても簡単なものですが、<b>チュートリアル106</b>などでも紹介した<b>追いかけるオブジェクト</b>の<b>ＡＩ処理</b>を、<b>物理世界のオブジェクト</b>に実装してみました。<br />
+　これまでのサンプルとは一味違った<b>追いかけるオブジェクト</b>を表現しています。<br />
+<br />
+<h4>追いかけるＡＩ処理</h4>
+　まず、<b>追いかけるオブジェクト</b>の処理ですが、<b>球体と正12面体</b>の2種類があります。同じようなコードが予想されるので、共通の親クラスとして<b>SeekObjectクラス</b>を用意します。また、このクラスは<b>ステートマシン</b>も実装します。以下は<b>SeekObject::OnCreate()</b>関数です。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+void SeekObject::OnCreate() {
+    //オブジェクトのグループを得る
+    auto Group = GetStage()->GetSharedObjectGroup(L"SeekObjectGroup");
+    //グループに自分自身を追加
+    Group->IntoGroup(GetThis&lt;SeekObject>());
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;SeekObject>(GetThis&lt;SeekObject>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(FarState::Instance());
+}
+</pre>
+</div>
+　このように、ここには描画系の準備や、メッシュの作成などは行っておりません。<b>SeekObjectクラス</b>には<b>追いかけるＡＩ処理</b>のみ記述します。<br />
+　ステートは<b>チュートリアル106</b>のように2種類用意します。<b>FarState（プレイヤーから遠い位置にいる処理）</b>と<b>NearState（プレイヤーに近いときの処理）</b>です。<br />
+　<b>チュートリアル106</b>ではここから<b>ステアリング行動クラス</b>を呼び出していましたが、今回のサンプルでは<b>物理世界</b>ですので<b>Rigidbodyコンポーネント</b>は利用できません。ですので、自前で記述します。<br />
+　といっても<b>ステアリングの中身</b>まで記述する必要はあありません。以下は<b>SeekObject::SeekBehavior()関数</b>です<b>Seekステアリング</b>を実装します。
+<div class="box1">
+<pre>
+void SeekObject::SeekBehavior() {
+    auto Pos = GetComponent&lt;Transform>()->GetPosition();
+    auto TargetTrans = GetStage()->GetSharedObject(L"Player")->GetComponent&lt;Transform>();
+    auto TargetPos = TargetTrans->GetPosition();
+    bsm::Vec3 WorkForce;
+    <span class="red">WorkForce = Steering::Seek(GetVelocity(), TargetPos, Pos, m_MaxSpeed);
+    Steering::AccumulateForce(m_Force, WorkForce, m_MaxForce);</span>
+}
+</pre>
+</div>
+　赤くなっているところが<b>ステアリング処理</b>です。<b>Steering::Seek()</b>は<b>探索行動</b>で<b>Steering::AccumulateForce()</b>は<b>フォースの調整</b>です。Seek()で作り出しているフォースをAccumulateForce()で、上限値を超えてないか調整します。最終的に<b>m_Force</b>が変化します。<br />
+　このように<b>SeekObject::SeekBehavior()</b>のほかに<b>SeekObject::ArriveBehavior()</b>（到着行動）、<b>SeekObject::SeparationBehavior()</b>（分離行動）を作成します。<br />
+　各ステートではこれらの<b>行動</b>を組合せを変えて実装します。すなわち<b>FarState</b>では<b>SeparationBehavior()とSeekBehavior()</b>で<b>NearState</b>では<b>SeparationBehavior()とArriveBehavior()</b>です。以下は、<b>NearState::Execute()関数</b>です。
+<div class="box1">
+<pre>
+void NearState::Execute(const shared_ptr&lt;SeekObject>& Obj) {
+    Obj->SeparationBehavior();
+    Obj->ArriveBehavior();
+    if (Obj->GetTargetToLen() >= Obj->GetStateChangeSize()) {
+        Obj->GetStateMachine()->ChangeState(FarState::Instance());
+    }
+}
+</pre>
+</div>
+　この中で条件によってはステートを変更します。<br/>
+<br />
+<h4>凸型オブジェクト</h4>
+　さて、<b>SeekObjectクラス</b>では<b>AI処理のみ</b>記述します。実際に形状の処理は、その派生クラスで行います。以下は<b>凸型形状</b>のオブジェクトである<b>ActivePsConvexクラス</b>の宣言です。<b>Character.h</b>に記述があります。
+<div class="box1">
+<pre>
+class ActivePsConvex : public SeekObject {
+    Vec3 m_Position;
+    //メッシュ（描画用）
+    <span class="red">static</span> shared_ptr&lt;MeshResource> m_ConvexMesh;
+    //物理計算用
+    <span class="red">static</span> shared_ptr&lt;PsConvexMeshResource> m_PsConvexMesh;
+public:
+    //構築と破棄
+    ActivePsConvex(const shared_ptr&lt;Stage>& StagePtr,
+        const Vec3& Position
+    );
+    virtual ~ActivePsConvex();
+    //初期化
+    virtual void OnCreate() override;
+    //現在の速度を得る（仮想関数）
+    virtual Vec3 GetVelocity() const;
+    //更新
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　ここでは赤くなっているところのように<b>static変数</b>を使っています。これの意味するところは、<b>m_ConvexMesh</b>と<b>m_PsConvexMesh</b>は<b>各インスタンスで使いまわし</b>するということです。これまでのサンプルでは<b>リソース登録</b>という形でシーンなどに<b>メッシュやテクスチャ</b>を登録していました。ここでもそれでいいのですが、<b>1つのクラスでしか使いまわししない</b>すなわち<b>インスタンスのみの使いまわし</b>であれば<b>シーンでのリソース登録</b>はしなくても充分です。そういう場合は<b>static変数</b>にしておきます。<br />
+　<b>クラス内にstatic変数</b>を作成した場合、cpp側でも以下のように<b>static変数の実体</b>記述する必要があります。Character.cpp内ですが
+<div class="box1">
+<pre>
+    //static変数の初期化
+    shared_ptr&lt;MeshResource> ActivePsConvex::m_ConvexMesh = nullptr;
+    shared_ptr&lt;PsConvexMeshResource> ActivePsConvex::m_PsConvexMesh = nullptr;
+</pre>
+</div>
+　のような形です。これらの初期化は<b>ActivePsConvex::OnCreate()関数</b>で行います。
+<div class="box1">
+<pre>
+void ActivePsConvex::OnCreate() {
+    <span class="red">if (!m_ConvexMesh || !m_PsConvexMesh) {
+        vector&lt;VertexPositionNormalTexture> vertices;
+        vector&lt;uint16_t> indices;
+        MeshUtill::CreateDodecahedron(0.5, vertices, indices);
+        m_ConvexMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+        m_PsConvexMesh = ObjectFactory::Create&lt;PsConvexMeshResource>(vertices, indices, 0.5f);
+    }</span>
+
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(Vec3(1.0f));
+    PtrTransform->SetQuaternion(Quat());
+    PtrTransform->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(m_ConvexMesh);
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(m_ConvexMesh);
+    PtrDraw->SetTextureResource(L"WALL_TX");
+
+    //物理計算凸面
+    PsConvexParam param;
+    //半径にする
+    param.m_ConvexMeshResource = m_PsConvexMesh;
+    param.m_Mass = 1.0f;
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = Quat();
+    param.m_Pos = m_Position;
+    auto PsPtr = AddComponent&lt;PsConvexBody>(param);
+    PsPtr->SetDrawActive(true);
+    <span class="red">//親クラスのOnCreateを呼ぶ
+    SeekObject::OnCreate();</span>
+}
+</pre>
+</div>
+　ここでは赤くなっている部分が2か所あります。上の部分では<b>static変数ならではの処理</b>です。static変数が初期化されてなければ2つのメッシュリソースを作成します。<b>MeshResourceクラス</b>はこれまでも何回も出てきたので説明は省略します。<br />
+　<b>PsConvexMeshResourceクラス</b>は<b>物理計算用のメッシュリソース</b>で、<b>コンストラクタに頂点の配列とインデックスの配列</b>を渡します。頂点の形式については<b>VertexPositionNormalTexture型</b>でなくてもよい<b>VertexPositionNormal型でもよい</b>のですが、<b>PsConvexMeshResourceクラス</b>はこのバックアップを所持しておいて後から取得できるので、<b>Texture</b>もあったほうが汎用的と考え、そのような設計にしました。（上記コードは、バックアップは使ってません）<br />
+　２つめの赤くなっているところは<b>親クラスのOnCreate()</b>を呼び出しています。<b>C++の文法</b>によって、仮想関数は一番末端の継承先の関数が呼ばれます。ここでの<b>OnCreate()</b>は、先ほど説明したように<b>親クラスにもOnCreate()が記述</b>されているので、親クラスの関数を呼ぶ必要があります。<br />
+　同様に<b>ActivePsConvex::OnUpdate()関数</b>でも親クラスの関数を呼び出しています。
+<div class="box1">
+<pre>
+void ActivePsConvex::OnUpdate() {
+    //親クラスのOnUpdateを呼ぶ
+    SeekObject::OnUpdate();
+    auto PtrPs = GetComponent&lt;PsConvexBody>();
+    //現在のフォースを設定
+    PtrPs->ApplyForce(GetForce());
+}
+</pre>
+</div>
+　<b>OnCreate()</b>では<b>親クラスはあとから</b>呼び出し、<b>OnUpdate()</b>では<b>親クラスは先に</b>呼び出しています。この違いは処理の内容です。<b>OnCreate()</b>の場合は、親クラスは<b>ステートマシンの設定</b>を行っています。この処理は<b>一連のOnCreate()の最後</b>に記述したほうが良いので、後から呼んでます。<br />
+　対して<b>OnUpdate()</b>では<b>ＡＩ処理</b>が親クラス側で実装されるので、派生クラスでは、その計算結果（フォース）を
+<div class="box1">
+<pre>
+    //現在のフォースを設定
+    PtrPs->ApplyForce(GetForce());
+</pre>
+</div>
+　と物理オブジェクトに設定します。ですから<b>派生クラス側で後から処理</b>になります。このように、<b>親クラスと継承先</b>で同じ仮想関数を実装する場合、<b>実行順番が重要</b>になる場合が多いので注意しましょう。<br />
+　あとは<b>追いかける球のクラス</b>ですが、<b>ActivePsSphereクラス</b>になります。同様の処理ですので説明は省略します。<br />
+<br />
+　さて、以上で<b>物理オブジェクトへのＡＩ処理</b>は実装できました。<b>衝突後の処理</b>や<b>球が当たったときの動作</b>は物理計算がやってくれます。もしこの部分に手を加える必要があれば<b>OnUpdate2()</b>を定義して記述してください。物理処理は<b>OnUpdate()とOnUpdate2()の間</b>に行われます。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="07_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

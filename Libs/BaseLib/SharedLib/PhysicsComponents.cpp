@@ -447,7 +447,64 @@ namespace basecross {
 		DrawShapeWireFrame(MeshRes, DrawWorld);
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	単体の凸面コンポーネント
+	//--------------------------------------------------------------------------------------
+	PsConvexBody::PsConvexBody(const shared_ptr<GameObject>& GameObjectPtr, const PsConvexParam& param):
+		PsBodyComponent(GameObjectPtr)
+	{
+		m_PhysicsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param);
+		CreateMesh(param);
+	}
 
+	void PsConvexBody::CreateMesh(const PsConvexParam& param) {
+		vector<VertexPositionColor> new_pc_vertices;
+		for (auto& v : param.m_ConvexMeshResource->GetVertices()) {
+			VertexPositionColor vertex;
+			vertex.position = v.position;
+			vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+			new_pc_vertices.push_back(vertex);
+		}
+		m_ConvexMesh = MeshResource::CreateMeshResource(new_pc_vertices, param.m_ConvexMeshResource->GetIndices(), false);
+	}
+	uint16_t PsConvexBody::GetIndex() const {
+		return m_PhysicsConvex->GetIndex();
+	}
+
+	void PsConvexBody::Reset(const PsConvexParam& param, uint16_t index) {
+		m_PhysicsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param, index);
+		CreateMesh(param);
+	}
+
+	void PsConvexBody::OnDraw() {
+		auto index = GetIndex();
+		//行列の定義
+		bsm::Mat4x4 World, Local;
+		PsBodyStatus Status;
+		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		auto MeshRes = m_ConvexMesh;
+		BasePs.GetBodyStatus(index, Status);
+		//ワールド行列の決定
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Status.m_Orientation,				//回転角度
+			Status.m_Position			//位置
+		);
+		bsm::Vec3 LocalPos;
+		bsm::Quat LocalQt;
+		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
+
+		Local.affineTransformation(
+			bsm::Vec3(1.0f),			//スケーリングは1.0f
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			LocalQt,				//回転角度
+			LocalPos				//位置
+		);
+		bsm::Mat4x4 DrawWorld = Local * World;
+		DrawShapeWireFrame(MeshRes, DrawWorld);
+
+	}
 
 
 }
