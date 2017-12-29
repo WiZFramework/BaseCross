@@ -67,11 +67,13 @@ namespace basecross {
 		//物理計算ボックス
 		PsBoxParam param;
 		param.m_HalfSize = m_Scale * 0.5f;
-		param.m_Mass = 1.0f;
+		//固定なので質量はいらない
+		param.m_Mass = 0.0f;
+		//慣性テンソルもデフォルトで良い
 		param.m_MotionType = PsMotionType::MotionTypeFixed;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		m_PhysicsBox = GetStage()->GetPhysicsManager()->AddSingleBox(param);
+		m_PhysicsBox = GetStage()->GetPhysicsManager()->AddBox(param);
 
 	}
 
@@ -167,10 +169,12 @@ namespace basecross {
 		//basecrossのスケーリングは各辺基準なので、ハーフサイズ基準にする
 		param.m_HalfSize = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaBox(param.m_HalfSize, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		m_PhysicsBox = GetStage()->GetPhysicsManager()->AddSingleBox(param);
+		m_PhysicsBox = GetStage()->GetPhysicsManager()->AddBox(param);
 
 	}
 
@@ -283,10 +287,12 @@ namespace basecross {
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSphere(param);
 
 	}
 
@@ -395,12 +401,14 @@ namespace basecross {
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = 0.25f * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = m_Emitter;
 		param.m_LinearVelocity = m_Velocity;
-		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSphere(param);
 	}
 	//更新
 	void FirePsSphere::OnUpdate() {
@@ -416,13 +424,15 @@ namespace basecross {
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = 0.25f * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = Emitter;
 		param.m_LinearVelocity = Velocity;
 		//同じインデックスで再構築
-		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param, Index);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSphere(param, Index);
 	}
 
 

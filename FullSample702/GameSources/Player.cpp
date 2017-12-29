@@ -77,13 +77,15 @@ namespace basecross{
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		//プレイヤーなのでスリープしない
 		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = FirstPos;
 		param.m_LinearVelocity = Vec3(0);
-		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
+		auto PsPtr = AddComponent<PsSphereBody>(param);
 		PsPtr->SetAutoTransform(false);
 		PsPtr->SetDrawActive(true);
 
@@ -121,7 +123,7 @@ namespace basecross{
 		m_InputHandler.PushHandle(GetThis<Player>());
 
 		auto Vec = GetMoveVector();
-		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto PtrPs = GetComponent<PsSphereBody>();
 		auto Velo = PtrPs->GetLinearVelocity();
 		Velo.x = Vec.x * 5.0f;
 		Velo.z = Vec.z * 5.0f;
@@ -130,7 +132,7 @@ namespace basecross{
 
 	//後更新
 	void Player::OnUpdate2() {
-		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto PtrPs = GetComponent<PsSphereBody>();
 		auto Ptr = GetComponent<Transform>();
 		Ptr->SetPosition(PtrPs->GetPosition());
 		//回転の計算
@@ -150,7 +152,7 @@ namespace basecross{
 		if (Ptr->GetPosition().y > 0.125f) {
 			return;
 		}
-		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto PtrPs = GetComponent<PsSphereBody>();
 		auto Velo = PtrPs->GetLinearVelocity();
 		Velo += Vec3(0, 4.0f, 0.0);
 		PtrPs->SetLinearVelocity(Velo);

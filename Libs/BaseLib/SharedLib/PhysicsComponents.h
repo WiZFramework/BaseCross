@@ -228,7 +228,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体の球体コンポーネント
 	//--------------------------------------------------------------------------------------
-	class PsSingleSphereBody : public PsBodyComponent {
+	class PsSphereBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
 		shared_ptr<PhysicsSphere> m_PhysicsSphere;
 		//ワイフレフレームメッシュ
@@ -242,13 +242,13 @@ namespace basecross {
 		@param[in]	param	球体の作成パラメータ
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PsSingleSphereBody(const shared_ptr<GameObject>& GameObjectPtr,const PsSphereParam& param);
+		explicit PsSphereBody(const shared_ptr<GameObject>& GameObjectPtr,const PsSphereParam& param);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PsSingleSphereBody() {}
+		virtual ~PsSphereBody() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体インデックスを得る
@@ -285,7 +285,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のボックスコンポーネント
 	//--------------------------------------------------------------------------------------
-	class PsSingleBoxBody : public PsBodyComponent {
+	class PsBoxBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
 		shared_ptr<PhysicsBox> m_PhysicsBox;
 	public:
@@ -297,13 +297,13 @@ namespace basecross {
 		@param[in]	param	の作成パラメータ
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PsSingleBoxBody(const shared_ptr<GameObject>& GameObjectPtr,const PsBoxParam& param);
+		explicit PsBoxBody(const shared_ptr<GameObject>& GameObjectPtr,const PsBoxParam& param);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PsSingleBoxBody() {}
+		virtual ~PsBoxBody() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体インデックスを得る
@@ -341,7 +341,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のカプセルコンポーネント
 	//--------------------------------------------------------------------------------------
-	class PsSingleCapsuleBody : public PsBodyComponent {
+	class PsCapsuleBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
 		shared_ptr<PhysicsCapsule> m_PhysicsCapsule;
 		//ワイアフレーム用メッシュ（カプセルは各コンポーネントが保持）
@@ -356,13 +356,13 @@ namespace basecross {
 		@param[in]	param	の作成パラメータ
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PsSingleCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param);
+		explicit PsCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PsSingleCapsuleBody() {}
+		virtual ~PsCapsuleBody() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体インデックスを得る
@@ -400,7 +400,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のシリンダーコンポーネント。シリンダーは、ボックスの縁からの落下時に不具合があるので、利用は慎重に！
 	//--------------------------------------------------------------------------------------
-	class PsSingleCylinderBody : public PsBodyComponent {
+	class PsCylinderBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
 		shared_ptr<PhysicsCylinder> m_PhysicsCylinder;
 		//ワイアフレーム用メッシュ（シリンダーは各コンポーネントが保持）
@@ -415,13 +415,13 @@ namespace basecross {
 		@param[in]	param	の作成パラメータ
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PsSingleCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param);
+		explicit PsCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PsSingleCylinderBody() {}
+		virtual ~PsCylinderBody() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	剛体インデックスを得る
@@ -497,6 +497,55 @@ namespace basecross {
 		virtual void OnDraw()override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成コンポーネント
+	//--------------------------------------------------------------------------------------
+	class PsCombinedBody : public PsBodyComponent {
+		//物理計算用のオブジェクト
+		shared_ptr<PhysicsCombinedObject> m_PhysicsCombinedObject;
+		//ワイアフレーム用メッシュの配列（各コンポーネントが保持）
+		vector<shared_ptr<MeshResource>> m_CombinedMeshVec;
+		void CreateMesh(const PsCombinedParam& param);
+	public:
+		//構築と破棄
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	このコンポーネントを所持するゲームオブジェクト
+		@param[in]	param	の作成パラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PsCombinedBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCombinedParam& param);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PsCombinedBody() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体インデックスを得る
+		@return	剛体インデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual uint16_t GetIndex() const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	再利用して剛体をリセットする
+		@param[in]	param	作成パラメータ
+		@param[in]	index	インデックス
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Reset(const PsCombinedParam& param, uint16_t index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画処理。
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	};
 
 
 

@@ -47,11 +47,13 @@ namespace basecross{
 		PsBoxParam param;
 		//DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
 		param.m_HalfSize = m_Scale * 0.5f;
-		param.m_Mass = 1.0f;
+		//固定なので質量はいらない
+		param.m_Mass = 0.0f;
+		//慣性テンソルもデフォルトで良い
 		param.m_MotionType = PsMotionType::MotionTypeFixed;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleBoxBody>(param);
+		auto PsPtr = AddComponent<PsBoxBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
 
@@ -185,7 +187,7 @@ namespace basecross{
 			vector<uint16_t> indices;
 			MeshUtill::CreateDodecahedron(0.5, vertices, indices);
 			m_ConvexMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-			m_PsConvexMesh = ObjectFactory::Create<PsConvexMeshResource>(vertices, indices, 0.5f);
+			m_PsConvexMesh = PsConvexMeshResource::CreateMeshResource(vertices, indices);
 		}
 
 		auto PtrTransform = GetComponent<Transform>();
@@ -204,9 +206,10 @@ namespace basecross{
 
 		//物理計算凸面
 		PsConvexParam param;
-		//半径にする
 		param.m_ConvexMeshResource = m_PsConvexMesh;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算(球と同じにする)
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(0.5f, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = Quat();
 		param.m_Pos = m_Position;
@@ -270,17 +273,19 @@ namespace basecross{
 		//DEFAULT_SPHEREのスケーリングは直径基準なので、半径にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = Quat();
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
+		auto PsPtr = AddComponent<PsSphereBody>(param);
 		PsPtr->SetDrawActive(true);
 		//親クラスのOnCreateを呼ぶ
 		SeekObject::OnCreate();
 	}
 
 	Vec3 ActivePsSphere::GetVelocity()const {
-		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto PtrPs = GetComponent<PsSphereBody>();
 		return PtrPs->GetLinearVelocity();
 	}
 
@@ -288,10 +293,128 @@ namespace basecross{
 	void ActivePsSphere::OnUpdate() {
 		//親クラスのOnUpdateを呼ぶ
 		SeekObject::OnUpdate();
-		auto PtrPs = GetComponent<PsSingleSphereBody>();
+		auto PtrPs = GetComponent<PsSphereBody>();
 		//現在のフォースを設定
 		PtrPs->ApplyForce(GetForce());
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブな合成オブジェクト
+	//--------------------------------------------------------------------------------------
+	ActivePsCombinedObject::ActivePsCombinedObject(const shared_ptr<Stage>& StagePtr,
+		const Quat& Qt,
+		const Vec3& Position
+	) :
+		GameObject(StagePtr),
+		m_Qt(Qt),
+		m_Position(Position)
+	{}
+
+	ActivePsCombinedObject::~ActivePsCombinedObject() {}
+
+	void ActivePsCombinedObject::CreateDrawComp(const PsCombinedParam& param) {
+		//表示用のカプセルメッシュの作成
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		bsm::Vec3 PointA(0, 0, 0);
+		bsm::Vec3 PointB(0, 0, 0);
+		PointA -= bsm::Vec3(0, param.m_Primitives[2].m_HalfLen, 0);
+		PointB += bsm::Vec3(0, param.m_Primitives[2].m_HalfLen, 0);
+		MeshUtill::CreateCapsule(param.m_Primitives[2].m_Radius * 2.0f,
+			PointA, PointB, 18, vertices, indices, true);
+		m_CapsuleMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+		//このオブジェクトはマルチメッシュを使う
+		m_MultiMeshResource = ObjectFactory::Create<MultiMeshResource>();
+		auto index = m_MultiMeshResource->AddMesh(L"DEFAULT_CUBE");
+		//メッシュごとのテクスチャの設定
+		m_MultiMeshResource->SetTextureResource(L"WALL_TX", index);
+		index = m_MultiMeshResource->AddMesh(L"DEFAULT_CUBE");
+		m_MultiMeshResource->SetTextureResource(L"WALL_TX", index);
+		index = m_MultiMeshResource->AddMesh(m_CapsuleMesh);
+		m_MultiMeshResource->SetTextureResource(L"SKY_TX", index);
+		//マルチメッシュを表示用に使うために設定
+		for (size_t i = 0; i < param.m_Primitives.size();i++) {
+			auto& v = param.m_Primitives[i];
+			Mat4x4 m;
+			if (i == 2) {
+				//カプセルは拡大率1.0
+				m.affineTransformation(
+					Vec3(1.0f),
+					Vec3(0, 0, 0),
+					v.m_OffsetOrientation,
+					v.m_OffsetPosition
+				);
+			}
+			else {
+				//ボックスは拡大率指定
+				m.affineTransformation(
+					v.m_HalfSize * 2.0f,
+					Vec3(0, 0, 0),
+					v.m_OffsetOrientation,
+					v.m_OffsetPosition
+				);
+			}
+			//Transformとメッシュの差分行列の設定
+			m_MultiMeshResource->SetUseMeshToTransformMatrix(true, i);
+			m_MultiMeshResource->SetMeshToTransformMatrix(m, i);
+		}
+		//描画コンポネント
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetFogEnabled(true);
+		//マルチメッシュリソースを設定
+		PtrDraw->SetMultiMeshResource(m_MultiMeshResource);
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMultiMeshResource(m_MultiMeshResource);
+	}
+
+
+	void ActivePsCombinedObject::OnCreate() {
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(Vec3(1.0f));
+		PtrTransform->SetQuaternion(m_Qt);
+		PtrTransform->SetPosition(m_Position);
+		//合成オブジェクトの準備
+		PsCombinedParam param;
+		//質量は重くする
+		param.m_Mass = 3.0f;
+		//Box用の慣性（慣性テンソル）を計算
+		param.m_Inertia = BasePhysics::CalcInertiaBox(Vec3(2.5f, 1.0f, 1.0f), param.m_Mass);
+		param.m_MotionType = PsMotionType::MotionTypeActive;
+		param.m_Quat = m_Qt;
+		param.m_Pos = m_Position;
+		//合成されるプリミティブ（0番目、ボックス）
+		PsCombinedPrimitive primitive;
+		primitive.reset();
+		primitive.m_CombinedType = PsCombinedType::TypeBox;
+		primitive.m_HalfSize = Vec3(0.5f, 0.5f, 1.5f);
+		primitive.m_OffsetPosition = Vec3(-2.0f, 0.0f, 0.0f);
+		//合成オブジェクトに追加
+		param.AddPrim(primitive);
+		//合成されるプリミティブ（1番目、ボックス）
+		primitive.reset();
+		primitive.m_CombinedType = PsCombinedType::TypeBox;
+		primitive.m_HalfSize = Vec3(0.5f, 1.5f, 0.5f);
+		primitive.m_OffsetPosition = Vec3(2.0f, 0.0f, 0.0f);
+		//合成オブジェクトに追加
+		param.AddPrim(primitive);
+		//合成されるプリミティブ（2番目、カプセル）
+		primitive.reset();
+		primitive.m_CombinedType = PsCombinedType::TypeCapsule;
+		primitive.m_HalfLen = 1.5f;
+		primitive.m_Radius = 0.5f;
+		primitive.m_OffsetPosition = Vec3(0.0f, 0.0f, 0.0f);
+		//合成オブジェクトに追加
+		param.AddPrim(primitive);
+		//物理コンポーネント（合成）
+		auto PsPtr = AddComponent<PsCombinedBody>(param);
+		PsPtr->SetDrawActive(true);
+		//物理コンポーネントに合わせて描画コンポーネント（影も）を作成
+		CreateDrawComp(param);
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -310,6 +433,8 @@ namespace basecross{
 		//DEFAULT_SPHEREのスケーリングは直径基準なので、半径にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		//スリープしない
 		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
@@ -340,13 +465,13 @@ namespace basecross{
 		CreateDefParam(param);
 		param.m_Pos = m_Emitter;
 		param.m_LinearVelocity = m_Velocity;
-		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
+		auto PsPtr = AddComponent<PsSphereBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
 
 
 	void FirePsSphere::Reset(const Vec3& Emitter, const Vec3& Velocity) {
-		auto PsPtr = GetComponent<PsSingleSphereBody>();
+		auto PsPtr = GetComponent<PsSphereBody>();
 		PsSphereParam param;
 		CreateDefParam(param);
 		param.m_Pos = Emitter;

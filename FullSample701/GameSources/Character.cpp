@@ -113,11 +113,13 @@ namespace basecross{
 		PsBoxParam param;
 		//DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
 		param.m_HalfSize = m_Scale * 0.5f;
-		param.m_Mass = 1.0f;
+		//固定なので質量はいらない
+		param.m_Mass = 0.0f;
+		//慣性テンソルもデフォルトで良い
 		param.m_MotionType = PsMotionType::MotionTypeFixed;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleBoxBody>(param);
+		auto PsPtr = AddComponent<PsBoxBody>(param);
 		PsPtr->SetDrawActive(true);
 
 	}
@@ -226,10 +228,12 @@ namespace basecross{
 		//DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
 		param.m_HalfSize = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaBox(param.m_HalfSize, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleBoxBody>(param);
+		auto PsPtr = AddComponent<PsBoxBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
 
@@ -288,10 +292,12 @@ namespace basecross{
 		//DEFAULT_SPHEREのスケーリングは直径基準なので、半径にする
 		param.m_Radius = m_Scale * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleSphereBody>(param);
+		auto PsPtr = AddComponent<PsSphereBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
 
@@ -361,10 +367,16 @@ namespace basecross{
 		param.m_HalfLen = m_Len * 0.5f;
 		param.m_Radius = m_Diameter * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaCylinderX(
+			param.m_HalfLen + param.m_Radius,
+			param.m_Radius,
+			param.m_Mass
+		);
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<PsSingleCapsuleBody>(param);
+		auto PsPtr = AddComponent<PsCapsuleBody>(param);
 		PsPtr->SetDrawActive(true);
 	}
 

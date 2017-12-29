@@ -192,21 +192,21 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体の球体コンポーネント
 	//--------------------------------------------------------------------------------------
-	PsSingleSphereBody::PsSingleSphereBody(const shared_ptr<GameObject>& GameObjectPtr, const PsSphereParam& param):
+	PsSphereBody::PsSphereBody(const shared_ptr<GameObject>& GameObjectPtr, const PsSphereParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSingleSphere(param);
+		m_PhysicsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSphere(param);
 	}
 
-	uint16_t PsSingleSphereBody::GetIndex() const {
+	uint16_t PsSphereBody::GetIndex() const {
 		return m_PhysicsSphere->GetIndex();
 	}
 
-	void PsSingleSphereBody::Reset(const PsSphereParam& param, uint16_t index) {
-		m_PhysicsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSingleSphere(param, index);
+	void PsSphereBody::Reset(const PsSphereParam& param, uint16_t index) {
+		m_PhysicsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSphere(param, index);
 	}
 
-	bool PsSingleSphereBody::CollisionTestBase(const SPHERE& src) {
+	bool PsSphereBody::CollisionTestBase(const SPHERE& src) {
 		SPHERE dest;
 		auto& param = m_PhysicsSphere->GetParam();
 		dest.m_Radius = param.m_Radius;
@@ -214,7 +214,7 @@ namespace basecross {
 		return HitTest::SPHERE_SPHERE(src, dest);
 	}
 
-	void PsSingleSphereBody::OnDraw() {
+	void PsSphereBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
@@ -245,31 +245,31 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のボックスコンポーネント
 	//--------------------------------------------------------------------------------------
-	PsSingleBoxBody::PsSingleBoxBody(const shared_ptr<GameObject>& GameObjectPtr, const PsBoxParam& param) :
+	PsBoxBody::PsBoxBody(const shared_ptr<GameObject>& GameObjectPtr, const PsBoxParam& param) :
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddSingleBox(param);
+		m_PhysicsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param);
 
 
 	}
 
-	uint16_t PsSingleBoxBody::GetIndex() const {
+	uint16_t PsBoxBody::GetIndex() const {
 		return m_PhysicsBox->GetIndex();
 	}
 
-	void PsSingleBoxBody::Reset(const PsBoxParam& param, uint16_t index) {
-		m_PhysicsBox = GetGameObject()->GetStage()->GetBasePhysics().AddSingleBox(param, index);
+	void PsBoxBody::Reset(const PsBoxParam& param, uint16_t index) {
+		m_PhysicsBox = GetGameObject()->GetStage()->GetBasePhysics().AddBox(param, index);
 	}
 
 
-	bool PsSingleBoxBody::CollisionTestBase(const SPHERE& src) {
+	bool PsBoxBody::CollisionTestBase(const SPHERE& src) {
 		OBB dest(m_PhysicsBox->GetParam().m_HalfSize * 2,
 			GetOrientation(), GetPosition());
 		bsm::Vec3 ret;
 		return HitTest::SPHERE_OBB(src, dest, ret);
 	}
 
-	void PsSingleBoxBody::OnDraw() {
+	void PsBoxBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
@@ -300,14 +300,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のカプセルコンポーネント
 	//--------------------------------------------------------------------------------------
-	PsSingleCapsuleBody::PsSingleCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param):
+	PsCapsuleBody::PsCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCapsule(param);
+		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param);
 		CreateMesh(param);
 	}
 
-	void PsSingleCapsuleBody::CreateMesh(const PsCapsuleParam& param) {
+	void PsCapsuleBody::CreateMesh(const PsCapsuleParam& param) {
 		vector<VertexPositionNormalTexture> vertices;
 		vector<VertexPositionColor> new_pc_vertices;
 		vector<uint16_t> indices;
@@ -327,16 +327,16 @@ namespace basecross {
 	}
 
 
-	uint16_t PsSingleCapsuleBody::GetIndex() const {
+	uint16_t PsCapsuleBody::GetIndex() const {
 		return m_PhysicsCapsule->GetIndex();
 	}
 
-	void PsSingleCapsuleBody::Reset(const PsCapsuleParam& param, uint16_t index) {
-		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCapsule(param, index);
+	void PsCapsuleBody::Reset(const PsCapsuleParam& param, uint16_t index) {
+		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
 		CreateMesh(param);
 	}
 
-	bool PsSingleCapsuleBody::CollisionTestBase(const SPHERE& src) {
+	bool PsCapsuleBody::CollisionTestBase(const SPHERE& src) {
 		//ワールド行列の決定
 		Mat4x4 World;
 		World.affineTransformation(
@@ -355,7 +355,7 @@ namespace basecross {
 
 
 
-	void PsSingleCapsuleBody::OnDraw() {
+	void PsCapsuleBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
@@ -388,14 +388,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	単体のシリンダーコンポーネント
 	//--------------------------------------------------------------------------------------
-	PsSingleCylinderBody::PsSingleCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param):
+	PsCylinderBody::PsCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCylinder(param);
+		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param);
 		CreateMesh(param);
 	}
 
-	void PsSingleCylinderBody::CreateMesh(const PsCylinderParam& param) {
+	void PsCylinderBody::CreateMesh(const PsCylinderParam& param) {
 		vector<VertexPositionNormalTexture> vertices;
 		vector<VertexPositionColor> new_pc_vertices;
 		vector<uint16_t> indices;
@@ -410,16 +410,16 @@ namespace basecross {
 	}
 
 
-	uint16_t PsSingleCylinderBody::GetIndex() const {
+	uint16_t PsCylinderBody::GetIndex() const {
 		return m_PhysicsCylinder->GetIndex();
 	}
 
-	void PsSingleCylinderBody::Reset(const PsCylinderParam& param, uint16_t index) {
-		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddSingleCylinder(param, index);
+	void PsCylinderBody::Reset(const PsCylinderParam& param, uint16_t index) {
+		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param, index);
 		CreateMesh(param);
 	}
 
-	void PsSingleCylinderBody::OnDraw() {
+	void PsCylinderBody::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
 		bsm::Mat4x4 World, Local;
@@ -506,5 +506,144 @@ namespace basecross {
 
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成コンポーネント
+	//--------------------------------------------------------------------------------------
+	PsCombinedBody::PsCombinedBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCombinedParam& param):
+		PsBodyComponent(GameObjectPtr)
+	{
+		m_PhysicsCombinedObject = GetGameObject()->GetStage()->GetBasePhysics().AddCombinedObject(param);
+		CreateMesh(param);
+	}
+
+	void PsCombinedBody::CreateMesh(const PsCombinedParam& param) {
+		m_CombinedMeshVec.clear();
+		for (auto& Prim : param.m_Primitives){
+			vector<VertexPositionNormalTexture> vertices;
+			vector<VertexPositionColor> new_pc_vertices;
+			vector<uint16_t> indices;
+			switch (Prim.m_CombinedType) {
+				case PsCombinedType::TypeSphere:
+				{
+					m_CombinedMeshVec.push_back(App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_SPHERE"));
+				}
+				break;
+				case PsCombinedType::TypeBox:
+				{
+					m_CombinedMeshVec.push_back(App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_CUBE"));
+				}
+				break;
+				case PsCombinedType::TypeCapsule:
+				{
+					bsm::Vec3 PointA(0, 0, 0);
+					bsm::Vec3 PointB(0, 0, 0);
+					PointA -= bsm::Vec3(0, Prim.m_HalfLen, 0);
+					PointB += bsm::Vec3(0, Prim.m_HalfLen, 0);
+					MeshUtill::CreateCapsule(Prim.m_Radius * 2.0f,
+						PointA, PointB, 6, vertices, indices, true);
+					for (auto& v : vertices) {
+						VertexPositionColor vertex;
+						vertex.position = v.position;
+						vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+						new_pc_vertices.push_back(vertex);
+					}
+					m_CombinedMeshVec.push_back(MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+				}
+				break;
+				case PsCombinedType::TypeCylinder:
+				{
+					MeshUtill::CreateCylinder(Prim.m_HalfLen * 2.0f, Prim.m_Radius * 2.0f, 6, vertices, indices, true);
+					for (auto& v : vertices) {
+						VertexPositionColor vertex;
+						vertex.position = v.position;
+						vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+						new_pc_vertices.push_back(vertex);
+					}
+					m_CombinedMeshVec.push_back(MeshResource::CreateMeshResource(new_pc_vertices, indices, false));
+				}
+				break;
+				case PsCombinedType::TypeConvex:
+				{
+					for (auto& v : Prim.m_ConvexMeshResource->GetVertices()) {
+						VertexPositionColor vertex;
+						vertex.position = v.position;
+						vertex.color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+						new_pc_vertices.push_back(vertex);
+					}
+					m_CombinedMeshVec.push_back(MeshResource::CreateMeshResource(new_pc_vertices, Prim.m_ConvexMeshResource->GetIndices(), false));
+				}
+				break;
+			}
+		}
+
+	}
+
+	uint16_t PsCombinedBody::GetIndex() const {
+		return m_PhysicsCombinedObject->GetIndex();
+	}
+
+	void PsCombinedBody::Reset(const PsCombinedParam& param, uint16_t index) {
+		m_PhysicsCombinedObject = GetGameObject()->GetStage()->GetBasePhysics().AddCombinedObject(param, index);
+		CreateMesh(param);
+	}
+
+	void PsCombinedBody::OnDraw() {
+		auto index = GetIndex();
+		//行列の定義
+		bsm::Mat4x4 World, Local;
+		PsBodyStatus Status;
+		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		BasePs.GetBodyStatus(index, Status);
+		//ワールド行列の決定
+		World.affineTransformation(
+			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Status.m_Orientation,				//回転角度
+			Status.m_Position			//位置
+		);
+
+		auto& param = m_PhysicsCombinedObject->GetParam();
+		for (size_t i = 0; i < param.m_Primitives.size(); i++) {
+			auto& prim = param.m_Primitives[i];
+			bsm::Vec3 LocalPos;
+			bsm::Quat LocalQt;
+			BasePs.GetShapeOffsetQuatPos(index, (uint16_t)i, LocalQt, LocalPos);
+			switch (prim.m_CombinedType) {
+				case PsCombinedType::TypeSphere:
+				{
+					Local.affineTransformation(
+						Vec3(prim.m_Radius),	//スケーリング
+						bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+						LocalQt,				//回転角度
+						LocalPos				//位置
+					);
+				}
+				break;
+				case PsCombinedType::TypeBox:
+				{
+					Local.affineTransformation(
+						prim.m_HalfSize,			//スケーリング
+						bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+						LocalQt,				//回転角度
+						LocalPos				//位置
+					);
+				}
+				break;
+				default:
+				{
+					//球とボックス以外はスケーリング1.0
+					Local.affineTransformation(
+						bsm::Vec3(1.0f),			//スケーリングは1.0f
+						bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+						LocalQt,				//回転角度
+						LocalPos				//位置
+					);
+				}
+				break;
+			}
+			bsm::Mat4x4 DrawWorld = Local * World;
+			DrawShapeWireFrame(m_CombinedMeshVec[i], DrawWorld);
+		}
+	}
 
 }

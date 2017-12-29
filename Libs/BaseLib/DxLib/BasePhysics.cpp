@@ -13,6 +13,7 @@ namespace basecross {
 #define NUM_RIGIDBODIES 500
 #define NUM_JOINTS    500
 #define NUM_CONTACTS  4000
+#define NUM_KEEP_SHAPES  (NUM_RIGIDBODIES*4)
 
 	namespace ps {
 
@@ -518,9 +519,30 @@ namespace basecross {
 			::ZeroMemory(&convexMeshes[index], sizeof(PfxConvexMesh));
 			reservedConvexMeshes.erase(index);
 		}
+
+		//Combined用shapeの配列
+		PfxShape combinedShapes[NUM_KEEP_SHAPES];
+		//shapeのインデックスはPfxUInt16
+		PfxUInt16 numCombinedShapes = 0;
+		void getNewCombinedShapesIndices(vector<PfxUInt16>& indices, PfxUInt16 count) {
+			if ((numCombinedShapes + count) >= NUM_KEEP_SHAPES) {
+				throw BaseException(
+					L"これ以上Combined用shapeは増やせません",
+					L"if ((numCombinedShapes + count) >= NUM_KEEP_SHAPES)",
+					L"ps::getNewCombinedShapesIndices()"
+				);
+			}
+			PfxUInt16 setIndex = numCombinedShapes;
+			PfxUInt16 i = 0;
+			while (i < count) {
+				indices.push_back(setIndex);
+				setIndex++;
+				i++;
+			}
+			numCombinedShapes += count;
+		}
 	}
 
-//	using namespace basecross::ps;
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
 	//--------------------------------------------------------------------------------------
@@ -584,10 +606,9 @@ namespace basecross {
 		ps::collidables[m_Index].finish();
 		ps::bodies[m_Index].reset();
 		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsBoxParam.m_Mass);
-		ps::bodies[m_Index].setInertia(pfxCalcInertiaBox(
-			(PfxVector3)pImpl->m_PsBoxParam.m_HalfSize, 
-			(PfxFloat)pImpl->m_PsBoxParam.m_Mass)
-		);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsBoxParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsBoxParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsBoxParam.m_Friction);
 		SetParamStatus(pImpl->m_PsBoxParam);
 	}
 
@@ -629,10 +650,9 @@ namespace basecross {
 		ps::collidables[m_Index].finish();
 		ps::bodies[m_Index].reset();
 		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsSphereParam.m_Mass);
-		ps::bodies[m_Index].setInertia(pfxCalcInertiaSphere(
-			(PfxFloat)pImpl->m_PsSphereParam.m_Radius,
-			(PfxFloat)pImpl->m_PsSphereParam.m_Mass)
-		);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsSphereParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsSphereParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsSphereParam.m_Friction);
 		SetParamStatus(pImpl->m_PsSphereParam);
 	}
 
@@ -677,13 +697,9 @@ namespace basecross {
 		ps::collidables[m_Index].finish();
 		ps::bodies[m_Index].reset();
 		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCapsuleParam.m_Mass);
-		ps::bodies[m_Index].setInertia(
-			pfxCalcInertiaCylinderX(
-				(PfxFloat)pImpl->m_PsCapsuleParam.m_HalfLen + (PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
-				(PfxFloat)pImpl->m_PsCapsuleParam.m_Radius,
-				(PfxFloat)pImpl->m_PsCapsuleParam.m_Mass
-			)
-		);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsCapsuleParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsCapsuleParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsCapsuleParam.m_Friction);
 		SetParamStatus(pImpl->m_PsCapsuleParam);
 	}
 
@@ -727,14 +743,9 @@ namespace basecross {
 		ps::collidables[m_Index].finish();
 		ps::bodies[m_Index].reset();
 		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCylinderParam.m_Mass);
-
-		ps::bodies[m_Index].setInertia(
-			pfxCalcInertiaCylinderX(
-			(PfxFloat)pImpl->m_PsCylinderParam.m_HalfLen,
-				(PfxFloat)pImpl->m_PsCylinderParam.m_Radius,
-				(PfxFloat)pImpl->m_PsCylinderParam.m_Mass
-			)
-		);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsCylinderParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsCylinderParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsCylinderParam.m_Friction);
 		SetParamStatus(pImpl->m_PsCylinderParam);
 	}
 
@@ -748,13 +759,11 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct PsConvexMeshResource::Impl {
 		uint32_t m_Index;
-		float m_Radius;
 		//バックアップ用の頂点(VertexPositionNormalTexture)とインデックス
 		vector<VertexPositionNormalTexture> m_Vertices;
 		vector<uint16_t> m_Indices;
-		Impl(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices, float radius):
-			m_Index(0),
-			m_Radius(radius)
+		Impl(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices):
+			m_Index(0)
 		{
 			try {
 				m_Vertices = vertices;
@@ -774,7 +783,6 @@ namespace basecross {
 				param.verts = &vertFloat.front();
 				param.numVerts = vertices.size();
 				param.vertexStrideBytes = sizeof(float) * 6;
-
 				param.triangles = &indices.front();
 				param.numTriangles = indices.size() / 3;
 				param.triangleStrideBytes = sizeof(uint16_t) * 3;
@@ -802,17 +810,24 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ConvexMeshリソース
 	//--------------------------------------------------------------------------------------
-	PsConvexMeshResource::PsConvexMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
-		float radius):
+	PsConvexMeshResource::PsConvexMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices):
 		BaseResource(),
-		pImpl(new Impl(vertices, indices, radius))
+		pImpl(new Impl(vertices, indices))
 	{}
+
+	shared_ptr<PsConvexMeshResource> PsConvexMeshResource::CreateMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
+		try {
+			return ObjectFactory::Create<PsConvexMeshResource>(vertices, indices);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
+
 	PsConvexMeshResource::~PsConvexMeshResource() {}
 	uint32_t PsConvexMeshResource::GetMeshIndex() const {
 		return pImpl->m_Index;
-	}
-	float PsConvexMeshResource::GetRadius() const {
-		return pImpl->m_Radius;
 	}
 
 	const vector<VertexPositionNormalTexture>& PsConvexMeshResource::GetVertices() const {
@@ -867,11 +882,9 @@ namespace basecross {
 		ps::collidables[m_Index].finish();
 		ps::bodies[m_Index].reset();
 		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsConvexParam.m_Mass);
-		//慣性モーメントは球体にならう
-		ps::bodies[m_Index].setInertia(pfxCalcInertiaSphere(
-			(PfxFloat)pImpl->m_PsConvexParam.m_ConvexMeshResource->GetRadius(),
-			(PfxFloat)pImpl->m_PsConvexParam.m_Mass)
-		);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsConvexParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsConvexParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsConvexParam.m_Friction);
 		SetParamStatus(pImpl->m_PsConvexParam);
 	}
 
@@ -881,6 +894,120 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
+	//	PhysicsCombined　Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct PhysicsCombinedObject::Impl {
+		//初期化パラメータ
+		PsCombinedParam m_PsCombinedParam;
+		Impl(const PsCombinedParam& param) :
+			m_PsCombinedParam(param)
+		{}
+		~Impl() {
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	PhysicsCombinedObject::PhysicsCombinedObject(const PsCombinedParam& param, uint16_t index):
+		pImpl(new Impl(param))
+	{
+		m_Index = index;
+	}
+
+	PhysicsCombinedObject::~PhysicsCombinedObject() {}
+
+	void PhysicsCombinedObject::OnCreate() {
+		vector<PfxUInt16> PrimIndices;
+		ps::getNewCombinedShapesIndices(PrimIndices, (PfxUInt16)pImpl->m_PsCombinedParam.m_Primitives.size());
+		ps::collidables[m_Index].reset(ps::combinedShapes, &PrimIndices.front(), (int)PrimIndices.size());
+		for (auto& v : pImpl->m_PsCombinedParam.m_Primitives) {
+			switch (v.m_CombinedType) {
+			case PsCombinedType::TypeSphere:
+				{
+					PfxSphere sphere((PfxFloat)v.m_Radius);
+					PfxShape shape;
+					shape.reset();
+					shape.setSphere(sphere);
+					shape.setOffsetOrientation((PfxQuat)v.m_OffsetOrientation);
+					shape.setOffsetPosition((PfxVector3)v.m_OffsetPosition);
+					ps::collidables[m_Index].addShape(shape);
+				}
+				break;
+				case PsCombinedType::TypeBox:
+				{
+					PfxBox box((PfxVector3)v.m_HalfSize);
+					PfxShape shape;
+					shape.reset();
+					shape.setBox(box);
+					shape.setOffsetOrientation((PfxQuat)v.m_OffsetOrientation);
+					shape.setOffsetPosition((PfxVector3)v.m_OffsetPosition);
+					ps::collidables[m_Index].addShape(shape);
+				}
+				break;
+				case PsCombinedType::TypeCapsule:
+				{
+					PfxCapsule capsule(
+						(PfxFloat)v.m_HalfLen,
+						(PfxFloat)v.m_Radius
+					);
+					PfxShape shape;
+					shape.reset();
+					shape.setCapsule(capsule);
+					shape.setOffsetOrientation((PfxQuat)v.m_OffsetOrientation);
+					shape.setOffsetPosition((PfxVector3)v.m_OffsetPosition);
+					ps::collidables[m_Index].addShape(shape);
+				}
+				break;
+				case PsCombinedType::TypeCylinder:
+				{
+					PfxCylinder cylinder(
+						(PfxFloat)v.m_HalfLen,
+						(PfxFloat)v.m_Radius
+					);
+					PfxShape shape;
+					shape.reset();
+					shape.setCylinder(cylinder);
+					shape.setOffsetOrientation((PfxQuat)v.m_OffsetOrientation);
+					shape.setOffsetPosition((PfxVector3)v.m_OffsetPosition);
+					ps::collidables[m_Index].addShape(shape);
+				}
+				break;
+				case PsCombinedType::TypeConvex:
+				{
+					if (!v.m_ConvexMeshResource) {
+						throw BaseException(
+							L"ConvexMeshResourceが見つかりません",
+							L"if (!v.m_ConvexMeshResource)",
+							L"PhysicsCombined::OnCreate()"
+						);
+					}
+					PfxShape shape;
+					shape.reset();
+					shape.setConvexMesh(&ps::convexMeshes[v.m_ConvexMeshResource->GetMeshIndex()]);
+					shape.setOffsetOrientation((PfxQuat)v.m_OffsetOrientation);
+					shape.setOffsetPosition((PfxVector3)v.m_OffsetPosition);
+					ps::collidables[m_Index].addShape(shape);
+				}
+				break;
+			}
+
+		}
+		ps::collidables[m_Index].finish();
+		ps::bodies[m_Index].reset();
+		ps::bodies[m_Index].setMass((PfxFloat)pImpl->m_PsCombinedParam.m_Mass);
+		ps::bodies[m_Index].setInertia((PfxMatrix3)pImpl->m_PsCombinedParam.m_Inertia);
+		ps::bodies[m_Index].setRestitution((PfxFloat)pImpl->m_PsCombinedParam.m_Restitution);
+		ps::bodies[m_Index].setFriction((PfxFloat)pImpl->m_PsCombinedParam.m_Friction);
+		SetParamStatus(pImpl->m_PsCombinedParam);
+	}
+
+	const PsCombinedParam& PhysicsCombinedObject::GetParam() const {
+		return pImpl->m_PsCombinedParam;
+	}
+
+	//--------------------------------------------------------------------------------------
 	///	物理計算用のインターフェイス
 	//--------------------------------------------------------------------------------------
 	BasePhysics::BasePhysics()
@@ -888,12 +1015,12 @@ namespace basecross {
 	}
 	BasePhysics::~BasePhysics() {}
 
-	shared_ptr<PhysicsBox> BasePhysics::AddSingleBox(const PsBoxParam& param, uint16_t index) {
+	shared_ptr<PhysicsBox> BasePhysics::AddBox(const PsBoxParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
 				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
-				L"BasePhysics::AddSingleBox()"
+				L"BasePhysics::AddBox()"
 			);
 		}
 		if (index >= ps::numRigidBodies) {
@@ -903,12 +1030,12 @@ namespace basecross {
 	}
 
 
-	shared_ptr<PhysicsSphere> BasePhysics::AddSingleSphere(const PsSphereParam& param, uint16_t index) {
+	shared_ptr<PhysicsSphere> BasePhysics::AddSphere(const PsSphereParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
 				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
-				L"BasePhysics::AddSingleSphere()"
+				L"BasePhysics::AddSphere()"
 			);
 		}
 		if (index >= ps::numRigidBodies) {
@@ -917,12 +1044,12 @@ namespace basecross {
 		return ObjectFactory::Create<PhysicsSphere>(param, index);
 	}
 
-	shared_ptr<PhysicsCapsule> BasePhysics::AddSingleCapsule(const PsCapsuleParam& param, uint16_t index) {
+	shared_ptr<PhysicsCapsule> BasePhysics::AddCapsule(const PsCapsuleParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
 				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
-				L"BasePhysics::AddSingleCapsule()"
+				L"BasePhysics::AddCapsule()"
 			);
 		}
 		if (index >= ps::numRigidBodies) {
@@ -931,12 +1058,12 @@ namespace basecross {
 		return ObjectFactory::Create<PhysicsCapsule>(param, index);
 	}
 
-	shared_ptr<PhysicsCylinder> BasePhysics::AddSingleCylinder(const PsCylinderParam& param, uint16_t index) {
+	shared_ptr<PhysicsCylinder> BasePhysics::AddCylinder(const PsCylinderParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
 				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
-				L"BasePhysics::AddSingleCylinder()"
+				L"BasePhysics::AddCylinder()"
 			);
 		}
 		if (index >= ps::numRigidBodies) {
@@ -958,6 +1085,22 @@ namespace basecross {
 		}
 		return ObjectFactory::Create<PhysicsConvex>(param, index);
 	}
+
+	shared_ptr<PhysicsCombinedObject> BasePhysics::AddCombinedObject(const PsCombinedParam& param, uint16_t index) {
+		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
+			throw BaseException(
+				L"これ以上物理オブジェクトを増やせません",
+				L"if (ps::numRigidBodies >= ps::NUM_RIGIDBODIES)",
+				L"BasePhysics::AddCombined()"
+			);
+		}
+		if (index >= ps::numRigidBodies) {
+			index = ps::numRigidBodies++;
+		}
+		return ObjectFactory::Create<PhysicsCombinedObject>(param, index);
+	}
+
+
 
 	uint16_t BasePhysics::GetNumBodies() const {
 		return ps::numRigidBodies;
@@ -983,7 +1126,9 @@ namespace basecross {
 	}
 
 	void BasePhysics::WakeUpBody(uint16_t body_index) {
-		ps::states[body_index].wakeup();
+		if (ps::states[body_index].isAsleep()) {
+			ps::states[body_index].wakeup();
+		}
 	}
 
 	void BasePhysics::SetBodyPosition(uint16_t body_index, const bsm::Vec3& pos) {
@@ -1078,6 +1223,28 @@ namespace basecross {
 		return ret;
 	}
 
+	bsm::Mat3x3 BasePhysics::CalcInertiaBox(const bsm::Vec3& halfExtent, float mass) {
+		// Box
+		return (bsm::Mat3x3)pfxCalcInertiaBox((PfxVector3)halfExtent,(PfxFloat)mass);
+
+	}
+	bsm::Mat3x3 BasePhysics::CalcInertiaSphere(float radius, float mass) {
+		// Sphere
+		return (bsm::Mat3x3)pfxCalcInertiaSphere((PfxFloat)radius, (PfxFloat)mass);
+
+	}
+	bsm::Mat3x3 BasePhysics::CalcInertiaCylinderX(float halfLength, float radius, float mass) {
+		// Cylinder
+		return (bsm::Mat3x3)pfxCalcInertiaCylinderX((PfxFloat)halfLength, (PfxFloat)radius, (PfxFloat)mass);
+
+	}
+	bsm::Mat3x3 BasePhysics::CalcInertiaCylinderY(float halfLength, float radius, float mass) {
+		return (bsm::Mat3x3)pfxCalcInertiaCylinderY((PfxFloat)halfLength, (PfxFloat)radius, (PfxFloat)mass);
+
+	}
+	bsm::Mat3x3 BasePhysics::CalcInertiaCylinderZ(float halfLength, float radius, float mass) {
+		return (bsm::Mat3x3)pfxCalcInertiaCylinderZ((PfxFloat)halfLength, (PfxFloat)radius, (PfxFloat)mass);
+	}
 
 	const PfxShape& BasePhysics::getPfxShape(uint16_t body_index, uint16_t shape_index) const {
 		return ps::collidables[body_index].getShape(shape_index);
@@ -1168,6 +1335,10 @@ namespace basecross {
 		::ZeroMemory(ps::contacts, sizeof(PfxContactManifold) * NUM_CONTACTS);
 		::ZeroMemory(ps::contactIdPool, sizeof(PfxUInt32) * NUM_CONTACTS);
 		::ZeroMemory(ps::poolBuff, sizeof(ps::poolBuff));
+		//合成用shape
+		::ZeroMemory(ps::combinedShapes, sizeof(PfxShape) * NUM_KEEP_SHAPES);
+		ps::numCombinedShapes = 0;
+
 	}
 
 

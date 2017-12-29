@@ -105,12 +105,14 @@ namespace basecross {
 		//basecrossのスケーリングは直径基準なので、半径基準にする
 		param.m_Radius = 0.25f * 0.5f;
 		param.m_Mass = 1.0f;
+		//慣性テンソルの計算
+		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
 		param.m_UseSleep = false;
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat.identity();
 		param.m_Pos = m_Pos;
 		param.m_LinearVelocity = Vec3(0);
-		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSingleSphere(param);
+		m_PhysicsSphere = GetStage()->GetPhysicsManager()->AddSphere(param);
 
 	}
 

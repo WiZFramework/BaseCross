@@ -46,6 +46,13 @@ namespace basecross {
 		//‹…‘Ì
 		AddGameObject<ActivePsSphere>(1.0f, Vec3(0.0f, 1.0f, -10.f));
 		AddGameObject<ActivePsSphere>(1.0f, Vec3(0.0f, 1.0f, 10.f));
+
+		Quat Qt1, Qt2;
+		Qt1.rotationZ(2.0f);
+		Qt2.rotationX(0.7f);
+		AddGameObject<ActivePsCombinedObject>(Qt1, Vec3(-5.0f, 5.0f, 5.0f));
+		AddGameObject<ActivePsCombinedObject>(Qt2, Vec3(5.0f, 5.0f, 5.0f));
+
 	}
 
 	//ƒvƒŒƒCƒ„[‚Ìì¬

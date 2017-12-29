@@ -14,7 +14,7 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <br/>
-<h3>７０２．凸型オブジェクトと物理世界のＡＩ</h3>
+<h3>７０２．凸型、組合せオブジェクトと物理世界のＡＩ</h3>
 <br />
 　このサンプルは<b>FullSample702</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
@@ -23,11 +23,12 @@
 <img src="img/0702a.png" width="80%"/>
 <p>図0702a</p>
 <p>&nbsp;</p>
-　プレイヤーを動かすと、大きめの球体と凸型オブジェクトがごろごろ追いかけてきます。<b>Ｂボタンで球を発射</b>できます。当たれがひるみますが、逃げればまた追いかけてきます。<br />
+　プレイヤーを動かすと、大きめの球体と凸型オブジェクトがごろごろ追いかけてきます。また、上からプリミティブが組み合わさった物体が落ちてきます。<b>Ｂボタンで球を発射</b>できます。追いかけるオブジェクトは、当たればひるみますが、逃げればまた追いかけてきます。<br />
 <br/>
-　このサンプルのテーマは２つあります。1つ目は<b>凸型オブジェクト</b>です。<br />
+　このサンプルのテーマは２つあります。1つ目は<b>凸型オブジェクトと組みあわせオブジェクト</b>です。<br />
 　<b>凸型オブジェクト</b>は<b>へっこんだ部分がない</b>オブジェクトです。物理ライブラリはこのようなオブジェクトも<b>物理世界</b>に加えることが可能です。<br />
 　もともと、<b>BaseCross</b>では<b>多面体</b>の形状を作成することができます。今回はこの中で<b>正12面体</b>を作成し、<b>物理世界</b>への加え方を紹介します。同様の方法で<b>正4面体、正8面体、正20面体</b>も作成できますので、興味があったら実装してみてください。<br />
+　また<b>組み合わせオブジェクト</b>は<b>ボックスやカプセル</b>といったプリミティブな形状を組み合わせて新しい形状を作成します。もともとある<b>マルチメッシュ</b>に物理計算が付いたものと考えることができます。<br />
 <br />
 　もう一つのテーマは<b>ＡＩ処理</b>です。といっても簡単なものですが、<b>チュートリアル106</b>などでも紹介した<b>追いかけるオブジェクト</b>の<b>ＡＩ処理</b>を、<b>物理世界のオブジェクト</b>に実装してみました。<br />
 　これまでのサンプルとは一味違った<b>追いかけるオブジェクト</b>を表現しています。<br />
@@ -123,9 +124,8 @@ void ActivePsConvex::OnCreate() {
         vector&lt;uint16_t> indices;
         MeshUtill::CreateDodecahedron(0.5, vertices, indices);
         m_ConvexMesh = MeshResource::CreateMeshResource(vertices, indices, false);
-        m_PsConvexMesh = ObjectFactory::Create&lt;PsConvexMeshResource>(vertices, indices, 0.5f);
+        m_PsConvexMesh = PsConvexMeshResource::CreateMeshResource(vertices, indices, 0.5f);
     }</span>
-
     auto PtrTransform = GetComponent&lt;Transform>();
     PtrTransform->SetScale(Vec3(1.0f));
     PtrTransform->SetQuaternion(Quat());
@@ -142,9 +142,10 @@ void ActivePsConvex::OnCreate() {
 
     //物理計算凸面
     PsConvexParam param;
-    //半径にする
     param.m_ConvexMeshResource = m_PsConvexMesh;
     param.m_Mass = 1.0f;
+    //慣性テンソルの計算(球と同じにする)
+    param.m_Inertia = BasePhysics::CalcInertiaSphere(0.5f, param.m_Mass);
     param.m_MotionType = PsMotionType::MotionTypeActive;
     param.m_Quat = Quat();
     param.m_Pos = m_Position;
@@ -181,7 +182,62 @@ void ActivePsConvex::OnUpdate() {
 　と物理オブジェクトに設定します。ですから<b>派生クラス側で後から処理</b>になります。このように、<b>親クラスと継承先</b>で同じ仮想関数を実装する場合、<b>実行順番が重要</b>になる場合が多いので注意しましょう。<br />
 　あとは<b>追いかける球のクラス</b>ですが、<b>ActivePsSphereクラス</b>になります。同様の処理ですので説明は省略します。<br />
 <br />
-　さて、以上で<b>物理オブジェクトへのＡＩ処理</b>は実装できました。<b>衝突後の処理</b>や<b>球が当たったときの動作</b>は物理計算がやってくれます。もしこの部分に手を加える必要があれば<b>OnUpdate2()</b>を定義して記述してください。物理処理は<b>OnUpdate()とOnUpdate2()の間</b>に行われます。
+　さて、以上で<b>物理オブジェクトへのＡＩ処理</b>は実装できました。<b>衝突後の処理</b>や<b>球が当たったときの動作</b>は物理計算がやってくれます。もしこの部分に手を加える必要があれば<b>OnUpdate2()</b>を定義して記述してください。物理処理は<b>OnUpdate()とOnUpdate2()の間</b>に行われます。<br />
+<br />
+<h4>組み合わせオブジェrクト</h4>
+　最後ですが<b>組み合わせオブジェrクト</b>です。<b>ActivePsCombinedObjectクラス</b>が実装クラスです。以下は<b>ActivePsCombinedObject::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void ActivePsCombinedObject::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(Vec3(1.0f));
+    PtrTransform->SetQuaternion(m_Qt);
+    PtrTransform->SetPosition(m_Position);
+    //合成オブジェクトの準備
+    PsCombinedParam param;
+    //質量は重くする
+    param.m_Mass = 3.0f;
+    //Box用の慣性（慣性テンソル）を計算
+    param.m_Inertia = BasePhysics::CalcInertiaBox(Vec3(2.5f, 1.0f, 1.0f), param.m_Mass);
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = m_Qt;
+    param.m_Pos = m_Position;
+    <span class="red">//合成されるプリミティブ（0番目、ボックス）
+    PsCombinedPrimitive primitive;
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeBox;
+    primitive.m_HalfSize = Vec3(0.5f, 0.5f, 1.5f);
+    primitive.m_OffsetPosition = Vec3(-2.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);</span>
+    //合成されるプリミティブ（1番目、ボックス）
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeBox;
+    primitive.m_HalfSize = Vec3(0.5f, 1.5f, 0.5f);
+    primitive.m_OffsetPosition = Vec3(2.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);
+    //合成されるプリミティブ（2番目、カプセル）
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeCapsule;
+    primitive.m_HalfLen = 1.5f;
+    primitive.m_Radius = 0.5f;
+    primitive.m_OffsetPosition = Vec3(0.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);
+    //物理コンポーネント（合成）
+    auto PsPtr = AddComponent&lt;PsCombinedBody>(param);
+    PsPtr->SetDrawActive(true);
+    <span class="red">//物理コンポーネントに合わせて描画コンポーネント（影も）を作成
+    CreateDrawComp(param);</span>
+}
+</pre>
+</div>
+　<b>べた書き</b>の部分が多いのであまりきれいなソースとは言えませんが、<b>組み合わせ</b>を実装するためにはそれなりに準備が必要なことがわかります。<br />
+　まず、合成されるオブジェクトの構造体<b>PsCombinedParam</b>を初期化します。<br />
+　そうしたうえで、基本となる形状（<b>ボックスとかカプセル</b>）を、<b>PsCombinedPrimitive</b>という設定用の構造体に作成し、それを、<b>PsCombinedParam構造体</b>に加えます。上記赤くなっている部分は、0番目のボックスを加えている部分です。<br/>
+　もう一つ赤くなっている（下の部分）は、描画関連を別関数<b>CreateDrawComp()</b>で処理します。ここでは物理計算で計算した結果を<b>マルチメッシュリソース</b>で表示するための処理です。<b>マルチメッシュリソース</b>は<b>チュートリアル011</b>で紹介しています。<br />
+　<b>組み合わせオブジェクト</b>はAI処理などは行わずに、動きは物理計算に任せています。
 </div>
 <!-- /コンテンツ　-->
 <hr>

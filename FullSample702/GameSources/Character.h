@@ -147,6 +147,29 @@ namespace basecross{
 		virtual void OnUpdate() override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	物理計算するアクティブな合成オブジェクト
+	//--------------------------------------------------------------------------------------
+	class ActivePsCombinedObject : public GameObject {
+		Quat m_Qt;
+		Vec3 m_Position;
+		//メッシュ（カプセル）
+		shared_ptr<MeshResource> m_CapsuleMesh;
+		shared_ptr<MultiMeshResource> m_MultiMeshResource;
+		//描画コンポーネントの作成
+		void CreateDrawComp(const PsCombinedParam& param);
+	public:
+		//構築と破棄
+		ActivePsCombinedObject(const shared_ptr<Stage>& StagePtr,
+			const Quat& Qt,
+			const Vec3& Position
+		);
+		virtual ~ActivePsCombinedObject();
+		//初期化
+		virtual void OnCreate() override;
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算する発射する球体

@@ -11,7 +11,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	モーションタイプ
 	//--------------------------------------------------------------------------------------
-	enum PsMotionType {
+	enum class PsMotionType {
 		MotionTypeFixed = 0,
 		MotionTypeActive,
 		MotionTypeKeyframe,
@@ -20,6 +20,9 @@ namespace basecross {
 		MotionTypeCount
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	オブジェクト作成パラメータの親
+	//--------------------------------------------------------------------------------------
 	struct PsParamBase {
 		PsMotionType m_MotionType;
 		bsm::Quat m_Quat;
@@ -28,122 +31,22 @@ namespace basecross {
 		bsm::Vec3 m_AngularVelocity;
 		bool m_UseSleep;
 		float m_Mass;
+		//慣性テンソル
+		bsm::Mat3x3 m_Inertia;
+		float m_Restitution;
+		float  m_Friction;
 		PsParamBase() :
 			m_Quat(),
 			m_Pos(0),
 			m_LinearVelocity(0),
 			m_AngularVelocity(0),
 			m_UseSleep(true),
-			m_Mass(1.0f)
+			m_Mass(0.0f),
+			m_Inertia(),
+			m_Restitution(0.2f),
+			m_Friction(0.6f)
 		{}
 	};
-
-	//--------------------------------------------------------------------------------------
-	///	ボックス作成のパラメータ
-	//--------------------------------------------------------------------------------------
-	struct PsBoxParam : public PsParamBase {
-		bsm::Vec3 m_HalfSize;
-		PsBoxParam():
-			m_HalfSize(1.0f)
-		{}
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	球体作成のパラメータ
-	//--------------------------------------------------------------------------------------
-	struct PsSphereParam : public PsParamBase {
-		float m_Radius;
-		PsSphereParam():
-			m_Radius(1.0f)
-		{}
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	カプセル作成のパラメータ
-	//--------------------------------------------------------------------------------------
-	struct PsCapsuleParam : public PsParamBase {
-		float m_HalfLen;
-		float m_Radius;
-		PsCapsuleParam() :
-			m_HalfLen(0.5f),
-			m_Radius(0.5f)
-		{}
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	シリンダー作成のパラメータ
-	//--------------------------------------------------------------------------------------
-	struct PsCylinderParam : public PsParamBase {
-		float m_HalfLen;
-		float m_Radius;
-		PsCylinderParam() :
-			m_HalfLen(0.5f),
-			m_Radius(0.5f)
-		{}
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	ConvexMeshリソース
-	//--------------------------------------------------------------------------------------
-	class PsConvexMeshResource : public BaseResource {
-	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	vertices	頂点の配列
-		@param[in]	indices	インデックスの配列
-		@param[in]	radius	半径（慣性モーメント作成のため）
-		*/
-		//--------------------------------------------------------------------------------------
-		PsConvexMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
-			float radius);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	デストラクタ
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual ~PsConvexMeshResource();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	メッシュインデックスの取得
-		@return	メッシュインデックス
-		*/
-		//--------------------------------------------------------------------------------------
-		uint32_t GetMeshIndex() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	慣性モーメント用半径の取得
-		@return	慣性モーメント用半径
-		*/
-		//--------------------------------------------------------------------------------------
-		float GetRadius() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	バックアップされている頂点の取得
-		@return	バックアップされている頂点
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<VertexPositionNormalTexture>& GetVertices() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	バックアップされているインデックスの取得
-		@return	バックアップされているインデックス
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<uint16_t>& GetIndices() const;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
-	};
-
-	//--------------------------------------------------------------------------------------
-	///	凸面作成のパラメータ
-	//--------------------------------------------------------------------------------------
-	struct PsConvexParam : public PsParamBase {
-		shared_ptr<PsConvexMeshResource> m_ConvexMeshResource;
-	};
-
 
 
 	//--------------------------------------------------------------------------------------
@@ -219,6 +122,17 @@ namespace basecross {
 		}
 	};
 
+
+	//--------------------------------------------------------------------------------------
+	///	ボックス作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsBoxParam : public PsParamBase {
+		bsm::Vec3 m_HalfSize;
+		PsBoxParam() :
+			m_HalfSize(1.0f)
+		{}
+	};
+
 	//--------------------------------------------------------------------------------------
 	///	ボックス物理オブジェクト
 	//--------------------------------------------------------------------------------------
@@ -255,6 +169,16 @@ namespace basecross {
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	球体作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsSphereParam : public PsParamBase {
+		float m_Radius;
+		PsSphereParam() :
+			m_Radius(1.0f)
+		{}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -295,6 +219,19 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+
+	//--------------------------------------------------------------------------------------
+	///	カプセル作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsCapsuleParam : public PsParamBase {
+		float m_HalfLen;
+		float m_Radius;
+		PsCapsuleParam() :
+			m_HalfLen(0.5f),
+			m_Radius(0.5f)
+		{}
+	};
+
 	//--------------------------------------------------------------------------------------
 	///	カプセル物理オブジェクト
 	//--------------------------------------------------------------------------------------
@@ -333,6 +270,17 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	シリンダー作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsCylinderParam : public PsParamBase {
+		float m_HalfLen;
+		float m_Radius;
+		PsCylinderParam() :
+			m_HalfLen(0.5f),
+			m_Radius(0.5f)
+		{}
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	シリンダー物理オブジェクト
@@ -372,6 +320,62 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	ConvexMeshリソース
+	//--------------------------------------------------------------------------------------
+	class PsConvexMeshResource : public BaseResource {
+		friend class ObjectFactory;
+		//コンストラクタは直接呼び出せない
+		PsConvexMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices);
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	PsConvexMeshResourceの作成
+		@param[in]	vertices	頂点の配列
+		@param[in]	indices	インデックスの配列
+		@return	作成されたスマートポインタ
+		*/
+		//--------------------------------------------------------------------------------------
+		static shared_ptr<PsConvexMeshResource> CreateMeshResource(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PsConvexMeshResource();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュインデックスの取得
+		@return	メッシュインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		uint32_t GetMeshIndex() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	バックアップされている頂点の取得
+		@return	バックアップされている頂点
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<VertexPositionNormalTexture>& GetVertices() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	バックアップされているインデックスの取得
+		@return	バックアップされているインデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<uint16_t>& GetIndices() const;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	凸面作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsConvexParam : public PsParamBase {
+		shared_ptr<PsConvexMeshResource> m_ConvexMeshResource;
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	凸面物理オブジェクト(頂点指定のオブジェクト)
@@ -410,6 +414,107 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成作成のタイプ
+	//--------------------------------------------------------------------------------------
+	enum class PsCombinedType {
+		TypeSphere = 0,
+		TypeBox,
+		TypeCapsule,
+		TypeCylinder,
+		TypeConvex,
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成作成のプリミティブ
+	//--------------------------------------------------------------------------------------
+	struct PsCombinedPrimitive {
+		//タイプ
+		PsCombinedType m_CombinedType;
+		//Boxで使用サイズ
+		bsm::Vec3 m_HalfSize;
+		//Sphere,Capsule,Cylinderで使う半径
+		float m_Radius;
+		//Capsule,Cylinderで使う半分の長さ
+		float m_HalfLen;
+		//Convexで使うリソース
+		shared_ptr<PsConvexMeshResource> m_ConvexMeshResource;
+		//オフセット回転
+		bsm::Quat m_OffsetOrientation;
+		//オフセット位置
+		bsm::Vec3 m_OffsetPosition;
+		PsCombinedPrimitive():
+			m_CombinedType(PsCombinedType::TypeSphere),
+			m_HalfSize(bsm::Vec3(0.5f,0.5f,0.5f)),
+			m_Radius(0.5f),
+			m_HalfLen(0.5f),
+			m_ConvexMeshResource(nullptr),
+			m_OffsetOrientation(bsm::Quat()),
+			m_OffsetPosition(0.0f)
+		{}
+		void reset() {
+			m_CombinedType = PsCombinedType::TypeSphere;
+			m_HalfSize = bsm::Vec3(0.5f, 0.5f, 0.5f);
+			m_Radius = 0.5f;
+			m_HalfLen = 0.5f;
+			m_ConvexMeshResource = nullptr;
+			m_OffsetOrientation = bsm::Quat();
+			m_OffsetPosition = bsm::Vec3(0.0f);
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成作成のパラメータ
+	//--------------------------------------------------------------------------------------
+	struct PsCombinedParam : public PsParamBase {
+		vector<PsCombinedPrimitive> m_Primitives;
+		PsCombinedParam()
+		{}
+		void AddPrim(const PsCombinedPrimitive& prim) {
+			m_Primitives.push_back(prim);
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	プリミティブ合成物理オブジェクト
+	//--------------------------------------------------------------------------------------
+	class PhysicsCombinedObject : public PhysicsObject {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit PhysicsCombinedObject(const PsCombinedParam& param, uint16_t index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~PhysicsCombinedObject();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate()override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	初期化時のパラメータを得る
+		@return	初期化時のパラメータ
+		*/
+		//--------------------------------------------------------------------------------------
+		const PsCombinedParam& GetParam() const;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
 
 
 
@@ -453,7 +558,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddSingleBox(const PsBoxParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PhysicsBox> AddBox(const PsBoxParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
@@ -462,7 +567,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSingleSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PhysicsSphere> AddSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体のカプセルの追加
@@ -471,7 +576,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsCapsule> AddSingleCapsule(const PsCapsuleParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PhysicsCapsule> AddCapsule(const PsCapsuleParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体のシリンダーの追加<br />
@@ -481,7 +586,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsCylinder> AddSingleCylinder(const PsCylinderParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PhysicsCylinder> AddCylinder(const PsCylinderParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	凸面オブジェクトの追加
@@ -491,6 +596,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual shared_ptr<PhysicsConvex> AddConvex(const PsConvexParam& param, uint16_t index = UINT16_MAX);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プリミティブ合成物理オブジェクトの追加
+		@param[in]	param	作成のパラメータ
+		@param[in]	index	インデックス（オブジェクトを再利用する場合）
+		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual shared_ptr<PhysicsCombinedObject> AddCombinedObject(const PsCombinedParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のボディ数を得る
@@ -629,6 +743,55 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		bool GetContactsSet(uint16_t body_index, set<uint16_t>& contacts)const;
+		//以下慣性を計算するstatic関数
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ボックス型の慣性を返す
+		@param[in]	halfExtent	3方向の半分
+		@param[in]	mass	質量
+		@return	慣性行列
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Mat3x3 CalcInertiaBox(const bsm::Vec3& halfExtent,float mass);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	球型の慣性を返す
+		@param[in]	radius	半径
+		@param[in]	mass	質量
+		@return	慣性行列
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Mat3x3 CalcInertiaSphere(float radius, float mass);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	シリンダー型（X方向に長い）の慣性を返す
+		@param[in]	halfLength	半分の長さ
+		@param[in]	radius	半径
+		@param[in]	mass	質量
+		@return	慣性行列
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Mat3x3 CalcInertiaCylinderX(float halfLength, float radius, float mass);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	シリンダー型（Y方向に長い）の慣性を返す
+		@param[in]	halfLength	半分の長さ
+		@param[in]	radius	半径
+		@param[in]	mass	質量
+		@return	慣性行列
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Mat3x3 CalcInertiaCylinderY(float halfLength, float radius, float mass);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	シリンダー型（Z方向に長い）の慣性を返す
+		@param[in]	halfLength	半分の長さ
+		@param[in]	radius	半径
+		@param[in]	mass	質量
+		@return	慣性行列
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Mat3x3 CalcInertiaCylinderZ(float halfLength, float radius, float mass);
 		//以下、直接アクセス(使用する場合は慎重に)
 		//--------------------------------------------------------------------------------------
 		/*!
