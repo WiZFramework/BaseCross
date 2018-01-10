@@ -32,7 +32,7 @@ namespace basecross {
 		Quat m_Qt;
 		Vec3 m_Pos;
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
+		shared_ptr<PsSphere> m_PhysicsSphere;
 		//進行方向を得る
 		Vec3 GetMoveVector() const;
 		//回転を設定する

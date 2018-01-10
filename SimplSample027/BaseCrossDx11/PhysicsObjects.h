@@ -20,7 +20,7 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_BoxMesh;
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsBox> m_PhysicsBox;
+		shared_ptr<PsBox> m_PhysicsBox;
 		Vec3 m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -61,7 +61,7 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_BoxMesh;
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsBox> m_PhysicsBox;
+		shared_ptr<PsBox> m_PhysicsBox;
 		Vec3 m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -100,7 +100,7 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_SphereMesh;
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
+		shared_ptr<PsSphere> m_PhysicsSphere;
 		float m_Scale;
 		Quat m_Qt;
 		Vec3 m_Position;
@@ -139,7 +139,7 @@ namespace basecross {
 		//メッシュ
 		shared_ptr<MeshResource> m_SphereMesh;
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
+		shared_ptr<PsSphere> m_PhysicsSphere;
 		Vec3 m_Emitter;
 		Vec3 m_Velocity;
 		//描画データ

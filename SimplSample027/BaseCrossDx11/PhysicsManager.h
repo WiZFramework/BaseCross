@@ -51,7 +51,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddBox(const PsBoxParam& param, uint16_t index = UINT16_MAX)override;
+		virtual shared_ptr<PsBox> AddBox(const PsBoxParam& param, uint16_t index = UINT16_MAX)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
@@ -60,7 +60,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSphere(const PsSphereParam& param, uint16_t index = UINT16_MAX)override;
+		virtual shared_ptr<PsSphere> AddSphere(const PsSphereParam& param, uint16_t index = UINT16_MAX)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	更新

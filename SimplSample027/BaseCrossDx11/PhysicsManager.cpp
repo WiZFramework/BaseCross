@@ -28,7 +28,7 @@ namespace basecross {
 	}
 
 
-	shared_ptr<PhysicsBox> PhysicsManager::AddBox(const PsBoxParam& param, uint16_t index) {
+	shared_ptr<PsBox> PhysicsManager::AddBox(const PsBoxParam& param, uint16_t index) {
 		if (!m_BoxMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;
@@ -50,7 +50,7 @@ namespace basecross {
 
 	}
 
-	shared_ptr<PhysicsSphere> PhysicsManager::AddSphere(const PsSphereParam& param, uint16_t index) {
+	shared_ptr<PsSphere> PhysicsManager::AddSphere(const PsSphereParam& param, uint16_t index) {
 		if (!m_SphereMeshRes) {
 			//ワイアフレーム用メッシュの作成（変更できない）
 			vector<VertexPositionNormalTexture> vertices;

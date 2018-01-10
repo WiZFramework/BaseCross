@@ -230,7 +230,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsSphereBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsSphere> m_PhysicsSphere;
+		shared_ptr<PsSphere> m_PsSphere;
 		//ワイフレフレームメッシュ
 		shared_ptr<MeshResource> m_SphereMeshRes;
 	public:
@@ -287,7 +287,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsBoxBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsBox> m_PhysicsBox;
+		shared_ptr<PsBox> m_PsBox;
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -343,7 +343,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsCapsuleBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsCapsule> m_PhysicsCapsule;
+		shared_ptr<PsCapsule> m_PsCapsule;
 		//ワイアフレーム用メッシュ（カプセルは各コンポーネントが保持）
 		shared_ptr<MeshResource> m_CapsuleMesh;
 		void CreateMesh(const PsCapsuleParam& param);
@@ -402,7 +402,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsCylinderBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsCylinder> m_PhysicsCylinder;
+		shared_ptr<PsCylinder> m_PsCylinder;
 		//ワイアフレーム用メッシュ（シリンダーは各コンポーネントが保持）
 		shared_ptr<MeshResource> m_CylinderMesh;
 		void CreateMesh(const PsCylinderParam& param);
@@ -452,7 +452,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsConvexBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsConvex> m_PhysicsConvex;
+		shared_ptr<PsConvex> m_PsConvex;
 		//ワイアフレーム用メッシュ（各コンポーネントが保持）
 		shared_ptr<MeshResource> m_ConvexMesh;
 		void CreateMesh(const PsConvexParam& param);
@@ -502,7 +502,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class PsCombinedBody : public PsBodyComponent {
 		//物理計算用のオブジェクト
-		shared_ptr<PhysicsCombinedObject> m_PhysicsCombinedObject;
+		shared_ptr<PsCombined> m_PsCombined;
 		//ワイアフレーム用メッシュの配列（各コンポーネントが保持）
 		vector<shared_ptr<MeshResource>> m_CombinedMeshVec;
 		void CreateMesh(const PsCombinedParam& param);
@@ -546,8 +546,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		virtual void OnDraw()override;
 	};
-
-
 
 
 

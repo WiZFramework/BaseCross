@@ -23,7 +23,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	オブジェクト作成パラメータの親
 	//--------------------------------------------------------------------------------------
-	struct PsParamBase {
+	struct PsParam {
 		PsMotionType m_MotionType;
 		bsm::Quat m_Quat;
 		bsm::Vec3 m_Pos;
@@ -35,7 +35,7 @@ namespace basecross {
 		bsm::Mat3x3 m_Inertia;
 		float m_Restitution;
 		float  m_Friction;
-		PsParamBase() :
+		PsParam() :
 			m_Quat(),
 			m_Pos(0),
 			m_LinearVelocity(0),
@@ -86,7 +86,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
 	//--------------------------------------------------------------------------------------
-	class PhysicsObject : public ObjectInterface {
+	class PsObject : public ObjectInterface {
 	protected:
 		/// 剛体インデックス
 		uint16_t m_Index;
@@ -95,13 +95,13 @@ namespace basecross {
 		@brief	コンストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsObject();
+		explicit PsObject();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsObject();
+		virtual ~PsObject();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化時のStatusの設定
@@ -109,7 +109,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetParamStatus(const PsParamBase& param);
+		void SetParamStatus(const PsParam& param);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -126,7 +126,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ボックス作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsBoxParam : public PsParamBase {
+	struct PsBoxParam : public PsParam {
 		bsm::Vec3 m_HalfSize;
 		PsBoxParam() :
 			m_HalfSize(1.0f)
@@ -136,7 +136,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ボックス物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	class PhysicsBox : public PhysicsObject {
+	class PsBox : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -145,13 +145,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsBox(const PsBoxParam& param, uint16_t index);
+		explicit PsBox(const PsBoxParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsBox();
+		virtual ~PsBox();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -174,7 +174,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	球体作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsSphereParam : public PsParamBase {
+	struct PsSphereParam : public PsParam {
 		float m_Radius;
 		PsSphereParam() :
 			m_Radius(1.0f)
@@ -184,7 +184,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	球体物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	class PhysicsSphere : public PhysicsObject {
+	class PsSphere : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -193,13 +193,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsSphere(const PsSphereParam& param,uint16_t index);
+		explicit PsSphere(const PsSphereParam& param,uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsSphere();
+		virtual ~PsSphere();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -223,7 +223,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	カプセル作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsCapsuleParam : public PsParamBase {
+	struct PsCapsuleParam : public PsParam {
 		float m_HalfLen;
 		float m_Radius;
 		PsCapsuleParam() :
@@ -235,7 +235,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	カプセル物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	class PhysicsCapsule : public PhysicsObject {
+	class PsCapsule : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -244,13 +244,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsCapsule(const PsCapsuleParam& param, uint16_t index);
+		explicit PsCapsule(const PsCapsuleParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsCapsule();
+		virtual ~PsCapsule();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -273,7 +273,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	シリンダー作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsCylinderParam : public PsParamBase {
+	struct PsCylinderParam : public PsParam {
 		float m_HalfLen;
 		float m_Radius;
 		PsCylinderParam() :
@@ -285,7 +285,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	シリンダー物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	class PhysicsCylinder : public PhysicsObject {
+	class PsCylinder : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -294,13 +294,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsCylinder(const PsCylinderParam& param, uint16_t index);
+		explicit PsCylinder(const PsCylinderParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsCylinder();
+		virtual ~PsCylinder();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -373,14 +373,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	凸面作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsConvexParam : public PsParamBase {
+	struct PsConvexParam : public PsParam {
 		shared_ptr<PsConvexMeshResource> m_ConvexMeshResource;
 	};
 
 	//--------------------------------------------------------------------------------------
 	///	凸面物理オブジェクト(頂点指定のオブジェクト)
 	//--------------------------------------------------------------------------------------
-	class PhysicsConvex : public PhysicsObject {
+	class PsConvex : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -389,13 +389,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsConvex(const PsConvexParam& param, uint16_t index);
+		explicit PsConvex(const PsConvexParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsConvex();
+		virtual ~PsConvex();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -467,7 +467,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	プリミティブ合成作成のパラメータ
 	//--------------------------------------------------------------------------------------
-	struct PsCombinedParam : public PsParamBase {
+	struct PsCombinedParam : public PsParam {
 		vector<PsCombinedPrimitive> m_Primitives;
 		PsCombinedParam()
 		{}
@@ -480,7 +480,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	プリミティブ合成物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	class PhysicsCombinedObject : public PhysicsObject {
+	class PsCombined : public PsObject {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -489,13 +489,13 @@ namespace basecross {
 		@param[in]	index	インデックス
 		*/
 		//--------------------------------------------------------------------------------------
-		explicit PhysicsCombinedObject(const PsCombinedParam& param, uint16_t index);
+		explicit PsCombined(const PsCombinedParam& param, uint16_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~PhysicsCombinedObject();
+		virtual ~PsCombined();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	初期化
@@ -514,9 +514,6 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
-
-
-
 
 
 	//--------------------------------------------------------------------------------------
@@ -558,7 +555,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsBox> AddBox(const PsBoxParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsBox> AddBox(const PsBoxParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体の球体の追加
@@ -567,7 +564,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsSphere> AddSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsSphere> AddSphere(const PsSphereParam& param,uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体のカプセルの追加
@@ -576,7 +573,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsCapsule> AddCapsule(const PsCapsuleParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsCapsule> AddCapsule(const PsCapsuleParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	単体のシリンダーの追加<br />
@@ -586,7 +583,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsCylinder> AddCylinder(const PsCylinderParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsCylinder> AddCylinder(const PsCylinderParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	凸面オブジェクトの追加
@@ -595,7 +592,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsConvex> AddConvex(const PsConvexParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsConvex> AddConvex(const PsConvexParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	プリミティブ合成物理オブジェクトの追加
@@ -604,7 +601,7 @@ namespace basecross {
 		@return	オブジェクトのポインタ（バックアップはしないので呼び出し側で保存すること）
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual shared_ptr<PhysicsCombinedObject> AddCombinedObject(const PsCombinedParam& param, uint16_t index = UINT16_MAX);
+		virtual shared_ptr<PsCombined> AddCombined(const PsCombinedParam& param, uint16_t index = UINT16_MAX);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のボディ数を得る

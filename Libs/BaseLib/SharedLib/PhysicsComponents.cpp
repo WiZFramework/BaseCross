@@ -195,20 +195,20 @@ namespace basecross {
 	PsSphereBody::PsSphereBody(const shared_ptr<GameObject>& GameObjectPtr, const PsSphereParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSphere(param);
+		m_PsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSphere(param);
 	}
 
 	uint16_t PsSphereBody::GetIndex() const {
-		return m_PhysicsSphere->GetIndex();
+		return m_PsSphere->GetIndex();
 	}
 
 	void PsSphereBody::Reset(const PsSphereParam& param, uint16_t index) {
-		m_PhysicsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSphere(param, index);
+		m_PsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSphere(param, index);
 	}
 
 	bool PsSphereBody::CollisionTestBase(const SPHERE& src) {
 		SPHERE dest;
-		auto& param = m_PhysicsSphere->GetParam();
+		auto& param = m_PsSphere->GetParam();
 		dest.m_Radius = param.m_Radius;
 		dest.m_Center = GetPosition();
 		return HitTest::SPHERE_SPHERE(src, dest);
@@ -233,7 +233,7 @@ namespace basecross {
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
 		Local.affineTransformation(
-			bsm::Vec3(m_PhysicsSphere->GetParam().m_Radius),			//スケーリング
+			bsm::Vec3(m_PsSphere->GetParam().m_Radius),			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -248,22 +248,22 @@ namespace basecross {
 	PsBoxBody::PsBoxBody(const shared_ptr<GameObject>& GameObjectPtr, const PsBoxParam& param) :
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param);
+		m_PsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param);
 
 
 	}
 
 	uint16_t PsBoxBody::GetIndex() const {
-		return m_PhysicsBox->GetIndex();
+		return m_PsBox->GetIndex();
 	}
 
 	void PsBoxBody::Reset(const PsBoxParam& param, uint16_t index) {
-		m_PhysicsBox = GetGameObject()->GetStage()->GetBasePhysics().AddBox(param, index);
+		m_PsBox = GetGameObject()->GetStage()->GetBasePhysics().AddBox(param, index);
 	}
 
 
 	bool PsBoxBody::CollisionTestBase(const SPHERE& src) {
-		OBB dest(m_PhysicsBox->GetParam().m_HalfSize * 2,
+		OBB dest(m_PsBox->GetParam().m_HalfSize * 2,
 			GetOrientation(), GetPosition());
 		bsm::Vec3 ret;
 		return HitTest::SPHERE_OBB(src, dest, ret);
@@ -288,7 +288,7 @@ namespace basecross {
 		bsm::Quat LocalQt;
 		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
 		Local.affineTransformation(
-			m_PhysicsBox->GetParam().m_HalfSize,			//スケーリング
+			m_PsBox->GetParam().m_HalfSize,			//スケーリング
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
 			LocalQt,				//回転角度
 			LocalPos				//位置
@@ -303,7 +303,7 @@ namespace basecross {
 	PsCapsuleBody::PsCapsuleBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param);
+		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param);
 		CreateMesh(param);
 	}
 
@@ -328,11 +328,11 @@ namespace basecross {
 
 
 	uint16_t PsCapsuleBody::GetIndex() const {
-		return m_PhysicsCapsule->GetIndex();
+		return m_PsCapsule->GetIndex();
 	}
 
 	void PsCapsuleBody::Reset(const PsCapsuleParam& param, uint16_t index) {
-		m_PhysicsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
+		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
 		CreateMesh(param);
 	}
 
@@ -345,9 +345,9 @@ namespace basecross {
 			GetOrientation(),				//回転角度
 			GetPosition()			//位置
 		);
-		CAPSULE dest(m_PhysicsCapsule->GetParam().m_Radius,
-			Vec3(0, -m_PhysicsCapsule->GetParam().m_HalfLen, 0),
-			Vec3(0, m_PhysicsCapsule->GetParam().m_HalfLen, 0),
+		CAPSULE dest(m_PsCapsule->GetParam().m_Radius,
+			Vec3(0, -m_PsCapsule->GetParam().m_HalfLen, 0),
+			Vec3(0, m_PsCapsule->GetParam().m_HalfLen, 0),
 			World);
 		bsm::Vec3 ret;
 		return HitTest::SPHERE_CAPSULE(src, dest, ret);
@@ -391,7 +391,7 @@ namespace basecross {
 	PsCylinderBody::PsCylinderBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param);
+		m_PsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param);
 		CreateMesh(param);
 	}
 
@@ -411,11 +411,11 @@ namespace basecross {
 
 
 	uint16_t PsCylinderBody::GetIndex() const {
-		return m_PhysicsCylinder->GetIndex();
+		return m_PsCylinder->GetIndex();
 	}
 
 	void PsCylinderBody::Reset(const PsCylinderParam& param, uint16_t index) {
-		m_PhysicsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param, index);
+		m_PsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param, index);
 		CreateMesh(param);
 	}
 
@@ -453,7 +453,7 @@ namespace basecross {
 	PsConvexBody::PsConvexBody(const shared_ptr<GameObject>& GameObjectPtr, const PsConvexParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param);
+		m_PsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param);
 		CreateMesh(param);
 	}
 
@@ -468,11 +468,11 @@ namespace basecross {
 		m_ConvexMesh = MeshResource::CreateMeshResource(new_pc_vertices, param.m_ConvexMeshResource->GetIndices(), false);
 	}
 	uint16_t PsConvexBody::GetIndex() const {
-		return m_PhysicsConvex->GetIndex();
+		return m_PsConvex->GetIndex();
 	}
 
 	void PsConvexBody::Reset(const PsConvexParam& param, uint16_t index) {
-		m_PhysicsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param, index);
+		m_PsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param, index);
 		CreateMesh(param);
 	}
 
@@ -512,7 +512,7 @@ namespace basecross {
 	PsCombinedBody::PsCombinedBody(const shared_ptr<GameObject>& GameObjectPtr, const PsCombinedParam& param):
 		PsBodyComponent(GameObjectPtr)
 	{
-		m_PhysicsCombinedObject = GetGameObject()->GetStage()->GetBasePhysics().AddCombinedObject(param);
+		m_PsCombined = GetGameObject()->GetStage()->GetBasePhysics().AddCombined(param);
 		CreateMesh(param);
 	}
 
@@ -579,11 +579,11 @@ namespace basecross {
 	}
 
 	uint16_t PsCombinedBody::GetIndex() const {
-		return m_PhysicsCombinedObject->GetIndex();
+		return m_PsCombined->GetIndex();
 	}
 
 	void PsCombinedBody::Reset(const PsCombinedParam& param, uint16_t index) {
-		m_PhysicsCombinedObject = GetGameObject()->GetStage()->GetBasePhysics().AddCombinedObject(param, index);
+		m_PsCombined = GetGameObject()->GetStage()->GetBasePhysics().AddCombined(param, index);
 		CreateMesh(param);
 	}
 
@@ -602,7 +602,7 @@ namespace basecross {
 			Status.m_Position			//位置
 		);
 
-		auto& param = m_PhysicsCombinedObject->GetParam();
+		auto& param = m_PsCombined->GetParam();
 		for (size_t i = 0; i < param.m_Primitives.size(); i++) {
 			auto& prim = param.m_Primitives[i];
 			bsm::Vec3 LocalPos;
@@ -645,5 +645,7 @@ namespace basecross {
 			DrawShapeWireFrame(m_CombinedMeshVec[i], DrawWorld);
 		}
 	}
+
+
 
 }

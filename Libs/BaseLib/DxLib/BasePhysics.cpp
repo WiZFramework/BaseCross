@@ -546,10 +546,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	物理オブジェクトの親
 	//--------------------------------------------------------------------------------------
-	PhysicsObject::PhysicsObject() {}
-	PhysicsObject::~PhysicsObject() {}
+	PsObject::PsObject() {}
+	PsObject::~PsObject() {}
 
-	void PhysicsObject::SetParamStatus(const PsParamBase& param) {
+	void PsObject::SetParamStatus(const PsParam& param) {
 		ps::states[m_Index].reset();
 		ps::states[m_Index].setPosition((PfxVector3)param.m_Pos);
 		ps::states[m_Index].setOrientation(
@@ -576,7 +576,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	ボックスImplイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsBox::Impl {
+	struct PsBox::Impl {
 		//初期化パラメータ
 		PsBoxParam m_PsBoxParam;
 		Impl(const PsBoxParam& param):
@@ -588,15 +588,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ボックス物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsBox::PhysicsBox(const PsBoxParam& param, uint16_t index):
+	PsBox::PsBox(const PsBoxParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
 
-	PhysicsBox::~PhysicsBox() {}
+	PsBox::~PsBox() {}
 
-	void PhysicsBox::OnCreate() {
+	void PsBox::OnCreate() {
 		PfxBox box((PfxVector3)pImpl->m_PsBoxParam.m_HalfSize);
 		PfxShape shape;
 		shape.reset();
@@ -612,7 +612,7 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsBoxParam);
 	}
 
-	const PsBoxParam& PhysicsBox::GetParam() const {
+	const PsBoxParam& PsBox::GetParam() const {
 		return pImpl->m_PsBoxParam;
 	}
 
@@ -620,7 +620,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	球体Implイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsSphere::Impl {
+	struct PsSphere::Impl {
 		//初期化パラメータ
 		PsSphereParam m_PsSphereParam;
 		Impl(const PsSphereParam& param) :
@@ -632,15 +632,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	球体物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsSphere::PhysicsSphere(const PsSphereParam& param, uint16_t index) :
+	PsSphere::PsSphere(const PsSphereParam& param, uint16_t index) :
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
 
-	PhysicsSphere::~PhysicsSphere() {}
+	PsSphere::~PsSphere() {}
 
-	void PhysicsSphere::OnCreate() {
+	void PsSphere::OnCreate() {
 		PfxSphere sphere((PfxFloat)pImpl->m_PsSphereParam.m_Radius);
 		PfxShape shape;
 		shape.reset();
@@ -656,7 +656,7 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsSphereParam);
 	}
 
-	const PsSphereParam& PhysicsSphere::GetParam() const {
+	const PsSphereParam& PsSphere::GetParam() const {
 		return pImpl->m_PsSphereParam;
 	}
 
@@ -664,7 +664,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	カプセルImplイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsCapsule::Impl {
+	struct PsCapsule::Impl {
 		//初期化パラメータ
 		PsCapsuleParam m_PsCapsuleParam;
 		Impl(const PsCapsuleParam& param) :
@@ -677,14 +677,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	カプセル物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsCapsule::PhysicsCapsule(const PsCapsuleParam& param, uint16_t index):
+	PsCapsule::PsCapsule(const PsCapsuleParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
-	PhysicsCapsule::~PhysicsCapsule() {}
+	PsCapsule::~PsCapsule() {}
 
-	void PhysicsCapsule::OnCreate() {
+	void PsCapsule::OnCreate() {
 		PfxCapsule capsule(
 			(PfxFloat)pImpl->m_PsCapsuleParam.m_HalfLen,
 			(PfxFloat)pImpl->m_PsCapsuleParam.m_Radius
@@ -703,14 +703,14 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsCapsuleParam);
 	}
 
-	const PsCapsuleParam& PhysicsCapsule::GetParam() const {
+	const PsCapsuleParam& PsCapsule::GetParam() const {
 		return pImpl->m_PsCapsuleParam;
 	}
 
 	//--------------------------------------------------------------------------------------
 	//	シリンダーImplイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsCylinder::Impl {
+	struct PsCylinder::Impl {
 		//初期化パラメータ
 		PsCylinderParam m_PsCylinderParam;
 		Impl(const PsCylinderParam& param) :
@@ -723,14 +723,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	シリンダー物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsCylinder::PhysicsCylinder(const PsCylinderParam& param, uint16_t index):
+	PsCylinder::PsCylinder(const PsCylinderParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
-	PhysicsCylinder::~PhysicsCylinder() {}
+	PsCylinder::~PsCylinder() {}
 
-	void PhysicsCylinder::OnCreate() {
+	void PsCylinder::OnCreate() {
 		PfxCylinder cylinder(
 			(PfxFloat)pImpl->m_PsCylinderParam.m_HalfLen,
 			(PfxFloat)pImpl->m_PsCylinderParam.m_Radius
@@ -749,7 +749,7 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsCylinderParam);
 	}
 
-	const PsCylinderParam& PhysicsCylinder::GetParam() const {
+	const PsCylinderParam& PsCylinder::GetParam() const {
 		return pImpl->m_PsCylinderParam;
 	}
 
@@ -844,7 +844,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	PhysicsConvex　Implイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsConvex::Impl {
+	struct PsConvex::Impl {
 		//初期化パラメータ
 		PsConvexParam m_PsConvexParam;
 		Impl(const PsConvexParam& param) :
@@ -859,14 +859,14 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	ConvexMesh物理オブジェクト(頂点指定のオブジェクト)
 	//--------------------------------------------------------------------------------------
-	PhysicsConvex::PhysicsConvex(const PsConvexParam& param, uint16_t index):
+	PsConvex::PsConvex(const PsConvexParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
-	PhysicsConvex::~PhysicsConvex() {}
+	PsConvex::~PsConvex() {}
 
-	void PhysicsConvex::OnCreate() {
+	void PsConvex::OnCreate() {
 		if (!pImpl->m_PsConvexParam.m_ConvexMeshResource) {
 			throw BaseException(
 				L"ConvexMeshResourceが見つかりません",
@@ -888,7 +888,7 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsConvexParam);
 	}
 
-	const PsConvexParam& PhysicsConvex::GetParam() const {
+	const PsConvexParam& PsConvex::GetParam() const {
 		return pImpl->m_PsConvexParam;
 	}
 
@@ -896,7 +896,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//	PhysicsCombined　Implイディオム
 	//--------------------------------------------------------------------------------------
-	struct PhysicsCombinedObject::Impl {
+	struct PsCombined::Impl {
 		//初期化パラメータ
 		PsCombinedParam m_PsCombinedParam;
 		Impl(const PsCombinedParam& param) :
@@ -910,15 +910,15 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	プリミティブ合成物理オブジェクト
 	//--------------------------------------------------------------------------------------
-	PhysicsCombinedObject::PhysicsCombinedObject(const PsCombinedParam& param, uint16_t index):
+	PsCombined::PsCombined(const PsCombinedParam& param, uint16_t index):
 		pImpl(new Impl(param))
 	{
 		m_Index = index;
 	}
 
-	PhysicsCombinedObject::~PhysicsCombinedObject() {}
+	PsCombined::~PsCombined() {}
 
-	void PhysicsCombinedObject::OnCreate() {
+	void PsCombined::OnCreate() {
 		vector<PfxUInt16> PrimIndices;
 		ps::getNewCombinedShapesIndices(PrimIndices, (PfxUInt16)pImpl->m_PsCombinedParam.m_Primitives.size());
 		ps::collidables[m_Index].reset(ps::combinedShapes, &PrimIndices.front(), (int)PrimIndices.size());
@@ -980,7 +980,7 @@ namespace basecross {
 						throw BaseException(
 							L"ConvexMeshResourceが見つかりません",
 							L"if (!v.m_ConvexMeshResource)",
-							L"PhysicsCombined::OnCreate()"
+							L"PsCombined::OnCreate()"
 						);
 					}
 					PfxShape shape;
@@ -1003,9 +1003,11 @@ namespace basecross {
 		SetParamStatus(pImpl->m_PsCombinedParam);
 	}
 
-	const PsCombinedParam& PhysicsCombinedObject::GetParam() const {
+	const PsCombinedParam& PsCombined::GetParam() const {
 		return pImpl->m_PsCombinedParam;
 	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算用のインターフェイス
@@ -1015,7 +1017,7 @@ namespace basecross {
 	}
 	BasePhysics::~BasePhysics() {}
 
-	shared_ptr<PhysicsBox> BasePhysics::AddBox(const PsBoxParam& param, uint16_t index) {
+	shared_ptr<PsBox> BasePhysics::AddBox(const PsBoxParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1026,11 +1028,11 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsBox>(param, index);
+		return ObjectFactory::Create<PsBox>(param, index);
 	}
 
 
-	shared_ptr<PhysicsSphere> BasePhysics::AddSphere(const PsSphereParam& param, uint16_t index) {
+	shared_ptr<PsSphere> BasePhysics::AddSphere(const PsSphereParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1041,10 +1043,10 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsSphere>(param, index);
+		return ObjectFactory::Create<PsSphere>(param, index);
 	}
 
-	shared_ptr<PhysicsCapsule> BasePhysics::AddCapsule(const PsCapsuleParam& param, uint16_t index) {
+	shared_ptr<PsCapsule> BasePhysics::AddCapsule(const PsCapsuleParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1055,10 +1057,10 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsCapsule>(param, index);
+		return ObjectFactory::Create<PsCapsule>(param, index);
 	}
 
-	shared_ptr<PhysicsCylinder> BasePhysics::AddCylinder(const PsCylinderParam& param, uint16_t index) {
+	shared_ptr<PsCylinder> BasePhysics::AddCylinder(const PsCylinderParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1069,10 +1071,10 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsCylinder>(param, index);
+		return ObjectFactory::Create<PsCylinder>(param, index);
 	}
 
-	shared_ptr<PhysicsConvex> BasePhysics::AddConvex(const PsConvexParam& param, uint16_t index) {
+	shared_ptr<PsConvex> BasePhysics::AddConvex(const PsConvexParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1083,10 +1085,10 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsConvex>(param, index);
+		return ObjectFactory::Create<PsConvex>(param, index);
 	}
 
-	shared_ptr<PhysicsCombinedObject> BasePhysics::AddCombinedObject(const PsCombinedParam& param, uint16_t index) {
+	shared_ptr<PsCombined> BasePhysics::AddCombined(const PsCombinedParam& param, uint16_t index) {
 		if (ps::numRigidBodies >= NUM_RIGIDBODIES) {
 			throw BaseException(
 				L"これ以上物理オブジェクトを増やせません",
@@ -1097,9 +1099,8 @@ namespace basecross {
 		if (index >= ps::numRigidBodies) {
 			index = ps::numRigidBodies++;
 		}
-		return ObjectFactory::Create<PhysicsCombinedObject>(param, index);
+		return ObjectFactory::Create<PsCombined>(param, index);
 	}
-
 
 
 	uint16_t BasePhysics::GetNumBodies() const {
