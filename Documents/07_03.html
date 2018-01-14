@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>７．物理世界</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>７０３．ジョイント</h3>
+<br />
+　このサンプルは<b>FullSample703</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると以下の画面が出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0703a.png" width="80%"/>
+<p>図0703a</p>
+<p>&nbsp;</p>
+　Xボタンで球を発射します。それを、手前側のボックスに当てると選択できます。選択したうえで、Yボタンを動かすと選択されたボックスが動きます。以下の画面です。
+<p>&nbsp;</p>
+<img src="img/0703b.png" width="80%"/>
+<p>図0703b</p>
+<p>&nbsp;</p>
+　選択できるのは、６つのボックスだけです。また、それぞれの動きも<b>ジョイント</b>に制約された動きとなります。<br />
+　<b>ジョイント</b>とは<b>オブジェクト同士を結びつける結び目</b>みたいなものです。<br />
+　向かって左から<b>ボールジョイント、球関節ジョイント、蝶番（ちょうつがい）ジョイント、スライドジョイント、固定ジョイント、ユニバーサルジョイント</b>です。それぞれの動きは各自確認してください。<br />
+　連続して<b>Xボタンの球</b>を同じオブジェクトに当てると、そのジョイントは切断されます。以下、切断された状態です。
+<p>&nbsp;</p>
+<img src="img/0703c.png" width="80%"/>
+<p>図0703c</p>
+<p>&nbsp;</p>
+　切断された状態では、選択されているオブジェクトは、プレイヤーの真上に向かって移動するようになります。<br />
+<br />
+<h4>ジョイントの利用範囲</h4>
+　<b>ジョイント</b>は一見目立たないオブジェクトですが、考えてみるとかなり利用範囲が広いのがわかります。<br />
+　例えば<b>ステージの出入り口</b>をリアルに表現しようと思えば<b>蝶番（ちょうつがい）ジョイント</b>が使えるのがわかりますし、壁に突き出たボタンのようなオブジェクトは、<b>スライダージョイント</b>が使えます。<br />
+　また<b>固定ジョイント</b>で複数のオブジェクトを組み合わせて作成しておき、それが破壊されたときに<b>ジョイントを切断</b>することで、<b>バラバラになったオブジェクト</b>を表現できます。<br />
+　さらには<b>球関節ジョイント</b>を駆使することで<b>ラグドール</b>と言われる<b>人形</b>を作ることができます。<b>ラグドール</b>は、実際のゲームでも<b>攻撃を受けた瞬間のアニメーション</b>や<b>死んだ敵</b>などを表現する場合に使用されます。<br />
+<br />
+　それらの応用については、機会があればサンプル化するとして、今項では、<b>ジョイント</b>の生成方法を述べたシンプルなサンプルとなっています。<br />
+<br />
+<h4>ジョイントオブジェクト</h4>
+　それでは具体的なコードの説明にはいります。まず<b>ジョイント</b>を表現するために<b>BaseCross</b>では<b>ジョイントクラス</b>をいくつか用意しています。これらクラスは<b>PsJointクラス</b>を親クラスとした派生クラスです。<br />
+　<b>PsBallJointクラス</b>は<b>ボールジョイント</b>です。<b>PsSwingTwistJoint</b>は<b>球関節ジョイント</b>です。このようにして<b>PsHingeJoint（ちょうつがい）、PsSliderJoint（スライダー）、PsFixJoint（固定）、PsUniversalJoint（ユニバーサル）</b>の各ジョイントがあります。<br />
+　また<b>ジョイントオブジェクト</b>は<b>ゲームオブジェクト</b>でもなければ<b>コンポーネント</b>でもありません。<b>カメラ</b>や<b>ライト</b>に近い、独立したオブジェクトです。これは<b>複数（２つの）ゲームオブジェクトの橋渡し的な存在</b>なのでこのような設計になってます。<br />
+　ですので<b>ジョイントオブジェクト</b>を実装するには<b>保持するオブジェクト</b>が必要になります。例えば<b>ステージ</b>はそのような役割を担えますが、このサンプルでは<b>ジョイントマネージャ</b>というゲームオブジェクトを作成し、そこに持たせます。<br />
+　以下が<b>ジョイントマネージャ（PsJointManagerクラス）</b>の宣言です。<b>Character.h</b>にあります。
+<div class="box1">
+<pre>
+class PsJointManager : public GameObject {
+    shared_ptr&lt;PsBallJoint> m_PsBallJoint;
+    shared_ptr&lt;PsSwingTwistJoint> m_PsSwingTwistJoint;
+    shared_ptr&lt;PsHingeJoint> m_PsHingeJoint;
+    shared_ptr&lt;PsSliderJoint> m_PsSliderJoint;
+    shared_ptr&lt;PsFixJoint> m_PsFixJoint;
+    shared_ptr&lt;PsUniversalJoint> m_PsUniversalJoint;
+    void CreateBallJoint();
+    void CreateSwingTwistJoint();
+    void CreateHingeJoint();
+    void CreateSliderJoint();
+    void CreateFixJoint();
+    void CreateUniversalJoint();
+public:
+    //構築と破棄
+    PsJointManager(const shared_ptr&lt;Stage>& StagePtr);
+    virtual ~PsJointManager();
+    //初期化
+    virtual void OnCreate() override;
+};
+</pre>
+</div>
+　このように<b>shared_ptr</b>として各ジョイントが宣言されています。これらは、<b>OnCreate()関数</b>によって初期化されます。<br />
+<br />
+<h4>ジョイントによって結び付けられるオブジェクト</h4>
+　さて、ジョイントを作成する前に<b>ジョイントによって結び付けられるオブジェクト</b>を作成しなければなりません。それは<b>PsBrickクラス</b>です。以下が<b>OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void PsBrick::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetQuaternion(m_Qt);
+    PtrTransform->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetTextureResource(L"SKY_TX");
+
+    <span class="red">//物理計算ボックス
+    PsBoxParam param;
+    //DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
+    param.m_HalfSize = m_Scale * 0.5f;
+    param.m_Mass = m_Mass;
+    //慣性テンソルの計算
+    param.m_Inertia = BasePhysics::CalcInertiaBox(param.m_HalfSize, param.m_Mass);
+    if (m_IsFixed) {
+        param.m_MotionType = PsMotionType::MotionTypeFixed;
+    }
+    else {
+        param.m_MotionType = PsMotionType::MotionTypeActive;
+    }
+    param.m_Quat = m_Qt;
+    param.m_Pos = m_Position;
+    auto PsPtr = AddComponent&lt;PsBoxBody>(param);
+    if (m_IsFixed) {
+        PsPtr->SetContactFilterSelf(1);
+        PsPtr->SetContactFilterTarget(1);
+    }
+    else {
+        PsPtr->SetContactFilterSelf(2);
+        PsPtr->SetContactFilterTarget(2);
+    }
+    //ワーアフレームの表示
+    PsPtr->SetDrawActive(true);</span>
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;PsBrick>(GetThis&lt;PsBrick>()));
+    //最初のステートをPsBrickDefaultStateに設定
+    m_StateMachine->ChangeState(PsBrickDefaultState::Instance());
+}
+</pre>
+</div>
+　赤くなっているところが<b>物理コンポーネント</b>を作成しているところです。<b>m_IsFixedがtrue</b>の場合は<b>固定オブジェクト</b>として作成しています。これは、支えになっているオブジェクトと、実際にジョイントで結びついているオブジェクトの区別です。<br />
+　また
+<div class="box1">
+<pre>
+    if (m_IsFixed) {
+        PsPtr->SetContactFilterSelf(1);
+        PsPtr->SetContactFilterTarget(1);
+    }
+    else {
+        PsPtr->SetContactFilterSelf(2);
+        PsPtr->SetContactFilterTarget(2);
+    }
+</pre>
+</div>
+　のように<b>衝突判定のフィルター</b>を掛けています。この設定で<b>ジョイントで結ばれたオブジェクト同士</b>は衝突しなくなります。<br />
+　<b>衝突判定のフィルター</b>とは、以下に実際に判定しているところのコード(ライブラリ中、抜粋）を紹介しますと
+<div class="box1">
+<pre>
+    if( (shapeA.getContactFilterSelf()&shapeB.getContactFilterTarget()) && 
+        (shapeA.getContactFilterTarget()&shapeB.getContactFilterSelf()) ) {
+        //判定を行う
+    }
+</pre>
+</div>
+　となっています。<br />
+　shapeAとshapeBは判定を行う形状です。このアルゴリズムを要約すると
+<div class="box1">
+<pre>
+１、shapeAのFilterSelfとshapeBのFilterTargetのANDが真
+２、shapeBのFilterSelfとshapeAのFilterTargetのANDが真
+３、１と２の両方を満たしてる場合、判定する
+</pre>
+</div>
+　となります。具体的にジョイントで結ばれている<b>支え</b>と<b>動くほう</b>を考えますと、<b>支え</b>は、FilterSelfとFilterTargetが両方<b>1</b>となっています。また<b>動くほう</b>はFilterSelfとFilterTargetが両方<b>2</b>となっています。<br />
+　<b>支え</b>と<b>動くほう</b>の判定は<b>支えのFilterSelf（1）と動くほうのFilterTarget(2)のANDは真ではない</b>ので判定は行いません。<br/>
+　一方<b>動くほう同士</b>は<b>動くほうAのFilterSelf（2）と動くほうBのFilterTarget(2)のANDは真</b>なので判定は行います。ですので、ジョイントが切り離されたオブジェクト同士は衝突判定が行われます。<br />
+　<b>支え同士</b>も同様に判定しますが、<b>支え</b>は<b>Fix</b>になっているので動くことはないので、お互いが衝突することはありません。<br />
+　また<b>衝突判定のフィルター</b>はデフォルトが<b>FilterSelfとFilterTargetが両方、0xFFFFFFFF</b>となっているので、<b>プレイヤー</b>とは<b>支え</b>も<b>動くほう</b>もどちらも判定を行います。<br />
+　このように<b>一方のFilterSelfと、もう一方のFilterTargetのAND</b>をもとに判定するかどうかを決めているので、複数のオブジェクト同士の判定を制御することが可能になります。<br />
+<br />
+　このように定義されたオブジェクトは、<b>GameStage</b>で以下のように構築されます。
+<div class="box1">
+<pre>
+void GameStage::CreatePhysicsObjects() {
+    //下の台
+    AddGameObject&lt;FixedPsBox>(Vec3(30.0f, 1.0f, 30.0f), Quat(), Vec3(0.0f, -0.5f, 0.0f));
+    //ボールジョイント用
+    auto BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(-2.0f, 1.5f, 4.0f), 5.0f, true);
+    SetSharedGameObject(L"Brick01", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(-2.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick02", BrickPtr);
+    //球関節ジョイント用
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(-1.0f, 1.5f, 4.0f), 5.0f, true);
+    SetSharedGameObject(L"Brick03", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(-1.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick04", BrickPtr);
+    //蝶番ジョイント用
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(0.0f, 1.5f, 4.0f),5.0f,true);
+    SetSharedGameObject(L"Brick05", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(0.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick06", BrickPtr);
+    //スライダージョイント用
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(1.0f, 1.5f, 4.0f), 5.0f, true);
+    SetSharedGameObject(L"Brick07", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(1.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick08", BrickPtr);
+    //固定ジョイント用
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(2.0f, 1.5f, 4.0f), 5.0f, true);
+    SetSharedGameObject(L"Brick09", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(2.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick10", BrickPtr);
+    //ユニバーサルジョイント用
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(3.0f, 1.5f, 4.0f), 5.0f, true);
+    SetSharedGameObject(L"Brick11", BrickPtr);
+    BrickPtr 
+    = AddGameObject&lt;PsBrick>(Vec3(0.25f, 0.7f, 1.0f), Quat(), Vec3(3.0f, 1.5f, 3.0f), 5.0f, false);
+    SetSharedGameObject(L"Brick12", BrickPtr);
+
+    //ジョイントマネージャの作成
+    auto MngPtr = AddGameObject&lt;PsJointManager>();
+    SetSharedGameObject(L"PsJointManager", MngPtr);
+}
+</pre>
+</div>
+　ソースにあるように各オブジェクト<b>PsBrickクラス</b>のインスタンスを<b>SetSharedGameObject()関数</b>で、<b>L"Brick01"</b>といった形の名前を登録します。<br />
+　これらは、最後に作成している<b>ジョイントマネージャ（PsJointManagerクラス）</b>で参照します。<br />
+<br />
+<h4>ジョイントの作成</h4>
+　このように、12個のオブジェクトを作成しましたら、最後に<b>PsJointManagerクラス</b>を構築します。以下は<b>PsJointManager::OnCreate()関数</b>です。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+void PsJointManager::OnCreate() {
+    CreateBallJoint();
+    CreateSwingTwistJoint();
+    CreateHingeJoint();
+    CreateSliderJoint();
+    CreateFixJoint();
+    CreateUniversalJoint();
+}
+</pre>
+</div>
+　このように、各ジョイントを個別に作成しています。上から<b>ボールジョイント、球関節ジョイント、ちょうつがいジョイント、スライダージョイント、固定ジョイント、ユニバーサルジョイント</b>の順です。<br />
+　個別にはここでは説明しませんが、1つだけ例として<b>ちょうつがいジョイント</b>を説明します。<b>CreateHingeJoint()関数</b>で作成します。
+<div class="box1">
+<pre>
+void  PsJointManager::CreateHingeJoint() {
+    auto ObjA = GetStage()->GetSharedGameObject&lt;PsBrick>(L"Brick05");
+    auto CompA = ObjA->GetComponent&lt;PsBoxBody>();
+    auto ObjB = GetStage()->GetSharedGameObject&lt;PsBrick>(L"Brick06");
+    auto CompB = ObjB->GetComponent&lt;PsBoxBody>();
+
+    <span class="red">PsHingeJointParam param;
+    param.m_AnchorPoint = (CompA->GetPosition() + CompB->GetPosition())*0.5f;
+    param.m_IndexA = CompA->GetIndex();
+    param.m_IndexB = CompB->GetIndex();
+    param.m_Axis = Vec3(1.0f, 0.0f, 0.0f);
+    param.m_LowerAngle = -0.5f;
+    param.m_UpperAngle = 0.7f;
+
+    m_PsHingeJoint = GetStage()->GetBasePhysics().AddHingeJoint(param);</span>
+    ObjA->SetJoint(m_PsHingeJoint);
+    ObjB->SetJoint(m_PsHingeJoint);
+
+}
+</pre>
+</div>
+　各ジョイント共通処理として<b>GetStage()->GetSharedGameObject&lt;PsBrick>()呼び出し</b>でジョイントを付ける２つのオブジェクトを呼び出します。<br />
+　そのあと赤くなっているところのように、<b>PsHingeJointParam構造体</b>を初期化します。この構造体はちょうつがいを作成するための構造体で、各ジョイントのタイプごとに存在します。<br />
+　<b>m_AnchorPoint、m_IndexA、m_IndexBメンバ</b>は各ジョイント共通です。ほかのメンバは個別です。<br />
+　<b>m_Axis</b>はちょうつがいの回転軸を設定します。<b>m_LowerAngle</b>は最小回転、<b>m_UpperAngle</b>は最大回転です。<br />
+　パラメータの設定が終わったら
+<div class="box1">
+<pre>
+    m_PsHingeJoint = GetStage()->GetBasePhysics().AddHingeJoint(param);</span>
+</pre>
+</div>
+　のようにジョイントを作成します。作成したら<b>m_PsHingeJoint</b>をジョイントを持つオブジェクト（PsBrickクラス）に渡します。<b>PsBrickクラス</b>では、所持するジョイントをweak_ptrで持っておいて、<b>ジョイントが切断する</b>という操作に利用します。<br />
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="07_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

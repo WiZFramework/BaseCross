@@ -20,28 +20,19 @@ namespace basecross {
 	PsBodyComponent::~PsBodyComponent() {}
 
 	bsm::Vec3	PsBodyComponent::GetPosition() const {
-		PsBodyStatus Status;
-		GetGameObject()->GetStage()->GetBasePhysics().GetBodyStatus(GetIndex(), Status);
-		return Status.m_Position;
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyPosition(GetIndex());
 	}
 
 	bsm::Quat	PsBodyComponent::GetOrientation() const {
-		PsBodyStatus Status;
-		GetGameObject()->GetStage()->GetBasePhysics().GetBodyStatus(GetIndex(), Status);
-		return Status.m_Orientation;
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyOrientation(GetIndex());
 	}
 
-
 	bsm::Vec3	PsBodyComponent::GetLinearVelocity() const {
-		PsBodyStatus Status;
-		GetGameObject()->GetStage()->GetBasePhysics().GetBodyStatus(GetIndex(), Status);
-		return Status.m_LinearVelocity;
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyLinearVelocity(GetIndex());
 	}
 
 	bsm::Vec3	PsBodyComponent::GetAngularVelocity() const {
-		PsBodyStatus Status;
-		GetGameObject()->GetStage()->GetBasePhysics().GetBodyStatus(GetIndex(), Status);
-		return Status.m_AngularVelocity;
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyAngularVelocity(GetIndex());
 	}
 
 	void PsBodyComponent::GetStatus(PsBodyStatus& st) const {
@@ -60,14 +51,26 @@ namespace basecross {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyPosition(GetIndex(), pos);
 	}
 
+	void PsBodyComponent::SetOrientation(const bsm::Quat& qt) {
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyOrientation(GetIndex(), qt);
+	}
+
 	void PsBodyComponent::SetLinearVelocity(const bsm::Vec3& v) {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyLinearVelocity(GetIndex(), v);
 
 	}
 	void PsBodyComponent::SetAngularVelocity(const bsm::Vec3& v) {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyAngularVelocity(GetIndex(), v);
-
 	}
+
+	void PsBodyComponent::MovePosition(const bsm::Vec3 &pos, float timeStep) {
+		GetGameObject()->GetStage()->GetBasePhysics().MoveBodyPosition(GetIndex(), pos, timeStep);
+	}
+	void PsBodyComponent::MoveOrientation(const bsm::Quat& qt, float timeStep) {
+		GetGameObject()->GetStage()->GetBasePhysics().MoveBodyOrientation(GetIndex(), qt, timeStep);
+	}
+
+
 	void PsBodyComponent::ApplyForce(const bsm::Vec3& v) {
 		GetGameObject()->GetStage()->GetBasePhysics().ApplyBodyForce(GetIndex(), v);
 
@@ -75,6 +78,14 @@ namespace basecross {
 	void PsBodyComponent::ApplyTorque(const bsm::Vec3& v) {
 		GetGameObject()->GetStage()->GetBasePhysics().ApplyBodyTorque(GetIndex(), v);
 	}
+
+	void PsBodyComponent::SetContactFilterSelf(uint32_t val) {
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyContactFilterSelf(GetIndex(), val);
+	}
+	void PsBodyComponent::SetContactFilterTarget(uint32_t val) {
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyContactFilterTarget(GetIndex(), val);
+	}
+
 
 	bool PsBodyComponent::GetContactsVec(vector<uint16_t>& contacts)const {
 		return GetGameObject()->GetStage()->GetBasePhysics().GetContactsVec(GetIndex(), contacts);
@@ -202,6 +213,11 @@ namespace basecross {
 		return m_PsSphere->GetIndex();
 	}
 
+	const PsSphereParam& PsSphereBody::GetParam() const {
+		return m_PsSphere->GetParam();
+	}
+
+
 	void PsSphereBody::Reset(const PsSphereParam& param, uint16_t index) {
 		m_PsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSphere(param, index);
 	}
@@ -249,12 +265,14 @@ namespace basecross {
 		PsBodyComponent(GameObjectPtr)
 	{
 		m_PsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param);
-
-
 	}
 
 	uint16_t PsBoxBody::GetIndex() const {
 		return m_PsBox->GetIndex();
+	}
+
+	const PsBoxParam& PsBoxBody::GetParam() const {
+		return m_PsBox->GetParam();
 	}
 
 	void PsBoxBody::Reset(const PsBoxParam& param, uint16_t index) {
@@ -330,6 +348,11 @@ namespace basecross {
 	uint16_t PsCapsuleBody::GetIndex() const {
 		return m_PsCapsule->GetIndex();
 	}
+
+	const PsCapsuleParam& PsCapsuleBody::GetParam() const {
+		return m_PsCapsule->GetParam();
+	}
+
 
 	void PsCapsuleBody::Reset(const PsCapsuleParam& param, uint16_t index) {
 		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
@@ -414,6 +437,11 @@ namespace basecross {
 		return m_PsCylinder->GetIndex();
 	}
 
+	const PsCylinderParam& PsCylinderBody::GetParam() const {
+		return m_PsCylinder->GetParam();
+	}
+
+
 	void PsCylinderBody::Reset(const PsCylinderParam& param, uint16_t index) {
 		m_PsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param, index);
 		CreateMesh(param);
@@ -470,6 +498,11 @@ namespace basecross {
 	uint16_t PsConvexBody::GetIndex() const {
 		return m_PsConvex->GetIndex();
 	}
+
+	const PsConvexParam& PsConvexBody::GetParam() const {
+		return m_PsConvex->GetParam();
+	}
+
 
 	void PsConvexBody::Reset(const PsConvexParam& param, uint16_t index) {
 		m_PsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param, index);
@@ -581,6 +614,11 @@ namespace basecross {
 	uint16_t PsCombinedBody::GetIndex() const {
 		return m_PsCombined->GetIndex();
 	}
+
+	const PsCombinedParam& PsCombinedBody::GetParam() const {
+		return m_PsCombined->GetParam();
+	}
+
 
 	void PsCombinedBody::Reset(const PsCombinedParam& param, uint16_t index) {
 		m_PsCombined = GetGameObject()->GetStage()->GetBasePhysics().AddCombined(param, index);

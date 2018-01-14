@@ -1007,6 +1007,357 @@ namespace basecross {
 		return pImpl->m_PsCombinedParam;
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	ジョイントの親
+	//--------------------------------------------------------------------------------------
+	PsJoint::PsJoint():
+		m_Index(0)
+	{}
+	PsJoint::~PsJoint() {}
+
+	void PsJoint::UpdateJointPairs(uint16_t IndexA, uint16_t IndexB) {
+		PfxRigidState &stateA = ps::states[IndexA];
+		PfxRigidState &stateB = ps::states[IndexB];
+		pfxUpdateJointPairs(ps::jointPairs[m_Index], m_Index, ps::joints[m_Index], stateA, stateB);
+	}
+
+	bool PsJoint::IsActive() const {
+		return (ps::joints[m_Index].m_active > 0);
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	ボールジョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsBallJoint::Impl {
+		//初期化パラメータ
+		PsBallJointParam m_PsBallJointParam;
+		Impl(const PsBallJointParam& param) :
+			m_PsBallJointParam(param)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	ボールジョイント
+	//--------------------------------------------------------------------------------------
+	PsBallJoint::PsBallJoint(const PsBallJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+	PsBallJoint::~PsBallJoint() {}
+
+	void PsBallJoint::OnCreate() {
+		PfxBallJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsBallJointParam.m_AnchorPoint;
+		PfxRigidState &stateA = ps::states[pImpl->m_PsBallJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsBallJointParam.m_IndexB];
+		pfxInitializeBallJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsBallJointParam.m_IndexA, pImpl->m_PsBallJointParam.m_IndexB);
+	}
+
+	const PsBallJointParam& PsBallJoint::GetParam() const {
+		return pImpl->m_PsBallJointParam;
+	}
+
+	void PsBallJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsBallJointParam.m_IndexA, pImpl->m_PsBallJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsBallJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsBallJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsBallJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsBallJointParam.m_IndexB].wakeup();
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	球関節ジョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsSwingTwistJoint::Impl {
+		//初期化パラメータ
+		PsSwingTwistJointParam m_PsSwingTwistJointParam;
+		Impl(const PsSwingTwistJointParam& param) :
+			m_PsSwingTwistJointParam(param)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	球関節ジョイント
+	//--------------------------------------------------------------------------------------
+	PsSwingTwistJoint::PsSwingTwistJoint(const PsSwingTwistJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+	PsSwingTwistJoint::~PsSwingTwistJoint() {}
+
+	void PsSwingTwistJoint::OnCreate() {
+		PfxSwingTwistJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsSwingTwistJointParam.m_AnchorPoint;
+		jparam.twistAxis = pImpl->m_PsSwingTwistJointParam.m_TwistAxis;
+		jparam.twistLowerAngle = pImpl->m_PsSwingTwistJointParam.m_TwistLowerAngle;
+		jparam.twistUpperAngle = pImpl->m_PsSwingTwistJointParam.m_TwistUpperAngle;
+		jparam.swingLowerAngle = pImpl->m_PsSwingTwistJointParam.m_SwingLowerAngle;
+		jparam.swingUpperAngle = pImpl->m_PsSwingTwistJointParam.m_SwingUpperAngle;
+		PfxRigidState &stateA = ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexB];
+		pfxInitializeSwingTwistJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsSwingTwistJointParam.m_IndexA, pImpl->m_PsSwingTwistJointParam.m_IndexB);
+	}
+
+	const PsSwingTwistJointParam& PsSwingTwistJoint::GetParam() const {
+		return pImpl->m_PsSwingTwistJointParam;
+	}
+
+	void PsSwingTwistJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsSwingTwistJointParam.m_IndexA, pImpl->m_PsSwingTwistJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsSwingTwistJointParam.m_IndexB].wakeup();
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	蝶番(ちょうつがい)ジョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsHingeJoint::Impl {
+		//初期化パラメータ
+		PsHingeJointParam m_PsHingeJointParam;
+		Impl(const PsHingeJointParam& param) :
+			m_PsHingeJointParam(param)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	蝶番(ちょうつがい)ジョイント
+	//--------------------------------------------------------------------------------------
+	PsHingeJoint::PsHingeJoint(const PsHingeJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+
+	PsHingeJoint::~PsHingeJoint() {}
+
+	void PsHingeJoint::OnCreate() {
+		PfxHingeJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsHingeJointParam.m_AnchorPoint;
+		jparam.axis = pImpl->m_PsHingeJointParam.m_Axis;
+		jparam.lowerAngle = pImpl->m_PsHingeJointParam.m_LowerAngle;
+		jparam.upperAngle = pImpl->m_PsHingeJointParam.m_UpperAngle;
+		PfxRigidState &stateA = ps::states[pImpl->m_PsHingeJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsHingeJointParam.m_IndexB];
+		pfxInitializeHingeJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsHingeJointParam.m_IndexA, pImpl->m_PsHingeJointParam.m_IndexB);
+	}
+
+	const PsHingeJointParam& PsHingeJoint::GetParam() const {
+		return pImpl->m_PsHingeJointParam;
+	}
+
+	void PsHingeJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsHingeJointParam.m_IndexA, pImpl->m_PsHingeJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsHingeJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsHingeJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsHingeJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsHingeJointParam.m_IndexB].wakeup();
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	スライダージョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsSliderJoint::Impl {
+		//初期化パラメータ
+		PsSliderJointParam m_PsSliderJointParam;
+		Impl(const PsSliderJointParam& param) :
+			m_PsSliderJointParam(param)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	スライダージョイント
+	//--------------------------------------------------------------------------------------
+	PsSliderJoint::PsSliderJoint(const PsSliderJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+	PsSliderJoint::~PsSliderJoint() {}
+
+	void PsSliderJoint::OnCreate() {
+		PfxSliderJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsSliderJointParam.m_AnchorPoint;
+		jparam.direction = pImpl->m_PsSliderJointParam.m_Direction;
+		jparam.lowerDistance = pImpl->m_PsSliderJointParam.m_LowerDistance;
+		jparam.upperDistance = pImpl->m_PsSliderJointParam.m_UpperDistance;
+
+		PfxRigidState &stateA = ps::states[pImpl->m_PsSliderJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsSliderJointParam.m_IndexB];
+		pfxInitializeSliderJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsSliderJointParam.m_IndexA, pImpl->m_PsSliderJointParam.m_IndexB);
+	}
+
+	const PsSliderJointParam& PsSliderJoint::GetParam() const {
+		return pImpl->m_PsSliderJointParam;
+	}
+
+	void PsSliderJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsSliderJointParam.m_IndexA, pImpl->m_PsSliderJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsSliderJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsSliderJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsSliderJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsSliderJointParam.m_IndexB].wakeup();
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	固定ジョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsFixJoint::Impl {
+		//初期化パラメータ
+		PsFixJointParam m_PsFixJointParam;
+		Impl(const PsFixJointParam& param) :
+			m_PsFixJointParam(param)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	固定ジョイント
+	//--------------------------------------------------------------------------------------
+	PsFixJoint::PsFixJoint(const PsFixJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+	PsFixJoint::~PsFixJoint() {}
+
+	void PsFixJoint::OnCreate() {
+		PfxFixJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsFixJointParam.m_AnchorPoint;
+		PfxRigidState &stateA = ps::states[pImpl->m_PsFixJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsFixJointParam.m_IndexB];
+		pfxInitializeFixJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsFixJointParam.m_IndexA, pImpl->m_PsFixJointParam.m_IndexB);
+	}
+
+	const PsFixJointParam& PsFixJoint::GetParam() const {
+		return pImpl->m_PsFixJointParam;
+	}
+
+	void PsFixJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsFixJointParam.m_IndexA, pImpl->m_PsFixJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsFixJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsFixJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsFixJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsFixJointParam.m_IndexB].wakeup();
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	ユニバーサルジョイントImplイディオム
+	//--------------------------------------------------------------------------------------
+	struct PsUniversalJoint::Impl {
+		//初期化パラメータ
+		PsUniversalJointParam m_PsUniversalJointParam;
+		Impl(const PsUniversalJointParam& param) :
+			m_PsUniversalJointParam(param)
+		{}
+		~Impl() {}
+	};
+	//--------------------------------------------------------------------------------------
+	///	ユニバーサルジョイント
+	//--------------------------------------------------------------------------------------
+	PsUniversalJoint::PsUniversalJoint(const PsUniversalJointParam& param):
+		pImpl(new Impl(param))
+	{
+		m_Index = ps::numJoints++;
+	}
+
+	PsUniversalJoint::~PsUniversalJoint() {}
+
+	void PsUniversalJoint::OnCreate() {
+		PfxUniversalJointInitParam jparam;
+		jparam.anchorPoint = pImpl->m_PsUniversalJointParam.m_AnchorPoint;
+		jparam.axis = pImpl->m_PsUniversalJointParam.m_Axis;
+		jparam.upVec = pImpl->m_PsUniversalJointParam.m_UpVec;
+		jparam.swing1LowerAngle = pImpl->m_PsUniversalJointParam.m_Swing1LowerAngle;
+		jparam.swing1UpperAngle = pImpl->m_PsUniversalJointParam.m_Swing1UpperAngle;
+		jparam.swing2LowerAngle = pImpl->m_PsUniversalJointParam.m_Swing2LowerAngle;
+		jparam.swing2UpperAngle = pImpl->m_PsUniversalJointParam.m_Swing2UpperAngle;
+
+		PfxRigidState &stateA = ps::states[pImpl->m_PsUniversalJointParam.m_IndexA];
+		PfxRigidState &stateB = ps::states[pImpl->m_PsUniversalJointParam.m_IndexB];
+		pfxInitializeUniversalJoint(ps::joints[m_Index], stateA, stateB, jparam);
+		UpdateJointPairs(pImpl->m_PsUniversalJointParam.m_IndexA, pImpl->m_PsUniversalJointParam.m_IndexB);
+
+	}
+	const PsUniversalJointParam& PsUniversalJoint::GetParam() const {
+		return pImpl->m_PsUniversalJointParam;
+
+	}
+
+	void PsUniversalJoint::SetActive(bool b) {
+		if (b) {
+			ps::joints[m_Index].m_active = 1;
+		}
+		else {
+			ps::joints[m_Index].m_active = 0;
+		}
+		UpdateJointPairs(pImpl->m_PsUniversalJointParam.m_IndexA, pImpl->m_PsUniversalJointParam.m_IndexB);
+		if (ps::states[pImpl->m_PsUniversalJointParam.m_IndexA].isAsleep()) {
+			ps::states[pImpl->m_PsUniversalJointParam.m_IndexA].wakeup();
+		}
+		if (ps::states[pImpl->m_PsUniversalJointParam.m_IndexB].isAsleep()) {
+			ps::states[pImpl->m_PsUniversalJointParam.m_IndexB].wakeup();
+		}
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1102,6 +1453,77 @@ namespace basecross {
 		return ObjectFactory::Create<PsCombined>(param, index);
 	}
 
+	shared_ptr<PsBallJoint> BasePhysics::AddBallJoint(const PsBallJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddBallJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsBallJoint>(param);
+	}
+
+
+	shared_ptr<PsSwingTwistJoint> BasePhysics::AddSwingTwistJoint(const PsSwingTwistJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddSwingTwistJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsSwingTwistJoint>(param);
+	}
+
+
+
+	shared_ptr<PsHingeJoint> BasePhysics::AddHingeJoint(const PsHingeJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddHingeJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsHingeJoint>(param);
+	}
+
+	shared_ptr<PsSliderJoint> BasePhysics::AddSliderJoint(const PsSliderJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddSliderJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsSliderJoint>(param);
+	}
+
+	shared_ptr<PsFixJoint> BasePhysics::AddFixJoint(const PsFixJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddFixJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsFixJoint>(param);
+	}
+
+
+	shared_ptr<PsUniversalJoint> BasePhysics::AddUniversalJoint(const PsUniversalJointParam& param) {
+		if (ps::numJoints >= NUM_JOINTS) {
+			throw BaseException(
+				L"これ以上ジョイントを増やせません",
+				L"if (ps::numJoints >= NUM_JOINTS)",
+				L"BasePhysics::AddUniversalJoint()"
+			);
+		}
+		return ObjectFactory::Create<PsUniversalJoint>(param);
+	}
+
+
 
 	uint16_t BasePhysics::GetNumBodies() const {
 		return ps::numRigidBodies;
@@ -1132,24 +1554,44 @@ namespace basecross {
 		}
 	}
 
-	void BasePhysics::SetBodyPosition(uint16_t body_index, const bsm::Vec3& pos) {
-		if (ps::states[body_index].getMotionType() != ePfxMotionType::kPfxMotionTypeTrigger) {
-			throw BaseException(
-				L"モーションタイプがMotionTypeTrigger以外では設定できません",
-				L"if (states[body_index].getMotionType != ePfxMotionType::kPfxMotionTypeTrigger)",
-				L"BasePhysics::SetBodyPosition()"
-			);
-		}
-		ps::states[body_index].setPosition((PfxVector3)pos);
+	bsm::Vec3 BasePhysics::GetBodyPosition(uint16_t body_index) const {
+		return (bsm::Vec3)ps::states[body_index].getPosition();
 	}
 
+	void BasePhysics::SetBodyPosition(uint16_t body_index, const bsm::Vec3& pos) {
+		ps::states[body_index].setPosition((const PfxVector3&)pos);
+	}
+
+	bsm::Quat BasePhysics::GetBodyOrientation(uint16_t body_index) const {
+		return (bsm::Quat)ps::states[body_index].getOrientation();
+	}
+	void BasePhysics::SetBodyOrientation(uint16_t body_index, const bsm::Quat& qt) {
+		ps::states[body_index].setOrientation((const PfxQuat&)qt);
+	}
+
+
+	bsm::Vec3 BasePhysics::GetBodyLinearVelocity(uint16_t body_index) const {
+		return (bsm::Vec3)ps::states[body_index].getLinearVelocity();
+	}
 
 	void BasePhysics::SetBodyLinearVelocity(uint16_t body_index, const bsm::Vec3& v) {
-		ps::states[body_index].setLinearVelocity((PfxVector3)v);
+		ps::states[body_index].setLinearVelocity((const PfxVector3&)v);
+	}
+
+	bsm::Vec3 BasePhysics::GetBodyAngularVelocity(uint16_t body_index) const {
+		return (bsm::Vec3)ps::states[body_index].getAngularVelocity();
 	}
 	void BasePhysics::SetBodyAngularVelocity(uint16_t body_index, const bsm::Vec3& v) {
-		ps::states[body_index].setAngularVelocity((PfxVector3)v);
+		ps::states[body_index].setAngularVelocity((const PfxVector3&)v);
 	}
+
+	void BasePhysics::MoveBodyPosition(uint16_t body_index, const bsm::Vec3 &pos, float timeStep) {
+		ps::states[body_index].movePosition((const PfxVector3&)pos,(PfxFloat)timeStep);
+	}
+	void BasePhysics::MoveBodyOrientation(uint16_t body_index, const bsm::Quat& qt, float timeStep) {
+		ps::states[body_index].moveOrientation((const PfxQuat&)qt,(PfxFloat)timeStep);
+	}
+
 
 	void BasePhysics::ApplyBodyForce(uint16_t body_index, const bsm::Vec3& v) {
 		pfxApplyExternalForce(
@@ -1168,6 +1610,14 @@ namespace basecross {
 			ps::timeStep
 		);
 	}
+
+	void BasePhysics::SetBodyContactFilterSelf(uint16_t body_index, uint32_t val) {
+		ps::states[body_index].setContactFilterSelf((PfxUInt32)val);
+	}
+	void BasePhysics::SetBodyContactFilterTarget(uint16_t body_index, uint32_t val) {
+		ps::states[body_index].setContactFilterTarget((PfxUInt32)val);
+	}
+
 
 	uint16_t BasePhysics::GetNumShapes(uint16_t body_index)const {
 		return (uint16_t)ps::collidables[body_index].getNumShapes();
