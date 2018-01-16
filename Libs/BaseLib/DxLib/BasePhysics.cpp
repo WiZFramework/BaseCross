@@ -1795,7 +1795,7 @@ namespace basecross {
 
 
 	void BasePhysics::Update() {
-		for (int i = 1; i<ps::numRigidBodies; i++) {
+		for (int i = 0; i<ps::numRigidBodies; i++) {
 			pfxApplyExternalForce(ps::states[i], ps::bodies[i], ps::bodies[i].getMass()*PfxVector3(0.0f, -9.8f, 0.0f), PfxVector3(0.0f), ps::timeStep);
 		}
 		ps::broadphase();
