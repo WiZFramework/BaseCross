@@ -736,9 +736,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateBoneModelMeshWithTangentBase(BinaryReader& Reader, const wstring& BinDataDir,
 			const wstring& BinDataFile, bool AccessWrite = false);
-
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュの作成（スタティックメッシュ）
@@ -905,6 +902,28 @@ namespace basecross {
 				);
 			}
 			return Ptr->m_Vertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	バックアップデータのインデックス取得<br />
+		AccessWriteがtrueで作成されたリソースは、頂点の配列によって頂点を変更できる。<br />
+		AccessWriteがtrueでない場合は、バックアップは空である。
+		@tparam	T	頂点の型
+		@param	なし
+		@return	バックアップデータインデックスの配列。
+		*/
+		//--------------------------------------------------------------------------------------
+		template<typename T>
+		vector<uint16_t>& GetBackupIndices() const {
+			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimData.m_BackUpData);
+			if (!Ptr) {
+				throw BaseException(
+					L"バックアップをT型にキャストできません",
+					Util::GetWSTypeName<T>(),
+					L"MeshResource::GetBackupIndices<T>()"
+				);
+			}
+			return Ptr->m_Indices;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

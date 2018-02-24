@@ -567,10 +567,27 @@ namespace basecross {
 		else {
 			ps::states[m_Index].setUseSleep(0);
 		}
+		ps::states[m_Index].setContactFilterSelf((PfxUInt32)param.m_ContactFilterSelf);
+		ps::states[m_Index].setContactFilterTarget((PfxUInt32)param.m_ContactFilterTarget);
+
 		ps::states[m_Index].setMotionType((ePfxMotionType)param.m_MotionType);
 		ps::states[m_Index].setRigidBodyId(m_Index);
 
 	}
+
+	const sce::PhysicsEffects::PfxRigidState& PsObject::getPfxRigidState() const {
+		return ps::states[GetIndex()];
+	}
+	sce::PhysicsEffects::PfxRigidState& PsObject::getPfxRigidState() {
+		return ps::states[GetIndex()];
+	}
+	const sce::PhysicsEffects::PfxRigidBody& PsObject::getPfxRigidBody() const {
+		return ps::bodies[GetIndex()];
+	}
+	sce::PhysicsEffects::PfxRigidBody& PsObject::getPfxRigidBody() {
+		return ps::bodies[GetIndex()];
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -600,6 +617,8 @@ namespace basecross {
 		PfxBox box((PfxVector3)pImpl->m_PsBoxParam.m_HalfSize);
 		PfxShape shape;
 		shape.reset();
+		shape.setOffsetOrientation((PfxQuat)pImpl->m_PsBoxParam.m_OffsetOrientation);
+		shape.setOffsetPosition((PfxVector3)pImpl->m_PsBoxParam.m_OffsetPosition);
 		shape.setBox(box);
 		ps::collidables[m_Index].reset();
 		ps::collidables[m_Index].addShape(shape);
@@ -644,6 +663,8 @@ namespace basecross {
 		PfxSphere sphere((PfxFloat)pImpl->m_PsSphereParam.m_Radius);
 		PfxShape shape;
 		shape.reset();
+		shape.setOffsetOrientation((PfxQuat)pImpl->m_PsSphereParam.m_OffsetOrientation);
+		shape.setOffsetPosition((PfxVector3)pImpl->m_PsSphereParam.m_OffsetPosition);
 		shape.setSphere(sphere);
 		ps::collidables[m_Index].reset();
 		ps::collidables[m_Index].addShape(shape);
@@ -691,6 +712,8 @@ namespace basecross {
 		);
 		PfxShape shape;
 		shape.reset();
+		shape.setOffsetOrientation((PfxQuat)pImpl->m_PsCapsuleParam.m_OffsetOrientation);
+		shape.setOffsetPosition((PfxVector3)pImpl->m_PsCapsuleParam.m_OffsetPosition);
 		shape.setCapsule(capsule);
 		ps::collidables[m_Index].reset();
 		ps::collidables[m_Index].addShape(shape);
@@ -737,6 +760,8 @@ namespace basecross {
 		);
 		PfxShape shape;
 		shape.reset();
+		shape.setOffsetOrientation((PfxQuat)pImpl->m_PsCylinderParam.m_OffsetOrientation);
+		shape.setOffsetPosition((PfxVector3)pImpl->m_PsCylinderParam.m_OffsetPosition);
 		shape.setCylinder(cylinder);
 		ps::collidables[m_Index].reset();
 		ps::collidables[m_Index].addShape(shape);
@@ -876,6 +901,8 @@ namespace basecross {
 		}
 		PfxShape shape;
 		shape.reset();
+		shape.setOffsetOrientation((PfxQuat)pImpl->m_PsConvexParam.m_OffsetOrientation);
+		shape.setOffsetPosition((PfxVector3)pImpl->m_PsConvexParam.m_OffsetPosition);
 		shape.setConvexMesh(&ps::convexMeshes[pImpl->m_PsConvexParam.m_ConvexMeshResource->GetMeshIndex()]);
 		ps::collidables[m_Index].reset();
 		ps::collidables[m_Index].addShape(shape);
@@ -1015,6 +1042,15 @@ namespace basecross {
 	{}
 	PsJoint::~PsJoint() {}
 
+	const sce::PhysicsEffects::PfxJoint& PsJoint::getPfxJoint() const {
+		return ps::joints[GetIndex()];
+
+	}
+	sce::PhysicsEffects::PfxJoint& PsJoint::getPfxJoint() {
+		return ps::joints[GetIndex()];
+	}
+
+
 	void PsJoint::UpdateJointPairs(uint16_t IndexA, uint16_t IndexB) {
 		PfxRigidState &stateA = ps::states[IndexA];
 		PfxRigidState &stateB = ps::states[IndexB];
@@ -1024,6 +1060,8 @@ namespace basecross {
 	bool PsJoint::IsActive() const {
 		return (ps::joints[m_Index].m_active > 0);
 	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1358,12 +1396,34 @@ namespace basecross {
 		}
 	}
 
+	struct BasePhysicsImplParam {
+		//重力が有効かどうか
+		bool m_IsGravityActive;
+		BasePhysicsImplParam() :
+			m_IsGravityActive(true)
+		{}
+	};
 
+	//--------------------------------------------------------------------------------------
+	///	物理計算用のインターフェイスImpl
+	//--------------------------------------------------------------------------------------
+	struct BasePhysics::Impl {
+		BasePhysicsImplParam Params[NUM_RIGIDBODIES];
+		Impl() 
+		{}
+		~Impl() {}
+		void Reset() {
+			for (size_t i = 0; i < NUM_RIGIDBODIES; i++) {
+				Params[i].m_IsGravityActive = true;
+			}
+		}
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	物理計算用のインターフェイス
 	//--------------------------------------------------------------------------------------
-	BasePhysics::BasePhysics()
+	BasePhysics::BasePhysics():
+		pImpl(new Impl())
 	{
 	}
 	BasePhysics::~BasePhysics() {}
@@ -1553,6 +1613,14 @@ namespace basecross {
 			ps::states[body_index].wakeup();
 		}
 	}
+
+	bool BasePhysics::IsAutoGravity(uint16_t body_index)const {
+		return pImpl->Params[body_index].m_IsGravityActive;
+	}
+	void BasePhysics::SetAutoGravity(uint16_t body_index, bool b) {
+		pImpl->Params[body_index].m_IsGravityActive = b;
+	}
+
 
 	bsm::Vec3 BasePhysics::GetBodyPosition(uint16_t body_index) const {
 		return (bsm::Vec3)ps::states[body_index].getPosition();
@@ -1789,14 +1857,16 @@ namespace basecross {
 		//合成用shape
 		::ZeroMemory(ps::combinedShapes, sizeof(PfxShape) * NUM_KEEP_SHAPES);
 		ps::numCombinedShapes = 0;
-
+		pImpl->Reset();
 	}
 
 
 
 	void BasePhysics::Update() {
 		for (int i = 0; i<ps::numRigidBodies; i++) {
-			pfxApplyExternalForce(ps::states[i], ps::bodies[i], ps::bodies[i].getMass()*PfxVector3(0.0f, -9.8f, 0.0f), PfxVector3(0.0f), ps::timeStep);
+			if (pImpl->Params[i].m_IsGravityActive) {
+				pfxApplyExternalForce(ps::states[i], ps::bodies[i], ps::bodies[i].getMass()*PfxVector3(0.0f, -9.8f, 0.0f), PfxVector3(0.0f), ps::timeStep);
+			}
 		}
 		ps::broadphase();
 		ps::collision();

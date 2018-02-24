@@ -1186,7 +1186,14 @@ namespace basecross {
 		@return	ローカルボーン行列配列の先頭ポインタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const;
+		virtual const vector< bsm::Mat4x4 >* GetVecLocalBonesPtr() const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列の参照を得る(書き換え可能)
+		@return	ローカルボーン行列配列の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		vector< bsm::Mat4x4 >& GetVecLocalBones();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ローカルボーン行列配列を得る（マルチメッシュ版）
@@ -1194,6 +1201,61 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual const vector< bsm::Mat4x4 >* GetVecMultiLocalBonesPtr(size_t index) const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ローカルボーン行列配列の参照を得る(マルチメッシュ版版、書き換え可能)
+		@return	ローカルボーン行列配列の参照（範囲外なら例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		vector< bsm::Mat4x4 >& GetVecMultiLocalBones(size_t index);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのローカル頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし（ボーンがなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		void GetSkinedVertices(vector<T>& vertices) {
+			if (GetVecLocalBones().size() == 0) {
+				throw BaseException(
+					L"ボーン行列がありません",
+					L"if (GetVecLocalBones().size() == 0)",
+					L"BcBaseDraw::GetSkinedVertices()"
+				);
+			}
+			auto ReshRes = GetMeshResource();
+			if (!ReshRes) {
+				throw BaseException(
+					L"メッシュリソースがありません",
+					L"if (!ReshRes)",
+					L"BcBaseDraw::GetSkinedVertices()"
+				);
+			}
+			vertices.clear();
+			auto& Bones = GetVecLocalBones();
+			auto& BackVec = ReshRes->GetBackupVerteces<T>();
+			for (auto& v : BackVec) {
+				vertices.push_back(v);
+			}
+			//スキニング処理
+			for (auto& v : vertices) {
+				Mat4x4 skinning(0);
+				for (size_t i = 0; i < 4; i++)
+				{
+					skinning += Bones[v.indices[i]] * v.weights[i];
+				}
+				skinning._14 = 1.0f;
+				skinning._24 = 1.0f;
+				skinning._34 = 1.0f;
+				skinning._44 = 1.0f;
+				Vec4 p(v.position);
+				p.w = 0.0f;
+				p *= skinning;
+				v.position = p;
+				v.normal *= (Mat3x3)skinning;
+			}
+		}
 	private:
 		// pImplイディオム
 		struct Impl;

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>７．物理世界</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>７０４．ラグドール</h3>
+<br />
+　このサンプルは<b>FullSample704</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　リビルドして実行すると、ラグドールが上方より落ちてきます。Yボタンを押し続けると、ラグドールが空中に浮きます。<br />
+　以下はその画面です。
+<p>&nbsp;</p>
+<img src="img/0704a.png" width="80%"/>
+<p>図0704a</p>
+<p>&nbsp;</p>
+　<b>Yボタン</b>をいったん離して、もう一度<b>Yボタン</b>を押すと、<b>選択される部位</b>が変わります。これを連続して行うと、続けて<b>選択される部位</b>が変わります。
+<p>&nbsp;</p>
+<img src="img/0704b.png" width="80%"/>
+<p>図0704b</p>
+<p>&nbsp;</p>
+<br />
+<h4>マルチ物理オブジェクト</h4>
+　ラグドールは<b>Character.h/cpp</b>に記述があります。<br />
+　この項では<b>マルチ物理オブジェクト</b>というコンポーネントを使います。<b>PsMultiBody</b>というコンポーネントです。<br />
+　複数の物理オブジェクトを管理できるコンポーネントです。<b>PsCombinedBody</b>と似ているようですが違います。<b>PsCombinedBody</b>は<b>物理オブジェクトを組み合わせて</b>新しい形を作ります。<b>PsMultiBody</b>で管理する物理オブジェクトは、あくまで一つ一つは別のものです。<br />
+　<b>Character.cpp</b>の<b>Ragdoll::OnCreate()関数</b>を見てください。抜粋ですが以下のような記述があります。
+<div class="box1">
+<pre>
+void Ragdoll::OnCreate() {
+    //初期位置などの設定
+    auto Ptr = GetComponent&lt;Transform>();
+    float Scale(1.0f);
+    Ptr->SetScale(Vec3(Scale));
+    Ptr->SetQuaternion(m_StartQt);
+    Ptr->SetPosition(m_StartPos);
+
+    <span class="red">//マルチ物理オブジェクト
+    auto PsPtr = AddComponent&lt;PsMultiBody>();
+    PsPtr->SetDrawActive(true);
+    PsPtr->SetAutoTransform(false);</span>
+
+    uint32_t contactFilterSelfA = 0x01;
+    uint32_t contactFilterSelfB = 0x02;
+    uint32_t contactFilterSelfC = 0x04;
+    uint32_t contactFilterSelfD = 0x08;
+    uint32_t contactFilterTargetA = 0x0d;
+    uint32_t contactFilterTargetB = 0x0a;
+    uint32_t contactFilterTargetC = 0x05;
+    uint32_t contactFilterTargetD = 0x0b;
+
+    size_t HeadNum, TorsoNum, BodyNum,
+        UpperLegLNum, LowerLegLNum, UpperArmLNum, LowerArmLNum,
+        UpperLegRNum, LowerLegRNum, UpperArmRNum, LowerArmRNum;
+
+
+    float inertiaScale = 3.0f;
+    {
+        //頭部の作成
+        PsSphereParam param;
+        param.m_Radius = 0.3f;
+        param.m_Mass = 3.0f;
+        //慣性テンソルの計算
+        param.m_Inertia = inertiaScale * BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
+        param.m_MotionType = PsMotionType::MotionTypeActive;
+        param.m_Quat = m_StartQt;
+        param.m_Pos = m_StartPos + rotate(m_StartQt, Vec3(0.0f, 3.38433f, 0.0f));
+        param.m_ContactFilterSelf = contactFilterSelfB;
+        param.m_ContactFilterTarget = contactFilterTargetB;
+        <span class="red">//頭部の追加
+        HeadNum = PsPtr->AddSphere(param);</span>
+
+
+    }
+    {
+        //腰の作成
+        PsSphereParam param;
+        param.m_Radius = 0.35f;
+        param.m_Mass = 10.0f;
+        //慣性テンソルの計算
+        param.m_Inertia 
+        = inertiaScale * BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
+        param.m_MotionType = PsMotionType::MotionTypeActive;
+        param.m_Quat = m_StartQt;
+        param.m_Pos = m_StartPos + rotate(m_StartQt, Vec3(0.0f, 1.96820f, 0.0f));
+        param.m_ContactFilterSelf = contactFilterSelfB;
+        param.m_ContactFilterTarget = contactFilterTargetB;
+        <span class="red">//腰の追加
+        TorsoNum = PsPtr->AddSphere(param);</span>
+
+    }
+//中略
+    {
+        //腰と胴体のジョイント
+        PsSwingTwistJointParam jparam;
+        jparam.m_AnchorPoint = m_StartPos + rotate(m_StartQt, Vec3(0.0f, 2.26425f, 0.0f));
+        jparam.m_TwistAxis = rotate(m_StartQt, Vec3(0.0f, 1.0f, 0.0f));
+        jparam.m_IndexA = PsPtr->GetPsObject(TorsoNum)->GetIndex();
+        jparam.m_IndexB = PsPtr->GetPsObject(BodyNum)->GetIndex();
+        <span class="red">PsPtr->AddSwingTwistJoint(jparam);</span>
+    }
+    {
+        //胴体と頭部のジョイント
+        PsSwingTwistJointParam jparam;
+        jparam.m_AnchorPoint = m_StartPos + rotate(m_StartQt, Vec3(0.0f, 3.13575f, 0.0f));
+        jparam.m_TwistAxis = rotate(m_StartQt, Vec3(0.0f, 1.0f, 0.0f));
+        jparam.m_IndexA = PsPtr->GetPsObject(BodyNum)->GetIndex();
+        jparam.m_IndexB = PsPtr->GetPsObject(HeadNum)->GetIndex();
+        <span class="red">PsPtr->AddSwingTwistJoint(jparam);</span>
+    }
+
+//中略
+    //ジョイントのパラメータ調整
+    for (auto& j : PsPtr->GetPsJointVec()) {
+        j->getPfxJoint().m_constraints[0].m_warmStarting = 1;
+        j->getPfxJoint().m_constraints[1].m_warmStarting = 1;
+        j->getPfxJoint().m_constraints[2].m_warmStarting = 1;
+
+        j->getPfxJoint().m_constraints[3].m_damping = 0.05f;
+        j->getPfxJoint().m_constraints[4].m_damping = 0.05f;
+        j->getPfxJoint().m_constraints[5].m_damping = 0.05f;
+    }
+}
+</pre>
+</div>
+　赤くなっているところが<b>PsMultiBodyコンポーネント</b>にかかわるところです。<b>物理オブジェクトとジョイント</b>を追加しています。<br />
+　ここで紹介したラグドールは人型をしています。<b>11個の部位</b>とそれらを結び付けている<b>ジョイント</b>で構成されています。<br />
+　それらをまとめて管理できるのが<b>PsMultiBodyコンポーネント</b>です。そういうことなので、前項で紹介した<b>ジョイント</b>のサンプルもこの<b>PsMultiBodyコンポーネント</b>を使って記述できます（そのほうが楽かもしれません）。<br />
+　ただ前項は<b>ジョイント</b>を強調したかったので<b>マネージャ</b>による管理方式をとってます。<br />
+<br />
+　ソースを見るとわかりますが、何も<b>ラグドール</b>だからといって特別なことをしているわけではなく、一つ一つの部位を作成しては<b>PsMultiBodyコンポーネント</b>に追加しています。ですので部位のパラメータやジョイントのパラメータを変えれば、<b>違う動きのラグドール</b>を作成できます。人型ではなく<b>動物型</b>や<b>昆虫型</b>のも挑戦してみるとよいでしょう。<br />
+<br />
+<h4>描画マネージャ</h4>
+　さてこのサンプルでは<b>描画マネージャ</b>として<b>ラグドールの描画</b>は別オブジェクトにしています。こうすることで、同じラグドールを使っても、別々の描画がしやすいつくりになってます。<br />
+　<b>RagdollManager</b>というクラスです。このクラスでは、<b>ラグドール</b>から一つ一つの部位を取り出し、その位置や姿勢に合わせて<b>球体やカプセル</b>を描画しています。<br />
+　テクスチャは実装してませんが、簡単に実装可能です。<br />
+　また<b>ボーンが入っているモデル</b>で各物理オブジェクトの<b>位置や姿勢</b>を<b>モデルのボーンにあてはめる</b>ことも可能です。この場合グラフィッカーさんとの綿密な計画が必要で、結構根気のいる実装が必要ですが、可能は可能です。<br />
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="07_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -1579,12 +1579,29 @@ namespace basecross {
 		return &pImpl->m_SmDrawObject.m_LocalBonesMatrix;
 	}
 
+	vector< bsm::Mat4x4 >& SmBaseDraw::GetVecLocalBones() {
+		return pImpl->m_SmDrawObject.m_LocalBonesMatrix;
+	}
+
+
 	const vector< bsm::Mat4x4 >* SmBaseDraw::GetVecMultiLocalBonesPtr(size_t index) const {
 		if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() > index) {
 			return &(pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[index]);
 		}
 		return nullptr;
 	}
+
+	vector< bsm::Mat4x4 >& SmBaseDraw::GetVecMultiLocalBones(size_t index) {
+		if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() <= index) {
+			throw BaseException(
+				L"インデックスが上限を超えてます",
+				L"if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() <= index)",
+				L"SmBaseDraw::GetVecMultiLocalBones"
+			);
+		}
+		return pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[index];
+	}
+
 
 
 	size_t SmBaseDraw::GetMaxInstance() const {

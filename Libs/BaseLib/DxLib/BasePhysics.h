@@ -35,6 +35,12 @@ namespace basecross {
 		bsm::Mat3x3 m_Inertia;
 		float m_Restitution;
 		float  m_Friction;
+		//衝突判定制御
+		uint32_t m_ContactFilterSelf;
+		uint32_t m_ContactFilterTarget;
+		//オフセット値
+		bsm::Quat m_OffsetOrientation;
+		bsm::Vec3 m_OffsetPosition;
 		PsParam() :
 			m_Quat(),
 			m_Pos(0),
@@ -44,10 +50,28 @@ namespace basecross {
 			m_Mass(0.0f),
 			m_Inertia(),
 			m_Restitution(0.2f),
-			m_Friction(0.6f)
-		{}
+			m_Friction(0.6f),
+			m_ContactFilterSelf(0xffffffff),
+			m_ContactFilterTarget(0xffffffff),
+			m_OffsetOrientation(),
+			m_OffsetPosition(0.0f)
+		{
+			m_Quat.identity();
+			m_OffsetOrientation.identity();
+		}
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	形状のタイプ(単体ボディのみ)
+	//--------------------------------------------------------------------------------------
+	enum class PsShapeType {
+		Sphere,
+		Box,
+		Capsule,
+		Cylinder,
+		Convex,
+		Unsupported
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	剛体のステータス(取得用)
@@ -120,6 +144,33 @@ namespace basecross {
 		uint16_t GetIndex() const {
 			return m_Index;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const {
+			return PsShapeType::Unsupported;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のステートを得る
+		@param[in]	body_index	ボディID
+		@return　剛体のステートの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxRigidState& getPfxRigidState() const;
+		sce::PhysicsEffects::PfxRigidState& getPfxRigidState();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体を得る
+		@param[in]	body_index	ボディID
+		@return　剛体の参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxRigidBody& getPfxRigidBody() const;
+		sce::PhysicsEffects::PfxRigidBody& getPfxRigidBody();
 	};
 
 
@@ -165,6 +216,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsBoxParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Box;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -213,6 +273,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsSphereParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Sphere;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -264,6 +333,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsCapsuleParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Capsule;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -314,6 +392,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsCylinderParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Cylinder;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -409,6 +496,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsConvexParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Convex;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -509,6 +605,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		const PsCombinedParam& GetParam() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 単体形状の場合の形状を得る
+		@return	形状(PsCombinedは単体ではないので未対応)
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual PsShapeType GetShapeType() const override {
+			return PsShapeType::Unsupported;
+		}
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -559,6 +664,14 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void UpdateJointPairs(uint16_t IndexA, uint16_t IndexB);
 	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Pfxジョイントを得る
+		@return　Pfxジョイントの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		const sce::PhysicsEffects::PfxJoint& getPfxJoint() const;
+		sce::PhysicsEffects::PfxJoint& getPfxJoint();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	ジョイントインデックスの取得
@@ -1111,6 +1224,23 @@ namespace basecross {
 		void WakeUpBody(uint16_t body_index);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	剛体が重力を計算するかどうかを得る
+		@param[in]	body_index	ボディID
+		@return	重力を計算すればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsAutoGravity(uint16_t body_index)const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体が重力を計算するかどうかを設定する
+		@param[in]	body_index	ボディID
+		@param[in]	b	設定する値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetAutoGravity(uint16_t body_index,bool b);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	剛体の位置を得る
 		@param[in]	body_index	ボディID
 		@return	剛体の位置
@@ -1434,7 +1564,10 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		const sce::PhysicsEffects::PfxContactManifold& getPfxContactManifold(uint16_t contact_index) const;
 		sce::PhysicsEffects::PfxContactManifold& getPfxContactManifold(uint16_t contact_index);
-
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
 	};
 
 
