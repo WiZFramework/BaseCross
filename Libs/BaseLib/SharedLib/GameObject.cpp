@@ -999,6 +999,8 @@ namespace basecross {
 		auto it = m_GameObjectVec.begin();
 		while (it != m_GameObjectVec.end()) {
 			if (*it == targetobj) {
+				//削除されることをオブジェクトに伝える
+				targetobj->OnDestroy();
 				m_GameObjectVec.erase(it);
 				return;
 			}
@@ -1557,6 +1559,20 @@ namespace basecross {
 		}
 	}
 
+	void Stage::DestroyStage() {
+		//子供ステージの削除処理
+		for (auto PtrChileStage : pImpl->m_ChildStageVec) {
+			PtrChileStage->DestroyStage();
+		}
+		//配置オブジェクトの削除処理
+		for (auto ptr : GetGameObjectVec()) {
+				ptr->OnDestroy();
+		}
+		//自身の削除処理
+		OnDestroy();
+	}
+
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -1797,6 +1813,10 @@ namespace basecross {
 		return pImpl->m_ActiveStage;
 	}
 	void SceneBase::SetActiveStage(const shared_ptr<Stage>& stage) {
+		if (pImpl->m_ActiveStage) {
+			//破棄を伝える
+			pImpl->m_ActiveStage->DestroyStage();
+		}
 		pImpl->m_ActiveStage = stage;
 	}
 
@@ -1822,6 +1842,12 @@ namespace basecross {
 			Dev->ClearDefaultViews(GetClearColor());
 			pImpl->m_ActiveStage->RenderStage();
 
+		}
+	}
+
+	void SceneBase::OnDestroy() {
+		if (pImpl->m_ActiveStage) {
+			pImpl->m_ActiveStage->DestroyStage();
 		}
 	}
 

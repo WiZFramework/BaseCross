@@ -119,11 +119,6 @@ namespace basecross{
 		//透明処理
 		SetAlphaActive(true);
 
-		//サウンドを登録.
-		auto pMultiSoundEffect = AddComponent<MultiSoundEffect>();
-		pMultiSoundEffect->AddAudioResource(L"cursor");
-
-
 		//カメラを得る
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(OnGetDrawCamera());
 		if (PtrCamera) {
@@ -326,8 +321,9 @@ namespace basecross{
 	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
 		auto PtrGrav = Obj->GetBehavior<Gravity>();
 		PtrGrav->StartJump(Vec3(0, 4.0f, 0));
-		auto pMultiSoundEffect = Obj->GetComponent<MultiSoundEffect>();
-		pMultiSoundEffect->Start(L"cursor", 0, 0.5f);
+		auto XAPtr = App::GetApp()->GetXAudio2Manager();
+		XAPtr->Start(L"cursor",0,0.5f);
+
 	}
 
 	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {

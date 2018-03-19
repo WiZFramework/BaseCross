@@ -9,133 +9,189 @@
 namespace basecross {
 
 	//--------------------------------------------------------------------------------------
-	//	struct AudioManager::Impl;
-	//	用途: Implクラス
+	//	XAudio2Manager::Implクラス
 	//--------------------------------------------------------------------------------------
-	struct AudioManager::Impl {
-		HWND m_hWnd;
-		bool m_audioAvailable;
-		ComPtr<IXAudio2>    m_musicEngine;
-		ComPtr<IXAudio2>    m_soundEffectEngine;
-		IXAudio2MasteringVoice* m_musicMasteringVoice;
-		IXAudio2MasteringVoice* m_soundEffectMasteringVoice;
-		Impl(HWND hWnd) :
-			m_hWnd(hWnd),
-			m_audioAvailable{ false },
-			m_musicMasteringVoice(nullptr),
-			m_soundEffectMasteringVoice(nullptr)
+	struct XAudio2Manager::Impl {
+		bool m_IsAudioActive;
+		ComPtr<IXAudio2>    m_IXAudio2;
+		IXAudio2MasteringVoice* m_MasteringVoice;
+		vector<shared_ptr<SoundItem>> m_SoundItemVec;
+		Impl() :
+			m_IsAudioActive(false),
+			m_IXAudio2(nullptr),
+			m_MasteringVoice(nullptr)
 		{}
-		~Impl() {}
+		~Impl() {
+			XAUDIO2_VOICE_STATE state;
+			bool isRunning;
+			for (auto v : m_SoundItemVec) {
+				if (v->m_SourceVoice) {
+					v->m_SourceVoice->GetState(&state);
+					isRunning = (state.BuffersQueued > 0) != 0;
+					if (isRunning) {
+			//			v->m_SourceVoice->Stop();
+					}
+					v->m_SourceVoice->DestroyVoice();
+					v->m_SourceVoice = nullptr;
+				}
+			}
+			m_IXAudio2.Reset();
+			m_IXAudio2 = nullptr;
+		}
+		//アイテム配列をチェックしながら必要であれば追加する
+		shared_ptr<SoundItem> ChkAndPushBackItem(const SoundItem& Item) {
+			for (auto v : m_SoundItemVec) {
+				if (!v->m_SourceVoice) {
+					v->m_SourceVoice = Item.m_SourceVoice;
+					v->m_AudioResource = Item.m_AudioResource;
+					return v;
+				}
+			}
+			auto Ptr = make_shared<SoundItem>();
+			Ptr->m_SourceVoice = Item.m_SourceVoice;
+			Ptr->m_AudioResource = Item.m_AudioResource;
+			m_SoundItemVec.push_back(Ptr);
+			return Ptr;
+		}
+		void OnUpdate() {
+			XAUDIO2_VOICE_STATE state;
+			bool isRunning;
+			for (auto v : m_SoundItemVec) {
+				if (v->m_SourceVoice) {
+					v->m_SourceVoice->GetState(&state);
+					isRunning = (state.BuffersQueued > 0) != 0;
+					if (!isRunning) {
+						v->m_AudioResource.reset();
+						v->m_SourceVoice->DestroyVoice();
+						v->m_SourceVoice = nullptr;
+					}
+				}
+			}
+		}
+		bool IsItemActive(const shared_ptr<SoundItem>& ChkItem) {
+			for (auto v : m_SoundItemVec) {
+				if (v == ChkItem && v->m_SourceVoice) {
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 
 
 
 	//--------------------------------------------------------------------------------------
-	//	class AudioManager;
+	/// XAudio2マネージャクラス
 	//--------------------------------------------------------------------------------------
-	AudioManager::AudioManager(HWND hWnd) :
-		pImpl(new Impl(hWnd))
-	{
-	}
-	AudioManager::~AudioManager() {
-		if (pImpl->m_soundEffectEngine) {
-			pImpl->m_soundEffectEngine->StopEngine();
-			pImpl->m_soundEffectEngine = nullptr;
-		}
-		if (pImpl->m_musicEngine) {
-			pImpl->m_musicEngine->StopEngine();
-			pImpl->m_musicEngine = nullptr;
-		}
+	XAudio2Manager::XAudio2Manager():
+		pImpl(new Impl())
+	{}
+
+	XAudio2Manager::~XAudio2Manager() {}
+
+	bool XAudio2Manager::IsAudioActive() const {
+		return IsCreated() && pImpl->m_IsAudioActive;
 	}
 
-	void AudioManager::AudioUnAvailableMassage() {
-		MessageBox(pImpl->m_hWnd, L"オーディオが取得できなかったので、音声なしで実行します", L"警告", MB_OK);
+	ComPtr<IXAudio2> XAudio2Manager::GetXAudio2() const {
+		return pImpl->m_IXAudio2;
+	}
+
+	IXAudio2MasteringVoice* XAudio2Manager::GetMasteringVoice() const {
+		return pImpl->m_MasteringVoice;
+	}
+
+	vector<shared_ptr<SoundItem>>& XAudio2Manager::GetSoundItemVec() {
+		return pImpl->m_SoundItemVec;
+	}
+	const vector<shared_ptr<SoundItem>>& XAudio2Manager::GetSoundItemVec() const {
+		return pImpl->m_SoundItemVec;
 	}
 
 
-	void AudioManager::CreateDeviceIndependentResources()
-	{
+
+
+	void XAudio2Manager::OnCreate() {
 		UINT32 flags = 0;
-		HRESULT hr = XAudio2Create(&pImpl->m_musicEngine, flags);
+		HRESULT hr = XAudio2Create(&pImpl->m_IXAudio2, flags);
 		if (FAILED(hr)) {
-			pImpl->m_audioAvailable = false;
-			AudioUnAvailableMassage();
+			pImpl->m_IsAudioActive = false;
 			return;
 		}
 
-#if defined(_DEBUG)
-		XAUDIO2_DEBUG_CONFIGURATION debugConfiguration = { 0 };
-		debugConfiguration.BreakMask = XAUDIO2_LOG_ERRORS;
-		debugConfiguration.TraceMask = XAUDIO2_LOG_ERRORS;
-		pImpl->m_musicEngine->SetDebugConfiguration(&debugConfiguration);
+#if (_WIN32_WINNT >= 0x0602 /*_WIN32_WINNT_WIN8*/) && defined(_DEBUG)
+		// To see the trace output, you need to view ETW logs for this application:
+		//    Go to Control Panel, Administrative Tools, Event Viewer.
+		//    View->Show Analytic and Debug Logs.
+		//    Applications and Services Logs / Microsoft / Windows / XAudio2. 
+		//    Right click on Microsoft Windows XAudio2 debug logging, Properties, then Enable Logging, and hit OK 
+		XAUDIO2_DEBUG_CONFIGURATION debug = { 0 };
+		debug.TraceMask = XAUDIO2_LOG_ERRORS | XAUDIO2_LOG_WARNINGS;
+		debug.BreakMask = XAUDIO2_LOG_ERRORS;
+		pImpl->m_IXAudio2->SetDebugConfiguration(&debug, 0);
 #endif
-		hr = pImpl->m_musicEngine->CreateMasteringVoice(&pImpl->m_musicMasteringVoice);
-		if (FAILED(hr))
+		//マスタリングボイス
+		if (FAILED(hr = pImpl->m_IXAudio2->CreateMasteringVoice(&pImpl->m_MasteringVoice)))
 		{
-			pImpl->m_audioAvailable = false;
-			AudioUnAvailableMassage();
+			pImpl->m_IXAudio2.Reset();
+			pImpl->m_IsAudioActive = false;
 			return;
 		}
+		pImpl->m_IsAudioActive = true;
 
-		hr = XAudio2Create(&pImpl->m_soundEffectEngine, flags);
+	}
+
+	void XAudio2Manager::OnUpdate() {
+		if (!IsAudioActive()) {
+			return;
+		}
+		pImpl->OnUpdate();
+	}
+
+
+	shared_ptr<SoundItem>  XAudio2Manager::Start(const wstring& ResKey, size_t LoopCount, float Volume) {
+		if (!IsAudioActive()) {
+			return nullptr;
+		}
+		auto SoundRes = App::GetApp()->GetResource<AudioResource>(ResKey);
+		//ソースボイスの作成
+		SoundItem Item;
+		HRESULT hr = pImpl->m_IXAudio2->CreateSourceVoice(&Item.m_SourceVoice, SoundRes->GetOutputWaveFormatEx());
 		if (FAILED(hr)) {
-			pImpl->m_audioAvailable = false;
-			AudioUnAvailableMassage();
+			pImpl->m_IsAudioActive = false;
+			return nullptr;
+		}
+		Item.m_AudioResource = SoundRes;
+		auto Ptr = pImpl->ChkAndPushBackItem(Item);
+		XAUDIO2_BUFFER buffer = { 0 };
+		buffer.AudioBytes = SoundRes->GetSoundData().size();
+		buffer.LoopCount = LoopCount;
+		buffer.pAudioData = &SoundRes->GetSoundData().front();
+		buffer.Flags = XAUDIO2_END_OF_STREAM;
+		Ptr->m_SourceVoice->SetVolume(Volume);
+		Ptr->m_SourceVoice->SubmitSourceBuffer(&buffer);
+		Ptr->m_SourceVoice->Start();
+		return Ptr;
+	}
+
+	void XAudio2Manager::Stop(const shared_ptr<SoundItem>& Item) {
+		if (!IsAudioActive()) {
 			return;
 		}
-#if defined(_DEBUG)
-		pImpl->m_soundEffectEngine->SetDebugConfiguration(&debugConfiguration);
-#endif
-
-		hr = pImpl->m_soundEffectEngine->CreateMasteringVoice(&pImpl->m_soundEffectMasteringVoice);
-		if (FAILED(hr)) {
-			pImpl->m_audioAvailable = false;
-			AudioUnAvailableMassage();
+		if (!Item) {
 			return;
 		}
-		pImpl->m_audioAvailable = true;
-	}
-
-	IXAudio2* AudioManager::GetMusicEngine()const
-	{
-		return pImpl->m_musicEngine.Get();
-	}
-
-	IXAudio2* AudioManager::GetSoundEffectEngine()const
-	{
-		return pImpl->m_soundEffectEngine.Get();
-	}
-
-	void AudioManager::SuspendAudio()
-	{
-		if (pImpl->m_audioAvailable)
-		{
-			pImpl->m_musicEngine->StopEngine();
-			pImpl->m_soundEffectEngine->StopEngine();
+		if (Item->m_SourceVoice) {
+			XAUDIO2_VOICE_STATE state;
+			bool isRunning;
+			Item->m_SourceVoice->GetState(&state);
+			isRunning = (state.BuffersQueued > 0) != 0;
+			if (isRunning) {
+				Item->m_SourceVoice->Stop();
+			}
+			Item->m_SourceVoice->DestroyVoice();
+			Item->m_SourceVoice = nullptr;
 		}
-	}
-
-	void AudioManager::ResumeAudio()
-	{
-		if (pImpl->m_audioAvailable)
-		{
-			ThrowIfFailed(
-				pImpl->m_musicEngine->StartEngine(),
-				L"音楽用エンジンのスタートに失敗しました",
-				L"m_musicEngine->StartEngine()",
-				L"AudioManager::CreateDeviceIndependentResources()"
-			);
-			ThrowIfFailed(
-				pImpl->m_soundEffectEngine->StartEngine(),
-				L"サウンド用エンジンのスタートに失敗しました",
-				L"m_soundEffectEngine->StartEngine()",
-				L"AudioManager::CreateDeviceIndependentResources()"
-			);
-		}
-	}
-
-	bool AudioManager::IsAudioAvailable()const {
-		return pImpl->m_audioAvailable;
 	}
 
 
@@ -167,10 +223,12 @@ namespace basecross {
 		pImpl(new Impl(FileName))
 	{
 		try {
-			if (!App::GetApp()->GetAudioManager()->IsAudioAvailable()) {
+			
+			if (!App::GetApp()->GetXAudio2Manager()->IsAudioActive()) {
 				//マネージャが無効ならリターン
 				return;
 			}
+
 
 			ThrowIfFailed(
 				MFStartup(MF_VERSION),
@@ -612,7 +670,7 @@ namespace basecross {
 			////デバイスリソースの構築
 			m_DeviceResources = shared_ptr<DeviceResources>(new DeviceResources(hWnd, FullScreen, Width, Height));
 			//オーディオマネージャの取得
-			GetAudioManager();
+			GetXAudio2Manager();
 			//イベント配送クラス
 			m_EventDispatcher = make_shared<EventDispatcher>();
 			//乱数の初期化
@@ -669,24 +727,25 @@ namespace basecross {
 	//強制破棄
 	void App::DeleteApp() {
 		if (m_App.get()) {
+			m_App->GetSceneInterface()->OnDestroy();
 			m_App.reset();
 		}
 	}
 
-	// オーディオマネージャの取得
-	unique_ptr<AudioManager>& App::GetAudioManager() {
-		try {
-			if (m_AudioManager.get() == 0) {
-				m_AudioManager.reset(new AudioManager(m_hWnd));
-				m_AudioManager->CreateDeviceIndependentResources();
 
+	shared_ptr<XAudio2Manager>& App::GetXAudio2Manager() {
+		try {
+			if (!m_XAudio2Manager) {
+				m_XAudio2Manager = ObjectFactory::Create<XAudio2Manager>();
 			}
-			return m_AudioManager;
+			return m_XAudio2Manager;
 		}
 		catch (...) {
 			throw;
 		}
+
 	}
+
 
 	void App::AfterInitContents(bool ShadowActive) {
 		if (!m_DeviceResources) {
@@ -790,7 +849,8 @@ namespace basecross {
 				L"App::UpdateDraw()"
 			);
 		}
-
+		//オーディオの更新
+		GetXAudio2Manager()->OnUpdate();
 		// シーン オブジェクトを更新します。
 		m_InputDevice.ResetControlerState();
 		m_Timer.Tick([&]()

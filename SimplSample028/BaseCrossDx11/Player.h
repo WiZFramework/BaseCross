@@ -35,8 +35,6 @@ namespace basecross {
 		shared_ptr<ShadowmapObject> m_PtrShadowmapObj;
 		//シャドウマップ描画オブジェクト(weak_ptr)
 		weak_ptr<ShadowmapRenderer> m_ShadowmapRenderer;
-		//サウンドオブジェクト
-		shared_ptr<SoundObject> m_SoundObject;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コントローラから方向ベクトルを得る

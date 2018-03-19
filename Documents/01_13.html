@@ -191,8 +191,6 @@ void Player::OnCreate() {
     wstring TestEffectStr = DataDir + L"Effects\\test.efk";
     auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
     m_EfkEffect = ObjectFactory::Create&lt;EfkEffect>(ShEfkInterface, TestEffectStr);
-    //サウンドコンポーネントの初期化
-    AddComponent&lt;SoundEffect>(L"cursor");
 
     //ステートマシンの構築
     m_StateMachine.reset(new StateMachine&lt;Player>(GetThis&lt;Player>()));
@@ -206,6 +204,7 @@ void Player::OnCreate() {
 　最後に、実際にエフェクトの発射です。Aボタンのハンドラである<b>Player::OnPushA()</b>に記述します。
 <div class="box1">
 <pre>
+//Aボタンハンドラ
 void  Player::OnPushA() {
     if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
         auto Ptr = GetComponent&lt;Transform>();
@@ -213,8 +212,8 @@ void  Player::OnPushA() {
         auto ShEfkInterface = GetTypeStage&lt;GameStage>()->GetEfkInterface();
         m_EfkPlay = ObjectFactory::Create&lt;EfkPlay>(m_EfkEffect, Ptr->GetPosition());</span>
         //サウンドのプレイ
-        auto SoundPtr = GetComponent&lt;SoundEffect>();
-        SoundPtr->Start(0, 0.5f);
+        auto XAPtr = App::GetApp()->GetXAudio2Manager();
+        XAPtr->Start(L"cursor", 0, 0.5f);
         //通常ステートならジャンプステートに移行
         GetStateMachine()->ChangeState(PlayerJumpState::Instance());
     }

@@ -49,9 +49,8 @@ namespace basecross{
 			CreateResourses();
 
 			//BGMの再生
-			m_AudioObjectPtr = ObjectFactory::Create<MultiAudioObject>();
-			m_AudioObjectPtr->AddAudioResource(L"Nanika");
-			m_AudioObjectPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
+			auto XAPtr = App::GetApp()->GetXAudio2Manager();
+			m_BGM = XAPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
 
 			//自分自身にイベントを送る
 			//これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
@@ -72,6 +71,14 @@ namespace basecross{
 		}
 	}
 
+	void Scene::OnDestroy() {
+		//親クラスのOnDestroyを呼ぶ
+		SceneBase::OnDestroy();
+
+		auto XAPtr = App::GetApp()->GetXAudio2Manager();
+		XAPtr->Stop(m_BGM);
+
+	}
 
 
 }

@@ -46,7 +46,7 @@
     }
 </pre>
 </div>
-　また、宣言部に<b>m_AudioObjectPtr</b>を宣言しておきます。<br />
+　また、宣言部に<b>shared_ptr&lt;SoundItem> m_BGM;</b>を宣言しておきます。<br />
 　そして、<b>Scene::OnCreate()関数</b>で以下のように記述します。
 <div class="box1">
 <pre>
@@ -55,10 +55,9 @@ void Scene::OnCreate(){
         //リソース作成
         CreateResourses();
 
-        //BGMの再生
-        m_AudioObjectPtr = ObjectFactory::Create&lt;MultiAudioObject>();
-        m_AudioObjectPtr->AddAudioResource(L"Nanika");
-        m_AudioObjectPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
+        <span class="red">//BGMの再生
+        auto XAPtr = App::GetApp()->GetXAudio2Manager();
+        m_BGM = XAPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);</span>
 
         //自分自身にイベントを送る
         //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
@@ -71,32 +70,31 @@ void Scene::OnCreate(){
 </pre>
 </div>
 　これで、ゲーム中ミュージックが繰り返し再生されます。<br />
-<br />
-<h4>プレーヤー</h4>
-　続いてプレイヤーですが、OnCreate()でサウンドを登録します。<br />
+　また、ゲームが終わったときに、ミュージックを終了します。このサンプルはステージが1つしかないので、ステージの終了イコールゲームの終了なので、実際には以下は記述しなくても大丈夫ですが、ステージごとにBGMが違う場合などは、以下のような処理が必要です。
 <div class="box1">
 <pre>
-void Player::OnCreate() {
-    //中略
+    void Scene::OnDestroy() {
+        //親クラスのOnDestroyを呼ぶ
+        SceneBase::OnDestroy();
 
-    //サウンドを登録.
-    <span class="red">auto pMultiSoundEffect = AddComponent&lt;MultiSoundEffect>();
-    pMultiSoundEffect->AddAudioResource(L"Cursor");</span>
+        <span class="red">auto XAPtr = App::GetApp()->GetXAudio2Manager();
+        XAPtr->Stop(m_BGM);</span>
 
-    //中略
-
-}
+    }
 </pre>
 </div>
-　最後に、ジャンプのタイミングで
+　OnDestroy()関数は、前もってOnCreate()などと同じように宣言しておく必要があります。<br />
+　この場合は、Scene::OnDestroy()に記述していますが、ステージごとにBGMを変える場合などはGameStage::OnDestroy()を多重定義して記述します。<br />
+<br />
+<h4>プレーヤー</h4>
+　続いてプレイヤーですが、ジャンプのタイミングで
 <div class="box1">
 <pre>
 void PlayerJumpState::Enter(const shared_ptr&lt;Player>& Obj) {
-    auto PtrJump = Obj->GetBehavior&lt;JumpBehavior>();
-    PtrJump->StartJump(Vec3(0, 4.0f, 0));
-    auto pMultiSoundEffect = Obj->GetComponent&lt;MultiSoundEffect>();
-    pMultiSoundEffect->Start(L"cursor", 0, 0.5f);
-
+    auto PtrGrav = Obj->GetBehavior&lt;Gravity>();
+    PtrGrav->StartJump(Vec3(0, 4.0f, 0));
+    <span class="red">auto XAPtr = App::GetApp()->GetXAudio2Manager();
+    XAPtr->Start(L"cursor",0,0.5f);</span>
 }
 </pre>
 </div>

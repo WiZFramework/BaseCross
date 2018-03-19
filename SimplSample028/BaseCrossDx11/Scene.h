@@ -576,8 +576,8 @@ namespace basecross {
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneInterface {
-		//オーディオ
-		shared_ptr<MultiAudioObject> m_AudioObjectPtr;
+		//BGM
+		shared_ptr<SoundItem> m_BGM;
 		//アクティブなステージ
 		shared_ptr<Stage> m_ActiveStage;
 		//--------------------------------------------------------------------------------------
@@ -667,6 +667,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnEvent(const shared_ptr<Event>& event) override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 削除時
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDestroy() override;
 	};
 
 

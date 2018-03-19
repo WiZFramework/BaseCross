@@ -112,11 +112,6 @@ namespace basecross {
 		m_PtrShadowmapObj->m_MeshRes = m_SphereMesh;
 		//描画データの行列をコピー
 		m_PtrShadowmapObj->m_WorldMatrix = World;
-
-		//サウンドオブジェクトの初期化
-		m_SoundObject = ObjectFactory::Create<SoundObject>(L"cursor");
-
-
 	}
 	void Player::OnUpdate() {
 		//前回のターンからの経過時間を求める
@@ -137,7 +132,8 @@ namespace basecross {
 					Emitter.y -= 0.125f;
 					FirePtr->InsertFire(Emitter);
 					//サウンドの発行
-					m_SoundObject->Start(0, 0.5f);
+					auto XAPtr = App::GetApp()->GetXAudio2Manager();
+					XAPtr->Start(L"cursor", 0, 0.5f);
 				}
 			}
 			Vec3 Direction = GetMoveVector();
