@@ -1686,6 +1686,13 @@ namespace basecross {
 		ps::states[body_index].setContactFilterTarget((PfxUInt32)val);
 	}
 
+	void BasePhysics::SetBodyMotionType(uint16_t body_index, PsMotionType t) {
+		ps::states[body_index].setMotionType((ePfxMotionType)t);
+	}
+
+	PsMotionType BasePhysics::GetBodyMotionType(uint16_t body_index)const {
+		return (PsMotionType)ps::states[body_index].getMotionType();
+	}
 
 	uint16_t BasePhysics::GetNumShapes(uint16_t body_index)const {
 		return (uint16_t)ps::collidables[body_index].getNumShapes();

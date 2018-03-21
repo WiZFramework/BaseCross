@@ -1365,6 +1365,23 @@ namespace basecross {
 		void SetBodyContactFilterTarget(uint16_t body_index, uint32_t val);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	剛体のモーションタイプを設定する
+		@param[in]	body_index	ボディID
+		@param[in]	t	値
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetBodyMotionType(uint16_t body_index, PsMotionType t);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	剛体のモーションタイプをを得る
+		@param[in]	body_index	ボディID
+		@return	形状数
+		*/
+		//--------------------------------------------------------------------------------------
+		PsMotionType GetBodyMotionType(uint16_t body_index)const;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	形状の数を得る
 		@param[in]	body_index	ボディID
 		@return	形状数

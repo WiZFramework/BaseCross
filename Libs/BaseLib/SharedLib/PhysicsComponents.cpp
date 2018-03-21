@@ -138,7 +138,8 @@ namespace basecross {
 	PsBodyComponent::PsBodyComponent(const shared_ptr<GameObject>& GameObjectPtr) :
 		PsBodyComponentBase(GameObjectPtr)
 	{}
-	PsBodyComponent::~PsBodyComponent() {}
+	PsBodyComponent::~PsBodyComponent() {
+	}
 
 	bsm::Vec3	PsBodyComponent::GetPosition() const {
 		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyPosition(GetIndex());
@@ -216,6 +217,15 @@ namespace basecross {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyContactFilterTarget(GetIndex(), val);
 	}
 
+	void PsBodyComponent::SetMotionType(PsMotionType t) {
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyMotionType(GetIndex(), t);
+
+	}
+	PsMotionType PsBodyComponent::GetMotionType()const {
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyMotionType(GetIndex());
+	}
+
+
 
 	bool PsBodyComponent::GetContactsVec(vector<uint16_t>& contacts)const {
 		return GetGameObject()->GetStage()->GetBasePhysics().GetContactsVec(GetIndex(), contacts);
@@ -259,6 +269,13 @@ namespace basecross {
 			Ptr->SetQuaternion(Status.m_Orientation);
 		}
 	}
+
+	void PsBodyComponent::OnDestroy() {
+		//ŒvŽZ‚âÕ“Ë‚ð‚µ‚È‚¢‚æ‚¤‚É‚·‚é
+		SetContactFilterTarget(0);
+		SetMotionType(PsMotionType::MotionTypeFixed);
+	}
+
 
 
 
@@ -711,6 +728,10 @@ namespace basecross {
 		PsBodyComponentBase(GameObjectPtr)
 	{}
 
+	PsMultiBody::~PsMultiBody() {
+	}
+
+
 	void PsMultiBody::CheckObjIndex(size_t index) const{
 		if (index >= m_PsObjectVec.size()) {
 			throw BaseException(
@@ -938,6 +959,17 @@ namespace basecross {
 		GetGameObject()->GetStage()->GetBasePhysics().SetBodyContactFilterTarget(GetIndex(index), val);
 
 	}
+
+	void PsMultiBody::SetMotionType(PsMotionType t, size_t index) {
+		CheckObjIndex(index);
+		GetGameObject()->GetStage()->GetBasePhysics().SetBodyMotionType(GetIndex(index), t);
+	}
+	PsMotionType PsMultiBody::GetMotionType(size_t index)const {
+		CheckObjIndex(index);
+		return GetGameObject()->GetStage()->GetBasePhysics().GetBodyMotionType(GetIndex(index));
+	}
+
+
 	bool PsMultiBody::GetContactsVec(vector<uint16_t>& contacts, size_t index)const {
 		CheckObjIndex(index);
 		return GetGameObject()->GetStage()->GetBasePhysics().GetContactsVec(GetIndex(index), contacts);
@@ -1083,6 +1115,14 @@ namespace basecross {
 		}
 	}
 
+	void PsMultiBody::OnDestroy() {
+		//ŒvŽZ‚âÕ“Ë‚ð‚µ‚È‚¢‚æ‚¤‚É‚·‚é
+		for (auto& v : m_PsObjectVec) {
+			auto BodyIndex = v->GetIndex();
+			GetGameObject()->GetStage()->GetBasePhysics().SetBodyContactFilterTarget(BodyIndex, 0);
+			GetGameObject()->GetStage()->GetBasePhysics().SetBodyMotionType(BodyIndex, PsMotionType::MotionTypeFixed);
+		}
+	}
 
 
 

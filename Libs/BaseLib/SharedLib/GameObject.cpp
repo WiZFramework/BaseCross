@@ -377,6 +377,33 @@ namespace basecross {
 		ComponentDraw();
 	}
 
+	void GameObject::DestroyGameObject() {
+		auto TMptr = GetComponent<Transform>();
+		auto RigidPtr = GetComponent<Rigidbody>(false);
+		//マップを検証してOnDestroy
+		list<type_index>::iterator it = pImpl->m_CompOrder.begin();
+		while (it != pImpl->m_CompOrder.end()) {
+			map<type_index, shared_ptr<Component> >::const_iterator it2;
+			it2 = pImpl->m_CompMap.find(*it);
+			if (it2 != pImpl->m_CompMap.end()) {
+				//指定の型のコンポーネントが見つかった
+				if (it2->second->IsUpdateActive()) {
+					it2->second->OnDestroy();
+				}
+			}
+			it++;
+		}
+		if (RigidPtr) {
+			//RigidbodyがあればOnDestroy()
+			RigidPtr->OnDestroy();
+		}
+		//TransformのOnDestroy
+		TMptr->OnDestroy();
+		//自分自身のOnDestroy()
+		OnDestroy();
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	用途: Implイディオム
@@ -1000,7 +1027,7 @@ namespace basecross {
 		while (it != m_GameObjectVec.end()) {
 			if (*it == targetobj) {
 				//削除されることをオブジェクトに伝える
-				targetobj->OnDestroy();
+				targetobj->DestroyGameObject();
 				m_GameObjectVec.erase(it);
 				return;
 			}
@@ -1566,7 +1593,7 @@ namespace basecross {
 		}
 		//配置オブジェクトの削除処理
 		for (auto ptr : GetGameObjectVec()) {
-				ptr->OnDestroy();
+				ptr->DestroyGameObject();
 		}
 		//自身の削除処理
 		OnDestroy();
