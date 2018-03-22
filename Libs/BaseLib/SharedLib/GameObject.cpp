@@ -1828,22 +1828,23 @@ namespace basecross {
 	}
 	SceneBase::~SceneBase() {}
 
-	shared_ptr<Stage> SceneBase::GetActiveStage() const {
+	shared_ptr<Stage> SceneBase::GetActiveStage(bool ExceptionActive) const {
 		if (!pImpl->m_ActiveStage) {
 			//アクティブなステージが無効なら
-			throw BaseException(
-				L"アクティブなステージがありません",
-				L"if(!m_ActiveStage.get())",
-				L"SceneBase::GetActiveStage()"
-			);
+			if (ExceptionActive) {
+				throw BaseException(
+					L"アクティブなステージがありません",
+					L"if(!m_ActiveStage.get())",
+					L"SceneBase::GetActiveStage()"
+				);
+			}
+			else {
+				return nullptr;
+			}
 		}
 		return pImpl->m_ActiveStage;
 	}
 	void SceneBase::SetActiveStage(const shared_ptr<Stage>& stage) {
-		if (pImpl->m_ActiveStage) {
-			//破棄を伝える
-			pImpl->m_ActiveStage->DestroyStage();
-		}
 		pImpl->m_ActiveStage = stage;
 	}
 

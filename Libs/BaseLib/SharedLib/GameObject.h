@@ -2107,11 +2107,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在のステージを得る
-		@return	現在のステージ（失敗事例外）
+		@param[in]	ExceptionActive	失敗事例外にするかどうか。
+		@return	現在のステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		shared_ptr<Stage> GetActiveStage() const;
-
+		shared_ptr<Stage> GetActiveStage(bool ExceptionActive = true) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	画面をクリアする色を得る
@@ -2157,6 +2157,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T, typename... Ts>
 		shared_ptr<T> ResetActiveStage(Ts&&... params) {
+			auto ActStagePtr = GetActiveStage(false);
+			if (ActStagePtr) {
+				//破棄を伝える
+				ActStagePtr->DestroyStage();
+			}
 			auto Ptr = ObjectFactory::Create<T>(params...);
 			auto StagePtr = dynamic_pointer_cast<Stage>(Ptr);
 			if (!StagePtr) {
@@ -2180,6 +2185,11 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T, typename... Ts>
 		shared_ptr<T> ResetActiveStageWithParam(Ts&&... params) {
+			auto ActStagePtr = GetActiveStage(false);
+			if (ActStagePtr) {
+				//破棄を伝える
+				ActStagePtr->DestroyStage();
+			}
 			auto Ptr = ObjectFactory::CreateWithParam<T>(params...);
 			auto StagePtr = dynamic_pointer_cast<Stage>(Ptr);
 			if (!StagePtr) {
