@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>７．物理世界</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>７０５．物理世界を使ったステージ</h3>
+<br />
+　このサンプルは<b>FullSample705</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　このサンプルは個別の機能を紹介するというより<b>物理世界</b>を使ったゲーム制作の具体的な手法を紹介しています。<br />
+　<b>物理世界</b>を使わないステージでも<b>衝突判定</b>はできますし、<b>Rigudbodyコンポーネント</b>で<b>速度</b>を操作できます。しかし、<b>物理世界</b>を使わない場合<b>衝突後の処理</b>や<b>回転速度</b>を管理するには、別に自作する必要があります。<br />
+　３Ｄ世界であっても、固定のカメラや、オブジェクトの動きに制限を設けたい（例えば勝手に回転されると困る場合）、あるいは３Ｄ世界を使った２Ｄなどの場合は<b>物理世界</b>を使わずに、６章までに紹介した<b>BaseCrossの手法</b>で記述したほうが良いでしょう。<br />
+　しかし、自由度の高い３Ｄ画面や、リアルなオブジェクトの動きを演出するためには、<b>物理世界</b>は威力を発揮します。<br />
+<br />
+　ソリューションをリビルドして実行すると、タイトルの画面が出てきます。
+　以下はその画面です。
+<p>&nbsp;</p>
+<img src="img/0705a.png" width="80%"/>
+<p>図0705a</p>
+<p>&nbsp;</p>
+　ここで<b>Ｂボタン</b>を押すとゲームステージに移行します。<br />
+　<b>ステージの移行</b>は以下のように記述します。<b>ステージ操作</b>は<b>シーンの役割</b>です。<br />
+　まず、<b>Scene.cpp</b>の<b>Sceneの宣言</b>に以下のようにメンバ関数を宣言します。<b>OnCreate()関数</b>はこれまでも出てきましたが、<b>OnEvent()関数</b>も作成します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// ゲームシーン
+//--------------------------------------------------------------------------------------
+class Scene : public SceneBase {
+//中略
+public:
+//中略
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief 初期化
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnCreate() override;
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief イベント取得
+    @return なし
+    */
+    //--------------------------------------------------------------------------------------
+    virtual void OnEvent(const shared_ptr&lt;Event>& event) override;
+};
+</pre>
+</div>
+　そうしたうえで<b>Scene.cpp</b>の<b>Scene::OnCreate()関数</b>および<b>Scene::OnEvent()関数</b>を記述します。
+<div class="box1">
+<pre>
+void Scene::OnCreate() {
+    try {
+        //リソース作成
+        CreateResourses();
+        //自分自身にイベントを送る
+        //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
+        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToTitleStage");
+    }
+    catch (...) {
+        throw;
+    }
+}
+
+void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
+    if (event->m_MsgStr == L"ToTitleStage") {
+        //最初のアクティブステージの設定
+        ResetActiveStage&lt;TitleStage>();
+    }
+    else if (event->m_MsgStr == L"ToGameStage") {
+        //アクティブステージの設定
+        ResetActiveStage&lt;GameStage>();
+    }
+}
+</pre>
+</div>
+　<b>Scene::OnEvent()</b>というのは<b>シーンに送られたイベント</b>を処理する関数です。<br />
+　イベントを送るには<b>PostEvent()関数</b>を使います。<b>Scene::OnCreate()</b>では、リソースを登録した後、<b>自分自身にイベントを送り</b>ます。<br />
+　なぜ、<b>Scene::OnCreate()</b>にステージを作成する関数である<b>ResetActiveStage()関数</b>を呼び出さないのでしょうか。<br />
+　それは<b>Scene::OnCreate()</b>の中の状態では、まだシーンが不完全な状態だからです。不完全な状態では、ステージからシーンの情報にアクセスすることができません。このサンプルには使ってませんが、ゲーム全体に共通するデータやパラメータは<b>Scene</b>に持たせることが多くなります。そうした場合、そのデータにアクセスするためには<b>Scene::OnCreate()</b>が終了している必要があります。<br />
+　<b>PostEvent()関数</b>は<b>次のターン以降</b>に<b>OnEvent()関数</b>を呼び出します。内部処理的には、イベントのプールにメッセージを貯めておき、指定のタイミングで指定されたオブジェクトにイベントを送ります。<b>PostEvent()関数</b>の第１引数の<b>0.0f</b>は送出までの時間です。<b>0.0f</b>で直近の次のターンとなり、<b>1.0f</b>と書けば<b>1秒後</b>という意味になります。<br />
+<br />
+　さて、イベントの処理は<b>Scene::OnEvent()関数</b>で行います。<b>event->m_MsgStr</b>にはメッセージ文字列が入ってますので、それが<b>L"ToTitleStage"</b>ならは、タイトルステージを構築します。<br />
+　またメッセージが<b>L"ToGameStage"</b>ならば、ゲームステージを構築します。<br />
+　<b>L"ToGameStage"</b>は<b>タイトルステージ</b>内でイベントを送出します。<br />
+<br />
+<h4>タイトルステージでの記述</h4>
+　上記のタイトルステージでは<b>Bでステージ切替</b>という文字が出ます。これはテクスチャですが、そのままの意味で、コントローラのBボタンで<b>ゲームステージ</b>に切り替わります。<br />
+　<b>Bボタンの入力を待って、ゲームステージに切り替える</b>処理は<b>GameStage.cpp</b>に記述があります<b>TitleStage::OnUpdate()関数</b>で行います。サンプルの関係で<b>GameStage.cpp</b>に記述がありますが、実際には<b>TitleStage.h/cpp</b>などを別に作成し記述したほうがいいかと思います。
+<div class="box1">
+<pre>
+//更新
+void TitleStage::OnUpdate() {
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        //Bボタン
+        if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+            PostEvent(0.0f, GetThis&lt;ObjectInterface>(), 
+                App::GetApp()->GetScene&lt;Scene>(), L"ToGameStage");
+        }
+    }
+}
+</pre>
+</div>
+　ここで、<b>PostEvent()関数</b>を使用しています。送り先は<b>App::GetApp()->GetScene&lt;Scene>()</b>です。この記述で<b>シーン</b>のポインタ（shared_ptr）を渡すことができます。<br />
+　タイトルステージで<b>Bボタン</b>を押すと、ステージが<b>ゲームステージ</b>に変わります。この間の<b>フェイドアウト</b>などの処理は、ここでは述べませんが方法はあります。（いづれサンプル化します）<br />
+<br />
+<h4>ゲームステージステージでの記述</h4>
+　ステージが変わると以下の画面が出てきます。<b>ゲームステージ（GameStage）</b>です。
+<p>&nbsp;</p>
+<img src="img/0705b.png" width="80%"/>
+<p>図0705b</p>
+<p>&nbsp;</p>
+　ステージに入ると上から<b>物理オブジェクト</b>が落下してきます。<br />
+　ここでは、プレイヤーは<b>Aボタンでジャンプ</b>し、<b>Xボタン</b>で砲弾を発射します。奥のほうに四角い敵がいて、砲弾を発射してきます。少し敵に近づくと、プレイヤーによってきたりします。<br />
+　BGMも流れ、砲弾を発射すると<b>ピン</b>という発射音がします。<br />
+　<b>プレイヤー</b>自身も物理オブジェクトの影響を受け、敵の砲弾に当たるとエフェクトを出します。敵に砲弾が命中すると敵は消えてしまいます。<b>プレイヤー</b>は砲弾に当てっても無敵ですが、ゲームとして成立させるためには、プレイヤーも何らかのダメージを受ける必要があるでしょう。<br />
+<br />
+　では一つ一つコードを見ていきましょう。<br />
+　まず、<b>上から落ちてくるオブジェクト</b>は<b>物理オブジェクト</b>です。これらのオブジェクトは<b>Character.h/cpp</b>に記述があり<b>ActivePsBox、ActivePsSphere、ActivePsCapsule</b>です。これらは<b>FullSample701から703</b>にあるオブジェクトとほとんど変わりませんが、<b>ActivePsObject</b>という共通の親クラスを持ちます。また<b>ActivePsCapsule</b>については<b>CollisionCapsuleコンポーネント</b>と互換をとるために若干の修正を加えています。<br />
+<br />
+　このサンプルのオブジェクトの特徴は<b>Collisionコンポーネント（の派生クラス）を持ちつつ物理計算もする</b>というものです。<br />
+　物理オブジェクトは勝手に衝突判定をしますが、同時に<b>Collisionコンポーネント（の派生クラス）</b>による判定も行います。ただし。<b>Collisionコンポーネント（の派生クラス）</b>側では<b>判定</b>は行いますが、<b>衝突後の処理</b>は行いません。<br />
+　基本的な設定としては。以下のように<b>OnCreate()関数</b>に記述します。以下は<b>ActivePsSphere::OnCreate()</b>ですが、
+<div class="box1">
+<pre>
+void ActivePsSphere::OnCreate() {
+    //中略
+
+    //衝突判定をつける
+    <span class="red">auto PtrCol = AddComponent&lt;CollisionSphere>();
+    //衝突判定はNoneにする
+    PtrCol->SetIsHitAction(IsHitAction::None);</span>
+
+
+    //中略
+
+    //物理計算球体
+    PsSphereParam param;
+    //DEFAULT_SPHEREのスケーリングは直径基準なので、半径にする
+    param.m_Radius = m_Scale * 0.5f;
+    param.m_Mass = 1.0f;
+    //慣性テンソルの計算
+    param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = m_Qt;
+    param.m_Pos = m_Position;
+    auto PsPtr = AddComponent&lt;PsSphereBody>(param);
+    PsPtr->SetDrawActive(true);
+}
+</pre>
+</div>
+　赤くなっているところがポイントです。<b>PtrCol->SetIsHitAction(IsHitAction::None);</b>とすることで衝突後の処理を物理計算に任せることができ、なおかつ<b>従来のBaseCrossの世界</b>でも<b>衝突状況</b>を把握することが可能となります。<br />
+<br />
+<h4>プレイヤーの記述</h4>
+　プレイヤーは<b>Player.h/cpp</b>に記述があります。ここでも上記同様<b>Collisionコンポーネント（の派生クラス）を持ちつつ物理計算もする</b>という処理になります。上記の<b>物理オブジェクト</b>と違う点は<b>OnUpdate()</b>や<b>OnUpdate2()</b>の記述があるところです。
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+//中略
+
+    <span class="red">//衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionSphere>();
+    //判定するだけなのでアクションはNone
+    PtrCol->SetIsHitAction(IsHitAction::None);</span>
+
+
+    PsSphereParam param;
+    //basecrossのスケーリングは直径基準なので、半径基準にする
+    param.m_Radius = m_Scale * 0.5f;
+    param.m_Mass = 1.0f;
+    //慣性テンソルの計算
+    param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
+    //プレイヤーなのでスリープしない
+    param.m_UseSleep = false;
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat.identity();
+    param.m_Pos = m_StartPos;
+    param.m_LinearVelocity = Vec3(0);
+    auto PsPtr = AddComponent&lt;PsSphereBody>(param);
+    PsPtr->SetAutoTransform(false);
+    PsPtr->SetDrawActive(true);
+
+//中略
+
+}
+</pre>
+</div>
+　プレイヤーが砲弾を発射した時の処理は、<b>Player::OnPushX()</b>にあります。
+<div class="box1">
+<pre>
+void Player::OnPushX() {
+    auto XAPtr = App::GetApp()->GetXAudio2Manager();
+    XAPtr->Start(L"cursor");
+
+    auto Ptr = GetComponent&lt;Transform>();
+    Vec3 Pos = Ptr->GetPosition();
+    Pos.y += 0.3f;
+    Quat Qt = Ptr->GetQuaternion();
+    Vec3 Rot = Qt.toRotVec();
+    float RotY = Rot.y;
+    Vec3 velo(sin(RotY), 0.05f, cos(RotY));
+    velo.normalize();
+    velo *= 20.0f;
+    auto Group = GetStage()->GetSharedObjectGroup(L"ShellGroup");
+    for (size_t i = 0; i &lt; Group->size(); i++) {
+        auto shptr = dynamic_pointer_cast&lt;ShellSphere>(Group->at(i));
+        if (shptr && !shptr->IsUpdateActive()) {
+            //空きが見つかった
+            shptr->Reset(Pos, velo);
+            return;
+        }
+    }
+    //ここまで来てれば空きがない
+    GetStage()->AddGameObject&lt;ShellSphere>(Pos, velo);
+}
+</pre>
+</div>
+　この処理で<b>砲弾の使いまわし</b>をする記述になります。<br />
+<br />
+<h4>敵の記述</h4>
+　敵は<b>Charecter.h/cpp</b>にある<b>Boxクラス</b>です。これも同様に<b>Collisionコンポーネント（の派生クラス）を持ちつつ物理計算もする</b>という処理です。以下<b>Box::OnCreate()関数</b>ですが
+<div class="box1">
+<pre>
+void Box::OnCreate() {
+
+//中略
+
+
+    <span class="red">//衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionObb>();
+    //衝突判定はNoneにする
+    PtrCol->SetIsHitAction(IsHitAction::None);</span>
+
+//中略
+
+    //物理計算ボックス
+    PsBoxParam param;
+    //DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
+    param.m_HalfSize = Vec3(0.5f, 0.5f, 0.5f) * 0.5f;
+    param.m_Mass = 1.0f;
+    //慣性テンソルの計算
+    param.m_Inertia = BasePhysics::CalcInertiaBox(param.m_HalfSize, param.m_Mass);
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = Qt;
+    param.m_Pos = m_StartPos;
+    auto PsPtr = AddComponent&lt;PsBoxBody>(param);
+    PsPtr->SetDrawActive(true);
+
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;Box>(GetThis&lt;Box>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(BoxDefaultState::Instance());
+
+}
+</pre>
+</div>
+　このほかに敵の処理は<b>AI処理</b>が加わります。これは<b>ステートマシン</b>で実装しています。<b>Box::OnUpdate()関数</b>からの処理の流れを確認ください。<br />
+<br />
+<h4>砲弾（発射する球体）の記述</h4>
+　このサンプルで、唯一<b>物理世界とは関係のない</b>オブジェクトが<b>砲弾</b>です<b>Character.h/cpp</b>にある<b>ShellSphereクラス</b>です。<br />
+　以下<b>ShellSphere::OnCreate()関数</b>ですが、<b>RigidbodyとCollisionSphere</b>を使用しています。つまり、物理計算コンポーネントを使う代わりに<b>Rigidbodyコンポーネント</b>を使用しています。<b>CollisionSphere</b>はこれまで同様<b>PtrCol->SetIsHitAction(IsHitAction::None);</b>とします。
+<div class="box1">
+<pre>
+void ShellSphere::OnCreate() {
+//中略
+
+    //Rigidbodyをつける
+    auto PtrRedid = AddComponent&lt;Rigidbody>();
+    PtrRedid->SetVelocity(m_Velocity);
+    <span class="red">//衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionSphere>();
+    PtrCol->SetIsHitAction(IsHitAction::None);</span>
+
+
+//中略
+
+}
+</pre>
+</div>
+　このようにしておいて、<b>ShellSphere::OnUpdate2()</b>で以下のように記述があります。
+<div class="box1">
+<pre>
+void ShellSphere::OnUpdate2() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    if (PtrTransform->GetPosition().y &lt; -0.5f) {
+        Erase();
+        return;
+    }
+    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
+    if (GetComponent&lt;Collision>()->GetHitObjectVec().size() > 0) {
+        for (auto& v : GetComponent&lt;Collision>()->GetHitObjectVec()) {
+            auto& ptr = dynamic_pointer_cast&lt;Box>(v);
+            auto& ptr2 = dynamic_pointer_cast&lt;Player>(v);
+            auto& ptr3 = dynamic_pointer_cast&lt;ActivePsObject>(v);
+            if (ptr || ptr2) {
+                if (ptr) {
+                    GetStage()->RemoveGameObject&lt;Box>(ptr);
+                }
+                else {
+                    //ここにプレイヤーのダメージを記述
+
+                }
+                //スパークの放出
+                if (PtrSpark) {
+                    PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+                }
+            }
+            else if (ptr3) {
+                //スパークの放出
+                if (PtrSpark) {
+                    PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+                }
+                Erase();
+            }
+        }
+    }
+}
+</pre>
+</div>
+　ここでは<b>衝突した相手</b>によって処理が変わります。<b>敵</b>なら、エフェクトを出して敵を消します。<b>物理オブジェクト</b>の場合は<b>エフェクトのみ</b>です。<b>プレイヤー</b>の場合も<b>エフェクトのみ</b>ですが、ゲームとして成立させるためには<b>//ここにプレイヤーのダメージを記述</b>の部分に、<b>プレイヤーのダメージ</b>を記述する必要があるでしょう。<br />
+　またこの処理は<b>OnCollision()関数</b>を多重定義することでも記述可能かと思います。<br />
+<br />
+　以上、割合と簡単な説明ですが、このサンプルには<b>BaseCrossが目指すもの</b>が凝縮されています。<br />
+　３Ｄゲームを作成する上での基礎的な最低限の機能が一通り入っています。皆さんの参考になれば幸いです。
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="07_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
