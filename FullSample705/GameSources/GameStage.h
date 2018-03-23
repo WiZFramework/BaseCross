@@ -56,6 +56,29 @@ namespace basecross {
 
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	ウエイトステージクラス（リソース読み込み用）
+	//--------------------------------------------------------------------------------------
+	class WaitStage : public Stage {
+		//ビューの作成
+		void CreateViewLight();
+		//スプライトの作成
+		void CreateTitleSprite();
+		//リソースロード用のスレッド（スタティック関数）
+		static void LoadResourceFunc();
+		//リソースを読み込んだことを知らせるフラグ（スタティック変数）
+		static bool m_Loaded;
+	public:
+		//構築と破棄
+		WaitStage() :Stage() {}
+		virtual ~WaitStage() {}
+		//初期化
+		virtual void OnCreate()override;
+		//更新
+		virtual void OnUpdate()override;
+	};
+
+
 
 
 }

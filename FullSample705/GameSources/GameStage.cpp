@@ -171,6 +171,91 @@ namespace basecross {
 
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	ウエイトステージクラス
+	//--------------------------------------------------------------------------------------
+
+	bool WaitStage::m_Loaded = false;
+
+	//リソースロード用のスレッド（スタティック関数）
+	void WaitStage::LoadResourceFunc() {
+		mutex m;
+		m.lock();
+		m_Loaded = false;
+		m.unlock();
+
+		wstring DataDir;
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//各ゲームは以下のようにデータディレクトリを取得すべき
+		//App::GetApp()->GetDataDirectory(DataDir);
+		wstring strTexture = DataDir + L"sky.jpg";
+		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+		strTexture = DataDir + L"trace.png";
+		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+		strTexture = DataDir + L"spark.png";
+		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+		strTexture = DataDir + L"StageMessage.png";
+		App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);
+		//サウンド
+		wstring CursorWav = DataDir + L"cursor.wav";
+		App::GetApp()->RegisterWav(L"cursor", CursorWav);
+		//BGM
+		wstring strMusic = DataDir + L"nanika .wav";
+		App::GetApp()->RegisterWav(L"Nanika", strMusic);
+
+		m.lock();
+		m_Loaded = true;
+		m.unlock();
+
+	}
+
+	void WaitStage::CreateViewLight() {
+		auto PtrView = CreateView<SingleView>();
+		//ビューのカメラの設定
+		auto PtrCamera = ObjectFactory::Create<Camera>();
+		PtrView->SetCamera(PtrCamera);
+		PtrCamera->SetEye(Vec3(0.0f, 2.0f, -3.0f));
+		PtrCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+		//マルチライトの作成
+		auto PtrMultiLight = CreateLight<MultiLight>();
+		//デフォルトのライティングを指定
+		PtrMultiLight->SetDefaultLighting();
+
+	}
+
+	//スプライトの作成
+	void WaitStage::CreateTitleSprite() {
+		AddGameObject<AnimeSprite>(L"WAIT_TX", true,
+			Vec2(256.0f, 64.0f), Vec2(0.0f, 100.0f));
+
+	}
+
+	//初期化
+	void WaitStage::OnCreate() {
+		wstring DataDir;
+		//サンプルのためアセットディレクトリを取得
+		App::GetApp()->GetAssetsDirectory(DataDir);
+		//お待ちくださいのテクスチャのみここで登録
+		wstring strTexture = DataDir + L"wait.png";
+		App::GetApp()->RegisterTexture(L"WAIT_TX", strTexture);
+		//他のリソースを読み込むスレッドのスタート
+		std::thread LoadThread(LoadResourceFunc);
+		//終了までは待たない
+		LoadThread.detach();
+
+		CreateViewLight();
+		//スプライトの作成
+		CreateTitleSprite();
+	}
+
+	//更新
+	void WaitStage::OnUpdate() {
+		if (m_Loaded) {
+			//リソースのロードが終了したらタイトルステージに移行
+			PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToTitleStage");
+		}
+	}
 
 
 }

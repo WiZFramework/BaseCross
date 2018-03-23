@@ -24,13 +24,14 @@
 　３Ｄ世界であっても、固定のカメラや、オブジェクトの動きに制限を設けたい（例えば勝手に回転されると困る場合）、あるいは３Ｄ世界を使った２Ｄなどの場合は<b>物理世界</b>を使わずに、６章までに紹介した<b>BaseCrossの手法</b>で記述したほうが良いでしょう。<br />
 　しかし、自由度の高い３Ｄ画面や、リアルなオブジェクトの動きを演出するためには、<b>物理世界</b>は威力を発揮します。<br />
 <br />
-　ソリューションをリビルドして実行すると、タイトルの画面が出てきます。
-　以下はその画面です。
+　また、このサンプルは<b>マルチスレッド</b>機能を実装しています。この機能により、ここでは<b>リソースの読み込み</b>などの時間がかかる処理中に<b>お待ちください</b>のメッセージを出力することを実装しています。<br />
+　ソリューションをリビルドして実行すると、次の画面が出てきます。
 <p>&nbsp;</p>
 <img src="img/0705a.png" width="80%"/>
 <p>図0705a</p>
 <p>&nbsp;</p>
-　ここで<b>Ｂボタン</b>を押すとゲームステージに移行します。<br />
+　この画面が<b>リソースのロード中</b>の画面です。デバッグモードで実行すれば、比較的長い時間表示されます。リリースモードの場合は、一瞬、場合によってはほとんど表示されずに次の画面に映ります。<br />
+　<b>リソースのロード中</b>の画面も<b>ステージ</b>です。<br />
 　<b>ステージの移行</b>は以下のように記述します。<b>ステージ操作</b>は<b>シーンの役割</b>です。<br />
 　まず、<b>Scene.cpp</b>の<b>Sceneの宣言</b>に以下のようにメンバ関数を宣言します。<b>OnCreate()関数</b>はこれまでも出てきましたが、<b>OnEvent()関数</b>も作成します。
 <div class="box1">
@@ -64,11 +65,9 @@ public:
 <pre>
 void Scene::OnCreate() {
     try {
-        //リソース作成
-        CreateResourses();
         //自分自身にイベントを送る
         //これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
-        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToTitleStage");
+        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), GetThis&lt;Scene>(), L"ToWaitStage");
     }
     catch (...) {
         throw;
@@ -76,12 +75,14 @@ void Scene::OnCreate() {
 }
 
 void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
-    if (event->m_MsgStr == L"ToTitleStage") {
-        //最初のアクティブステージの設定
+    if (event->m_MsgStr == L"ToWaitStage") {
+        //リソース読み込み用のステージ
+        ResetActiveStage&lt;WaitStage>();
+    }
+    else if (event->m_MsgStr == L"ToTitleStage") {
         ResetActiveStage&lt;TitleStage>();
     }
     else if (event->m_MsgStr == L"ToGameStage") {
-        //アクティブステージの設定
         ResetActiveStage&lt;GameStage>();
     }
 }
@@ -93,10 +94,117 @@ void Scene::OnEvent(const shared_ptr&lt;Event>& event) {
 　それは<b>Scene::OnCreate()</b>の中の状態では、まだシーンが不完全な状態だからです。不完全な状態では、ステージからシーンの情報にアクセスすることができません。このサンプルには使ってませんが、ゲーム全体に共通するデータやパラメータは<b>Scene</b>に持たせることが多くなります。そうした場合、そのデータにアクセスするためには<b>Scene::OnCreate()</b>が終了している必要があります。<br />
 　<b>PostEvent()関数</b>は<b>次のターン以降</b>に<b>OnEvent()関数</b>を呼び出します。内部処理的には、イベントのプールにメッセージを貯めておき、指定のタイミングで指定されたオブジェクトにイベントを送ります。<b>PostEvent()関数</b>の第１引数の<b>0.0f</b>は送出までの時間です。<b>0.0f</b>で直近の次のターンとなり、<b>1.0f</b>と書けば<b>1秒後</b>という意味になります。<br />
 <br />
-　さて、イベントの処理は<b>Scene::OnEvent()関数</b>で行います。<b>event->m_MsgStr</b>にはメッセージ文字列が入ってますので、それが<b>L"ToTitleStage"</b>ならは、タイトルステージを構築します。<br />
+　さて、イベントの処理は<b>Scene::OnEvent()関数</b>で行います。<b>event->m_MsgStr</b>にはメッセージ文字列が入ってますので、それが<b>L"ToWaitStage"</b>ならばリソース読み込み中の画面が表示されます。<b>L"ToTitleStage"</b>ならは、タイトルステージを構築します。<br />
 　またメッセージが<b>L"ToGameStage"</b>ならば、ゲームステージを構築します。<br />
-　<b>L"ToGameStage"</b>は<b>タイトルステージ</b>内でイベントを送出します。<br />
+　リソース読み込み画面で、読み込みが終わると、自動的に<b>L"ToTitleStage"</b>を送出します。<br />
 <br />
+<h4>リソース読み込みステージでの記述</h4>
+　<b>リソース読み込みステージ</b>は<b>WaitStageクラス</b>です。<b>GameStage,h/cpp</b>に記述があります。以下は宣言部です。
+<div class="box1">
+<pre>
+class WaitStage : public Stage {
+    //ビューの作成
+    void CreateViewLight();
+    //スプライトの作成
+    void CreateTitleSprite();
+    <span class="red">//リソースロード用のスレッド（スタティック関数）
+    static void LoadResourceFunc();
+    //リソースを読み込んだことを知らせるフラグ（スタティック変数）
+    static bool m_Loaded;</span>
+public:
+    //構築と破棄
+    WaitStage() :Stage() {}
+    virtual ~WaitStage() {}
+    //初期化
+    virtual void OnCreate()override;
+    //更新
+    virtual void OnUpdate()override;
+};
+</pre>
+</div>
+　ここに、<b>LoadResourceFunc()関数</b>と<b>m_Loaded変数</b>の2つの<b>スタティックメンバ</b>があります。<b>LoadResourceFunc()関数</b>は<b>リソース読み込みを新しいスレッドで行う関数</b>であり、<b>m_Loaded変数</b>は<b>読み込み終了したかどうか</b>のフラグです。<br />
+　以下が実体です。<b>GameStage.cpp</b>に記述があります。
+<div class="box1">
+<pre>
+<span class="red">bool WaitStage::m_Loaded = false;</span>
+
+//リソースロード用のスレッド（スタティック関数）
+void WaitStage::LoadResourceFunc() {
+    <span class="red">mutex m;
+    m.lock();
+    m_Loaded = false;
+    m.unlock();</span>
+
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //各ゲームは以下のようにデータディレクトリを取得すべき
+    //App::GetApp()->GetDataDirectory(DataDir);
+    wstring strTexture = DataDir + L"sky.jpg";
+    App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+    strTexture = DataDir + L"trace.png";
+    App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+    strTexture = DataDir + L"spark.png";
+    App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+    strTexture = DataDir + L"StageMessage.png";
+    App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);
+    //サウンド
+    wstring CursorWav = DataDir + L"cursor.wav";
+    App::GetApp()->RegisterWav(L"cursor", CursorWav);
+    //BGM
+    wstring strMusic = DataDir + L"nanika .wav";
+    App::GetApp()->RegisterWav(L"Nanika", strMusic);
+
+    <span class="red">m.lock();
+    m_Loaded = true;
+    m.unlock();</span>
+
+}
+
+//中略
+
+
+//初期化
+void WaitStage::OnCreate() {
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //お待ちくださいのテクスチャのみここで登録
+    wstring strTexture = DataDir + L"wait.png";
+    App::GetApp()->RegisterTexture(L"WAIT_TX", strTexture);
+    <span class="red">//他のリソースを読み込むスレッドのスタート
+    std::thread LoadThread(LoadResourceFunc);
+    //終了までは待たない
+    LoadThread.detach();</span>
+
+
+    CreateViewLight();
+    //スプライトの作成
+    CreateTitleSprite();
+}
+
+//更新
+void WaitStage::OnUpdate() {
+    if (m_Loaded) {
+        //リソースのロードが終了したらタイトルステージに移行
+        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), App::GetApp()->GetScene&lt;Scene>(), L"ToTitleStage");
+    }
+}
+</pre>
+</div>
+　<b>WaitStage::OnCreate()</b>内で赤くなっているところは<b>読み込み用の新しいスレッド</b>を起動しているところです。新スレッドでは<b>WaitStage::LoadResourceFunc()</b>を実行します。<br />
+　<b>WaitStage::LoadResourceFunc()</b>では、<b>ミューテックス</b>というオブジェクトを作成し、<b>ロック</b>をかけてから<b>m_Loaded</b>を操作します。操作後<b>アンロック</b>します。読み込みが終わったら、また<b>ロック</b>をかけて<b>m_Loadedをtrue</b>にします。操作が終わったら<b>アンロック</b>します。こうすることで<b>WaitStage::OnUpdate()</b>での<b>m_Loadedのチェック</b>を安全に行うことができます。<br />
+　ロードが終了しますと<b>m_Loadedがtrue</b>になりますのでタイトルステージに移行します。<br />
+<br />
+　<b>タイトルステージ</b>内では、<b>Ｂボタン</b>で<b>L"ToGameStage"</b>イベントを送出します。<br />
+<br />
+<p>&nbsp;</p>
+<img src="img/0705b.png" width="80%"/>
+<p>図0705b</p>
+<p>&nbsp;</p>
+　これが<b>タイトルステージ</b>です。<br />
+　ここで<b>Ｂボタン</b>を押すとゲームステージに移行します。<br />
+<br/>
 <h4>タイトルステージでの記述</h4>
 　上記のタイトルステージでは<b>Bでステージ切替</b>という文字が出ます。これはテクスチャですが、そのままの意味で、コントローラのBボタンで<b>ゲームステージ</b>に切り替わります。<br />
 　<b>Bボタンの入力を待って、ゲームステージに切り替える</b>処理は<b>GameStage.cpp</b>に記述があります<b>TitleStage::OnUpdate()関数</b>で行います。サンプルの関係で<b>GameStage.cpp</b>に記述がありますが、実際には<b>TitleStage.h/cpp</b>などを別に作成し記述したほうがいいかと思います。
@@ -119,11 +227,11 @@ void TitleStage::OnUpdate() {
 　ここで、<b>PostEvent()関数</b>を使用しています。送り先は<b>App::GetApp()->GetScene&lt;Scene>()</b>です。この記述で<b>シーン</b>のポインタ（shared_ptr）を渡すことができます。<br />
 　タイトルステージで<b>Bボタン</b>を押すと、ステージが<b>ゲームステージ</b>に変わります。この間の<b>フェイドアウト</b>などの処理は、ここでは述べませんが方法はあります。（いづれサンプル化します）<br />
 <br />
-<h4>ゲームステージステージでの記述</h4>
+<h4>ゲームステージでの記述</h4>
 　ステージが変わると以下の画面が出てきます。<b>ゲームステージ（GameStage）</b>です。
 <p>&nbsp;</p>
-<img src="img/0705b.png" width="80%"/>
-<p>図0705b</p>
+<img src="img/0705c.png" width="80%"/>
+<p>図0705c</p>
 <p>&nbsp;</p>
 　ステージに入ると上から<b>物理オブジェクト</b>が落下してきます。<br />
 　ここでは、プレイヤーは<b>Aボタンでジャンプ</b>し、<b>Xボタン</b>で砲弾を発射します。奥のほうに四角い敵がいて、砲弾を発射してきます。少し敵に近づくと、プレイヤーによってきたりします。<br />
