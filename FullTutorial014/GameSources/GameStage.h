@@ -47,8 +47,6 @@ namespace basecross {
 		void SelectClear();
 		//マウスの左ボタン(押した瞬間)
 		void OnLButtonEnter();
-		//マウスの左ボタン(押し続け)
-		void OnLButtonDown();
 		//マウスの左ボタン(離した)
 		void OnLButtonUp();
 		//マウスの右ボタン(押した瞬間)

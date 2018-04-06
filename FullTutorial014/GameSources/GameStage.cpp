@@ -119,9 +119,6 @@ namespace basecross {
 		if (KeyState.m_bPressedKeyTbl[VK_LBUTTON]) {
 			OnLButtonEnter();
 		}
-		else if (KeyState.m_bPushKeyTbl[VK_LBUTTON]) {
-			OnLButtonDown();
-		}
 		else if (KeyState.m_bUpKeyTbl[VK_LBUTTON]) {
 			OnLButtonUp();
 		}
@@ -236,19 +233,13 @@ namespace basecross {
 		}
 	}
 
-	//マウスの左ボタン押し続け
-	void GameStage::OnLButtonDown() {
-
-	}
-
-
 	//マウスの左ボタン(離した)
 	void GameStage::OnLButtonUp() {
 		SelectClear();
 
 	}
 
-	//マウスの左ボタン(離した)
+	//マウスの右ボタン(押した瞬間)
 	void GameStage::OnRButtonEnter() {
 		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToTitleStage");
 	}

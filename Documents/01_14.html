@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１１４．マウスとキーボードの使用とレイキャスト</h3>
+　このサンプルは<b>FullTutorial014</b>というディレクトリに含まれます。<br />
+<br />
+<h4>マウスとキーボードでの操作</h4>
+　<b>BaseCross</b>でも<b>マウス</b>および<b>キーボード</b>が使用できます。<br />
+　このサンプルはその具体的な使用方法について説明したものです。<br />
+　このサンプルは<b>フルサンプル705</b>をベースに作成されています。物理オブジェクトその他についての説明はそちらをお読みください。<br />
+　サンプルをビルドして起動しますと<b>お待ちください</b>という画面が出てきます。この画面はマルチスレッドを使ったデータ読み込みステージです。少ししますと<b>マウス右で画面切り替え</b>というメッセージが出ます。これはタイトルぺステージです。そこで<b>マウスの右ボタン</b>をクリックします。すると以下の画面が出てきます。
+<p>&nbsp;</p>
+<img src="img/0114a.png" width="80%"/>
+<p>図0114a</p>
+<p>&nbsp;</p>
+　この画面で<b>→↓←↑キー</b>を押すとカメラが回転します。<b>PageUp、PageDown</b>でカメラが寄ったり引いたりします。<b>WASDキー</b>はプレイヤーを動かします。<b>X</b>で砲弾を発射し、<b>Z</b>でジャンプします。<br />
+　物理オブジェクトに対して<b>マウスの左ボタン</b>でクリックすると色が変化します。その状態で<b>ドラッグドロップ</b>すると、物理オブジェクトが移動します。<b>マウスの右ボタン</b>で、タイトルステージに戻ります。<br />
+<br />
+<h4>マウスとキーボード操作の準備</h4>
+　<b>BaseCross</b>では<b>マウスとキーボード</b>を使う場合は、あらかじめ<b>使うキーの登録</b>が必要です。それは<b>WinMain.cpp</b>に記述します。<b>MainLoop()関数</b>というのがありますので、その中盤に
+
+
+<div class="box1">
+<pre>
+    //キーボード入力用
+    //ここに設定したキーボード入力を得る
+    vector&lt;DWORD> UseKeyVec = { };
+</pre>
+</div>
+　という記述がありますので
+<div class="box1">
+<pre>
+    //キーボード入力用
+    //ここに設定したキーボード入力を得る
+    vector&lt;DWORD> UseKeyVec = { 
+        <span class="red">VK_PRIOR,VK_NEXT,VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 
+        VK_LBUTTON, VK_RBUTTON, VK_MBUTTON,
+        'W','A','S','D','X','Z'</span>
+    };
+</pre>
+</div>
+　のように使うキーを登録します。<b>VK</b>で始まるのは<b>仮想キー</b>です。この中にマウスの仮想キーもあり<b>VK_LBUTTON, VK_RBUTTON, VK_MBUTTON</b>というのがマウスのボタンです。<b>VK_MBUTTON</b>はこのサンプルでは使用してません。<br />
+　登録を記述すると、それらのキーを使用できるようになります。<br />
+<br />
+<h4>マウスの操作</h4>
+　<b>マウスの操作（マウス状態の取得）</b>は、<b>TitleStage</b>での記述が説明が簡単なのでそちらを説明します。<b>GameStage.cpp</b>にあります<b>TitleStage::OnUpdate()</b>に記述されています。
+<div class="box1">
+<pre>
+void TitleStage::OnUpdate() {
+    //キーボード（マウス）の取得
+    auto KeyState = App::GetApp()->GetInputDevice().GetKeyState();
+    if (KeyState.m_bPressedKeyTbl[VK_RBUTTON]) {
+        OnRButtonEnter();
+    }
+}
+</pre>
+</div>
+　キーボードおよびマウスは<b>押された瞬間、押しつづけ、離された瞬間</b>を取得できます。<b>m_bPressedKeyTbl</b>というのは<b>押された瞬間</b>です。<b>m_bPushKeyTbl</b>は<b>押しつづけ</b>で、<b>m_bUpKeyTbl</b>は<b>離された瞬間</b>です。<br />
+　ここで呼び出している<b>OnRButtonEnter();</b>は別関数になっていて
+<div class="box1">
+<pre>
+void TitleStage::OnRButtonEnter() {
+    PostEvent(0.0f, GetThis&lt;ObjectInterface>(), App::GetApp()->GetScene&lt;Scene>(), L"ToGameStage");
+}
+</pre>
+</div>
+　のように<b>L"ToGameStage"</b>というイベントを送出しています。<br/>
+<br />
+<h4>キーボードの操作</h4>
+　<b>キーボードの操作（キーボード状態の取得）</b>は<b>GameStageクラス</b>で説明します。キーボードもマウス同様<b>押された瞬間、押しつづけ、離された瞬間</b>を取得できます。取得する方法はマウスと同じです。<br />
+　まず<b>プレイヤーの動き</b>は<b>Player::GetMoveVector()関数</b>に記述されています。以下がその本体です。
+<div class="box1">
+<pre>
+Vec3 Player::GetMoveVector() const {
+    Vec3 Angle(0, 0, 0);
+    //キーボードの取得
+    auto KeyState = App::GetApp()->GetInputDevice().GetKeyState();
+    float MoveLength = 0;   //動いた時のスピード
+    auto PtrTransform = GetComponent&lt;Transform>();
+    auto PtrCamera = OnGetDrawCamera();
+    //進行方向の向きを計算
+    Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+    Front.y = 0;
+    Front.normalize();
+    //進行方向向きからの角度を算出
+    float FrontAngle = atan2(Front.z, Front.x);
+    float MoveX = 0.0f;
+    float MoveZ = 0.0f;
+    if (KeyState.m_bPushKeyTbl['W']) {
+        //前
+        MoveZ = 1.0f;
+    }
+    else if (KeyState.m_bPushKeyTbl['A']) {
+        //左
+        MoveX = -1.0f;
+    }
+    else if (KeyState.m_bPushKeyTbl['S']) {
+        //後ろ
+        MoveZ = -1.0f;
+    }
+    else if (KeyState.m_bPushKeyTbl['D']) {
+        //右
+        MoveX = 1.0f;
+    }
+    if (MoveX == 0.0f && MoveZ == 0.0f) {
+        return Angle;
+    }
+
+    float KeyAngle = atan2(-MoveX, MoveZ);
+    //トータルの角度を算出
+    float TotalAngle = FrontAngle + KeyAngle;
+    //角度からベクトルを作成
+    Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+    //正規化する
+    Angle.normalize();
+    //Y軸は変化させない
+    Angle.y = 0;
+    return Angle;
+}
+</pre>
+</div>
+　このように<b>KeyState</b>にキーの状態をとってきて<b>m_bPushKeyTbl</b>でそれぞれのキーが押されているかどうかを検証します。<b>m_bPushKeyTbl</b>は<b>押し続け</b>の状態です。プレイヤーをキーを押し続けることにより移動させるので、このような記述になります。<br />
+<br />
+　また、カメラは<b>LookAtCamera</b>クラスに記述があります。<b>矢印キー</b>と<b>PageUp、PageDown</b>についての記述は、コントローラの記述に対応する形になっています。<br />
+　カメラをキーボードで操作させる場合は<b>LookAtCamera::OnUpdate()関数</b>を参考にしてください。<br/>
+<br />
+　またまた、<b>砲弾の発射</b>および<b>プレイヤーのジャンプ</b>は<b>Player::OnUpdate()</b>にあります。
+<div class="box1">
+<pre>
+    void Player::OnUpdate() {
+        auto Vec = GetMoveVector();
+        auto PtrPs = GetComponent&lt;PsSphereBody>();
+        auto Velo = PtrPs->GetLinearVelocity();
+        Velo.x = Vec.x * 5.0f;
+        Velo.z = Vec.z * 5.0f;
+        PtrPs->SetLinearVelocity(Velo);
+
+        <span class="red">//キーボードの取得
+        auto KeyState = App::GetApp()->GetInputDevice().GetKeyState();
+        if (KeyState.m_bPressedKeyTbl['X']) {
+            OnPushX();
+        }
+        else if (KeyState.m_bPressedKeyTbl['Z']) {
+            OnPushA();
+        }</span>
+    }
+</pre>
+</div>
+　<b>m_bPressedKeyTbl</b>は<b>押された瞬間</b>です。プレイヤーの移動とは違って、<b>瞬間</b>を取得します。<br />
+　ここで呼び出している<b>OnPushX()とOnPushA()</b>は関数名が不思議と思うでしょうが、これは<b>フルサンプル705</b>との比較がしやすいようにこの名前を使いました。<b>フルサンプル705</b>ではコントローラのボタンに割り当てています。<br />
+　<b>コントローラでもキーボードでも使える</b>ようにした場合には<b>OnJump()</b>とか<b>OnAttack()</b>とかの関数名にするとよいでしょう。<br/>
+<br/>
+<h4>レイキャスト</h4>
+　このサンプルのもう一つのテーマは<b>2D空間から3D空間への変換</b>があります。<br />
+　ゲームステージで物理オブジェクトを<b>ドラッグアンドドロップ</b>するとそのオブジェクトが選択されて移動します。<br />
+　これは<b>マウスのポインタを２Ｄから３Ｄに変換</b>した時に<b>カメラ視点からマウス位置</b>に<b>線分</b>を伸ばし、その線分と物理オブジェクトの衝突判定を行います。<br />
+　具体的には<b>GameStage::GetMouseRay()関数</b>で、<b>カメラの始点と終点</b>を取得して、それを<b>レイ</b>として、各オブジェクトとの衝突判定を行います。<br />
+　まず、<b>GameStage::GetMouseRay()関数</b>ですが
+<div class="box1">
+<pre>
+void GameStage::GetMouseRay(Vec3& Near, Vec3& Far) {
+    Mat4x4 world, view, proj;
+    world.affineTransformation(
+        Vec3(1.0f, 1.0f, 1.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f),
+        Vec3(0.0f, 0.0f, 0.0f)
+    );
+    auto PtrCamera = GetView()->GetTargetCamera();
+    view = PtrCamera->GetViewMatrix();
+    proj = PtrCamera->GetProjMatrix();
+    auto viewport = GetView()->GetTargetViewport();
+
+    Near = XMVector3Unproject(
+        <span class="red">Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, 0)</span>,
+        viewport.TopLeftX,
+        viewport.TopLeftY,
+        viewport.Width,
+        viewport.Height,
+        viewport.MinDepth,
+        viewport.MaxDepth,
+        proj,
+        view,
+        world);
+
+    Far = XMVector3Unproject(
+        <span class="red">Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, 1.0)</span>,
+        viewport.TopLeftX,
+        viewport.TopLeftY,
+        viewport.Width,
+        viewport.Height,
+        viewport.MinDepth,
+        viewport.MaxDepth,
+        proj,
+        view,
+        world);
+}
+</pre>
+</div>
+　ここでは、カメラの<b>ビュー行列、射影行列</b>を取得して、また<b>ビューポート</b>も取り出して、その値を<b>XMVector3Unproject</b>という<b>DirectXMath関数</b>を呼び出して、<b>手前の点（Near）</b>と<b>奥の点（Far）</b>に代入します。<br />
+　この<b>XMVector3Unproject()関数</b>は<b>スクリーン座標から３Ｄ座標</b>に変換してくれる、とっても便利な関数です。このほかに<b>XMVector3Project()関数</b>という<b>３Ｄ座標から２Ｄ座標に変換</b>してくれる関数もあるので機会があったら使ってみましょう。<br />
+　ここで<b>XMVector3Unproject()関数</b>を呼び出している引数で、２回呼び出していますが違いは<b>第一引数</b>のみなのに注意してください。
+<div class="box1">
+<pre>
+Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, <span class="red">0</span>)
+</pre>
+</div>
+　というのは<b>Ｚ位置が最前位置</b>という意味で
+<div class="box1">
+<pre>
+Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, <span class="red">1.0</span>)
+</pre>
+</div>
+　というのは<b>Ｚ位置が最奥位置</b>という意味です。こうすると、カメラが見ている一番手前から、一番奥までのレイを作成することができます。<br />
+<br />
+　さてカメラのレイを取り出したらそれと物理オブジェクトの<b>衝突判定</b>を行います。それは<b>GameStage::OnLButtonEnter()関数</b>に記述されています
+
+<div class="box1">
+<pre>
+//マウスの左ボタン押した瞬間
+void GameStage::OnLButtonEnter() {
+    SelectClear();
+    auto PtrCamera = GetView()->GetTargetCamera();
+    Vec3 Eye = PtrCamera->GetEye();
+
+    vector&lt;shared_ptr&lt;ActivePsObject>> ObjVec;
+    Vec3 NearPos, FarPos;
+    GetMouseRay(NearPos, FarPos);
+    for (auto& v : GetGameObjectVec()) {
+        auto PsPtr = dynamic_pointer_cast&lt;ActivePsObject>(v);
+        if (PsPtr) {
+            <span class="red">auto ColObb = PsPtr->GetComponent&lt;CollisionObb>(false);
+            auto ColSp = PsPtr->GetComponent&lt;CollisionSphere>(false);
+            auto ColCapsule = PsPtr->GetComponent&lt;CollisionCapsule>(false);
+            if (ColObb) {
+                auto Obb = ColObb->GetObb();
+                if (HitTest::SEGMENT_OBB(NearPos, FarPos, Obb)) {
+                    ObjVec.push_back(PsPtr);
+                }
+            }
+            else if (ColSp) {
+                auto Sp = ColSp->GetSphere();
+                if (HitTest::SEGMENT_SPHERE(NearPos, FarPos, Sp)) {
+                    ObjVec.push_back(PsPtr);
+                }
+            }
+            else if (ColCapsule) {
+                auto Cap = ColCapsule->GetCapsule();
+                if (HitTest::SEGMENT_CAPSULE(NearPos, FarPos, Cap)) {
+                    ObjVec.push_back(PsPtr);
+                }
+            }</span>
+        }
+    }
+    if (ObjVec.size() > 0) {
+        float MinSpan = 1000.0f;
+        shared_ptr&lt;ActivePsObject> SelectObj = nullptr;
+        for (auto& v : ObjVec) {
+            float Span = length(v->GetComponent&lt;Transform>()->GetPosition() - Eye);
+            if (Span &lt; MinSpan) {
+                MinSpan = Span;
+                SelectObj = v;
+            }
+        }
+        if (SelectObj) {
+            SelectObj->SetSelected(true);
+        }
+    }
+}
+</pre>
+</div>
+　赤くなっているところでは、それぞれの物理オブジェクトとレイの衝突判定を行って、衝突していたらObjVecに追加します。その後、カメラから一番近いオブジェクトを<b>衝突する</b>と判断して、そのオブジェクトを<b>選択状態</b>にします。<br />
+<br />
+　<b>選択状態</b>になってオブジェクトがマウスにつられて移動するさまは<b>ActivePsObject::OnUpdate()</b>に記述されています。<br />
+　ここでは、やはりカメラのレイを取り出してその線と現在位置の<b>最近接点</b>を計算して（HitTest::ClosetPtPointSegment()関数）、その位置に向かう速度を設定します（２倍にしてます）。
+<div class="box1">
+<pre>
+void ActivePsObject::OnUpdate() {
+    if (!IsSelected()) {
+        return;
+    }
+    Vec3 Near, Far;
+    GetTypeStage&lt;GameStage>()->GetMouseRay(Near, Far);
+    auto PsPtr = GetDynamicComponent&lt;PsBodyComponent>(false);
+    if (PsPtr) {
+        auto PsPos = PsPtr->GetPosition();
+        float t;
+        Vec3 RayPos;
+        //現在位置と一番近いレイ上の点を得る
+        HitTest::ClosetPtPointSegment(PsPos,Near,Far,t, RayPos);
+        Vec3 ToVec = RayPos - PsPos;
+        ToVec *= 2.0f;
+        PsPtr->WakeUp();
+        PsPtr->SetLinearVelocity(ToVec);
+    }
+}
+</pre>
+</div>
+　このようにして、<b>ドラッグアンドドロップ</b>を実装します。マウスのボタンが離されたら、選択状態を外します。<br />
+<br />
+　このサンプルでは<b>キーボードとマウス</b>に加え<b>レイキャスト</b>する方法も説明しました。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_13.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
