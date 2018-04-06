@@ -2106,6 +2106,164 @@ namespace basecross{
 
 			return true;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	直線と球の交差
+		@param[in]	p	直線の原点
+		@param[in]	d	直線の向き
+		@param[in]	s	球
+		@param[in]	t	交差点からの距離
+		@param[in]	q	交差点
+		@return	交差していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool RAY_SPHERE(const bsm::Vec3& p, const bsm::Vec3& d,const SPHERE& s,
+			float &t,bsm::Vec3& q) {
+			bsm::Vec3 m = p - s.m_Center;
+			float b = bsm::dot(m, d);
+			float c = bsm::dot(m, m) - s.m_Radius * s.m_Radius;
+			if (c > 0.0f && b > 0.0f) {
+				return false;
+			}
+			float discr = b * b - c;
+			if (discr < 0.0f) {
+				return false;
+			}
+			bsm::Vec3 VecDiscr(discr);
+			VecDiscr = XMVectorSqrt(VecDiscr);
+			t = -b - VecDiscr.x;
+			if (t < 0.0f) {
+				t = 0.0f;
+			}
+			q = d * t + p;
+			return true;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とSPHEREのレイ判定
+		@param[in]	p0	線分開始点
+		@param[in]	p1	線分終了点
+		@param[in]	s	SPHERE
+		@return	交差していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SEGMENT_SPHERE(const bsm::Vec3& p0, const bsm::Vec3& p1, const SPHERE& s) {
+			bsm::Vec3 norm = p1 - p0;
+			norm.normalize();
+			float t;
+			bsm::Vec3 q;
+			if (RAY_SPHERE(p0, norm, s, t, q)) {
+				if (t <= bsm::length(p1 - p0)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とCYLINDERのレイ判定
+		@param[in]	sa	線分開始点
+		@param[in]	sb	線分終了点
+		@param[in]	cy	CYLINDER
+		@param[in]	t	交差点からの距離(0.0から1.0)
+		@return	交差していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SEGMENT_CYLINDER(const bsm::Vec3& sa, const bsm::Vec3& sb, const CYLINDER& cy,
+			float &t) {
+			const float EPSILON = 1.175494e-37f;
+			bsm::Vec3 p = cy.m_PointBottom;
+			bsm::Vec3 q = cy.m_PointTop;
+			float r = cy.m_Radius;
+			bsm::Vec3 d = q - p;
+			bsm::Vec3 m = sa - p;
+			bsm::Vec3 n = sb - sa;
+			float md = bsm::dot(m, d);
+			float nd = bsm::dot(n, d);
+			float dd = bsm::dot(d, d);
+			if (md < 0.0f && md + nd < 0.0f) {
+				return false;
+			}
+			if (md > dd && md + nd > dd) {
+				return false;
+			}
+			float nn = bsm::dot(n, n);
+			float mn = bsm::dot(m, n);
+			float a = dd * nn - nd * nd;
+			float k = bsm::dot(m, m) - r * r;
+			float c = dd * k - md * md;
+			if (abs(a) < EPSILON) {
+				if (c > 0.0f) {
+					return false;
+				}
+				if (md < 0.0f) {
+					t = -mn / nn;
+				}
+				else if (md > dd) {
+					t = (nd - mn) / nn;
+				}
+				else {
+					t = 0.0f;
+				}
+				return true;
+			}
+			float b = dd * mn - nd * md;
+			float discr = b * b - a * c;
+			if (discr < 0.0f) {
+				return false;
+			}
+			bsm::Vec3 VecDiscr(discr);
+			VecDiscr = XMVectorSqrt(VecDiscr);
+			t = (-b - VecDiscr.x) / a;
+			if (t < 0.0f || t > 1.0f) {
+				return false;
+			}
+			if (md + t * nd < 0.0f) {
+				if (nd <= 0.0f) {
+					return false;
+				}
+				t = -md / nd;
+				return k + 2 * t * (mn + t * mn) <= 0.0f;
+			}
+			else if (md + t * nd > dd) {
+				if (nd >= 0.0f) {
+					return false;
+				}
+				t = (dd - md) / nd;
+				return k + dd - 2 * md + t * (2 * (mn - nd) + t * nn) <= 0.0f;
+			}
+			return true;
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とCAPSULEのレイ判定
+		@param[in]	p0	線分開始点
+		@param[in]	p1	線分終了点
+		@param[in]	cap	CAPSULE
+		@return	交差していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SEGMENT_CAPSULE(const bsm::Vec3& p0, const bsm::Vec3& p1, const CAPSULE& cap) {
+			bsm::Vec3 normR = cap.m_PointTop - cap.m_PointBottom;
+			normR.normalize();
+			normR *= cap.m_Radius;
+			//カプセルの半球部分を増やしたシリンダーを作成
+			CYLINDER more_cy(cap.m_Radius, cap.m_PointBottom - normR, cap.m_PointTop + normR);
+			float t;
+			if (SEGMENT_CYLINDER(p0, p1, more_cy, t)) {
+				//半球部分の球を２つ作成
+				SPHERE sp0,sp1;
+				sp0.m_Center = cap.m_PointBottom;
+				sp0.m_Radius = cap.m_Radius;
+				sp1.m_Center = cap.m_PointTop;
+				sp1.m_Radius = cap.m_Radius;
+				if (SEGMENT_SPHERE(p0, p1, sp0) || SEGMENT_SPHERE(p0, p1, sp1)) {
+					return true;
+				}
+			}
+			return false;
+		}
 
 		//--------------------------------------------------------------------------------------
 		/*!

@@ -489,7 +489,7 @@ namespace basecross {
 			}
 			//アームの変更
 			//Dパッド下
-			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN) {
+			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_DOWN || KeyData.m_bPushKeyTbl[VK_NEXT]) {
 				//カメラ位置を引く
 				pImpl->m_ArmLen += pImpl->m_ZoomSpeed;
 				if (pImpl->m_ArmLen >= pImpl->m_MaxArm) {
@@ -498,7 +498,7 @@ namespace basecross {
 				}
 			}
 			//Dパッド上
-			if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP) {
+			else if (CntlVec[0].wButtons & XINPUT_GAMEPAD_DPAD_UP || KeyData.m_bPushKeyTbl[VK_PRIOR] ) {
 				//カメラ位置を寄る
 				pImpl->m_ArmLen -= pImpl->m_ZoomSpeed;
 				if (pImpl->m_ArmLen <= pImpl->m_MinArm) {
@@ -510,12 +510,6 @@ namespace basecross {
 			bsm::Vec3 ToEye = NewAt + ArmVec * pImpl->m_ArmLen;
 			NewEye = Lerp::CalculateLerp(GetEye(), ToEye, 0, 1.0f, pImpl->m_ToTargetLerp, Lerp::Linear);
 		}
-		if (KeyData.m_bPressedKeyTbl[VK_LEFT]) {
-			int a = 0;
-		}
-
-
-
 		SetAt(NewAt);
 		SetEye(NewEye);
 		UpdateArmLengh();
