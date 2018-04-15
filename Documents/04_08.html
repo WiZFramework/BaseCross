@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>４．Draw系</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>４０８．マスク処理</h3>
+<br />
+<h4>マスク処理とは</h4>
+　画面全体にかかわる効果やエフェクトを<b>ポストエフェクト</b>とか<b>アフターエフェクト</b>とか言いますが、その一種で、画面の中を部分的に暗くしたり半透明の色を付けたりする場合があります。<br />
+　このような処理を<b>マスキング</b>なんても言います。このサンプルはその<b>マスク処理</b>です。<br />
+<br />
+　<b>FullSample408ディレクトリ</b>のソリューションを開き、リビルド、実行してみましょう。以下の画面が現れます。
+<p>&nbsp;</p>
+<img src="img/0408a.png" width="80%"/>
+<p>図0408a</p>
+<p>&nbsp;</p>
+　両脇を暗くマスキング処理をしています。Bボタンでマスクが外れます。<br />
+　このマスク処理をしているオブジェクトは<b>Character.h/cpp</b>にあります、<b>MaskSpriteクラス</b>です。<br />
+　これはスプライトの一種で、<b>OnCreate()関数</b>では、<b>VertexPositionColorTexture型</b>の頂点で<b>四角形</b>を作成しています。この頂点は<b>X方向は-1.0から1.0、Y方向は-1.0から1.0、Zは0.0</b>にしておきます。<br />
+　また、ワールド行列は<b>そのまま（Idebntity）</b>にしておきます。<br/>
+　そうしたうえで、<b>OnDraw()関数</b>では、以下のように記述します。
+<div class="box1">
+<pre>
+void MaskSprite::OnDraw() {
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    auto RenderStatePtr = Dev->GetRenderState();
+    pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetAlphaBlendEx(), nullptr, 0xffffffff);
+    pID3D11DeviceContext->OMSetDepthStencilState(RenderStatePtr->GetDepthNone(), 0);
+    pID3D11DeviceContext->RSSetState(RenderStatePtr->GetCullNone());
+    ID3D11SamplerState* pSampler = nullptr;
+    pSampler = RenderStatePtr->GetLinearClamp();
+    pID3D11DeviceContext->PSSetSamplers(0, 1, &pSampler);
+    //シェーダの設定
+    //頂点シェーダ
+    pID3D11DeviceContext->VSSetShader(VSPCTSprite::GetPtr()->GetShader(), nullptr, 0);
+    //インプットレイアウトの設定
+    pID3D11DeviceContext->IASetInputLayout(VSPCTSprite::GetPtr()->GetInputLayout());
+    //ピクセルシェーダ
+    pID3D11DeviceContext->PSSetShader(PSPCTSprite::GetPtr()->GetShader(), nullptr, 0);
+    //個別処理
+    SpriteConstants sb;
+    //コンスタントバッファの作成
+    //行列の取得
+    auto PtrTrans = GetComponent&lt;Transform>();
+    //行列の定義
+    bsm::Mat4x4 World;
+    World = PtrTrans->Get2DWorldMatrix();
+    //エミッシブ
+    sb.Emissive = Col4(0,0,0,1);
+    //デフィーズはすべて通す
+    sb.Diffuse = Col4(1, 1, 1, 1);
+    //行列の設定
+    sb.World = World;
+    //テクスチャ
+    auto shTex = App::GetApp()->GetResource&lt;TextureResource>(m_TextureKey);
+    pID3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
+    //コンスタントバッファの更新
+    pID3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+    //コンスタントバッファの設定
+    ID3D11Buffer* pConstantBuffer = CBSprite::GetPtr()->GetBuffer();
+    //頂点シェーダに渡す
+    pID3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ピクセルシェーダに渡す
+    pID3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //ストライドとオフセット
+    UINT stride = m_SpriteMesh->GetNumStride();
+    UINT offset = 0;
+    //描画方法のセット
+    pID3D11DeviceContext->IASetPrimitiveTopology(m_SpriteMesh->GetPrimitiveTopology());
+    //頂点バッファのセット
+    pID3D11DeviceContext->IASetVertexBuffers(0, 1, m_SpriteMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+    //インデックスバッファのセット
+    pID3D11DeviceContext->IASetIndexBuffer(m_SpriteMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+    //描画
+    pID3D11DeviceContext->DrawIndexed(m_SpriteMesh->GetNumIndicis(), 0, 0);
+    //後始末
+    Dev->InitializeStates();
+}
+</pre>
+</div>
+　ここで行っている処理は、描画コンポーネントを使わずに直接デバイスに描画する処理です。<br />
+　また、あらかじめ、マスク処理のための半透明のテクスチャを準備しておきます。このサンプルでは<b>LenMask.png</b>というテクスチャを使い、<b>L"LENMASK_TX"</b>というキーワードでアクセスできるようにしています。<br />
+　シェーダーは<b>VSPCTSprite</b>（頂点シェーダ）と<b>PSPCTSprite</b>（ピクセルシェーダ）です。<br />
+<br />
+　また、マスクを描画する場合<b>必ず最後に</b>描画する必要があります。そのためには、一番最後に<b>AddGameObject</b>するわけですが、加えて、<b>OnCreate()</b>で
+<div class="box1">
+<pre>
+        SetDrawLayer(2);
+</pre>
+</div>
+　としておきます。これは描画レイヤーと言って、描画順番を強制的に<b>後ろ</b>にする方法です。描画レイヤーはデフォルトは<b>0</b>
+です。大きくすると<b>後で描画</b>になります。ですからこ々の設定では<b>SetDrawLayer(1);</b>でもよいわけですが、ほかにレイヤーを指定するオブジェクトのためにできるだけ後ろにしています。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="04_07.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
