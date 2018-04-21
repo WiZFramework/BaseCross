@@ -2307,6 +2307,59 @@ namespace basecross{
 			}
 			return false;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	三角形と線分との交差判定
+		@param[in]	p	線分の始点
+		@param[in]	q	線分の終点
+		@param[in]	tri	三角形
+		@param[out]	uvw	交差点が代入される参照
+		@param[out]	t	交差点の線分上の割合
+		@return	交差していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SEGMENT_TRIANGLE(
+			const bsm::Vec3& p,
+			const bsm::Vec3& q,
+			const TRIANGLE& tri,
+			bsm::Vec3& uvw,
+			float& t
+		) {
+			bsm::Vec3 ab = tri.m_B - tri.m_A;
+			bsm::Vec3 ac = tri.m_C - tri.m_A;
+			bsm::Vec3 qp = p - q;
+			bsm::Vec3 n = bsm::cross(ab, ac);
+			float d = bsm::dot(qp, n);
+			if (d <= 0.0f) {
+				return false;
+			}
+			bsm::Vec3 ap = p - tri.m_A;
+			t = bsm::dot(ap, n);
+			if (t < 0.0f) {
+				return false;
+			}
+			if (t > d) {
+				return false;
+			}
+			bsm::Vec3 e = bsm::cross(qp, ap);
+			uvw.y = bsm::dot(ac, e);
+			if (uvw.y < 0.0f || uvw.y > d) {
+				return false;
+			}
+			uvw.z = -bsm::dot(ab, e);
+			if (uvw.z < 0.0f || uvw.y + uvw.z > d) {
+				return false;
+			}
+			float ood = 1.0f / d;
+			t *= ood;
+			uvw.y *= ood;
+			uvw.z *= ood;
+			uvw.x = 1.0f - uvw.y - uvw.z;
+			return true;
+		}
+
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Sphereと動かないRectの衝突判定

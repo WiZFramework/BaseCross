@@ -53,7 +53,15 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	///	一つのメッシュデータ(MultiMeshで使用)
+	///	頂点ごとのスキニング情報
+	//--------------------------------------------------------------------------------------
+	struct SkinPrimData {
+		uint32_t indices[4];
+		float weights[4];
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	一つのメッシュデータ
 	//--------------------------------------------------------------------------------------
 	struct MeshPrimData {
 		//頂点バッファ
@@ -91,6 +99,10 @@ namespace basecross {
 		vector<bsm::Mat4x4> m_SampleMatrixVec;
 		//マルチメッシュの場合のメッシュインデックス
 		UINT m_MultiMeshIndex;
+		//汎用に使えるローカル頂点の配列
+		vector<VertexPosition> m_Vertices;
+		//スキニング情報
+		vector<SkinPrimData> m_Skins;
 		MeshPrimData():
 			m_IsSkining(false),
 			m_BoneCount(0),
@@ -796,6 +808,12 @@ namespace basecross {
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto pDx11Device = Dev->GetD3DDevice();
 			auto Ptr = ObjectFactory::Create<MeshResource>();
+			//汎用頂点の作成
+			for (auto& v : vertices) {
+				VertexPosition vertex;
+				vertex.position = v.position;
+				Ptr->m_MeshPrimData.m_Vertices.push_back(vertex);
+			}
 			//バッファの作成
 			if (AccessWrite) {
 				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
@@ -840,6 +858,34 @@ namespace basecross {
 			auto pDx11Device = Dev->GetD3DDevice();
 			auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
 			auto Ptr = ObjectFactory::Create<MeshResource>();
+			//汎用頂点の作成。
+			//インデックスをもとに作成する
+			for (auto i : indices) {
+				VertexPosition vertex;
+				vertex.position = vertices[i].position;
+				Ptr->m_MeshPrimData.m_Vertices.push_back(vertex);
+				//スキン情報を持つかどうか
+				//VertexPositionNormalTangentColorTextureSkinningは未対応
+				if (typeid(T) == typeid(VertexPositionNormalTextureSkinning)) {
+					auto& ref = (VertexPositionNormalTextureSkinning&)vertices[i];
+					SkinPrimData sdata;
+					for (int i = 0; i < 4; i++) {
+						sdata.indices[i] = ref.indices[i];
+						sdata.weights[i] = ref.weights[i];
+					}
+					Ptr->m_MeshPrimData.m_Skins.push_back(sdata);
+
+				}
+				else if (typeid(T) == typeid(VertexPositionNormalTangentTextureSkinning)) {
+					auto& ref = (VertexPositionNormalTangentTextureSkinning&)vertices[i];
+					SkinPrimData sdata;
+					for (int i = 0; i < 4; i++) {
+						sdata.indices[i] = ref.indices[i];
+						sdata.weights[i] = ref.weights[i];
+					}
+					Ptr->m_MeshPrimData.m_Skins.push_back(sdata);
+				}
+			}
 			//バッファの作成
 			if (AccessWrite) {
 				Util::DemandCreate(Ptr->m_MeshPrimData.m_VertexBuffer, Mutex, [&](ID3D11Buffer** pResult)
@@ -874,7 +920,6 @@ namespace basecross {
 				//インデックスバッファの作成
 				MeshResource::CreatePrimitiveBuffer(pDx11Device, indices, D3D11_BIND_INDEX_BUFFER, pResult);
 			});
-
 			//インデックス数の設定
 			Ptr->m_MeshPrimData.m_NumIndicis = static_cast<UINT>(indices.size());
 			Ptr->m_MeshPrimData.m_MeshTypeIndex = typeid(T);
@@ -905,6 +950,16 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	汎用に利用できる頂点の取得<br />
+		@param	なし
+		@return	頂点の配列。
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<VertexPosition>& GetVerteces() const {
+			return m_MeshPrimData.m_Vertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	バックアップデータのインデックス取得<br />
 		AccessWriteがtrueで作成されたリソースは、頂点の配列によって頂点を変更できる。<br />
 		AccessWriteがtrueでない場合は、バックアップは空である。
@@ -924,6 +979,16 @@ namespace basecross {
 				);
 			}
 			return Ptr->m_Indices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	汎用に利用できるスキン情報の取得<br />
+		@param	なし
+		@return	スキン情報の配列（空の場合あり）。
+		*/
+		//--------------------------------------------------------------------------------------
+		const vector<SkinPrimData>& GetSkins() const {
+			return m_MeshPrimData.m_Skins;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

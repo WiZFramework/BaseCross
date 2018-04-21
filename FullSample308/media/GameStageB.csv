@@ -1,0 +1,6 @@
+Name,Scale,,,Rot,,,Pos,,
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0
+TilingPlate,40,40,1,XM_PIDIV2,0,0,0,0,0
