@@ -71,55 +71,35 @@ namespace basecross{
 		m_InputHandler.PushHandle(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
-
-
 		auto LinePtr = GetStage()->GetSharedGameObject<ActionLine>(L"ActionLine");
 		auto StartPos = GetComponent<Transform>()->GetPosition();
-
 		Vec3 Rot = GetComponent<Transform>()->GetRotation();
-
 		Vec3 VecRot(sin(Rot.y), 0, cos(Rot.y));
 		VecRot.normalize();
 		VecRot *= 2.0f;
 		Vec3 EndPos = StartPos + VecRot;
 		LinePtr->SetStartPos(StartPos);
 		LinePtr->SetEndPos(EndPos);
-
 		auto EnemyPtr = GetStage()->GetSharedGameObject<Enemy>(L"Enemy");
-		auto& Triangles = EnemyPtr->GetLocalTriangles();
-		auto EnemyMat = EnemyPtr->GetComponent<Transform>()->GetWorldMatrix();
-		for (size_t i = 0; i < Triangles.size();i += 3) {
-			TRIANGLE tri;
-			tri.m_A = Triangles[i] * EnemyMat;
-			tri.m_B = Triangles[i + 1] * EnemyMat;
-			tri.m_C = Triangles[i + 2] * EnemyMat;
-			Vec3 ret;
-			float t;
-			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
-				//スパークの放出
-				auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
-				if (PtrSpark) {
-					auto Len = length(EndPos - StartPos);
-					Len *= t;
-					auto Nomal = EndPos - StartPos;
-					Nomal.normalize();
-					Nomal *= Len;
-
-					PtrSpark->InsertSpark(StartPos + Nomal);
-					break;
-				}
-			}
+		Vec3 HitPoint;
+		if (EnemyPtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
+			//スパークの放出
+			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+			PtrSpark->InsertSpark(HitPoint);
 		}
-
+		auto BonePtr = GetStage()->GetSharedGameObject<BoneTriangles>(L"BoneTriangles");
+		if (BonePtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
+			//スパークの放出
+			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+			PtrSpark->InsertSpark(HitPoint);
+		}
 
 	}
 
 	//後更新
 	void Player::OnUpdate2() {
-
 		//文字列の表示
 		DrawStrings();
-
 	}
 
 	void Player::OnCollision(vector<shared_ptr<GameObject>>& OtherVec) {

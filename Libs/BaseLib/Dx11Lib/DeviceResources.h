@@ -101,6 +101,8 @@ namespace basecross {
 		UINT m_MultiMeshIndex;
 		//汎用に使えるローカル頂点の配列
 		vector<VertexPosition> m_Vertices;
+		//汎用計算に使えるローカル頂点の配列
+		vector<bsm::Vec3> m_TempVertices;
 		//スキニング情報
 		vector<SkinPrimData> m_Skins;
 		MeshPrimData():
@@ -957,6 +959,64 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		const vector<VertexPosition>& GetVerteces() const {
 			return m_MeshPrimData.m_Vertices;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ワールド変換を掛けた汎用に利用できる頂点(Vec3)の取得<br />
+		@param[out]	ret	代入される頂点の配列
+		@param[in]	WorldMat	利用されるワールド行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetDrawingPositions(vector<bsm::Vec3>& ret,const bsm::Mat4x4& WorldMat)const{
+			//ワールド行列
+			bsm::Mat4x4 world;
+			if (m_MeshPrimData.m_UseMeshToTransformMatrix) {
+				world = GetMeshToTransformMatrix() * WorldMat;
+			}
+			else {
+				world = WorldMat;			
+			}
+			ret.clear();
+			for (auto& v : m_MeshPrimData.m_Vertices) {
+				bsm::Vec3 pos;
+				pos = v.position;
+				pos *= world;
+				ret.push_back(pos);
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	含まれる三角形と線分との衝突判定
+		@param[in]	WorldMat	利用されるワールド行列
+		@param[in]	StartPos	線分の開始位置
+		@param[in]	EndPos	線分の終了位置
+		@param[out]	HitPoint	衝突位置
+		@param[out]	RetTri	衝突した三角形
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsHitSegmentTriangles(const bsm::Mat4x4& WorldMat, const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+			GetDrawingPositions(m_MeshPrimData.m_TempVertices, WorldMat);
+			for (size_t i = 0; i < m_MeshPrimData.m_TempVertices.size(); i += 3) {
+				TRIANGLE tri;
+				tri.m_A = m_MeshPrimData.m_TempVertices[i];
+				tri.m_B = m_MeshPrimData.m_TempVertices[i + 1];
+				tri.m_C = m_MeshPrimData.m_TempVertices[i + 2];
+				bsm::Vec3 ret;
+				float t;
+				if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
+					auto Len = length(EndPos - StartPos);
+					Len *= t;
+					auto Nomal = EndPos - StartPos;
+					Nomal.normalize();
+					Nomal *= Len;
+					HitPoint = StartPos + Nomal;
+					RetTri = tri;
+					return true;
+				}
+			}
+			return false;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

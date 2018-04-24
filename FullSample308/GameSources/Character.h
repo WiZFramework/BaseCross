@@ -43,7 +43,7 @@ namespace basecross{
 		virtual ~ActionLine() {}
 		//初期化
 		virtual void OnCreate() override;
-		//更新
+		//操作
 		virtual void OnUpdate() override;
 		const Vec3& GetStartPos()const {
 			return m_StartPos;
@@ -118,7 +118,7 @@ namespace basecross{
 		Vec3 m_Rotation;
 		Vec3 m_Position;
 		shared_ptr<MeshResource> m_BallMesh;
-		vector<Vec3> m_LocalTriangles;
+		vector<Vec3> m_WorldTriangles;
 	public:
 		//構築と破棄
 		Enemy(const shared_ptr<Stage>& StagePtr,
@@ -130,10 +130,74 @@ namespace basecross{
 		//初期化
 		virtual void OnCreate() override;
 		//操作
-		virtual void OnDraw() override;
-		const vector<Vec3>& GetLocalTriangles()const {
-			return m_LocalTriangles;
-		}
+		vector<Vec3>& WorldTriangles();
+		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, bsm::Vec3& HitPoint);
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	Boneキャラ
+	//--------------------------------------------------------------------------------------
+	class BoneChara : public GameObject {
+		Vec3 m_StartPos;
+		vector<Vec3> m_TempPosvec;
+		shared_ptr<MeshResource> m_TriangleMesh;
+	public:
+		//構築と破棄
+		BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		virtual ~BoneChara();
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Bone三角形オブジェクト
+	//--------------------------------------------------------------------------------------
+	class BoneTriangles : public GameObject {
+		weak_ptr<BoneChara> m_BoneChara;
+		vector<VertexPositionColor> m_BackupVertices;
+		shared_ptr<MeshResource> m_TriangleMesh;
+		vector<Vec3> m_TempPosvec;
+	public:
+		//構築と破棄
+		BoneTriangles(const shared_ptr<Stage>& StagePtr,const shared_ptr<BoneChara>& boneChara);
+		virtual ~BoneTriangles() {}
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, bsm::Vec3& HitPoint);
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	ヒット時の三角形オブジェクト
+	//--------------------------------------------------------------------------------------
+	class HitTriangles : public GameObject {
+		shared_ptr<MeshResource> m_TriangleMesh;
+		struct DrawTriangle {
+			TRIANGLE m_Triangle;
+			float m_LastTime;
+			DrawTriangle() {}
+			DrawTriangle(const TRIANGLE& tri, float lasttime) :
+				m_Triangle(tri), m_LastTime(lasttime) {}
+		};
+		vector<DrawTriangle> m_DrawTriangleVec;
+	public:
+		//構築と破棄
+		HitTriangles(const shared_ptr<Stage>& StagePtr);
+		virtual ~HitTriangles() {}
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+		virtual void OnDraw() override;
+		void AddHitTriangle(const TRIANGLE& tri);
+	};
+
+
+
+
 }
 //end basecross

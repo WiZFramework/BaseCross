@@ -1240,7 +1240,7 @@ namespace basecross {
 			}
 			//スキニング処理
 			for (auto& v : vertices) {
-				Mat4x4 skinning(0);
+				bsm::Mat4x4 skinning(0);
 				for (size_t i = 0; i < 4; i++)
 				{
 					skinning += Bones[v.indices[i]] * v.weights[i];
@@ -1249,13 +1249,22 @@ namespace basecross {
 				skinning._24 = 1.0f;
 				skinning._34 = 1.0f;
 				skinning._44 = 1.0f;
-				Vec4 p(v.position);
+				bsm::Vec4 p(v.position);
 				p.w = 0.0f;
 				p *= skinning;
 				v.position = p;
-				v.normal *= (Mat3x3)skinning;
+				v.normal *= (bsm::Mat3x3)skinning;
 			}
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのローカル頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし（ボーンがなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetSkinedPositions(vector<bsm::Vec3>& vertices);
 	private:
 		// pImplイディオム
 		struct Impl;

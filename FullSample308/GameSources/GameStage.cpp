@@ -104,8 +104,16 @@ namespace basecross {
 
 	//敵の作成
 	void GameStage::CreateEnemy() {
-		AddGameObject<Enemy>(Vec3(0.5), Vec3(0.0f), Vec3(0,0.25f,5.0f));
+		AddGameObject<Enemy>(Vec3(0.5), Vec3(0.0f), Vec3(2.5f,0.25f,5.0f));
 	}
+
+	//キャラクターの作成
+	void GameStage::CreateChara() {
+		auto Ptr = AddGameObject<BoneChara>(Vec3(-2.5f, 0.0f, 5.0f));
+		AddGameObject<BoneTriangles>(Ptr);
+		AddGameObject<HitTriangles>();
+	}
+
 
 
 	//プレイヤーの作成
@@ -139,8 +147,11 @@ namespace basecross {
 			CreateSpark();
 			//敵の作成
 			CreateEnemy();
+			//キャラクターの作成
+			CreateChara();
 			//プレーヤーの作成
 			CreatePlayer();
+
 		}
 		catch (...) {
 			throw;

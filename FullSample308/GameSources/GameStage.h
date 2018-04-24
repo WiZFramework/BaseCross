@@ -24,6 +24,8 @@ namespace basecross {
 		void CreateSpark();
 		//敵の作成
 		void CreateEnemy();
+		//キャラクターの作成
+		void CreateChara();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

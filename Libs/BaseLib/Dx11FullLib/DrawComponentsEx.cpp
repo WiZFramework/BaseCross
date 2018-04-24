@@ -684,6 +684,49 @@ namespace basecross {
 	}
 
 
+	void BcBaseDraw::GetSkinedPositions(vector<bsm::Vec3>& vertices) {
+		if (GetVecLocalBones().size() == 0) {
+			throw BaseException(
+				L"ボーン行列がありません",
+				L"if (GetVecLocalBones().size() == 0)",
+				L"BcBaseDraw::GetSkinedPositions()"
+			);
+		}
+		auto ReshRes = GetMeshResource();
+		if (!ReshRes) {
+			throw BaseException(
+				L"メッシュリソースがありません",
+				L"if (!ReshRes)",
+				L"BcBaseDraw::GetSkinedPositions()"
+			);
+		}
+		vertices.clear();
+		auto& Bones = GetVecLocalBones();
+		auto& PosVec = ReshRes->GetVerteces();
+		auto& SkinVec = ReshRes->GetSkins();
+		for (auto& v : PosVec) {
+			vertices.push_back(v.position);
+		}
+		//スキニング処理
+		for (size_t j = 0; j < vertices.size(); j++) {
+			bsm::Mat4x4 skinning(0);
+			for (size_t i = 0; i < 4; i++)
+			{
+				skinning += Bones[SkinVec[j].indices[i]] * SkinVec[j].weights[i];
+			}
+			skinning._14 = 1.0f;
+			skinning._24 = 1.0f;
+			skinning._34 = 1.0f;
+			skinning._44 = 1.0f;
+			bsm::Vec4 p(vertices[j]);
+			p.w = 1.0f;
+			p *= skinning;
+			vertices[j] = p;
+		}
+	}
+
+
+
 	void BcBaseDraw::SetConstants(BasicConstants& BcCb, const MeshPrimData& data) {
 		//行列の定義
 		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
