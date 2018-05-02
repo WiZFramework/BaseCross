@@ -1,11 +1,11 @@
-@‚±‚Ì‚½‚Ñ‚ÍAuWiZi‘Ûî•ñH‰È‘åŠwZjC++ƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒNi’ÊÌBaseCrossjvGitHubƒTƒCƒgA‚ÉƒAƒNƒZƒX‚¢‚½‚¾‚«‚ ‚è‚ª‚Æ‚¤‚²‚´‚¢‚Ü‚·B
+@‚±‚Ì‚½‚Ñ‚ÍAuWiZi‘Ûî•ñH‰ÈŽ©“®ŽÔ‘åŠwZjC++ƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒNi’ÊÌBaseCrossjvGitHubƒTƒCƒgA‚ÉƒAƒNƒZƒX‚¢‚½‚¾‚«‚ ‚è‚ª‚Æ‚¤‚²‚´‚¢‚Ü‚·B
 
-@WiZi‘Ûî•ñH‰È‘åŠwZjƒz[ƒ€ƒy[ƒW
+@WiZi‘Ûî•ñH‰ÈŽ©“®ŽÔ‘åŠwZjƒz[ƒ€ƒy[ƒW
 @http://www.wiz.ac.jp/index.html
 
 @uBaseCrossv‚ÍuƒNƒƒXƒvƒ‰ƒbƒgƒtƒH[ƒ€v‚ð–ÚŽw‚·ƒQ[ƒ€‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚Å‚·B
 @‚±‚ê‚Ü‚ÅŒöŠJ‚µ‚Ä‚«‚Ü‚µ‚½uDxBase2015vuDxBase2016v‚ÌŒãŒp‚É‚ ‚½‚è‚Ü‚·B
-@2017”N11ŒŽŒ»ÝAuBaseCrossv‚ÍDx11”Å‚É‚Â‚«‚Ü‚µ‚Ä‚Í‚¨‚¨‚Þ‚Ë‚Ü‚Æ‚Ü‚Á‚Ä‚«‚Ü‚µ‚½B
+@2018”N5ŒŽŒ»ÝAuBaseCrossv‚ÍDx11”Å‚É‚Â‚«‚Ü‚µ‚Ä‚Í‚¨‚¨‚Þ‚Ë‚Ü‚Æ‚Ü‚Á‚Ä‚«‚Ü‚µ‚½B
 
 @‚Ü‚½uBaseCrossv‚É‚Íƒ‚ƒfƒ‹‚Ìƒf[ƒ^•ÏŠ·ƒc[ƒ‹uFbx2BinVS2015v‚ªŠÜ‚Ü‚ê‚Ü‚·B
 @‚±‚Ìƒc[ƒ‹‚ðƒrƒ‹ƒh‚·‚é‚É‚ÍuFBXSDKv‚¨‚æ‚ÑuMFCv‚ª•K—v‚Æ‚È‚è‚Ü‚·B
@@ -21,7 +21,7 @@ https://wizframework.github.io/Documents/
 
 @ƒ_ƒEƒ“ƒ[ƒh‚·‚é‘O‚É‚Ç‚ñ‚È‚à‚Ì‚©Œ©‚Ä‚Ý‚½‚¢•û‚È‚ÇA‚²—˜—p‚­‚¾‚³‚¢B
 
-@2017”N‰ÄŒ»Ýƒƒ“ƒeƒiƒ“ƒX‚Ís‚Á‚Ä‚È‚Ü‚¹‚ñ‚ªA‰ß‹Ž‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚ÍˆÈ‰º‚É‚È‚è‚Ü‚·B
+@2017”N‰ÄŒ»Ýƒƒ“ƒeƒiƒ“ƒX‚Ís‚Á‚Ä‚Ü‚¹‚ñ‚ªA‰ß‹Ž‚ÌƒtƒŒ[ƒ€ƒ[ƒN‚ÍˆÈ‰º‚É‚È‚è‚Ü‚·B
 uDxBase2015v‚Í
 https://github.com/WiZFramework/DxBase2015
 uDxBase2016v‚Í
@@ -36,6 +36,11 @@ https://github.com/WiZFramework/DxBaseTools
 
 @‚Ü‚½A“®ì‚ðŠm”F‚·‚é‚É‚ÍˆÈ‰º‚ÌŠÂ‹«‚ª•K—v‚Å‚·
 Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo[ƒWƒ‡ƒ“‚È‚Ì‚Å‘åä•v‚ÆŽv‚í‚ê‚Ü‚·j
+–VS2015‚ðDX11‚Å‚¨Žg‚¢‚É‚È‚éê‡‚ÍŠeƒTƒ“ƒvƒ‹‚ÌuBaseCrossDx11.slnv‚ð‚¨ŠJ‚«‚­‚¾‚³‚¢B
+–VS2015‚ðDX12‚Å‚¨Žg‚¢‚É‚È‚éê‡‚ÍŠeƒTƒ“ƒvƒ‹‚ÌuBaseCrossDx12.slnv‚ð‚¨ŠJ‚«‚­‚¾‚³‚¢B
+Visual Studio Community 2017iƒtƒ‹ƒo[ƒWƒ‡ƒ“ƒTƒ“ƒvƒ‹‚Ì‚Ý‚Ì‘Î‰ž‚Å‚·B‚½‚¾‚µFbx2BinVS2015‚Í‘Î‰ž‚µ‚Ä‚Ü‚¹‚ñBj
+–VS2017‚ð‚¨Žg‚¢‚É‚È‚éê‡‚ÍŠeƒTƒ“ƒvƒ‹‚ÌuBaseCrossDx11VS2017.slnv‚ð‚¨ŠJ‚«‚­‚¾‚³‚¢B
+
 
 –ƒZƒbƒgƒAƒbƒvŽž‚É•K‚¸VisualC++‚ðƒZƒbƒgƒAƒbƒv‚µ‚Ä‚­‚¾‚³‚¢B
 –uDirectX11v”ÅA“®ì‚É‚ÍWindows8.1ˆÈã‚ª•K—v‚Å‚·B
@@ -59,6 +64,7 @@ Visual Studio Community 2015iCommunityˆÈŠO‚Å‚Í“®ìŠm”F‚µ‚Ä‚Ü‚¹‚ñ‚ªA‘¼‚ÍãˆÊƒo
 2017”N11ŒŽ14“ú@ƒhƒLƒ…ƒƒ“ƒgƒIƒ“ƒ‰ƒCƒ“ŒöŠJB
 2017”N12ŒŽ11“ú@•¨—ƒGƒ“ƒWƒ“uSony Computer EntertainmentŽÐ‚ÌPhysics EffectsiƒI[ƒvƒ“ƒ\[ƒX”Åjv
 	‚ðŽÀ‘•‚µ‚Ü‚µ‚½BiBSDƒ‰ƒCƒZƒ“ƒX‚Æ‚È‚Á‚Ä‚¢‚Ü‚·jB
+2018”N05ŒŽ02“ú@VS2017‘Î‰žiƒtƒ‹ƒo[ƒWƒ‡ƒ“‚Ì‚ÝjB
 
 BaseCrossƒQ[ƒ€ƒtƒŒ[ƒ€ƒ[ƒN“úŽ
 ŠJ”­“úŽu-ŽÀŒ±‚ÆŽÀ‘•‚Æ-v
@@ -67,4 +73,4 @@ http://gameproject.jp/
 
 
 
-@@@@@@@@@@@@@@@@@@@@@2017”N“~@ŽRƒmˆä@–õiWiZƒQ[ƒ€‰È”ñí‹ÎuŽtFC++’S“–j
+@@@@@@@@@@@@@@@@@@@@@2018”Nt@ŽRƒmˆä@–õiWiZƒQ[ƒ€‰È”ñí‹ÎuŽtFC++’S“–j
