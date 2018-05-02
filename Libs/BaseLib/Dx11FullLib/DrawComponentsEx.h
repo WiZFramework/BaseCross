@@ -1210,61 +1210,58 @@ namespace basecross {
 		vector< bsm::Mat4x4 >& GetVecMultiLocalBones(size_t index);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	スキン処理済みのローカル頂点配列を得る
+		@brief	メッシュのローカル頂点配列を得る
 		@param[out]	vertices	受け取る頂点の配列
-		@return	なし（ボーンがなければ例外）
+		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		template <typename T>
-		void GetSkinedVertices(vector<T>& vertices) {
-			if (GetVecLocalBones().size() == 0) {
-				throw BaseException(
-					L"ボーン行列がありません",
-					L"if (GetVecLocalBones().size() == 0)",
-					L"BcBaseDraw::GetSkinedVertices()"
-				);
-			}
-			auto ReshRes = GetMeshResource();
-			if (!ReshRes) {
-				throw BaseException(
-					L"メッシュリソースがありません",
-					L"if (!ReshRes)",
-					L"BcBaseDraw::GetSkinedVertices()"
-				);
-			}
-			vertices.clear();
-			auto& Bones = GetVecLocalBones();
-			auto& BackVec = ReshRes->GetBackupVerteces<T>();
-			for (auto& v : BackVec) {
-				vertices.push_back(v);
-			}
-			//スキニング処理
-			for (auto& v : vertices) {
-				bsm::Mat4x4 skinning(0);
-				for (size_t i = 0; i < 4; i++)
-				{
-					skinning += Bones[v.indices[i]] * v.weights[i];
-				}
-				skinning._14 = 1.0f;
-				skinning._24 = 1.0f;
-				skinning._34 = 1.0f;
-				skinning._44 = 1.0f;
-				bsm::Vec4 p(v.position);
-				p.w = 0.0f;
-				p *= skinning;
-				v.position = p;
-				v.normal *= (bsm::Mat3x3)skinning;
-			}
-		}
-
+		void GetStaticMeshLocalPositions(vector<bsm::Vec3>& vertices);
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	スキン処理済みのローカル頂点配列を得る
+		@brief	メッシュのワールド頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetStaticMeshWorldPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とメッシュのワールド頂点の衝突判定
+		@param[in]	StartPos	線分の開始点
+		@param[in]	EndPos	線分の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint,TRIANGLE& RetTri);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのメッシュのローカル頂点配列を得る
 		@param[out]	vertices	受け取る頂点の配列
 		@return	なし（ボーンがなければ例外）
 		*/
 		//--------------------------------------------------------------------------------------
-		void GetSkinedPositions(vector<bsm::Vec3>& vertices);
+		void GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのメッシュのワールド頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし（ボーンがなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetSkinedMeshWorldPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とスキンメッシュのワールド頂点の衝突判定
+		@param[in]	StartPos	線分の開始点
+		@param[in]	EndPos	線分の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
 	private:
 		// pImplイディオム
 		struct Impl;

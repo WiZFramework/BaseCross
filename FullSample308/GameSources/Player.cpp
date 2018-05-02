@@ -15,7 +15,8 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
-		GameObject(StagePtr)
+		GameObject(StagePtr),
+		m_StartPosition(0.0f, 0.5f, 0.0f)
 	{}
 
 	//初期化
@@ -23,15 +24,17 @@ namespace basecross{
 
 		//初期位置などの設定
 		auto Ptr = GetComponent<Transform>();
-		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
+		Ptr->SetScale(0.5f, 0.5f, 0.5f);	//直径25センチの球体
 		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+		Ptr->SetPosition(m_StartPosition);
+		AddTag(L"Player");
 
 		//Rigidbodyをつける
 		auto PtrRedid = AddComponent<Rigidbody>();
 		//衝突判定をつける
-		auto PtrCol = AddComponent<CollisionSphere>();
-		PtrCol->SetIsHitAction(IsHitAction::Auto);
+		auto PtrCol = AddComponent<CollisionCapsule>();
+		PtrCol->SetIsHitAction(IsHitAction::Slide);
+		PtrCol->AddExcludeCollisionTag(L"PlayerSword");
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -41,11 +44,11 @@ namespace basecross{
 		//影をつける（シャドウマップを描画する）
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
 		//描画コンポーネントの設定
 		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
 		//描画するテクスチャを設定
 		PtrDraw->SetTextureResource(L"TRACE_TX");
 
@@ -59,6 +62,8 @@ namespace basecross{
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
+		//戦いの行動の構築
+		m_FightBehavior.reset(new FightBehavior<Player>(GetThis<Player>()));
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
 		//最初のステートをPlayerDefaultに設定
@@ -71,29 +76,24 @@ namespace basecross{
 		m_InputHandler.PushHandle(GetThis<Player>());
 		//ステートマシン更新
 		m_StateMachine->Update();
-		auto LinePtr = GetStage()->GetSharedGameObject<ActionLine>(L"ActionLine");
-		auto StartPos = GetComponent<Transform>()->GetPosition();
-		Vec3 Rot = GetComponent<Transform>()->GetRotation();
-		Vec3 VecRot(sin(Rot.y), 0, cos(Rot.y));
-		VecRot.normalize();
-		VecRot *= 2.0f;
-		Vec3 EndPos = StartPos + VecRot;
-		LinePtr->SetStartPos(StartPos);
-		LinePtr->SetEndPos(EndPos);
-		auto EnemyPtr = GetStage()->GetSharedGameObject<Enemy>(L"Enemy");
+
+		Vec3 StartPos, EndPos;
+		GetFightBehavior()->GetSowdStartEndLine(StartPos, EndPos);
+
+		auto EnemyPtr = GetStage()->GetSharedGameObject<EnemyBox>(L"EnemyBox");
 		Vec3 HitPoint;
 		if (EnemyPtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
 			//スパークの放出
 			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
 			PtrSpark->InsertSpark(HitPoint);
 		}
-		auto BonePtr = GetStage()->GetSharedGameObject<BoneTriangles>(L"BoneTriangles");
+
+		auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
 		if (BonePtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
 			//スパークの放出
 			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
 			PtrSpark->InsertSpark(HitPoint);
 		}
-
 	}
 
 	//後更新
@@ -118,15 +118,16 @@ namespace basecross{
 		}
 	}
 
+	//Xボタンハンドラ
+	void  Player::OnPushX() {
+		//剣を振るステートに移行
+		GetStateMachine()->ChangeState(PlayerSwordState::Instance());
+	}
+
 
 	//文字列の表示
 	void Player::DrawStrings() {
-
 		//文字列表示
-		//行動
-		wstring BEHAVIOR;
-
-
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
@@ -147,7 +148,7 @@ namespace basecross{
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring str = BEHAVIOR + FPS + PositionStr + RididStr ;
+		wstring str = FPS + PositionStr + RididStr ;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
@@ -161,7 +162,7 @@ namespace basecross{
 	IMPLEMENT_SINGLETON_INSTANCE(PlayerDefaultState)
 
 	void PlayerDefaultState::Enter(const shared_ptr<Player>& Obj) {
-		//何もしない
+		Obj->GetFightBehavior()->HaveSword(L"PlayerSword");
 	}
 
 	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
@@ -197,6 +198,29 @@ namespace basecross{
 		//何もしない
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	剣を振るステート
+	//--------------------------------------------------------------------------------------
+	IMPLEMENT_SINGLETON_INSTANCE(PlayerSwordState)
+
+	void PlayerSwordState::Enter(const shared_ptr<Player>& Obj) {
+		Obj->GetFightBehavior()->StartShakeSword();
+	}
+
+	void PlayerSwordState::Execute(const shared_ptr<Player>& Obj) {
+		auto PtrBehavior = Obj->GetBehavior<PlayerBehavior>();
+		PtrBehavior->MovePlayer();
+		auto PtrGrav = Obj->GetBehavior<Gravity>();
+		PtrGrav->Execute();
+		if (Obj->GetFightBehavior()->RotationShakeSword()) {
+			//半周回転させたらデフォルトステートに移行
+			Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
+		}
+	}
+
+	void PlayerSwordState::Exit(const shared_ptr<Player>& Obj) {
+		//何もしない
+	}
 
 
 }

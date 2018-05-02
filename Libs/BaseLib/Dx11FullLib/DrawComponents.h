@@ -1030,6 +1030,8 @@ namespace basecross {
 	struct DrawObjectBase {
 		//メッシュリソース
 		weak_ptr<MeshResource> m_MeshResource;
+		//三角形衝突判定等に使うテンポラリ配列（static）
+		static vector<bsm::Vec3> m_TempPositions;
 		//マルチメッシュリソース
 		weak_ptr<MultiMeshResource> m_MultiMeshResource;
 		//以下、ボーンモデル用
@@ -2252,6 +2254,60 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D11Buffer>& GetMatrixBuffer() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュのローカル頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetStaticMeshLocalPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	メッシュのワールド頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetStaticMeshWorldPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とメッシュのワールド頂点の衝突判定
+		@param[in]	StartPos	線分の開始点
+		@param[in]	EndPos	線分の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのメッシュのローカル頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし（ボーンがなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	スキン処理済みのメッシュのワールド頂点配列を得る
+		@param[out]	vertices	受け取る頂点の配列
+		@return	なし（ボーンがなければ例外）
+		*/
+		//--------------------------------------------------------------------------------------
+		void GetSkinedMeshWorldPositions(vector<bsm::Vec3>& vertices);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	線分とスキンメッシュのワールド頂点の衝突判定
+		@param[in]	StartPos	線分の開始点
+		@param[in]	EndPos	線分の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
 	private:
 		// pImplイディオム
 		struct Impl;

@@ -29,6 +29,11 @@ namespace basecross{
 		strTexture = DataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
 
+		strTexture = DataDir + L"Blue.png";
+		App::GetApp()->RegisterTexture(L"BLUE_TX", strTexture);
+		strTexture = DataDir + L"Red.png";
+		App::GetApp()->RegisterTexture(L"RED_TX", strTexture);
+
 		//ボーンモデルの通常リソース
 		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf",true);
 		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);

@@ -104,27 +104,28 @@ namespace basecross {
 
 	//敵の作成
 	void GameStage::CreateEnemy() {
-		AddGameObject<Enemy>(Vec3(0.5), Vec3(0.0f), Vec3(2.5f,0.25f,5.0f));
+		AddGameObject<EnemyBox>(Vec3(1.0), Vec3(0.0f), Vec3(2.5f,0.5f,5.0f));
 	}
 
 	//キャラクターの作成
 	void GameStage::CreateChara() {
 		auto Ptr = AddGameObject<BoneChara>(Vec3(-2.5f, 0.0f, 5.0f));
-		AddGameObject<BoneTriangles>(Ptr);
-		AddGameObject<HitTriangles>();
 	}
 
 
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
+		auto SwordPtr = AddGameObject<Sword>(
+			Vec3(0.2, 0.8, 0.2),
+			L"PlayerSword"
+			);
+		SetSharedGameObject(L"PlayerSword", SwordPtr);
 		//プレーヤーの作成
 		auto PlayerPtr = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
 		SetSharedGameObject(L"Player", PlayerPtr);
-		Vec3 StartPos = PlayerPtr->GetComponent<Transform>()->GetPosition();
-		Vec3 EndPos = StartPos + Vec3(0, 0, 2.0f);
-		AddGameObject<ActionLine>(StartPos, EndPos);
+
 	}
 
 

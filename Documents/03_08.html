@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０８．メッシュの三角形の取得</h3>
+　メッシュの三角形（の集合）を取得したり、その三角形と線分の衝突判定を行うなどの処理があると便利な場合があります。<br />
+　例えば<b>剣で戦う</b>場合など、相手のどの部位に当たったのかを知りたいときに、剣とメッシュの三角形と衝突判定（交差判定）を行って、その後の処理ができたりすると便利ですね。<br />
+　またでこぼこした床とのレイ判定などにも使えます。<br />
+<br />
+　まず<b>FullSample308</b>を実行してみましょう。以下のような画面が出てきます。<br />
+　このサンプルは処理が重いので<b>リリースモード</b>で実行してください。そうするとそこそこのスピードが出ます。<br />
+<p>&nbsp;</p>
+<img src="img/0308a.png" width="80%"/>
+<p>図0308a</p>
+　プレイヤーはBボタンで棒を振り回すことができます。右のボックス、および左のモデルに振り回した棒が当たると当たった場所からスパークがでます。<br />
+　当たった場所はメッシュの三角形上の点で、アニメーションでスキン処理されているメッシュでもそこに当たります。<br />
+<br />
+<h4>Drawコンポーネントで交差判定処理</h4>
+　このサンプルは<b>Update処理</b>の章に入ってますが<b>Drawコンポーネント</b>と密接な関係があります。<br />
+　まず、右側のボックスである<b>EnemyBoxクラス</b>から見ていきましょう。<br />
+　使っているのは普通のスタティックメッシュですが<b>IsHitSegmentTriangles()</b>という関数があります。<br />
+　この関数の実体は以下です。
+<div class="box1">
+<pre>
+bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, Vec3& HitPoint) {
+    auto PtrDraw = GetComponent&lt;BcPNTStaticDraw>();
+    TRIANGLE tri;
+    return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri);
+}
+</pre>
+</div>
+　ここでは<b>BcPNTStaticDraw描画コンポーネント</b>を取得してその<b>HitTestStaticMeshSegmentTriangles()関数</b>を呼び出しています。この関数は、線分とメッシュ内の三角形と交差判定を行い、交差していたら<b>HitPoint</b>に交差点を代入します。<br />
+　このサンプルでは使ってませんが<b>交差した三角形</b>も習得できます。<br />
+<br />
+　続いてボーン付きのメッシュです。<br/>
+　こちらは<b>BoneChara::IsHitSegmentTriangles()関数</b>に記述があります。以下が実体です。
+<div class="box1">
+<pre>
+bool BoneChara::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, Vec3& HitPoint) {
+    auto PtrDraw = GetComponent&lt;BcPNTBoneModelDraw>();
+    TRIANGLE tri;
+    return PtrDraw->HitTestSkinedMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri);
+
+}
+</pre>
+</div>
+　こちらも同様に<b>BcPNTBoneModelDraw描画コンポーネント</b>を取り出して、その<b>HitTestSkinedMeshSegmentTriangles()関数</b>を呼び出しています。この処理で、スキン処理済みの三角形と線分が交差していた場合<b>HitPoint</b>に衝突点が入ります。<br />
+　こちらも交差した三角形も取得できます。<br />
+<br />
+<h4>プレイヤーから呼び出す</h4>
+　これらの関数を呼び出しているのは<b>プレイヤー</b>です。<b>Player::OnUpdate()</b>に記述があります。以下抜粋です。
+
+<div class="box1">
+<pre>
+void Player::OnUpdate() {
+//中略
+
+    Vec3 StartPos, EndPos;
+    GetFightBehavior()->GetSowdStartEndLine(StartPos, EndPos);
+
+    auto EnemyPtr = GetStage()->GetSharedGameObject&lt;EnemyBox>(L"EnemyBox");
+    Vec3 HitPoint;
+    if (EnemyPtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
+        //スパークの放出
+        auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+        PtrSpark->InsertSpark(HitPoint);
+    }
+
+    auto BonePtr = GetStage()->GetSharedGameObject&lt;BoneChara>(L"BoneChara");
+    if (BonePtr->IsHitSegmentTriangles(StartPos, EndPos, HitPoint)) {
+        //スパークの放出
+        auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+        PtrSpark->InsertSpark(HitPoint);
+    }
+}
+</pre>
+</div>
+　ここで<b>EnemyBox</b>かもしくは<b>BoneChara</b>のポインタを取得して、<b>IsHitSegmentTriangles()関数</b>を呼び出しています。交差していたら交差点をエミッターにしてエフェクトを出しています。<br />
+<br />
+　今回紹介したサンプルは、非常にシンプルbなものです。実際には、衝突したら、相手に何らかのダメージが付くように記述することでしょう。<br />
+　そのあたりの処理は皆さんにお任せします。シンプルですが、結構深いと思いますよ。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_07.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

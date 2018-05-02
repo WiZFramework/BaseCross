@@ -683,13 +683,59 @@ namespace basecross {
 		return pImpl->m_BcDrawObject.m_MultiLocalBonesMatrix[index];
 	}
 
+	void BcBaseDraw::GetStaticMeshLocalPositions(vector<bsm::Vec3>& vertices) {
+		auto ReshRes = GetMeshResource();
+		if (!ReshRes) {
+			throw BaseException(
+				L"メッシュリソースがありません",
+				L"if (!ReshRes)",
+				L"BcBaseDraw::GetStaticMeshLocalPositions()"
+			);
+		}
+		vertices.clear();
+		ReshRes->GetLocalPositions(vertices);
+	}
 
-	void BcBaseDraw::GetSkinedPositions(vector<bsm::Vec3>& vertices) {
+	void BcBaseDraw::GetStaticMeshWorldPositions(vector<bsm::Vec3>& vertices) {
+		GetStaticMeshLocalPositions(vertices);
+		//ワールド行列の反映
+		auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
+		for (auto& v : vertices) {
+			v *= WorldMat;
+		}
+	}
+
+	bool BcBaseDraw::HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint,
+		TRIANGLE& RetTri) {
+		GetStaticMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
+				auto Len = length(EndPos - StartPos);
+				Len *= t;
+				auto Nomal = EndPos - StartPos;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartPos + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	void BcBaseDraw::GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices) {
 		if (GetVecLocalBones().size() == 0) {
 			throw BaseException(
 				L"ボーン行列がありません",
 				L"if (GetVecLocalBones().size() == 0)",
-				L"BcBaseDraw::GetSkinedPositions()"
+				L"BcBaseDraw::GetSkinedMeshLocalPositions()"
 			);
 		}
 		auto ReshRes = GetMeshResource();
@@ -697,7 +743,7 @@ namespace basecross {
 			throw BaseException(
 				L"メッシュリソースがありません",
 				L"if (!ReshRes)",
-				L"BcBaseDraw::GetSkinedPositions()"
+				L"BcBaseDraw::GetSkinedMeshLocalPositions()"
 			);
 		}
 		vertices.clear();
@@ -725,6 +771,39 @@ namespace basecross {
 		}
 	}
 
+	void BcBaseDraw::GetSkinedMeshWorldPositions(vector<bsm::Vec3>& vertices) {
+		GetSkinedMeshLocalPositions(vertices);
+		//ワールド行列の反映
+		auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
+		for (auto& v : vertices) {
+			v *= WorldMat;
+		}
+	}
+
+	bool BcBaseDraw::HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, 
+		bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		GetSkinedMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
+				auto Len = length(EndPos - StartPos);
+				Len *= t;
+				auto Nomal = EndPos - StartPos;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartPos + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 
 	void BcBaseDraw::SetConstants(BasicConstants& BcCb, const MeshPrimData& data) {
@@ -747,7 +826,8 @@ namespace basecross {
 		//ワールド行列
 		bsm::Mat4x4 world;
 		if (data.m_UseMeshToTransformMatrix) {
-			world = data.m_MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+			world = data.m_MeshToTransformMatrix * GetMeshToTransformMatrix();
+			world *= PtrTrans->GetWorldMatrix();
 		}
 		else {
 			world = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();

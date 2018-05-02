@@ -385,7 +385,8 @@ namespace basecross {
 		bsm::Mat4x4 RealWorldMatrix;
 		//ワールド行列の決定
 		if (data.m_UseMeshToTransformMatrix) {
-			RealWorldMatrix = data.m_MeshToTransformMatrix * World;
+			RealWorldMatrix = data.m_MeshToTransformMatrix * GetMeshToTransformMatrix();
+			RealWorldMatrix *= World;
 		}
 		else {
 			RealWorldMatrix = GetMeshToTransformMatrix() * World;
@@ -1167,6 +1168,9 @@ namespace basecross {
 			bsm::Col4(0,0,0,0), bsm::Col4(1, 1, 1, 1), MeshToTransformMatrix);
 	}
 
+	//static変数の実体
+	vector<bsm::Vec3> DrawObjectBase::m_TempPositions;
+
 	//--------------------------------------------------------------------------------------
 	///	Simple描画に使用する構造体(影対応)
 	//--------------------------------------------------------------------------------------
@@ -1244,7 +1248,8 @@ namespace basecross {
 		bsm::Mat4x4 World, ViewMat, ProjMat;
 		//ワールド行列の決定
 		if (data.m_UseMeshToTransformMatrix) {
-			World = data.m_MeshToTransformMatrix * PtrTrans->GetWorldMatrix();
+			World = data.m_MeshToTransformMatrix * GetMeshToTransformMatrix();
+			World *= PtrTrans->GetWorldMatrix();
 		}
 		else {
 			World = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
@@ -1647,6 +1652,129 @@ namespace basecross {
 	ComPtr<ID3D11Buffer>& SmBaseDraw::GetMatrixBuffer() const {
 		return pImpl->m_SmDrawObject.m_MatrixBuffer;
 	}
+
+	void SmBaseDraw::GetStaticMeshLocalPositions(vector<bsm::Vec3>& vertices) {
+		auto ReshRes = GetMeshResource();
+		if (!ReshRes) {
+			throw BaseException(
+				L"メッシュリソースがありません",
+				L"if (!ReshRes)",
+				L"SmBaseDraw::GetStaticMeshLocalPositions()"
+			);
+		}
+		vertices.clear();
+		ReshRes->GetLocalPositions(vertices);
+	}
+
+	void SmBaseDraw::GetStaticMeshWorldPositions(vector<bsm::Vec3>& vertices) {
+		GetStaticMeshLocalPositions(vertices);
+		//ワールド行列の反映
+		auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
+		for (auto& v : vertices) {
+			v *= WorldMat;
+		}
+	}
+
+	bool SmBaseDraw::HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint,
+		TRIANGLE& RetTri) {
+		GetStaticMeshWorldPositions(pImpl->m_SmDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_SmDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
+				auto Len = length(EndPos - StartPos);
+				Len *= t;
+				auto Nomal = EndPos - StartPos;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartPos + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	void SmBaseDraw::GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices) {
+		if (GetVecLocalBones().size() == 0) {
+			throw BaseException(
+				L"ボーン行列がありません",
+				L"if (GetVecLocalBones().size() == 0)",
+				L"SmBaseDraw::GetSkinedMeshLocalPositions()"
+			);
+		}
+		auto ReshRes = GetMeshResource();
+		if (!ReshRes) {
+			throw BaseException(
+				L"メッシュリソースがありません",
+				L"if (!ReshRes)",
+				L"SmBaseDraw::GetSkinedMeshLocalPositions()"
+			);
+		}
+		vertices.clear();
+		auto& Bones = GetVecLocalBones();
+		auto& PosVec = ReshRes->GetVerteces();
+		auto& SkinVec = ReshRes->GetSkins();
+		for (auto& v : PosVec) {
+			vertices.push_back(v.position);
+		}
+		//スキニング処理
+		for (size_t j = 0; j < vertices.size(); j++) {
+			bsm::Mat4x4 skinning(0);
+			for (size_t i = 0; i < 4; i++)
+			{
+				skinning += Bones[SkinVec[j].indices[i]] * SkinVec[j].weights[i];
+			}
+			skinning._14 = 1.0f;
+			skinning._24 = 1.0f;
+			skinning._34 = 1.0f;
+			skinning._44 = 1.0f;
+			bsm::Vec4 p(vertices[j]);
+			p.w = 1.0f;
+			p *= skinning;
+			vertices[j] = p;
+		}
+	}
+
+	void SmBaseDraw::GetSkinedMeshWorldPositions(vector<bsm::Vec3>& vertices) {
+		GetSkinedMeshLocalPositions(vertices);
+		//ワールド行列の反映
+		auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
+		for (auto& v : vertices) {
+			v *= WorldMat;
+		}
+	}
+
+	bool SmBaseDraw::HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos,
+		bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		GetSkinedMeshWorldPositions(pImpl->m_SmDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_SmDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
+				auto Len = length(EndPos - StartPos);
+				Len *= t;
+				auto Nomal = EndPos - StartPos;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartPos + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	PCStatic描画コンポーネント

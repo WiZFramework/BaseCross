@@ -8,7 +8,6 @@
 
 namespace basecross{
 
-
 	//--------------------------------------------------------------------------------------
 	//class MultiSpark : public MultiParticle;
 	//用途: 複数のスパーククラス
@@ -23,43 +22,34 @@ namespace basecross{
 		void InsertSpark(const Vec3& Pos);
 	};
 
-
 	//--------------------------------------------------------------------------------------
-	///	ライン
+	//	用途: 剣
 	//--------------------------------------------------------------------------------------
-	class ActionLine : public GameObject {
-		Vec3 m_StartPos;
-		Vec3 m_EndPos;
+	class Sword : public GameObject {
+		Vec3 m_Scale;
+		wstring m_Tag;
+		//剣の強さ
+		float m_Strength;
 	public:
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	コンストラクタ
-		@param[in]	StagePtr	ステージ
-		@param[in]	StartPos	開始点
-		@param[in]	EndtPos　　終了点
-		*/
-		//--------------------------------------------------------------------------------------
-		ActionLine(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, const Vec3& EndtPos);
-		virtual ~ActionLine() {}
+		//構築と破棄
+		Sword(const shared_ptr<Stage>& StagePtr,
+			const Vec3& Scale,
+			const wstring& Tag
+		);
+		virtual ~Sword();
 		//初期化
 		virtual void OnCreate() override;
+		//強さを得る
+		float GetStrength() const {
+			return m_Strength;
+		}
+		//強さを設定する
+		void SetStrength(float f) {
+			m_Strength = f;
+		}
 		//操作
 		virtual void OnUpdate() override;
-		const Vec3& GetStartPos()const {
-			return m_StartPos;
-		}
-		const Vec3& GetEndPos()const {
-			return m_EndPos;
-		}
-		void SetStartPos(const Vec3& StartPos) {
-			m_StartPos = StartPos;
-		}
-		void SetEndPos(const Vec3& EndtPos) {
-			m_EndPos = EndtPos;
-		}
-
 	};
-
 
 	//--------------------------------------------------------------------------------------
 	//	タイリングするプレート
@@ -111,27 +101,24 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
-	//	敵
+	//	敵の箱
 	//--------------------------------------------------------------------------------------
-	class Enemy : public GameObject {
+	class EnemyBox : public GameObject {
 		Vec3 m_Scale;
 		Vec3 m_Rotation;
 		Vec3 m_Position;
-		shared_ptr<MeshResource> m_BallMesh;
-		vector<Vec3> m_WorldTriangles;
 	public:
 		//構築と破棄
-		Enemy(const shared_ptr<Stage>& StagePtr,
+		EnemyBox(const shared_ptr<Stage>& StagePtr,
 			const Vec3& Scale,
 			const Vec3& Rotation,
 			const Vec3& Position
 		);
-		virtual ~Enemy();
+		virtual ~EnemyBox();
 		//初期化
 		virtual void OnCreate() override;
 		//操作
-		vector<Vec3>& WorldTriangles();
-		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, bsm::Vec3& HitPoint);
+		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, Vec3& HitPoint);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -149,54 +136,8 @@ namespace basecross{
 		virtual void OnCreate() override;
 		//操作
 		virtual void OnUpdate() override;
+		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, Vec3& HitPoint);
 	};
-
-	//--------------------------------------------------------------------------------------
-	///	Bone三角形オブジェクト
-	//--------------------------------------------------------------------------------------
-	class BoneTriangles : public GameObject {
-		weak_ptr<BoneChara> m_BoneChara;
-		vector<VertexPositionColor> m_BackupVertices;
-		shared_ptr<MeshResource> m_TriangleMesh;
-		vector<Vec3> m_TempPosvec;
-	public:
-		//構築と破棄
-		BoneTriangles(const shared_ptr<Stage>& StagePtr,const shared_ptr<BoneChara>& boneChara);
-		virtual ~BoneTriangles() {}
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-		virtual void OnUpdate() override;
-		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, bsm::Vec3& HitPoint);
-	};
-
-
-	//--------------------------------------------------------------------------------------
-	///	ヒット時の三角形オブジェクト
-	//--------------------------------------------------------------------------------------
-	class HitTriangles : public GameObject {
-		shared_ptr<MeshResource> m_TriangleMesh;
-		struct DrawTriangle {
-			TRIANGLE m_Triangle;
-			float m_LastTime;
-			DrawTriangle() {}
-			DrawTriangle(const TRIANGLE& tri, float lasttime) :
-				m_Triangle(tri), m_LastTime(lasttime) {}
-		};
-		vector<DrawTriangle> m_DrawTriangleVec;
-	public:
-		//構築と破棄
-		HitTriangles(const shared_ptr<Stage>& StagePtr);
-		virtual ~HitTriangles() {}
-		//初期化
-		virtual void OnCreate() override;
-		//操作
-		virtual void OnUpdate() override;
-		virtual void OnDraw() override;
-		void AddHitTriangle(const TRIANGLE& tri);
-	};
-
-
 
 
 }
