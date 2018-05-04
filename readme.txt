@@ -15,6 +15,10 @@
 　まずは「DirectX11」と「DirectX12」の「クロスプラットフォーム」の実装を進めてまいります。
 
 　更新や追加情報はfacebookにて紹介いたします。
+　もし更新情報などを知りたければ、facebookにて「YasushiYamanoi」を検索して、
+<img src="https://wizframework.github.io/Documents/img/yy.png" >
+　この似顔絵のアイコンを見つけましたら「友達依頼」を出してください。
+
 　また、ドキュメントの部分をオンライン公開しました。
 
 https://wizframework.github.io/Documents/
