@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StageEditor", "StageEditor\StageEditor.vcxproj", "{3BB34856-3ECE-470C-90C2-24136C6CDCE4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{06CBE727-112F-4CC2-B49B-952280C5FBF9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\Libs\DirectXTex\DirectXTex_Desktop_2015.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11FullLib", "..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems", "{12B4EA0B-BF4F-4C4E-B659-DD6561EA2666}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11Lib", "..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxFullLib", "..\Libs\BaseLib\DxFullLib\DxFullLib.vcxitems", "{B57F14D4-0224-4E49-B829-4273487291E9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\DxLib\DxLib.vcxitems", "{974C28F3-3934-456B-BE8E-408774EF14CF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SharedLib", "..\Libs\BaseLib\SharedLib\SharedLib.vcxitems", "{CAA0470E-F76D-42A8-84FA-D6562FA70F4A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameSources", "GameSources\GameSources.vcxitems", "{A8A8BC75-ECC8-4F71-A74F-2B2E525EBDFA}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems*{12b4ea0b-bf4f-4c4e-b659-dd6561ea2666}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxFullLib\DxFullLib.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		..\Libs\BaseLib\SharedLib\SharedLib.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		GameSources\GameSources.vcxitems*{3bb34856-3ece-470c-90c2-24136c6cdce4}*SharedItemsImports = 4
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
+		GameSources\GameSources.vcxitems*{a8a8bc75-ecc8-4f71-a74f-2b2e525ebdfa}*SharedItemsImports = 9
+		..\Libs\BaseLib\DxFullLib\DxFullLib.vcxitems*{b57f14d4-0224-4e49-b829-4273487291e9}*SharedItemsImports = 9
+		..\Libs\BaseLib\SharedLib\SharedLib.vcxitems*{caa0470e-f76d-42a8-84fa-d6562fa70f4a}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3BB34856-3ECE-470C-90C2-24136C6CDCE4}.Debug|x86.ActiveCfg = Debug|Win32
+		{3BB34856-3ECE-470C-90C2-24136C6CDCE4}.Debug|x86.Build.0 = Debug|Win32
+		{3BB34856-3ECE-470C-90C2-24136C6CDCE4}.Release|x86.ActiveCfg = Release|Win32
+		{3BB34856-3ECE-470C-90C2-24136C6CDCE4}.Release|x86.Build.0 = Release|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x86.ActiveCfg = Debug|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x86.Build.0 = Debug|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x86.ActiveCfg = Release|Win32
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+		{12B4EA0B-BF4F-4C4E-B659-DD6561EA2666} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+		{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+		{B57F14D4-0224-4E49-B829-4273487291E9} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+		{974C28F3-3934-456B-BE8E-408774EF14CF} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+		{CAA0470E-F76D-42A8-84FA-D6562FA70F4A} = {06CBE727-112F-4CC2-B49B-952280C5FBF9}
+	EndGlobalSection
+EndGlobal
