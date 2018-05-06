@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>１．フルバージョンチュートリアル</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>１１５．ステージセレクト</h3>
+　このサンプルは<b>FullTutorial015</b>というディレクトリに含まれます。<br />
+<br />
+<h4>ステージを選択する</h4>
+　複数のステージで構成されるゲームを作成する場合、どのような記述がいいかは、いろいろ方法があるかと思いますが、このサンプルではその一般的な方法について説明します。<br />
+　サンプルを起動すると以下の画面が出てきます。これは<b>ステージ選択</b>の画面です。<br />
+<p>&nbsp;</p>
+<img src="img/0115a.png" width="80%"/>
+<p>図0115a</p>
+<p>&nbsp;</p>
+　画像が点滅してますので、コントローラの左スティック上下で移動させて、選択し、Ａボタンを押します。すると、ゲームステージが出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0115b.png" width="80%"/>
+<p>図0115ｂ</p>
+<p>&nbsp;</p>
+　Ｂボタンでセレクト画面に戻ります。<br />
+　ステージ３からステージ３までありますが、３が一番敵が多い形です。これらは<b>mediaディレクトリ</b>内に<b>GameStage1.csv、GameStage2.csv、GameStage3.csv</b>として定義されています。<br />
+<br />
+<h4>ステージ番号の変数</h4>
+　こういった<b>ステージ選択</b>の仕組みを作る場合、最初に迷うのが<b>現在の番号をどこに取っておくか</b>という部分です。<br />
+　<b>C言語</b>だけで作成されるプログラムなら、<b>グローバル変数</b>として変数化するでしょうが、オブジェクト指向ではそうはしたくありません。<br />
+　しかし<b>Sceneクラス</b>であればプログラム中１つのインスタンスしかないので、そこに変数化しておきましょう。<br />
+　以下は<b>Scene.h</b>の宣言部です。
+<div class="box1">
+<pre>
+class Scene : public SceneBase {
+//中略
+    //現在セレクトされているステージナンバー
+    <span class="red">int m_SrageNum;</span>
+public:
+//中略
+    //ステージナンバーのアクセサ
+    int GetStageNum() const {
+        return m_SrageNum;
+    }
+    void SetStageNum(int i) {
+        m_SrageNum = i;
+    }
+};
+</pre>
+</div>
+　ここに<b>m_SrageNum</b>という変数があります。これが<b>現在のステージ番号</b>です。アクセサも用意しておきます。<br />
+　またこの変数はメンバイニシャライズによって<b>1</b>に初期化しています。<br />
+<br />
+<h4>セレクトステージ</h4>
+　起動後最初に呼ばれるのが<b>セレクトステージ</b>です。ここではクリエイト時に<b>現在のステージ番号</b>をシーンから取得してその番号のメニューを点滅させます。<br />
+　コントローラ左スティックの上下で選択を変えます。以下がそのコントローラの部分です。<b>SelectStage::OnUpdate()</b>に記述します。
+<div class="box1">
+<pre>
+void SelectStage::OnUpdate() {
+    //シーンの取得
+    auto PtrScene = App::GetApp()->GetScene&lt;Scene>();
+    int StageNum = PtrScene->GetStageNum();
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        //ゲームステージへ
+        //Aボタン
+        if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+            PostEvent(0.0f, GetThis&lt;SelectStage>(), PtrScene, L"ToGameStage");
+            return;
+        }
+        if (!m_CntrolLock) {
+            if (CntlVec[0].fThumbLY >= 0.8f) {
+                StageNum--;
+                if (StageNum &lt; 1) {
+                    StageNum = 3;
+                }
+                m_CntrolLock = true;
+                PtrScene->SetStageNum(StageNum);
+                ChangeSelect(StageNum);
+            }
+            else if (CntlVec[0].fThumbLY &lt;= -0.8f) {
+                StageNum++;
+                if (StageNum > 3) {
+                    StageNum = 1;
+                }
+                m_CntrolLock = true;
+                PtrScene->SetStageNum(StageNum);
+                ChangeSelect(StageNum);
+            }
+        }
+        else {
+            if (CntlVec[0].fThumbLY == 0.0f) {
+                m_CntrolLock = false;
+            }
+        }
+    }
+}
+</pre>
+</div>
+　このように、選択された番号にシーンの<b>PtrScene->SetStageNum(StageNum);</b>呼び出しで番号を変更しています。<b>Ａボタン</b>が押されたら、ゲームステージに推移するメッセージをシーンに送ってます。<br />
+<br />
+<h4>ゲームステージ</h4>
+　ゲームステージでは、現在のステージナンバーをもとに該当するcsvを読み込みます。<br />
+　csvを決定しているのは以下です。<b>GameStage::OnCreate()</b>です。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        //シーンの取得
+        auto PtrScene = App::GetApp()->GetScene&lt;Scene>();
+        wstring DataDir;
+        App::GetApp()->GetDataDirectory(DataDir);
+        switch (PtrScene->GetStageNum()) {
+        case 1:
+            //CSVファイルの確定
+            m_GameStageCsv.SetFileName(DataDir + L"GameStage1.csv");
+            break;
+        case 2:
+            //CSVファイルの確定
+            m_GameStageCsv.SetFileName(DataDir + L"GameStage2.csv");
+            break;
+        case 3:
+            //CSVファイルの確定
+            m_GameStageCsv.SetFileName(DataDir + L"GameStage3.csv");
+            break;
+        default:
+            //それ以外はステージ1
+            //CSVファイルの確定
+            m_GameStageCsv.SetFileName(DataDir + L"GameStage1.csv");
+            break;
+        }
+        m_GameStageCsv.ReadCsv();
+        ////CSVファイルそのBの読み込み
+        m_GameStageCsvB.SetFileName(DataDir + L"GameStageB.csv");
+        m_GameStageCsvB.ReadCsv();
+
+//中略
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　csvに定義されているのは敵なので、<b>GameStage::CreateEnemy()</b>で、該当のcsvから敵を読み込みます。<br />
+<br />
+　今回は<b>ステージセレクト</b>の一般的な例を紹介しました。<br />
+　複雑なステージ構成になっている場合は、この方法は使えないでしょう。<br />
+　ただ、<b>ゲームに共通する変数はシーンに置く</b>という原則は決めておいてもいいと思います。<br />
+　もちろん<b>ゲームデータクラス</b>のようなクラスを作ってもいいですが、スコアや現在のステージ、あるいは、所得したアイテム数など、比較的単純なデータであれば<b>シーンに置く</b>形でもいいのかなあと思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="01_13.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="01_15.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
