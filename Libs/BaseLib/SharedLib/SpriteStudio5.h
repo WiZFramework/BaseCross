@@ -918,6 +918,12 @@ namespace basecross {
 		void UpdateAnimeTime(float TimeSpan);
 		//fps（再生スピード）を設定する
 		void SetFps(float f);
+		//ルートのパーツを取得する
+		const shared_ptr<SSPart>& GetRootPart() const;
+		//すべてのパーツのデフューズを変更する
+		void SetAllPartsDiffuse(const bsm::Col4& c);
+		//すべてのパーツのエミッシブを変更する
+		void SetAllPartsEmissive(const bsm::Col4& c);
 
 		virtual void OnUpdate() override{}
 		virtual void OnDraw()override;

@@ -305,6 +305,7 @@ namespace basecross{
 
 	//Zレール変更を開始する
 	void Player::RailChangeStartMotion() {
+		SetAllPartsDiffuse(Col4(1.0f, 0, 0, 1.0f));
 		//Rigidbodyを取得
 		auto PtrRedit = GetComponent<Rigidbody>();
 		//無効にする
@@ -358,6 +359,7 @@ namespace basecross{
 
 	//Zレール変更を終了する
 	void Player::RailChangeEndMotion() {
+		SetAllPartsDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
 		//Actionを取得する
 		auto PtrAction = AddComponent<Action>();
 		//無効にする

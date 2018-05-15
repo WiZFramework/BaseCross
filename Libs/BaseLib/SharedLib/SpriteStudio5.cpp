@@ -2090,6 +2090,49 @@ namespace basecross {
 		return pImpl->m_TextureOnlyNoLight;
 	}
 
+	const shared_ptr<SSPart>&  SS5ssae::GetRootPart() const {
+		return pImpl->m_RootPart;
+	}
+
+	//すべてのパーツのデフューズを変更する
+	void SS5ssae::SetAllPartsDiffuse(const bsm::Col4& c) {
+		//パーツのデフューズ変更
+		auto& rootParts = GetRootPart();
+		vector<SSPart*> PartVec;
+		rootParts->SetPartInVector(PartVec);
+		for (auto ptr : PartVec) {
+			if (IsSpriteType()) {
+				auto DComp = ptr->GetComponent<PCTSpriteDraw>();
+				DComp->SetDiffuse(c);
+			}
+			else {
+				auto DComp = ptr->GetComponent<PCTStaticDraw>();
+				DComp->SetDiffuse(c);
+			}
+		}
+	}
+
+	void SS5ssae::SetAllPartsEmissive(const bsm::Col4& c) {
+		//パーツのエミッシブ変更
+		auto& rootParts = GetRootPart();
+		vector<SSPart*> PartVec;
+		rootParts->SetPartInVector(PartVec);
+		for (auto ptr : PartVec) {
+			if (IsSpriteType()) {
+				auto DComp = ptr->GetComponent<PCTSpriteDraw>();
+				DComp->SetEmissive(c);
+			}
+			else {
+				auto DComp = ptr->GetComponent<PCTStaticDraw>();
+				DComp->SetEmissive(c);
+			}
+		}
+
+	}
+
+
+
+
 	bool ZSortModelFunc(SSPart* rLeft, SSPart* rRight){
 		if (rLeft->GetPrio() == rRight->GetPrio()){
 			return rLeft->get_arrayIndex() < rRight->get_arrayIndex();

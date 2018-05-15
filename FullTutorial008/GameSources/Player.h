@@ -74,7 +74,6 @@ namespace basecross{
 		void RailChangeBeforStartMotion();
 		//Zレール変更を終了する
 		void RailChangeEndMotion();
-
 		//更新
 		virtual void OnUpdate() override;
 		//衝突時
