@@ -1462,6 +1462,19 @@ namespace bsm {
 	}
 
 
+	inline Flt3 Mat3x3::rotXInMatrix()const {
+		Flt3 ret(_11, _12, _13);
+		return ret;
+	}
+	inline Flt3 Mat3x3::rotYInMatrix()const {
+		Flt3 ret(_21, _22, _23);
+		return ret;
+	}
+	inline Flt3 Mat3x3::rotZInMatrix()const {
+		Flt3 ret(_31, _32, _33);
+		return ret;
+	}
+
 	//--------------------------------------------------------------------------------------
 	///	Mat4x4インライン関数
 	//--------------------------------------------------------------------------------------
@@ -1883,17 +1896,17 @@ namespace bsm {
 			auto XLen = length(Flt3(_11, _12, _13));
 			auto YLen = length(Flt3(_21, _22, _23));
 			auto ZLen = length(Flt3(_31, _32, _33));
-
-			rScaling = Flt3(XLen, YLen, ZLen);
-
-			if (XLen == 0.0f || YLen == 0.0f || ZLen == 0.0f) {
-				throw BaseException(
-					L"行列のデコンポーズ計算に失敗しました",
-					L"if (XLen == 0.0f || YLen == 0.0f || ZLen == 0.0f)",
-					L"Mat4X4::decompose()"
-				);
+			//スケーリングが0の要素がある
+			if (XLen == 0.0f) {
+				XLen = 0.0001f;
 			}
-
+			if (YLen == 0.0f) {
+				YLen = 0.0001f;
+			}
+			if (ZLen == 0.0f) {
+				ZLen = 0.0001f;
+			}
+			rScaling = Flt3(XLen, YLen, ZLen);
 			rTranslation = Flt3(_41, _42, _43);
 
 			Flt3 vX = Flt3(_11, _12, _13) / XLen;
@@ -2027,6 +2040,30 @@ namespace bsm {
 		return *this;
 	}
 
+	inline Flt3 Mat4x4::rotXInMatrix()const {
+		Flt3 ret(_11, _12, _13);
+		Flt3 Scale = scaleInMatrix();
+		ret.x /= Scale.x;
+		ret.y /= Scale.x;
+		ret.z /= Scale.x;
+		return ret;
+	}
+	inline Flt3 Mat4x4::rotYInMatrix()const {
+		Flt3 ret(_21, _22, _23);
+		Flt3 Scale = scaleInMatrix();
+		ret.x /= Scale.y;
+		ret.y /= Scale.y;
+		ret.z /= Scale.y;
+		return ret;
+	}
+	inline Flt3 Mat4x4::rotZInMatrix()const {
+		Flt3 ret(_31, _32, _33);
+		Flt3 Scale = scaleInMatrix();
+		ret.x /= Scale.z;
+		ret.y /= Scale.z;
+		ret.z /= Scale.z;
+		return ret;
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt2

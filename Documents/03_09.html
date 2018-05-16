@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCrossドキュメント(2017年)</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>３．Update系</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>３０９．オブジェクトの方向の取得</h3>
+　まず<b>FullSample309</b>を実行してみましょう。以下のような画面が出てきます。<br />
+<p>&nbsp;</p>
+<img src="img/0309a.png" width="80%"/>
+<p>図0309a</p>
+<h4>オブジェクトの方向とは</h4>
+　コントローラーでプレイヤーを動かすと、プレイヤーの向いている方向が線で示されます。いわゆる<b>姿勢</b>と呼ばれることもあります。<br />
+　これは<b>Transformコンポーネント</b>から取得すできる<b>GetForword()関数、GetUp()関数、GetRight()関数</b>を使用しています。<br />
+　実装するにはまず、3方向のラインを構築します。ラインは<b>ActionLineクラス</b>で<b>Charactor.h/cpp</b>に記述があります。<br />
+　<b>ActionLineクラス</b>は<b>開始位置と終了位置</b>を引数に取るオブジェクトなので、<b>GameStage::CreatePlayer()</b>で以下のように気jyつします。
+<div class="box1">
+<pre>
+//プレイヤーの作成
+void GameStage::CreatePlayer() {
+    //プレーヤーの作成
+    auto PlayerPtr = AddGameObject&lt;Player>();
+    //シェア配列にプレイヤーを追加
+    SetSharedGameObject(L"Player", PlayerPtr);
+    auto StartPos = PlayerPtr->GetComponent&lt;Transform>()->GetPosition();
+    auto EndPos = PlayerPtr->GetComponent&lt;Transform>()-><span class="red">GetForword()</span>;
+    EndPos += StartPos;
+    auto LinePtr = AddGameObject&lt;ActionLine>(StartPos,EndPos, Col4(1.0f, 1.0f, 0, 1.0f));
+    //シェア配列に前方ラインを追加
+    SetSharedGameObject(L"ForwordActionLine", LinePtr);
+
+    EndPos = PlayerPtr->GetComponent&lt;Transform>()-><span class="red">GetUp()</span>;
+    EndPos += StartPos;
+    LinePtr = AddGameObject&lt;ActionLine>(StartPos, EndPos, Col4(1.0f, 0.0f, 0, 1.0f));
+    //シェア配列に上方ラインを追加
+    SetSharedGameObject(L"UpActionLine", LinePtr);
+
+    EndPos = PlayerPtr->GetComponent&lt;Transform>()-><span class="red">GetRight()</span>;
+    EndPos += StartPos;
+    LinePtr = AddGameObject&lt;ActionLine>(StartPos, EndPos, Col4(0.0f, 0.0f, 1.0f, 1.0f));
+    //シェア配列に右方ラインを追加
+    SetSharedGameObject(L"RightActionLine", LinePtr);
+}
+</pre>
+</div>
+　これで3方向のラインが作成されます。赤くなっているところが、3方向を取得する関数を使用しています。<br />
+　取得した方向に<b>開始位置</b>であるプレイヤー位置を加算して、実際のラインの初期パラメータを決定します。<br />
+<br />
+<h4>ラインの更新</h4>
+　プレイヤーは常に移動してますので、それに合わせてラインも移動させます。記述個所は<b>Player::OnUpdate2()</b>です。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    auto LinePtr = GetStage()->GetSharedGameObject&lt;ActionLine>(L"ForwordActionLine");
+    auto StartPos = GetComponent&lt;Transform>()->GetPosition();
+    auto EndPos = GetComponent&lt;Transform>()->GetForword();
+    EndPos += StartPos;
+    LinePtr->ResetObject(StartPos, EndPos);
+    LinePtr = GetStage()->GetSharedGameObject&lt;ActionLine>(L"UpActionLine");
+    EndPos = GetComponent&lt;Transform>()->GetUp();
+    EndPos += StartPos;
+    LinePtr->ResetObject(StartPos, EndPos);
+    LinePtr = GetStage()->GetSharedGameObject&lt;ActionLine>(L"RightActionLine");
+    EndPos = GetComponent&lt;Transform>()->GetRight();
+    EndPos += StartPos;
+    LinePtr->ResetObject(StartPos, EndPos);
+    //文字列の表示
+    DrawStrings();
+}
+</pre>
+</div>
+　このようにプレイヤーを追随するようにラインを変化させます。<br />
+<br />
+<h4>オブジェクトの方向の利用</h4>
+　このサンプルでは<b>ラインの表示</b>という形でわかりやすく表現していますが、この機能はいろんなところに使えます。<br />
+　例えば敵が<b>自分の向いている方向にプレイヤーがいたら追いかける</b>のような処理にも使えます。この場合<b>ライン</b>のようなオブジェクトは使わずに、計算上で前項で紹介した<b>線とオブジェクトの交差判定</b>のような形で利用できますね。<br />
+　また、<b>後ろ、下、左方向</b>は、<b>前、上、右方向</b>に<b>-1.0f</b>を掛ければ計算できます。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="03_08.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

@@ -382,6 +382,25 @@ namespace basecross {
 		}
 	}
 
+	bsm::Vec3 Transform::GetForword() const {
+		bsm::Vec3 ret = GetWorldMatrix().rotZInMatrix();
+		ret.normalize();
+		return ret;
+	}
+
+	bsm::Vec3 Transform::GetUp() const {
+		bsm::Vec3 ret = GetWorldMatrix().rotYInMatrix();
+		ret.normalize();
+		return ret;
+	}
+	bsm::Vec3 Transform::GetRight() const {
+		bsm::Vec3 ret = GetWorldMatrix().rotXInMatrix();
+		ret.normalize();
+		return ret;
+	}
+
+
+
 	//‘€ì
 	void Transform::OnUpdate() {
 		if (!pImpl->m_Init) {
