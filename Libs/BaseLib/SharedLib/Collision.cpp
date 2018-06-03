@@ -15,6 +15,8 @@ namespace basecross {
 	struct Collision::Impl {
 		bool m_Fixed;		//静止オブジェクトかどうか
 		float m_EscapeAdjustedValue;	//エスケープ処理の調整値
+		float m_EscapeSlideValue;	//Slide時のエスケープ処理の調整値
+
 
 		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
@@ -40,6 +42,7 @@ namespace basecross {
 		Impl() :
 			m_Fixed(false),
 			m_EscapeAdjustedValue(0.0f),
+			m_EscapeSlideValue(0.0f),
 			m_IsHitAction(IsHitAction::Auto)
 		{
 		}
@@ -72,6 +75,14 @@ namespace basecross {
 	void Collision::SetEscapeAdjustedValue(float f) {
 		pImpl->m_EscapeAdjustedValue = f;
 	}
+
+	float Collision::GetEscapeSlideValue() const {
+		return pImpl->m_EscapeSlideValue;
+	}
+	void Collision::SetEscapeSlideValue(float f) {
+		pImpl->m_EscapeSlideValue = f;
+	}
+
 
 
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
@@ -252,14 +263,6 @@ namespace basecross {
 		auto DestVelo = PtrDestTransform->GetWorldMatrix().transInMatrix() 
 			- PtrDestTransform->GetBeforeWorldMatrix().transInMatrix();
 
-		//スライドする方向を計算
-		bsm::Vec3 Slide = pImpl->Slide(SrcVelocity, HitNormal);
-		PtrTransform->SetToBefore();
-		if (GetIsHitAction() != IsHitAction::Stop && GetIsHitAction() != IsHitAction::None) {
-			auto WorldPos = PtrTransform->GetWorldPosition() + Slide * AfterHitTime;
-			PtrTransform->SetWorldPosition(WorldPos);
-		}
-
 		bool horizontal = false;
 		if (GetGameObject()->FindBehavior<Gravity>()) {
 			auto Grav = GetGameObject()->GetBehavior<Gravity>()->GetGravity();
@@ -269,6 +272,18 @@ namespace basecross {
 				horizontal = true;
 			}
 		}
+
+		//スライドする方向を計算
+		bsm::Vec3 Slide = pImpl->Slide(SrcVelocity, HitNormal);
+		PtrTransform->SetToBefore();
+		if (GetIsHitAction() != IsHitAction::Stop && GetIsHitAction() != IsHitAction::None) {
+			auto WorldPos = PtrTransform->GetWorldPosition() + Slide * AfterHitTime;
+			if (!horizontal) {
+				WorldPos += HitNormal * (-1.0f * GetEscapeSlideValue());
+			}
+			PtrTransform->SetWorldPosition(WorldPos);
+		}
+
 
 		auto PtrRigid = GetGameObject()->GetComponent<Rigidbody>(false);
 		if (PtrRigid) {
